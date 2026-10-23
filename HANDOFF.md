@@ -3,7 +3,7 @@
 > File bàn giao phiên làm việc. Cập nhật file này mỗi khi kết thúc một block việc lớn,
 > để session sau (hoặc phiên khác) đọc là hiểu ngay, không cần hỏi lại.
 
-**Cập nhật lần cuối:** 23/10/2026
+**Cập nhật lần cuối:** 23/10/2026 (block 2 — fix layout)
 **Repo:** https://github.com/nguyenquochuydl96/Boardgame-Collection
 **Local:** `/home/ubuntu/projects/Boardgame-Collection`
 
@@ -30,27 +30,41 @@ và có thể sync thêm từ Google Sheet.
 | motion (framer-motion) | 12.x |
 | lucide-react | 0.546 |
 
-## 3. Trạng thái hiện tại — ĐÃ VERIFY
+## 3. Trạng thái hiện tại — ĐÃ VERIFY (đo bằng CDP, không đoán bằng mắt)
 
-- [x] `npm install --legacy-peer-deps` → OK
 - [x] `npx tsc --noEmit` → **0 lỗi**
-- [x] `npm run build` → **pass**, 1684 modules, bundle 450 kB (gzip 131 kB)
-- [x] Dev server chạy được, render đầy đủ 2 tủ, search/filter/toggle hoạt động
+- [x] `npm run build` → **pass**, 1684 modules, ~450 kB (gzip ~131 kB)
+- [x] Không tràn ngang ở 1440 / 1280 / 1024 / 900 / 768 (đo `document.scrollWidth == innerWidth`,
+      0 element có `right > innerWidth`)
+- [x] Không còn text bị `...` trong card (quét `scrollWidth > clientWidth` → 0 kết quả)
+- [x] 16 card đều **253×497 px**, các hàng thẳng nhau giữa 2 tủ (y = 424 / 987 / 1551 / 2114)
+- [x] Chế độ Gáy Kệ: gáy 48×256, đứng gọn trong tấm kệ (kệ 137–683, gáy 149–575), tên không bị cắt
+- [x] View So Sánh / Thống Kê / Sheet không tràn layout
 
-## 4. Việc đang mở (chưa làm)
+## 4. Việc đang mở
 
-3 lỗi CSS/giao diện phát hiện từ ảnh chụp 1440×1000:
+**Không còn lỗi layout nào đang mở.** 3 lỗi của block 1 đã fix xong:
 
-1. **Navbar tràn ngang** — nút `Đồng Bộ Sheet` bị cắt cụt ở mép phải viewport.
-   Nghi vấn: `src/components/Navbar.tsx` thiếu max-width / flex-wrap, hoặc `whitespace-nowrap`
-   trên cụm nút phải. Cần kiểm tra padding/margin tổng.
-2. **Truncate quá tay** — tên game, thể loại (`Chiến thuật / Gia…`), tình trạng đều bị `...`
-   dù panel còn chỗ. Xem `src/components/GameBoxCard.tsx` (line-clamp, `truncate`).
-   Cân nhắc: 3 cột/hộp ở 1440px là quá chật → thử 2 cột hoặc giảm metadata hiển thị.
-3. **Dòng giá card Catan (tủ Real) bị mờ** — chữ `Mới nguyên …` gần như trùng màu nền,
-   có mask/fade đè lên. Xem đoạn render condition + price trong `GameBoxCard.tsx`.
+| # | Lỗi | Cách fix |
+|---|---|---|
+| 1 | Navbar tràn, nút `Đồng Bộ Sheet` bị cắt | Nhãn menu rút gọn ở < 2xl (`2 Tủ / So Sánh / Thống Kê / Sheet`), full nhãn từ 2xl, giảm padding/gap, nút Google thành icon-only < 2xl. Nút sync giờ kết thúc ở x=1360 trên viewport 1440 |
+| 2 | Truncate quá tay (tên game, thể loại, tình trạng) | `max-w-[110px]`/`max-w-[120px]` cứng → `flex-1 min-w-0 truncate` + `shrink-0` cho năm/giá; tên game cho 2 dòng; lưới 3 cột → **2 cột** khi 2 tủ song song (3 cột chỉ ở 2xl), 4 cột khi mở 1 tủ |
+| 3 | Dòng tình trạng card Catan bị mờ | Không phải mask/fade — do chữ 11px màu `text-slate-400` + bị truncate. Đổi sang `text-slate-300`, có `title` tooltip, giá `shrink-0 whitespace-nowrap` nên không bị đè |
 
-Chưa fix vì user chưa chốt ưu tiên. Hỏi user muốn fix 3 lỗi này hay thêm tính năng mới trước.
+Lỗi phụ tìm thấy thêm trong block 2 (đã fix luôn):
+- Gáy Kệ bị xoay 2 lần (`writing-mode: vertical-rl` **+** `rotate-90`) và `truncate` cắt giữa từ → bỏ rotate, bỏ truncate, thêm tooltip.
+- 8 gáy/hàng rộng 64px tràn khỏi tấm kệ (554px > 522px khả dụng) → gáy cố định 48px.
+- Container kệ khai báo cùng lúc `flex` và `grid` → bỏ, chia 2 nhánh class rõ ràng.
+- Thanh lọc tràn ở 1024px → row layout đổi từ `lg` sang `xl` + `flex-wrap`.
+- Card lệch chiều cao làm giá không thẳng hàng / ván kệ lệch giữa 2 tủ → `h-full` cho card, info panel `flex-1`.
+- Gáy Kệ thừa `min-h-[500px]` của tủ → còn 380px khi ở chế độ gáy.
+
+### Hướng phát triển tiếp (chưa chốt với user)
+
+1. **Backup / Export-Import JSON** — hiện dữ liệu chỉ nằm trong localStorage, xoá cache là mất.
+2. **Ảnh bìa thật** — nhiều game đang dùng fallback CSS; thêm ô upload ảnh (base64) hoặc dán URL.
+3. **Lịch sử giá** — lưu giá theo lần sync để vẽ biểu đồ tăng/giảm (user là dân theo dõi giá).
+4. **So Sánh nâng cao** — chọn đúng 1 cặp Real↔Fake theo tên game thay vì so sánh cả 2 tủ.
 
 ## 5. Bản đồ file
 
@@ -66,9 +80,9 @@ src/
 │   ├── googleSheets.ts          (781)  parse + sync Google Sheet → BoardGame[]
 │   └── googleWorkspace.ts       (346)  Google API helpers
 └── components/
-    ├── Navbar.tsx               (201)  header + 4 tab + nút sync  ← lỗi #1
-    ├── CabinetsView.tsx         (496)  2 tủ song song, grid card
-    ├── GameBoxCard.tsx          (246)  card game                 ← lỗi #2, #3
+    ├── Navbar.tsx               (201)  header + 4 tab + nút sync
+    ├── CabinetsView.tsx         (496)  2 tủ song song, lưới card, filter bar
+    ├── GameBoxCard.tsx          (246)  card game (front + spine)
     ├── GameDetailModal.tsx      (293)
     ├── AddEditGameModal.tsx     (404)
     ├── ComparisonMode.tsx       (317)  so sánh Real vs Fake
@@ -86,6 +100,8 @@ Tổng ~4.760 dòng TS/TSX.
 - **`--legacy-peer-deps` bắt buộc** (Vite 8 cần esbuild ^0.27+, AI Studio pin ^0.25).
   Không sửa `package.json` để né, vì AI Studio có thể ghi đè khi sync.
 - **Không cần `GEMINI_API_KEY`** — app không gọi Gemini API dù `.env.example` có nhắc tới.
+- **Verify layout bằng số đo CDP, không chỉ nhìn ảnh chụp** — script
+  `/home/ubuntu/.hermes/cache/scratch/cdp.py` (xem `.hermes.md`).
 
 ## 7. Cách chạy lại từ đầu
 

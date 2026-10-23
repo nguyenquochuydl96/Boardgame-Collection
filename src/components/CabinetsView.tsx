@@ -36,7 +36,6 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [playerFilter, setPlayerFilter] = useState<string>('all');
-  const [shelfSize, setShelfSize] = useState<number>(3); // games per shelf row in front mode
 
   // Filter games based on search & filters
   const filteredGames = useMemo(() => {
@@ -80,7 +79,14 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
     return chunks;
   };
 
-  const gamesPerRow = viewMode === 'spine' ? 8 : shelfSize;
+  // Lưới Front: 2 tủ song song => mỗi tủ chỉ rộng ~nửa trang nên xếp 2 hộp/dòng;
+  // mở riêng 1 tủ (full width) thì xếp 3-4 hộp/dòng. Giữ số hộp mỗi "kệ" khớp số cột
+  // để hộp không bị bẻ dòng lệch khỏi tấm ván kệ bên dưới.
+  const isBothCabinets = cabinetFocus === 'both';
+  const shelfColumns = isBothCabinets
+    ? 'grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3 md:gap-4'
+    : 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4';
+  const gamesPerRow = viewMode === 'spine' ? 8 : isBothCabinets ? 2 : 4;
   const realShelves = chunkIntoShelves(realGames, gamesPerRow);
   const fakeShelves = chunkIntoShelves(fakeGames, gamesPerRow);
 
@@ -109,7 +115,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Control Bar & Filter Strip */}
-      <div className="bg-[#12161f] border border-slate-800/80 rounded-xl p-4 shadow-lg flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      <div className="bg-[#12161f] border border-slate-800/80 rounded-xl p-4 shadow-lg flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 md:gap-4">
         {/* Left: Search input */}
         <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -117,7 +123,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm theo tên game, nhà phát hành, dấu hiệu fake..."
+            placeholder="Tìm tên game, NXB, dấu hiệu fake..."
             className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/80 transition-colors"
           />
           {searchQuery && (
@@ -166,7 +172,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
         </div>
 
         {/* Right: Cabinet Focus & View Mode Switcher */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* View mode (Front box vs Spine view) */}
           <div className="flex items-center bg-slate-900 border border-slate-700/80 rounded-lg p-1 text-xs">
             <button
@@ -289,7 +295,11 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
             </div>
 
             {/* Cabinet Interior: Backboard + Realistic Shelves */}
-            <div className="p-4 md:p-6 flex-1 flex flex-col justify-start bg-gradient-to-b from-[#18110b] to-[#0f0b07] relative min-h-[500px]">
+            <div
+              className={`p-4 md:p-6 flex-1 flex flex-col justify-start bg-gradient-to-b from-[#18110b] to-[#0f0b07] relative ${
+                viewMode === 'spine' ? 'min-h-[380px]' : 'min-h-[500px]'
+              }`}
+            >
               {/* Backboard vertical panel lines */}
               <div
                 className="absolute inset-0 opacity-15 pointer-events-none"
@@ -329,11 +339,11 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                     <div key={`real-shelf-${sIdx}`} className="flex flex-col">
                       {/* Shelf Items (Boxes sitting on top of shelf plank) */}
                       <div
-                        className={`px-3 pb-1 flex items-end ${
+                        className={
                           viewMode === 'spine'
-                            ? 'gap-1.5 overflow-x-auto justify-start py-2'
-                            : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-4'
-                        }`}
+                            ? 'px-3 pb-1 flex items-end gap-1.5 overflow-x-auto justify-start py-2'
+                            : `px-3 pb-1 ${shelfColumns}`
+                        }
                       >
                         {shelf.map((game) => (
                           <GameBoxCard
@@ -418,7 +428,11 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
             </div>
 
             {/* Cabinet Interior: Dark Distressed Backboard + Steel/Cedar Shelves */}
-            <div className="p-4 md:p-6 flex-1 flex flex-col justify-start bg-gradient-to-b from-[#141416] to-[#0a0a0c] relative min-h-[500px]">
+            <div
+              className={`p-4 md:p-6 flex-1 flex flex-col justify-start bg-gradient-to-b from-[#141416] to-[#0a0a0c] relative ${
+                viewMode === 'spine' ? 'min-h-[380px]' : 'min-h-[500px]'
+              }`}
+            >
               {/* Backboard industrial pattern */}
               <div
                 className="absolute inset-0 opacity-10 pointer-events-none"
@@ -458,11 +472,11 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                     <div key={`fake-shelf-${sIdx}`} className="flex flex-col">
                       {/* Shelf Items */}
                       <div
-                        className={`px-3 pb-1 flex items-end ${
+                        className={
                           viewMode === 'spine'
-                            ? 'gap-1.5 overflow-x-auto justify-start py-2'
-                            : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-4'
-                        }`}
+                            ? 'px-3 pb-1 flex items-end gap-1.5 overflow-x-auto justify-start py-2'
+                            : `px-3 pb-1 ${shelfColumns}`
+                        }
                       >
                         {shelf.map((game) => (
                           <GameBoxCard

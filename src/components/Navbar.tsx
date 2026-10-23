@@ -32,7 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#090b0e]/95 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-8 py-3.5 transition-all">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 md:gap-8">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 md:gap-4 xl:gap-6">
         {/* Zone 1: Single text element wordmark */}
         <div className="flex items-center gap-3 shrink-0">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-900/40 border border-amber-400/30">
@@ -49,58 +49,62 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Zone 2: 4 nav links, single-line, whitespace-nowrap shrink-0 */}
-        <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+        <nav className="hidden md:flex items-center gap-1 min-w-0">
           <button
             onClick={() => setActiveTab('cabinets')}
-            className={`px-3 py-1.5 text-xs lg:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            className={`px-2.5 2xl:px-3.5 py-1.5 text-xs lg:text-[13px] 2xl:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               activeTab === 'cabinets'
                 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
             <Layers className="w-4 h-4" />
-            <span>2 Tủ Trưng Bày</span>
+            <span className="hidden 2xl:inline">2 Tủ Trưng Bày</span>
+            <span className="2xl:hidden">2 Tủ</span>
           </button>
 
           <button
             onClick={() => setActiveTab('compare')}
-            className={`px-3 py-1.5 text-xs lg:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            className={`px-2.5 2xl:px-3.5 py-1.5 text-xs lg:text-[13px] 2xl:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               activeTab === 'compare'
                 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
             <GitCompare className="w-4 h-4" />
-            <span>So Sánh Real & Fake</span>
+            <span className="hidden 2xl:inline">So Sánh Real &amp; Fake</span>
+            <span className="2xl:hidden">So Sánh</span>
           </button>
 
           <button
             onClick={() => setActiveTab('stats')}
-            className={`px-3 py-1.5 text-xs lg:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            className={`px-2.5 2xl:px-3.5 py-1.5 text-xs lg:text-[13px] 2xl:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               activeTab === 'stats'
                 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>Thống Kê Bộ Sưu Tập</span>
+            <span className="hidden 2xl:inline">Thống Kê Bộ Sưu Tập</span>
+            <span className="2xl:hidden">Thống Kê</span>
           </button>
 
           <button
             onClick={() => setActiveTab('sheet')}
-            className={`px-3 py-1.5 text-xs lg:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            className={`px-2.5 2xl:px-3.5 py-1.5 text-xs lg:text-[13px] 2xl:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               activeTab === 'sheet'
                 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
             <Sheet className="w-4 h-4" />
-            <span>Nguồn Google Sheet</span>
+            <span className="hidden 2xl:inline">Nguồn Google Sheet</span>
+            <span className="2xl:hidden">Sheet</span>
           </button>
         </nav>
 
         {/* Zone 3: 1 primary action button + quick action */}
-        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
           {currentUser ? (
             <button
               onClick={onOpenSyncModal}
@@ -126,6 +130,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onSignInWithGoogle}
               className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+              aria-label="Đăng nhập Google"
               title="Đăng nhập Google Drive & Sheets"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
@@ -134,7 +139,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
               </svg>
-              <span>Google Sign-in</span>
+              <span className="hidden 2xl:inline">Google Sign-in</span>
             </button>
           ) : null}
 

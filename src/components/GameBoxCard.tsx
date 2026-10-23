@@ -31,7 +31,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
         title={`${game.name} - Nhấn để xem chi tiết`}
       >
         <div
-          className={`w-12 md:w-16 h-56 md:h-64 rounded-sm flex flex-col justify-between p-2 shadow-2xl relative overflow-hidden transition-all duration-200 border-t border-r ${
+          className={`w-12 h-56 md:h-64 rounded-sm flex flex-col justify-between p-1.5 md:p-2 shadow-2xl relative overflow-hidden transition-all duration-200 border-t border-r ${
             isReal
               ? 'border-amber-400/40 bg-gradient-to-b from-stone-800 via-stone-900 to-black text-amber-200 shadow-amber-950/40'
               : 'border-zinc-500/40 bg-gradient-to-b from-zinc-800 via-zinc-900 to-black text-zinc-300 shadow-black'
@@ -53,10 +53,11 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
           </div>
 
           {/* Vertical Title along spine */}
-          <div className="flex-1 flex items-center justify-center my-2">
+          <div className="flex-1 flex items-center justify-center my-2 w-full overflow-hidden">
             <span
-              className="text-xs md:text-sm font-bold tracking-tight text-white whitespace-nowrap rotate-90 origin-center truncate max-w-[170px]"
+              className="text-[11px] md:text-xs font-bold tracking-tight text-white leading-tight max-h-full overflow-hidden"
               style={{ writingMode: 'vertical-rl' }}
+              title={game.name}
             >
               {game.name}
             </span>
@@ -67,7 +68,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             <span className="font-mono tabular-nums text-[9px] text-amber-300">
               {game.rating.toFixed(1)}★
             </span>
-            <span className="truncate max-w-[40px] text-[8px] opacity-70">
+            <span className="truncate max-w-[46px] text-[8px] opacity-70" title={game.publisher}>
               {game.publisher}
             </span>
           </div>
@@ -97,10 +98,10 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
   return (
     <div
       onClick={() => onSelect(game)}
-      className="group relative cursor-pointer perspective-1000 flex flex-col"
+      className="group relative cursor-pointer perspective-1000 flex flex-col h-full"
     >
       <div
-        className={`game-box-3d relative rounded-lg overflow-hidden flex flex-col bg-slate-900/90 border transition-all duration-300 ${
+        className={`game-box-3d relative rounded-lg overflow-hidden flex flex-col h-full bg-slate-900/90 border transition-all duration-300 ${
           isReal
             ? 'border-amber-500/30 hover:border-amber-400 shadow-xl shadow-amber-950/20'
             : 'border-rose-900/40 hover:border-rose-500/60 shadow-xl shadow-rose-950/20'
@@ -190,12 +191,18 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
           </div>
 
           {/* Bottom Title on Image */}
-          <div className="absolute bottom-2.5 left-2.5 right-12 z-10">
-            <h3 className="text-sm font-bold text-white drop-shadow-md truncate">
+          <div
+            className="absolute bottom-2.5 left-2.5 right-12 z-10"
+            title={game.name}
+          >
+            <h3 className="text-sm font-bold text-white drop-shadow-md line-clamp-2 leading-snug">
               {game.name}
             </h3>
             {game.vietnameseName && (
-              <p className="text-[11px] text-slate-300 truncate drop-shadow">
+              <p
+                className="text-[11px] text-slate-300 truncate drop-shadow mt-0.5"
+                title={game.vietnameseName}
+              >
                 {game.vietnameseName}
               </p>
             )}
@@ -205,10 +212,13 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
         {/* Card Info Details */}
         <div className="p-3 flex flex-col gap-2 flex-1 justify-between bg-slate-900/70 border-t border-slate-800/60">
           {/* Metadata clean unboxed text with · separators */}
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-            <span className="truncate max-w-[110px]">{game.category}</span>
-            <span aria-hidden="true">·</span>
-            <span>{game.year}</span>
+          <div
+            className="flex items-center gap-1.5 text-[11px] text-slate-400"
+            title={game.category}
+          >
+            <span className="min-w-0 flex-1 truncate">{game.category}</span>
+            <span aria-hidden="true" className="shrink-0">·</span>
+            <span className="shrink-0 tabular-nums">{game.year}</span>
           </div>
 
           {/* Players and Playtime */}
@@ -224,11 +234,14 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
           </div>
 
           {/* Condition & Price */}
-          <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
-            <span className="text-[11px] text-slate-400 truncate max-w-[120px]">
+          <div className="flex items-baseline justify-between gap-2 pt-2 border-t border-slate-800/80">
+            <span
+              className="text-[11px] text-slate-300 min-w-0 flex-1 truncate"
+              title={game.condition}
+            >
               {game.condition}
             </span>
-            <span className="font-mono font-bold text-xs text-amber-400 tabular-nums">
+            <span className="shrink-0 font-mono font-bold text-xs text-amber-400 tabular-nums whitespace-nowrap">
               {formatVnd(game.price)}
             </span>
           </div>
