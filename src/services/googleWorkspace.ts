@@ -233,7 +233,7 @@ export async function fetchSpreadsheetGamesViaApi(
     if (!row || row.length === 0) continue;
 
     let name = '';
-    let cabinetType: CabinetType = 'real';
+    let cabinetType: CabinetType = 'real' as CabinetType;
     let statusRaw = '';
     let status: 'On Hand' | 'OOS' = 'On Hand';
     let imageUrl = '';
@@ -305,11 +305,11 @@ export async function fetchSpreadsheetGamesViaApi(
 
       if (anyFieldFake || cabinetType === 'fake') {
         cabinetType = 'fake';
-        if (condition === 'Mới 99%' || !condition) {
-          condition = statusRaw && parseType(statusRaw) === 'fake' ? statusRaw : 'Bản Fake / Replica';
+        if (condition === 'Brand New' || !condition) {
+          condition = statusRaw && parseType(statusRaw) === 'fake' ? statusRaw : 'Replica / Fake Edition';
         }
         if (!authenticityNotes) {
-          authenticityNotes = 'Bản replica / copy hoặc in lậu không có bản quyền chính hãng.';
+          authenticityNotes = 'Non-official replica / bootleg copy without official publisher copyright.';
         }
       }
 

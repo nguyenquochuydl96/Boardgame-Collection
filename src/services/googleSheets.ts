@@ -354,7 +354,7 @@ export function parseGvizResponse(text: string): BoardGame[] {
     if (!row || !row.c) continue;
 
     let name = '';
-    let cabinetType: CabinetType = 'real';
+    let cabinetType: CabinetType = 'real' as CabinetType;
     let statusRaw = '';
     let status: 'On Hand' | 'OOS' = 'On Hand';
     let imageUrl = '';
@@ -425,11 +425,11 @@ export function parseGvizResponse(text: string): BoardGame[] {
 
       if (anyFieldFake || cabinetType === 'fake') {
         cabinetType = 'fake';
-        if (condition === 'Mới 99%' || !condition) {
-          condition = statusRaw && parseCabinetType(statusRaw) === 'fake' ? statusRaw : 'Bản Fake / Replica';
+        if (condition === 'Brand New' || !condition) {
+          condition = statusRaw && parseCabinetType(statusRaw) === 'fake' ? statusRaw : 'Replica / Fake Edition';
         }
         if (!authenticityNotes) {
-          authenticityNotes = 'Bản replica / copy hoặc in lậu không có bản quyền chính hãng.';
+          authenticityNotes = 'Non-official replica / bootleg copy without official publisher copyright.';
         }
       }
 
@@ -701,7 +701,7 @@ export function parseCsvToGames(csvText: string): BoardGame[] {
   for (let r = 1; r < rows.length; r++) {
     const row = rows[r];
     let name = '';
-    let cabinetType: CabinetType = 'real';
+    let cabinetType: CabinetType = 'real' as CabinetType;
     let statusRaw = '';
     let status: 'On Hand' | 'OOS' = 'On Hand';
     let imageUrl = '';
@@ -769,11 +769,11 @@ export function parseCsvToGames(csvText: string): BoardGame[] {
 
       if (anyFieldFake || cabinetType === 'fake') {
         cabinetType = 'fake';
-        if (condition === 'Mới 99%' || !condition) {
-          condition = statusRaw && parseCabinetType(statusRaw) === 'fake' ? statusRaw : 'Bản Fake / Replica';
+        if (condition === 'Brand New' || !condition) {
+          condition = statusRaw && parseCabinetType(statusRaw) === 'fake' ? statusRaw : 'Replica / Fake Edition';
         }
         if (!authenticityNotes) {
-          authenticityNotes = 'Bản replica / copy hoặc in lậu không có bản quyền chính hãng.';
+          authenticityNotes = 'Non-official replica / bootleg copy without official publisher copyright.';
         }
       }
 

@@ -335,9 +335,6 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                         )}
                       </div>
                     </div>
-                    <p className="text-xs text-amber-300/80 mt-0.5">
-                      Bộ sưu tập chính hãng NXB · First Edition & Collector's Grade · Bảo tồn trọn vẹn
-                    </p>
                   </div>
                 </div>
 
@@ -475,9 +472,6 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                         )}
                       </div>
                     </div>
-                    <p className="text-xs text-rose-300/80 mt-0.5">
-                      Bản reprint, in lậu F1 & mẫu đối chiếu chất lượng phục vụ thẩm định
-                    </p>
                   </div>
                 </div>
 
