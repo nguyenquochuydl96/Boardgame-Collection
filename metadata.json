@@ -1,0 +1,8 @@
+{
+  "name": "BoardGame Vault - Tủ Game Real & Fake",
+  "description": "Quản lý bộ sưu tập boardgame trực quan với 2 tủ trưng bày Real và Fake, đồng bộ danh sách từ Google Sheet.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

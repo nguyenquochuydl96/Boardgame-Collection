@@ -1,0 +1,152 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background-color: #0c0e12;
+    color: #f1f5f9;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+/* 3D Shelf & Box Perspective */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+/* Realistic Cabinet Shelves */
+.shelf-wood-real {
+  background: linear-gradient(180deg, #3d2212 0%, #2b180d 60%, #1f1008 100%);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.8), inset 0 2px 0 0 rgba(217, 119, 6, 0.3);
+}
+
+.shelf-lip-real {
+  background: linear-gradient(90deg, #451a03 0%, #78350f 50%, #451a03 100%);
+  border-top: 2px solid #b45309;
+  border-bottom: 3px solid #1c0c05;
+  box-shadow: 0 14px 20px rgba(0, 0, 0, 0.7);
+}
+
+.shelf-wood-fake {
+  background: linear-gradient(180deg, #27272a 0%, #18181b 60%, #09090b 100%);
+  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.8), inset 0 2px 0 0 rgba(161, 161, 170, 0.2);
+}
+
+.shelf-lip-fake {
+  background: linear-gradient(90deg, #3f3f46 0%, #52525b 50%, #3f3f46 100%);
+  border-top: 2px solid #71717a;
+  border-bottom: 3px solid #09090b;
+  box-shadow: 0 14px 20px rgba(0, 0, 0, 0.7);
+}
+
+/* 3D Physical Board Game Box Depth */
+.game-box-3d {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: bottom center;
+}
+
+.game-box-3d:hover {
+  transform: translateY(-8px) scale(1.03) rotateZ(-0.5deg);
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.9), 0 0 15px rgba(251, 191, 36, 0.15);
+}
+
+.game-spine-3d {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), margin 0.2s ease;
+}
+
+.game-spine-3d:hover {
+  transform: translateY(-16px) scale(1.05);
+  z-index: 30;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Official Google Sign-In Button */
+.gsi-material-button {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  background-color: WHITE;
+  border: 1px solid #747775;
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: #1f1f1f;
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  height: 40px;
+  outline: none;
+  overflow: hidden;
+  padding: 0 16px;
+  position: relative;
+  text-align: center;
+  transition: background-color .218s, border-color .218s, box-shadow .218s;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+}
+
+.gsi-material-button .gsi-material-button-icon {
+  height: 20px;
+  margin-right: 12px;
+  min-width: 20px;
+  width: 20px;
+}
+
+.gsi-material-button .gsi-material-button-content-wrapper {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 100%;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+.gsi-material-button .gsi-material-button-contents {
+  flex-grow: 1;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
+}
+
+.gsi-material-button:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  background-color: #f8fafc;
+}
+
