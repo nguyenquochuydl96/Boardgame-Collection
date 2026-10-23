@@ -15,7 +15,12 @@ import {
   LogOut,
   Sparkles,
 } from 'lucide-react';
-import { generateSampleCsvContent, exportGamesToCsv, parseCsvToGames } from '../services/googleSheets';
+import {
+  generateSampleCsvContent,
+  exportGamesToCsv,
+  parseCsvToGames,
+  SAMPLE_GOOGLE_SHEET_URL,
+} from '../services/googleSheets';
 import { BoardGame } from '../types/boardgame';
 import {
   listUserGoogleSheets,
@@ -55,10 +60,18 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
   onSignInWithGoogle,
   onSignOut,
 }) => {
-  const [sheetUrl, setSheetUrl] = useState(currentSheetUrl);
+  const [sheetUrl, setSheetUrl] = useState(() =>
+    currentSheetUrl && !currentSheetUrl.includes('demo') ? currentSheetUrl : ''
+  );
   const [activeTab, setActiveTab] = useState<'drive' | 'link' | 'template'>('link');
   const [copied, setCopied] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentSheetUrl && !currentSheetUrl.includes('demo')) {
+      setSheetUrl(currentSheetUrl);
+    }
+  }, [currentSheetUrl]);
 
   // Drive sheets list
   const [driveSheets, setDriveSheets] = useState<DriveSheetFile[]>([]);
@@ -186,7 +199,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
 
   const handleCopySampleHeaders = () => {
     const headers =
-      'Tên game\tLoại tủ (Real/Fake)\tHình ảnh\tSố người chơi\tThời gian\tThể loại\tGiá tiền\tNhà phát hành\tNăm\tTình trạng\tDấu hiệu nhận biết / Ghi chú\tĐánh giá';
+      'Tên game\tTủ (Real Collection/Replicas & Fake)\tTrạng thái (On Hand/OOS)\tHình ảnh\tSố người chơi\tThời gian\tThể loại\tGiá tiền\tNhà phát hành\tNăm\tTình trạng\tDấu hiệu nhận biết / Ghi chú\tĐánh giá';
     navigator.clipboard.writeText(headers);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -209,7 +222,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                 Đồng Bộ Từ Google Sheet
               </h3>
               <p className="text-xs text-slate-400">
-                Kết nối Google Drive hoặc dán link Google Sheet để cập nhật 2 tủ game
+                Đồng bộ từ sheet <strong className="text-emerald-400">Boardgame Collection</strong> vào 2 tủ Real Collection &amp; Replicas &amp; Fake
               </p>
             </div>
           </div>
@@ -429,26 +442,65 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
           {/* TAB 2: MANUAL GOOGLE SHEET LINK */}
           {activeTab === 'link' && (
             <div className="space-y-4">
+              {/* Instruction banner */}
+              <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2 text-xs">
+                <div className="font-semibold text-amber-300 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Cách lấy link từ Google Sheet của bạn:</span>
+                </div>
+                <ul className="space-y-1.5 text-[11px] text-slate-300 list-disc pl-4 leading-relaxed">
+                  <li>
+                    Mở bảng tính Google Sheet của bạn trên trình duyệt (ví dụ file <em>Expense &amp; Income Tracker</em> có tab <strong>"Boardgame Collection"</strong>).
+                  </li>
+                  <li>
+                    Sao chép toàn bộ thanh địa chỉ URL trình duyệt (dạng <code>https://docs.google.com/spreadsheets/d/.../edit</code>) và dán vào ô bên dưới.
+                  </li>
+                  <li>
+                    Bật quyền xem công khai: <strong>Chia sẻ &rarr; Bất kỳ ai có liên kết &rarr; Người xem</strong> (hoặc chuyển sang tab <strong>Google Drive</strong> ở trên để đăng nhập tài khoản).
+                  </li>
+                </ul>
+              </div>
+
               <form onSubmit={handleSyncUrl} className="space-y-3">
-                <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider">
-                  Dán Đường Dẫn Google Sheet (URL):
-                </label>
+                <div className="flex items-center justify-between text-xs text-slate-300">
+                  <label className="font-semibold text-slate-200 uppercase tracking-wider">
+                    Dán Đường Dẫn Google Sheet (URL):
+                  </label>
+                  <span className="text-[11px] text-emerald-300 font-medium bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/40">
+                    Tab ưu tiên: <strong>Boardgame Collection</strong>
+                  </span>
+                </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="url"
                     value={sheetUrl}
                     onChange={(e) => setSheetUrl(e.target.value)}
-                    placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=0"
+                    placeholder="Dán link dạng: https://docs.google.com/spreadsheets/d/.../edit#gid=0"
                     className="flex-1 px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
                     required
                   />
                   <button
                     type="submit"
-                    disabled={isSyncing}
+                    disabled={isSyncing || !sheetUrl.trim()}
                     className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-all shadow-md shadow-emerald-900/30 flex items-center justify-center gap-2 shrink-0"
                   >
                     <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
                     <span>{isSyncing ? 'Đang Tải...' : 'Đồng Bộ Ngay'}</span>
+                  </button>
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <p className="text-[11px] text-slate-400">
+                    Hệ thống sẽ tự động quét tab <span className="text-emerald-400 font-semibold">"Boardgame Collection"</span> và phân loại theo cột <span className="text-amber-300 font-semibold">Status (On Hand / OOS)</span>.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSheetUrl(SAMPLE_GOOGLE_SHEET_URL);
+                      onSyncSheet(SAMPLE_GOOGLE_SHEET_URL);
+                    }}
+                    className="text-[11px] text-amber-400/80 hover:text-amber-300 underline shrink-0 ml-2"
+                  >
+                    Tải 16 game mẫu (Demo)
                   </button>
                 </div>
               </form>
@@ -483,7 +535,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                 </h4>
                 <ol className="space-y-2 text-xs text-slate-300 list-decimal pl-4 leading-relaxed">
                   <li>
-                    <strong className="text-white">Tạo hoặc mở Google Sheet:</strong> Bấm nút{' '}
+                    <strong className="text-white">Tạo hoặc mở Google Sheet:</strong> Đặt tên sheet/tab là <span className="text-emerald-400 font-semibold">Boardgame Collection</span>. Bấm nút{' '}
                     <button
                       onClick={handleDownloadSampleCsv}
                       className="text-emerald-400 hover:underline font-semibold"
@@ -521,7 +573,8 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                 <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 text-[11px] font-mono text-slate-400 space-y-1">
                   <p>
                     <span className="text-amber-300">Tên game</span> |{' '}
-                    <span className="text-amber-300">Loại tủ</span> (Real hoặc Fake) |{' '}
+                    <span className="text-amber-300">Loại tủ</span> (Real Collection hoặc Replicas &amp; Fake) |{' '}
+                    <span className="text-emerald-400 font-semibold">Status (On Hand / OOS)</span> |{' '}
                     <span className="text-amber-300">Hình ảnh</span> (URL ảnh) |{' '}
                     <span className="text-slate-300">Số người chơi</span> |{' '}
                     <span className="text-slate-300">Thời gian</span> |{' '}

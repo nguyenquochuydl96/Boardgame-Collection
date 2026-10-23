@@ -20,6 +20,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
   const [name, setName] = useState('');
   const [vietnameseName, setVietnameseName] = useState('');
   const [cabinetType, setCabinetType] = useState<CabinetType>(defaultCabinetType);
+  const [status, setStatus] = useState<'On Hand' | 'OOS'>('On Hand');
   const [imageUrl, setImageUrl] = useState('');
   const [players, setPlayers] = useState('2 - 4 người');
   const [minPlayers, setMinPlayers] = useState(2);
@@ -39,6 +40,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
       setName(editingGame.name);
       setVietnameseName(editingGame.vietnameseName || '');
       setCabinetType(editingGame.cabinetType);
+      setStatus(editingGame.status || 'On Hand');
       setImageUrl(editingGame.imageUrl);
       setPlayers(editingGame.players);
       setMinPlayers(editingGame.minPlayers);
@@ -56,6 +58,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
       setName('');
       setVietnameseName('');
       setCabinetType(defaultCabinetType);
+      setStatus('On Hand');
       setImageUrl('');
       setPlayers('2 - 4 người');
       setMinPlayers(2);
@@ -70,7 +73,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
       setAuthenticityNotes(
         defaultCabinetType === 'real'
           ? 'Hộp carton nén dày, dập nổi vân linen, linh kiện chuẩn xịn.'
-          : 'Dấu hiệu fake: Hộp carton mỏng, lưng bài lệch màu, token nhẹ không có lõi.'
+          : 'Dấu hiệu fake/replica: Hộp carton mỏng, lưng bài lệch màu, token nhẹ không có lõi.'
       );
       setRating(defaultCabinetType === 'real' ? 8.5 : 4.5);
     }
@@ -87,6 +90,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
       name: name.trim(),
       vietnameseName: vietnameseName.trim() || undefined,
       cabinetType,
+      status,
       imageUrl:
         imageUrl.trim() ||
         (cabinetType === 'real'
@@ -164,7 +168,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
               >
                 <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
                 <div>
-                  <p className="text-xs font-bold text-white">Tủ Game Real</p>
+                  <p className="text-xs font-bold text-white">Real Collection</p>
                   <p className="text-[11px] opacity-75">Bản chính hãng có bản quyền</p>
                 </div>
               </button>
@@ -180,8 +184,49 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
               >
                 <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
                 <div>
-                  <p className="text-xs font-bold text-white">Tủ Game Fake</p>
-                  <p className="text-[11px] opacity-75">Bản reprint / in lậu / đối chứng</p>
+                  <p className="text-xs font-bold text-white">Replicas & Fake</p>
+                  <p className="text-[11px] opacity-75">Bản replica / copy / đối chứng</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Status Selection: On Hand vs OOS */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-200 flex items-center justify-between">
+              <span>Trạng thái kho (Status):</span>
+              <span className="text-[10px] text-slate-400 font-normal">Game OOS sẽ tự động xếp ở cuối kệ và làm mờ</span>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setStatus('On Hand')}
+                className={`p-2.5 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
+                  status === 'On Hand'
+                    ? 'bg-emerald-950/50 border-emerald-500/70 text-emerald-200 ring-2 ring-emerald-500/20'
+                    : 'bg-slate-900 border-slate-700/80 text-slate-400 hover:bg-slate-850'
+                }`}
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
+                <div>
+                  <p className="text-xs font-bold text-white">On Hand</p>
+                  <p className="text-[10px] text-slate-400">Có sẵn trên kệ trưng bày</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatus('OOS')}
+                className={`p-2.5 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
+                  status === 'OOS'
+                    ? 'bg-zinc-800/80 border-zinc-500 text-zinc-200 ring-2 ring-zinc-500/20'
+                    : 'bg-slate-900 border-slate-700/80 text-slate-400 hover:bg-slate-850'
+                }`}
+              >
+                <span className="w-2.5 h-2.5 rounded-full bg-zinc-400 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-white">OOS (Out of Stock)</p>
+                  <p className="text-[10px] text-slate-400">Tạm hết / Chưa có mặt (xếp cuối, mờ)</p>
                 </div>
               </button>
             </div>

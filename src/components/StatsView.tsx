@@ -60,6 +60,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
 
   const authenticityRate = games.length > 0 ? Math.round((realGames.length / games.length) * 100) : 0;
 
+  const onHandCount = useMemo(() => games.filter((g) => g.status !== 'OOS').length, [games]);
+  const oosCount = useMemo(() => games.filter((g) => g.status === 'OOS').length, [games]);
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Overview Metric Cards */}
@@ -72,8 +75,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
           <div>
             <p className="text-xs text-slate-400 uppercase tracking-wider">Tổng Số Game</p>
             <p className="text-xl font-bold text-white font-mono tabular-nums">{games.length} bộ</p>
-            <p className="text-[11px] text-slate-500 mt-0.5">
-              {realGames.length} Real · {fakeGames.length} Fake
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              <span className="text-emerald-400 font-semibold">{onHandCount} On Hand</span> ·{' '}
+              <span className="text-zinc-400 font-semibold">{oosCount} OOS</span>
             </p>
           </div>
         </div>
@@ -84,11 +88,11 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-slate-400 uppercase tracking-wider">Trị Giá Tủ Real</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wider">Real Collection</p>
             <p className="text-lg font-bold text-emerald-400 font-mono tabular-nums truncate">
               {formatVnd(realTotal)}
             </p>
-            <p className="text-[11px] text-slate-500 mt-0.5">Điểm TB: {realAvgRating} / 10★</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">{realGames.length} bộ · TB: {realAvgRating}★</p>
           </div>
         </div>
 
@@ -98,11 +102,11 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-slate-400 uppercase tracking-wider">Chi Phí Tủ Fake</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wider">Replicas & Fake</p>
             <p className="text-lg font-bold text-rose-400 font-mono tabular-nums truncate">
               {formatVnd(fakeTotal)}
             </p>
-            <p className="text-[11px] text-slate-500 mt-0.5">Điểm TB: {fakeAvgRating} / 10★</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">{fakeGames.length} bộ · TB: {fakeAvgRating}★</p>
           </div>
         </div>
 
@@ -112,12 +116,12 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-slate-400 uppercase tracking-wider">Tỉ Lệ Bản Quyền</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wider">Tỉ Lệ Real</p>
             <p className="text-xl font-bold text-sky-400 font-mono tabular-nums">
               {authenticityRate}% Real
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              {authenticityRate >= 70 ? 'Bộ sưu tập chất lượng cao' : 'Nhiều bản reprint/thử nghiệm'}
+              {authenticityRate >= 70 ? 'Bộ sưu tập chất lượng cao' : 'Nhiều bản reprint/đối chứng'}
             </p>
           </div>
         </div>
@@ -127,7 +131,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
       <div className="bg-[#11141c] border border-slate-800 rounded-xl p-5 shadow-lg">
         <h3 className="text-sm font-bold text-white font-display mb-4 flex items-center gap-2">
           <PieChart className="w-4 h-4 text-amber-400" />
-          <span>Phân Bổ Thể Loại Game (Real vs Fake)</span>
+          <span>Phân Bổ Thể Loại Game (Real vs Replicas & Fake)</span>
         </h3>
 
         <div className="space-y-3">

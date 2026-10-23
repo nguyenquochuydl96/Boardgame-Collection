@@ -78,7 +78,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             )}
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                {isReal ? 'TỦ GAME CHÍNH HÃNG' : 'TỦ GAME REPRINT / FAKE'}
+                {isReal ? 'REAL COLLECTION' : 'REPLICAS & FAKE'}
               </span>
               <h3 className="text-base md:text-lg font-bold text-white font-display truncate max-w-md">
                 {game.name}
@@ -123,7 +123,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                     alt={game.name}
                     referrerPolicy="no-referrer"
                     onError={() => setImageError(true)}
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover ${game.status === 'OOS' ? 'grayscale opacity-75' : ''}`}
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-900">
@@ -137,8 +137,8 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   </div>
                 )}
 
-                {/* Box Badge */}
-                <div className="absolute top-3 left-3">
+                {/* Box Badges */}
+                <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
                   <span
                     className={`px-2.5 py-1 rounded text-xs font-bold border backdrop-blur-md ${
                       isReal
@@ -146,7 +146,16 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                         : 'bg-rose-950/90 text-rose-300 border-rose-500/40'
                     }`}
                   >
-                    {isReal ? 'Chính Hãng (Real)' : 'Bản Nhái (Fake)'}
+                    {isReal ? 'Real Collection' : 'Replicas & Fake'}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider backdrop-blur-md ${
+                      game.status === 'OOS'
+                        ? 'bg-zinc-900/90 text-zinc-300 border-zinc-600/60'
+                        : 'bg-emerald-900/80 text-emerald-300 border-emerald-500/40'
+                    }`}
+                  >
+                    {game.status === 'OOS' ? 'OOS · Out of Stock' : 'On Hand'}
                   </span>
                 </div>
               </div>
@@ -158,7 +167,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
               >
                 <ArrowLeftRight className="w-4 h-4 text-amber-400" />
                 <span>
-                  {isReal ? 'Chuyển sang Tủ Fake' : 'Chuyển sang Tủ Real'}
+                  {isReal ? 'Chuyển sang Replicas & Fake' : 'Chuyển sang Real Collection'}
                 </span>
               </button>
             </div>
@@ -204,6 +213,16 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 
               {/* Category & Publisher */}
               <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Trạng thái:</span>
+                  <span className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
+                    game.status === 'OOS'
+                      ? 'bg-zinc-800 text-zinc-300 border border-zinc-700'
+                      : 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30'
+                  }`}>
+                    {game.status === 'OOS' ? 'OOS (Out of Stock)' : 'On Hand (Có sẵn)'}
+                  </span>
+                </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Thể loại:</span>
                   <span className="font-semibold text-white">{game.category}</span>

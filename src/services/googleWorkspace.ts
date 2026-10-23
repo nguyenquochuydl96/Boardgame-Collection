@@ -1,5 +1,10 @@
 import { BoardGame, CabinetType } from '../types/boardgame';
 import { parseCsvRows } from './googleSheets';
+import {
+  findInBggCatalog,
+  getGenerativeBoardGameBoxArt,
+  cleanGameTitleForSearch,
+} from './bggService';
 
 export interface DriveSheetFile {
   id: string;
@@ -78,7 +83,25 @@ function identifyColumn(header: string): keyof BoardGame | 'cabinetType' | 'unkn
   if (norm.includes('tengame') || norm.includes('ten') || norm === 'name' || norm === 'title' || norm === 'boardgame') {
     return 'name';
   }
-  if (norm.includes('loai') || norm.includes('tu') || norm.includes('type') || norm.includes('realfake') || norm.includes('authentic')) {
+  if (
+    norm === 'status' ||
+    norm.includes('onhand') ||
+    norm.includes('oos') ||
+    norm.includes('tinhtranghang') ||
+    norm.includes('stock') ||
+    (norm.includes('trangthai') && !norm.includes('tu') && !norm.includes('loai'))
+  ) {
+    return 'status';
+  }
+  if (
+    norm.includes('loai') ||
+    norm.includes('tu') ||
+    norm.includes('type') ||
+    norm.includes('realfake') ||
+    norm.includes('authentic') ||
+    norm.includes('replica') ||
+    norm.includes('fake')
+  ) {
     return 'cabinetType';
   }
   if (norm.includes('anh') || norm.includes('hinhanh') || norm.includes('image') || norm.includes('photo') || norm.includes('cover')) {
@@ -129,10 +152,43 @@ function identifyColumn(header: string): keyof BoardGame | 'cabinetType' | 'unkn
 
 function parseType(val: string): CabinetType {
   const norm = normalizeHeader(val);
-  if (norm.includes('fake') || norm.includes('nhai') || norm.includes('f1') || norm.includes('rep') || norm.includes('inlau')) {
+  if (
+    norm.includes('fake') ||
+    norm.includes('replica') ||
+    norm.includes('replicas') ||
+    norm.includes('nhai') ||
+    norm.includes('f1') ||
+    norm.includes('rep') ||
+    norm.includes('inlau') ||
+    norm.includes('hangfake') ||
+    norm.includes('bannhai') ||
+    norm.includes('baninloi') ||
+    norm.includes('copy') ||
+    norm.includes('counterfeit') ||
+    norm === '2' ||
+    norm === 'f'
+  ) {
     return 'fake';
   }
   return 'real';
+}
+
+function parseStatus(val: string): 'On Hand' | 'OOS' {
+  const norm = normalizeHeader(val);
+  if (
+    norm.includes('oos') ||
+    norm.includes('outofstock') ||
+    norm.includes('hethang') ||
+    norm.includes('soldout') ||
+    norm.includes('het') ||
+    norm.includes('tamhet') ||
+    norm.includes('chayhang') ||
+    norm.includes('daban') ||
+    norm.includes('khongcosan')
+  ) {
+    return 'OOS';
+  }
+  return 'On Hand';
 }
 
 /**
@@ -178,6 +234,8 @@ export async function fetchSpreadsheetGamesViaApi(
 
     let name = '';
     let cabinetType: CabinetType = 'real';
+    let statusRaw = '';
+    let status: 'On Hand' | 'OOS' = 'On Hand';
     let imageUrl = '';
     let players = '2 - 4 người';
     let playtime = '45 phút';
@@ -189,6 +247,7 @@ export async function fetchSpreadsheetGamesViaApi(
     let gameplayStory = '';
     let authenticityNotes = '';
     let rating = 8.0;
+    let hasExplicitRating = false;
 
     row.forEach((val: any, cIdx: number) => {
       if (val === undefined || val === null) return;
@@ -197,7 +256,13 @@ export async function fetchSpreadsheetGamesViaApi(
 
       if (field === 'name') name = strVal;
       else if (field === 'cabinetType') cabinetType = parseType(strVal);
-      else if (field === 'imageUrl') imageUrl = strVal;
+      else if (field === 'status') {
+        statusRaw = strVal;
+        status = parseStatus(strVal);
+        if (parseType(strVal) === 'fake') {
+          cabinetType = 'fake';
+        }
+      } else if (field === 'imageUrl') imageUrl = strVal;
       else if (field === 'players') players = strVal;
       else if (field === 'playtime') playtime = strVal;
       else if (field === 'category') category = strVal;
@@ -208,49 +273,97 @@ export async function fetchSpreadsheetGamesViaApi(
       else if (field === 'year') {
         const y = parseInt(strVal, 10);
         if (!isNaN(y)) year = y;
-      } else if (field === 'condition') condition = strVal;
-      else if (field === 'gameplayStory') gameplayStory = strVal;
-      else if (field === 'authenticityNotes') authenticityNotes = strVal;
-      else if (field === 'rating') {
+      } else if (field === 'condition') {
+        condition = strVal;
+        if (parseType(strVal) === 'fake') cabinetType = 'fake';
+      } else if (field === 'gameplayStory') gameplayStory = strVal;
+      else if (field === 'authenticityNotes') {
+        authenticityNotes = strVal;
+        if (parseType(strVal) === 'fake') cabinetType = 'fake';
+      } else if (field === 'rating') {
         const rt = parseFloat(strVal);
-        if (!isNaN(rt)) rating = rt;
+        if (!isNaN(rt)) {
+          rating = rt;
+          hasExplicitRating = true;
+        }
       }
     });
 
     if (name) {
+      // 1. Cross-field fake detection
+      const { isMarkedFake } = cleanGameTitleForSearch(name);
+      const fakeKeywords = ['fake', 'nhai', 'nhái', 'rep', 'replica', 'f1', 'in lau', 'in lậu', 'bootleg', 'copy', 'bản nhái', 'hàng nhái', 'không bản quyền'];
+      const anyFieldFake =
+        isMarkedFake ||
+        fakeKeywords.some(
+          (k) =>
+            statusRaw.toLowerCase().includes(k) ||
+            condition.toLowerCase().includes(k) ||
+            authenticityNotes.toLowerCase().includes(k) ||
+            category.toLowerCase().includes(k)
+        );
+
+      if (anyFieldFake || cabinetType === 'fake') {
+        cabinetType = 'fake';
+        if (condition === 'Mới 99%' || !condition) {
+          condition = statusRaw && parseType(statusRaw) === 'fake' ? statusRaw : 'Bản Fake / Replica';
+        }
+        if (!authenticityNotes) {
+          authenticityNotes = 'Bản replica / copy hoặc in lậu không có bản quyền chính hãng.';
+        }
+      }
+
+      // 2. Look up BoardGameGeek data based on game title
+      const bggMatch = findInBggCatalog(name);
+      const bggRating = bggMatch?.rating;
+      const bggId = bggMatch?.bggId;
+      const bggUrl = bggMatch?.bggUrl;
+
+      const finalRating = hasExplicitRating ? rating : (bggRating ?? rating);
+
+      // Auto-match cover image based on title
+      let finalImageUrl = imageUrl;
+      if (!finalImageUrl || finalImageUrl.trim().length === 0 || finalImageUrl.includes('Catan-2015-boxart.jpg')) {
+        if (bggMatch && bggMatch.imageUrl) {
+          finalImageUrl = bggMatch.imageUrl;
+        } else {
+          finalImageUrl = getGenerativeBoardGameBoxArt(name);
+        }
+      }
+
       const nums = players.match(/\d+/g);
-      const min = nums ? parseInt(nums[0], 10) : 2;
-      const max = nums && nums[1] ? parseInt(nums[1], 10) : min;
+      const min = nums ? parseInt(nums[0], 10) : (bggMatch?.minPlayers || 2);
+      const max = nums && nums[1] ? parseInt(nums[1], 10) : (bggMatch?.maxPlayers || min);
 
       games.push({
         id: `google-sheet-${r}-${Date.now().toString(36)}`,
         name,
         cabinetType,
-        imageUrl:
-          imageUrl ||
-          (cabinetType === 'real'
-            ? 'https://upload.wikimedia.org/wikipedia/en/a/a3/Catan-2015-boxart.jpg'
-            : 'https://upload.wikimedia.org/wikipedia/en/a/a3/Catan-2015-boxart.jpg'),
-        players,
+        status,
+        imageUrl: finalImageUrl,
+        players: players || (bggMatch ? `${bggMatch.minPlayers} - ${bggMatch.maxPlayers} người` : `${min} - ${max} người`),
         minPlayers: min,
         maxPlayers: max,
-        playtime,
-        playtimeMinutes: parseInt(playtime, 10) || 45,
-        category,
-        price,
-        publisher,
-        year,
-        condition,
+        playtime: playtime || (bggMatch ? `${bggMatch.playtimeMinutes} phút` : '45 phút'),
+        playtimeMinutes: parseInt(playtime, 10) || bggMatch?.playtimeMinutes || 45,
+        category: category || bggMatch?.category || 'Chiến thuật',
+        price: price || (cabinetType === 'real' ? 850000 : 120000),
+        publisher: publisher && publisher !== 'Chưa rõ' ? publisher : (bggMatch?.publisher || 'Chưa rõ'),
+        year: year || bggMatch?.year || 2023,
+        condition: condition || (cabinetType === 'real' ? 'Mới nguyên seal' : 'Bản Fake / Replica'),
         gameplayStory:
           gameplayStory ||
-          `Trò chơi ${name} thuộc thể loại ${category || 'chiến thuật'}, phù hợp cho ${players || '2 - 4 người'} với lối chơi độc đáo và trải nghiệm lôi cuốn.`,
+          `Trò chơi ${name} thuộc thể loại ${category || bggMatch?.category || 'chiến thuật'}, với lối chơi kịch tính và chiều sâu hấp dẫn.`,
         authenticityNotes:
           authenticityNotes ||
           (cabinetType === 'real'
             ? 'Sản phẩm chính hãng với tem kiểm định, chất liệu cao cấp.'
-            : 'Bản in nhái hoặc reprint không có bản quyền chính thức.'),
+            : 'Dấu hiệu: Bản replica / in lậu không có bản quyền chính thức.'),
         boxColor: cabinetType === 'real' ? '#b45309' : '#991b1b',
-        rating,
+        rating: finalRating,
+        bggRating,
+        bggId,
+        bggUrl,
         addedDate: new Date().toISOString().split('T')[0],
       });
     }

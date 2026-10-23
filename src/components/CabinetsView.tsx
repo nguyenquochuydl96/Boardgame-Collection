@@ -22,6 +22,9 @@ interface CabinetsViewProps {
   onToggleCabinet: (game: BoardGame, e: React.MouseEvent) => void;
   onOpenAddModal: (cabinetType?: 'real' | 'fake') => void;
   onOpenSyncModal: () => void;
+  onEnrichBgg?: () => void;
+  isEnrichingBgg?: boolean;
+  isDemoData?: boolean;
 }
 
 export const CabinetsView: React.FC<CabinetsViewProps> = ({
@@ -30,6 +33,9 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
   onToggleCabinet,
   onOpenAddModal,
   onOpenSyncModal,
+  onEnrichBgg,
+  isEnrichingBgg,
+  isDemoData,
 }) => {
   const [cabinetFocus, setCabinetFocus] = useState<'both' | 'real' | 'fake'>('both');
   const [viewMode, setViewMode] = useState<'front' | 'spine'>('front');
@@ -70,6 +76,19 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
     [filteredGames]
   );
 
+  // Sort games so that OOS games are always placed at the bottom/end of the shelves
+  const sortedRealGames = useMemo(() => {
+    const onHand = realGames.filter((g) => g.status !== 'OOS');
+    const oos = realGames.filter((g) => g.status === 'OOS');
+    return [...onHand, ...oos];
+  }, [realGames]);
+
+  const sortedFakeGames = useMemo(() => {
+    const onHand = fakeGames.filter((g) => g.status !== 'OOS');
+    const oos = fakeGames.filter((g) => g.status === 'OOS');
+    return [...onHand, ...oos];
+  }, [fakeGames]);
+
   // Group into shelf rows
   const chunkIntoShelves = (list: BoardGame[], size: number) => {
     const chunks: BoardGame[][] = [];
@@ -87,8 +106,8 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
     ? 'grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3 md:gap-4'
     : 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4';
   const gamesPerRow = viewMode === 'spine' ? 8 : isBothCabinets ? 2 : 4;
-  const realShelves = chunkIntoShelves(realGames, gamesPerRow);
-  const fakeShelves = chunkIntoShelves(fakeGames, gamesPerRow);
+  const realShelves = chunkIntoShelves(sortedRealGames, gamesPerRow);
+  const fakeShelves = chunkIntoShelves(sortedFakeGames, gamesPerRow);
 
   // Statistics
   const realTotalValue = useMemo(
@@ -114,6 +133,35 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Demo Data Banner when not connected to user's real sheet */}
+      {isDemoData && (
+        <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/10 to-slate-900 border border-amber-500/30 rounded-xl p-4 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400 shrink-0 mt-0.5">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
+                  Dữ Liệu Mẫu (Demo)
+                </span>
+                <h4 className="text-sm font-bold text-white">Tủ game đang hiển thị 16 bộ demo mẫu</h4>
+              </div>
+              <p className="text-xs text-slate-300 mt-1">
+                Để hiển thị bộ sưu tập từ Google Sheet của bạn (tab <strong>"Boardgame Collection"</strong>), hãy bấm nút kết nối để dán link Sheet hoặc Đăng nhập Google để chọn file từ Drive.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenSyncModal}
+            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-lg shadow-md transition-all shrink-0 flex items-center gap-2 hover:scale-[1.02] active:scale-95"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Kết Nối Google Sheet Của Bạn</span>
+          </button>
+        </div>
+      )}
+
       {/* Control Bar & Filter Strip */}
       <div className="bg-[#12161f] border border-slate-800/80 rounded-xl p-4 shadow-lg flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 md:gap-4">
         {/* Left: Search input */}
@@ -221,7 +269,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Tủ Real ({realGames.length})
+              Real Collection ({realGames.length})
             </button>
             <button
               onClick={() => setCabinetFocus('fake')}
@@ -231,9 +279,22 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Tủ Fake ({fakeGames.length})
+              Replicas & Fake ({fakeGames.length})
             </button>
           </div>
+
+          {/* BGG Auto-Enrich Button */}
+          {onEnrichBgg && (
+            <button
+              onClick={onEnrichBgg}
+              disabled={isEnrichingBgg}
+              className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50 whitespace-nowrap"
+              title="Dựa vào tên game tự động tìm ảnh hộp và điểm BoardGameGeek (BGG)"
+            >
+              <Sparkles className={`w-3.5 h-3.5 text-amber-400 ${isEnrichingBgg ? 'animate-spin' : ''}`} />
+              <span>{isEnrichingBgg ? 'Đang Lấy BGG...' : 'Tìm Ảnh & Điểm BGG'}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -245,7 +306,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
             : 'grid-cols-1'
         }`}
       >
-        {/* ======================= TỦ GAME REAL ======================= */}
+        {/* ======================= REAL COLLECTION ======================= */}
         {(cabinetFocus === 'both' || cabinetFocus === 'real') && (
           <div className="rounded-2xl overflow-hidden border border-amber-600/30 bg-[#16120e] shadow-2xl flex flex-col relative">
             {/* Top Cabinet Header with Rich Walnut & Brass Look */}
@@ -261,11 +322,18 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg md:text-xl font-bold text-amber-100 font-display tracking-wide">
-                        Phòng Trưng Bày Bản Quyền (Authentics)
+                        Real Collection
                       </h2>
-                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        {realGames.length} Tựa Game
-                      </span>
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          {realGames.filter((g) => g.status !== 'OOS').length} On Hand
+                        </span>
+                        {realGames.filter((g) => g.status === 'OOS').length > 0 && (
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                            {realGames.filter((g) => g.status === 'OOS').length} OOS
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-xs text-amber-300/80 mt-0.5">
                       Bộ sưu tập chính hãng NXB · First Edition & Collector's Grade · Bảo tồn trọn vẹn
@@ -286,7 +354,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   <button
                     onClick={() => onOpenAddModal('real')}
                     className="p-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition-colors"
-                    title="Thêm game vào Tủ Real"
+                    title="Thêm game vào Real Collection"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -313,7 +381,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center my-auto">
                   <ShieldCheck className="w-12 h-12 text-amber-500/40 mb-3" />
                   <p className="text-sm font-semibold text-amber-200">
-                    Chưa có boardgame nào trong Tủ Real
+                    Chưa có boardgame nào trong Real Collection
                   </p>
                   <p className="text-xs text-amber-400/60 mt-1 max-w-sm">
                     Hãy thêm game mới hoặc đồng bộ danh sách từ Google Sheet để lấp đầy kệ!
@@ -323,7 +391,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                       onClick={() => onOpenAddModal('real')}
                       className="px-3 py-1.5 text-xs font-semibold bg-amber-500 text-slate-950 rounded-lg hover:bg-amber-400 transition-colors"
                     >
-                      + Thêm Game Real
+                      + Thêm vào Real Collection
                     </button>
                     <button
                       onClick={onOpenSyncModal}
@@ -372,7 +440,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
           </div>
         )}
 
-        {/* ======================= TỦ GAME FAKE ======================= */}
+        {/* ======================= REPLICAS & FAKE ======================= */}
         {(cabinetFocus === 'both' || cabinetFocus === 'fake') && (
           <div className="rounded-2xl overflow-hidden border border-rose-800/40 bg-[#121214] shadow-2xl flex flex-col relative">
             {/* Top Cabinet Header with Distressed Industrial & Warning Look */}
@@ -394,11 +462,18 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   <div>
                     <div className="flex items-center gap-2">
                       <h2 className="text-lg md:text-xl font-bold text-rose-100 font-display tracking-wide">
-                        Kệ Lưu Trữ Đối Chứng (Replicas & Fakes)
+                        Replicas & Fake
                       </h2>
-                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                        {fakeGames.length} Mẫu Lưu
-                      </span>
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                        <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                          {fakeGames.filter((g) => g.status !== 'OOS').length} On Hand
+                        </span>
+                        {fakeGames.filter((g) => g.status === 'OOS').length > 0 && (
+                          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                            {fakeGames.filter((g) => g.status === 'OOS').length} OOS
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="text-xs text-rose-300/80 mt-0.5">
                       Bản reprint, in lậu F1 & mẫu đối chiếu chất lượng phục vụ thẩm định
@@ -419,7 +494,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   <button
                     onClick={() => onOpenAddModal('fake')}
                     className="p-2 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 transition-colors"
-                    title="Thêm game vào Tủ Fake"
+                    title="Thêm game vào Replicas & Fake"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -446,7 +521,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center my-auto">
                   <AlertTriangle className="w-12 h-12 text-rose-500/40 mb-3" />
                   <p className="text-sm font-semibold text-rose-200">
-                    Chưa có boardgame nào trong Tủ Fake
+                    Chưa có boardgame nào trong Replicas & Fake
                   </p>
                   <p className="text-xs text-rose-400/60 mt-1 max-w-sm">
                     Tủ này dành cho các bộ game in nhái, hàng F1 hoặc bản đối chứng để cảnh báo người chơi!
@@ -456,7 +531,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                       onClick={() => onOpenAddModal('fake')}
                       className="px-3 py-1.5 text-xs font-semibold bg-rose-600 text-white rounded-lg hover:bg-rose-500 transition-colors"
                     >
-                      + Thêm Game Fake
+                      + Thêm vào Replicas & Fake
                     </button>
                     <button
                       onClick={onOpenSyncModal}

@@ -19,8 +19,12 @@ export interface BoardGame {
   gameplayStory: string; // Brief gameplay hook, lore and theme
   authenticityNotes: string; // Key traits: Real features or Fake flaws
   boxColor: string; // Accent color for 3D box spine / fallback
-  rating: number; // Scale 1 - 10
+  rating: number; // Current rating (1 - 10)
+  bggRating?: number; // Official BoardGameGeek rating score (1 - 10)
+  bggId?: number; // BGG Thing ID
+  bggUrl?: string; // Direct link to BoardGameGeek page
   addedDate?: string;
+  status?: 'On Hand' | 'OOS'; // Inventory status: On Hand or Out of Stock (OOS)
   counterpartId?: string; // Link to the matching real/fake version if any
   rulesUrl?: string;
   barcode?: string;

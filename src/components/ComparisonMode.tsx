@@ -92,7 +92,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
         <div className="bg-[#18120c] border border-amber-600/30 rounded-xl p-4 flex flex-col gap-2">
           <label className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Chọn Game từ Tủ Real (Chính Hãng):</span>
+            <span>Chọn Game từ Real Collection:</span>
           </label>
           <select
             value={selectedRealId}
@@ -101,7 +101,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
           >
             {realGames.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.name} ({formatVnd(g.price)})
+                {g.name} {g.status === 'OOS' ? '[OOS] ' : ''}({formatVnd(g.price)})
               </option>
             ))}
           </select>
@@ -111,7 +111,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
         <div className="bg-[#181416] border border-rose-700/40 rounded-xl p-4 flex flex-col gap-2">
           <label className="text-xs font-bold text-rose-400 flex items-center gap-1.5">
             <AlertTriangle className="w-4 h-4 text-rose-400" />
-            <span>Chọn Game từ Tủ Fake (Bản Nhái/Reprint):</span>
+            <span>Chọn Game từ Replicas & Fake:</span>
           </label>
           <select
             value={selectedFakeId}
@@ -120,7 +120,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
           >
             {fakeGames.map((g) => (
               <option key={g.id} value={g.id}>
-                {g.name} ({formatVnd(g.price)})
+                {g.name} {g.status === 'OOS' ? '[OOS] ' : ''}({formatVnd(g.price)})
               </option>
             ))}
           </select>
@@ -137,7 +137,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
               <div className="flex items-center justify-between pb-3 border-b border-amber-700/30">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 text-xs font-bold">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>BẢN CHÍNH HÃNG (REAL)</span>
+                  <span>REAL COLLECTION</span>
                 </div>
                 <span className="font-mono text-sm font-bold text-amber-400">
                   {formatVnd(currentReal.price)}
@@ -205,7 +205,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
               onClick={() => onSelectGame(currentReal)}
               className="mt-6 w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-lg transition-colors"
             >
-              Xem Chi Tiết Bản Real
+              Xem Chi Tiết Real Collection
             </button>
           </div>
 
@@ -216,7 +216,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
               <div className="flex items-center justify-between pb-3 border-b border-rose-700/30">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-rose-950 text-rose-300 border border-rose-500/40 text-xs font-bold">
                   <AlertTriangle className="w-4 h-4 text-rose-400" />
-                  <span>BẢN REPRINT / FAKE</span>
+                  <span>REPLICAS & FAKE</span>
                 </div>
                 <span className="font-mono text-sm font-bold text-rose-400">
                   {formatVnd(currentFake.price)}
@@ -284,7 +284,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
               onClick={() => onSelectGame(currentFake)}
               className="mt-6 w-full py-2 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-xs font-bold rounded-lg transition-colors"
             >
-              Xem Chi Tiết Bản Fake
+              Xem Chi Tiết Replicas & Fake
             </button>
           </div>
         </div>

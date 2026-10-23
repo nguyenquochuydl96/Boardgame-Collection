@@ -50,16 +50,23 @@ export default function App() {
     return INITIAL_BOARDGAMES;
   });
 
-  // Google Sheet state
+  // Google Sheet state: only treat as connected if user explicitly saved their own URL
   const [sheetUrl, setSheetUrl] = useState<string>(() => {
-    return localStorage.getItem(SHEET_URL_KEY) || SAMPLE_GOOGLE_SHEET_URL;
+    const saved = localStorage.getItem(SHEET_URL_KEY);
+    return saved && !saved.includes('demo') ? saved : '';
   });
   const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(() => {
-    return localStorage.getItem(LAST_SYNC_KEY) || '23/10/2026';
+    return localStorage.getItem(LAST_SYNC_KEY) || undefined;
   });
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Status indicator
+  const isCustomSheetConnected = Boolean(
+    (sheetUrl && !sheetUrl.includes('demo') && sheetUrl !== SAMPLE_GOOGLE_SHEET_URL) || currentUser
+  );
+  const isDemoData = !isCustomSheetConnected;
 
   // Modals state
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
@@ -134,7 +141,7 @@ export default function App() {
       prev.map((g) => (g.id === game.id ? { ...g, cabinetType: newType } : g))
     );
     showToast(
-      `Đã chuyển "${game.name}" sang ${newType === 'real' ? 'Tủ Game Real' : 'Tủ Game Fake'}!`
+      `Đã chuyển "${game.name}" sang ${newType === 'real' ? 'Real Collection' : 'Replicas & Fake'}!`
     );
     if (selectedGame && selectedGame.id === game.id) {
       setSelectedGame({ ...selectedGame, cabinetType: newType });
@@ -147,14 +154,18 @@ export default function App() {
     setSyncError(null);
     try {
       const currentToken = accessToken || (await getAccessToken());
-      const result = await fetchFromGoogleSheet(url, currentToken);
+      const result = await fetchFromGoogleSheet(url, currentToken, 'Boardgame Collection');
       if (result.success && result.games.length > 0) {
         setGames(result.games);
         setSheetUrl(url);
         const nowStr = new Date().toLocaleString('vi-VN');
         setLastSyncedAt(nowStr);
         localStorage.setItem(LAST_SYNC_KEY, nowStr);
-        showToast(`Đồng bộ thành công ${result.games.length} boardgame từ Google Sheet!`);
+        if (result.sourceType === 'sample') {
+          showToast(`Đã tải ${result.games.length} boardgame mẫu (Demo). Dán link Google Sheet thật của bạn để đồng bộ trực tiếp!`);
+        } else {
+          showToast(`Đồng bộ thành công ${result.games.length} boardgame từ sheet "Boardgame Collection"!`);
+        }
         setIsSyncModalOpen(false);
       } else {
         throw new Error('Không tìm thấy dữ liệu hợp lệ trong Google Sheet.');
@@ -187,7 +198,7 @@ export default function App() {
         return [gameToSave, ...prev];
       }
     });
-    showToast(`Đã lưu "${gameToSave.name}" vào ${gameToSave.cabinetType === 'real' ? 'Tủ Real' : 'Tủ Fake'}!`);
+    showToast(`Đã lưu "${gameToSave.name}" vào ${gameToSave.cabinetType === 'real' ? 'Real Collection' : 'Replicas & Fake'}!`);
     setEditingGame(null);
   };
 
@@ -250,15 +261,21 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           {/* Left: Google Sheet sync info */}
           <div className="flex items-center gap-2 text-slate-300">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <div className={`w-2 h-2 rounded-full ${isCustomSheetConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
             <span className="font-medium text-slate-400">Nguồn dữ liệu:</span>
             <button
               onClick={() => setIsSyncModalOpen(true)}
               className="text-amber-400 hover:text-amber-300 font-semibold truncate max-w-[200px] sm:max-w-xs hover:underline flex items-center gap-1"
             >
-              <span>{currentUser ? `Drive: ${currentUser.email}` : sheetUrl ? 'Google Sheet đã kết nối' : 'Dùng bộ sưu tập mẫu'}</span>
+              <span>
+                {currentUser
+                  ? `Drive: ${currentUser.email}`
+                  : isCustomSheetConnected
+                  ? 'Google Sheet đã kết nối'
+                  : '16 Game Demo (Chưa kết nối Sheet)'}
+              </span>
             </button>
-            {lastSyncedAt && (
+            {lastSyncedAt && isCustomSheetConnected && (
               <span className="text-slate-500 hidden md:inline">
                 (Đồng bộ: {lastSyncedAt})
               </span>
@@ -270,21 +287,21 @@ export default function App() {
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>{realCount} Real</span>
+                <span>{realCount} Real Collection</span>
               </span>
               <span className="text-slate-600">·</span>
               <span className="inline-flex items-center gap-1 text-rose-400 font-semibold">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                <span>{fakeCount} Fake</span>
+                <span>{fakeCount} Replicas & Fake</span>
               </span>
             </div>
 
             <button
               onClick={() => setIsSyncModalOpen(true)}
-              className="text-slate-400 hover:text-white hover:underline flex items-center gap-1 text-[11px]"
+              className="text-amber-400 hover:text-amber-300 hover:underline flex items-center gap-1 text-[11px] font-semibold"
             >
               <Sheet className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Cấu hình Sheet</span>
+              <span>{isCustomSheetConnected ? 'Cấu hình Sheet' : 'Kết nối Google Sheet'}</span>
             </button>
           </div>
         </div>
@@ -299,6 +316,7 @@ export default function App() {
             onToggleCabinet={handleToggleCabinet}
             onOpenAddModal={handleOpenAddModal}
             onOpenSyncModal={() => setIsSyncModalOpen(true)}
+            isDemoData={isDemoData}
           />
         )}
 
