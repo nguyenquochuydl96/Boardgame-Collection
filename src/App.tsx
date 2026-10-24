@@ -25,9 +25,9 @@ import {
   Info,
 } from 'lucide-react';
 
-const STORAGE_KEY = 'boardgame_vault_games_v9';
-const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v9';
-const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v9';
+const STORAGE_KEY = 'boardgame_vault_games_v10';
+const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v10';
+const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v10';
 
 export default function App() {
   // Navigation tab
@@ -41,7 +41,7 @@ export default function App() {
   const [games, setGames] = useState<BoardGame[]>(() => {
     try {
       // Clear legacy caches containing broken image URLs or unseparated cabinets
-      ['boardgame_vault_games_v2', 'boardgame_vault_games_v3', 'boardgame_vault_games_v4', 'boardgame_vault_games_v8'].forEach((k) => {
+      ['boardgame_vault_games_v2', 'boardgame_vault_games_v3', 'boardgame_vault_games_v4', 'boardgame_vault_games_v8', 'boardgame_vault_games_v9'].forEach((k) => {
         try { localStorage.removeItem(k); } catch {}
       });
 
@@ -132,11 +132,11 @@ export default function App() {
       if (res) {
         setCurrentUser(res.user);
         setAccessToken(res.accessToken);
-        showToast(`Đã kết nối Google: ${res.user.displayName || res.user.email}!`);
+        showToast(`Connected to Google: ${res.user.displayName || res.user.email}!`);
       }
     } catch (err: any) {
       console.error('Sign-in error:', err);
-      showToast('Đăng nhập Google thất bại hoặc đã bị đóng.');
+      showToast('Google sign-in was cancelled or failed.');
     }
   };
 
@@ -144,7 +144,7 @@ export default function App() {
     await logout();
     setCurrentUser(null);
     setAccessToken(null);
-    showToast('Đã đăng xuất tài khoản Google.');
+    showToast('Signed out of Google account.');
   };
 
   // Switch game between cabinets (Real <-> Fake)
@@ -155,7 +155,7 @@ export default function App() {
       prev.map((g) => (g.id === game.id ? { ...g, cabinetType: newType } : g))
     );
     showToast(
-      `Đã chuyển "${game.name}" sang ${newType === 'real' ? 'Real Collection' : 'Replicas & Fake'}!`
+      `Moved "${game.name}" to ${newType === 'real' ? 'Real Collection' : 'Replicas & Fake'}!`
     );
     if (selectedGame && selectedGame.id === game.id) {
       setSelectedGame({ ...selectedGame, cabinetType: newType });
@@ -172,22 +172,22 @@ export default function App() {
       if (result.success && result.games.length > 0) {
         setGames(result.games);
         setSheetUrl(url);
-        const nowStr = new Date().toLocaleString('vi-VN');
+        const nowStr = new Date().toLocaleString('en-US');
         setLastSyncedAt(nowStr);
         localStorage.setItem(LAST_SYNC_KEY, nowStr);
         if (result.sourceType === 'sample') {
-          showToast(`Đã tải ${result.games.length} boardgame mẫu (Demo). Dán link Google Sheet thật của bạn để đồng bộ trực tiếp!`);
+          showToast(`Loaded ${result.games.length} sample board games (Demo). Paste your live Google Sheet link to sync directly!`);
         } else {
-          showToast(`Đồng bộ thành công ${result.games.length} boardgame từ sheet "Boardgame Collection"!`);
+          showToast(`Successfully synced ${result.games.length} board games from "Boardgame Collection"!`);
         }
         setIsSyncModalOpen(false);
       } else {
-        throw new Error('Không tìm thấy dữ liệu hợp lệ trong Google Sheet.');
+        throw new Error('No valid board game data found in Google Sheet.');
       }
     } catch (err: any) {
       console.error('Sync failed:', err);
       setSyncError(
-        err.message || 'Không thể đồng bộ. Vui lòng kiểm tra quyền chia sẻ "Bất kỳ ai có liên kết".'
+        err.message || 'Unable to sync. Please ensure Google Sheet sharing is set to "Anyone with the link can view".'
       );
     } finally {
       setIsSyncing(false);
@@ -197,9 +197,9 @@ export default function App() {
   // Import games from CSV
   const handleImportCsv = (importedGames: BoardGame[]) => {
     setGames(importedGames);
-    const nowStr = new Date().toLocaleString('vi-VN');
+    const nowStr = new Date().toLocaleString('en-US');
     setLastSyncedAt(nowStr);
-    showToast(`Đã nạp ${importedGames.length} game từ file CSV thành công!`);
+    showToast(`Imported ${importedGames.length} games from CSV successfully!`);
   };
 
   // Add / Edit game handler
@@ -212,14 +212,14 @@ export default function App() {
         return [gameToSave, ...prev];
       }
     });
-    showToast(`Đã lưu "${gameToSave.name}" vào ${gameToSave.cabinetType === 'real' ? 'Real Collection' : 'Replicas & Fake'}!`);
+    showToast(`Saved "${gameToSave.name}" to ${gameToSave.cabinetType === 'real' ? 'Real Collection' : 'Replicas & Fake'}!`);
     setEditingGame(null);
   };
 
   // Delete game handler
   const handleDeleteGame = (id: string) => {
     setGames((prev) => prev.filter((g) => g.id !== id));
-    showToast('Đã xóa game khỏi tủ.');
+    showToast('Removed game from collection shelf.');
     setSelectedGame(null);
   };
 
@@ -239,17 +239,17 @@ export default function App() {
   const handleEnrichBgg = async () => {
     setIsEnrichingBgg(true);
     try {
-      showToast('Đang quét và tự động tìm ảnh & điểm BGG...');
+      showToast('Scanning and fetching official box art & BGG scores...');
       const result = await enrichCollectionWithBgg(games);
       if (result.updatedCount > 0) {
         setGames(result.enrichedGames);
-        showToast(`Đã cập nhật ảnh & thông tin cho ${result.updatedCount} game thành công!`);
+        showToast(`Updated box art and metadata for ${result.updatedCount} games!`);
       } else {
-        showToast('Tất cả game đã có đầy đủ ảnh và thông tin chuẩn xác!');
+        showToast('All games already have accurate box art and metadata!');
       }
     } catch (err) {
       console.error('Enrich failed:', err);
-      showToast('Có lỗi xảy ra khi tìm dữ liệu BGG.');
+      showToast('An error occurred while fetching BGG data.');
     } finally {
       setIsEnrichingBgg(false);
     }
@@ -295,7 +295,7 @@ export default function App() {
           {/* Left: Google Sheet sync info */}
           <div className="flex items-center gap-2 text-slate-300">
             <div className={`w-2 h-2 rounded-full ${isCustomSheetConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-            <span className="font-medium text-slate-400">Nguồn dữ liệu:</span>
+            <span className="font-medium text-slate-400">Data Source:</span>
             <button
               onClick={() => setIsSyncModalOpen(true)}
               className="text-amber-400 hover:text-amber-300 font-semibold truncate max-w-[200px] sm:max-w-xs hover:underline flex items-center gap-1"
@@ -304,13 +304,13 @@ export default function App() {
                 {currentUser
                   ? `Drive: ${currentUser.email}`
                   : isCustomSheetConnected
-                  ? 'Google Sheet đã kết nối'
-                  : '16 Game Demo (Chưa kết nối Sheet)'}
+                  ? 'Google Sheet Connected'
+                  : '46 Games Loaded (Local Catalog)'}
               </span>
             </button>
             {lastSyncedAt && isCustomSheetConnected && (
               <span className="text-slate-500 hidden md:inline">
-                (Đồng bộ: {lastSyncedAt})
+                (Synced: {lastSyncedAt})
               </span>
             )}
           </div>
@@ -334,7 +334,7 @@ export default function App() {
               className="text-amber-400 hover:text-amber-300 hover:underline flex items-center gap-1 text-[11px] font-semibold"
             >
               <Sheet className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{isCustomSheetConnected ? 'Cấu hình Sheet' : 'Kết nối Google Sheet'}</span>
+              <span>{isCustomSheetConnected ? 'Configure Sheet' : 'Connect Google Sheet'}</span>
             </button>
           </div>
         </div>
@@ -374,21 +374,21 @@ export default function App() {
       <footer className="border-t border-slate-800/80 bg-[#07090d] py-6 px-4 md:px-8 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <p>
-            BoardGame Vault — Quản lý bộ sưu tập & phân loại Real vs Fake chân thực kết nối Google Sheets & Drive.
+            BoardGame Vault — Physical shelf collection manager & Real vs Fake authenticity tracker connected with Google Sheets & Drive.
           </p>
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSyncModalOpen(true)}
               className="hover:text-slate-300 transition-colors"
             >
-              Cấu hình Google Sheet
+              Configure Google Sheet
             </button>
             <span>·</span>
             <button
               onClick={() => handleOpenAddModal('real')}
               className="hover:text-slate-300 transition-colors"
             >
-              + Thêm boardgame
+              + Add Game
             </button>
           </div>
         </div>

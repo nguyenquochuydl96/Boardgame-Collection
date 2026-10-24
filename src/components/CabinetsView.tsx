@@ -103,9 +103,6 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
     return chunks;
   };
 
-  // Lưới Front: 2 tủ song song => mỗi tủ chỉ rộng ~nửa trang nên xếp 2 hộp/dòng;
-  // mở riêng 1 tủ (full width) thì xếp 3-4 hộp/dòng. Giữ số hộp mỗi "kệ" khớp số cột
-  // để hộp không bị bẻ dòng lệch khỏi tấm ván kệ bên dưới.
   const isBothCabinets = cabinetFocus === 'both';
   const shelfColumns = isBothCabinets
     ? 'grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3 md:gap-4'
@@ -124,8 +121,10 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
     [fakeGames]
   );
 
-  const formatVnd = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  const formatCurrency = (price: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 })
+      .format(price)
+      .replace('VND', '₫');
   };
 
   const categories = useMemo(() => {
@@ -148,12 +147,12 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-wider">
-                  Dữ Liệu Mẫu (Demo)
+                  Sample Collection (Demo)
                 </span>
-                <h4 className="text-sm font-bold text-white">Tủ game đang hiển thị 16 bộ demo mẫu</h4>
+                <h4 className="text-sm font-bold text-white">Displaying sample board game catalog</h4>
               </div>
               <p className="text-xs text-slate-300 mt-1">
-                Để hiển thị bộ sưu tập từ Google Sheet của bạn (tab <strong>"Boardgame Collection"</strong>), hãy bấm nút kết nối để dán link Sheet hoặc Đăng nhập Google để chọn file từ Drive.
+                To load your live collection from Google Sheet (tab <strong>"Boardgame Collection"</strong>), click below to paste your sheet link or sign in with Google Drive.
               </p>
             </div>
           </div>
@@ -162,21 +161,21 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
             className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-lg shadow-md transition-all shrink-0 flex items-center gap-2 hover:scale-[1.02] active:scale-95"
           >
             <RefreshCw className="w-4 h-4" />
-            <span>Kết Nối Google Sheet Của Bạn</span>
+            <span>Connect Your Google Sheet</span>
           </button>
         </div>
       )}
 
       {/* Control Bar & Filter Strip */}
       <div className="bg-[#12161f] border border-slate-800/80 rounded-xl p-4 shadow-lg flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 md:gap-4">
-        {/* Left: Search input */}
+        {/* Search input */}
         <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm tên game, NXB, dấu hiệu fake..."
+            placeholder="Search by title, publisher, category, counterfeit signs..."
             className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/80 transition-colors"
           />
           {searchQuery && (
@@ -189,11 +188,11 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
           )}
         </div>
 
-        {/* Center: Filters */}
+        {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Players filter */}
           <div className="flex items-center gap-1 bg-slate-900 border border-slate-700/80 rounded-lg p-1 text-xs">
-            <span className="text-slate-400 px-2">Số người:</span>
+            <span className="text-slate-400 px-2">Players:</span>
             {(['all', '2', '4', '6+'] as const).map((opt) => (
               <button
                 key={opt}
@@ -204,7 +203,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                {opt === 'all' ? 'Tất cả' : opt === '6+' ? '6+ người' : `${opt} người`}
+                {opt === 'all' ? 'All' : opt === '6+' ? '6+ Players' : `${opt} Players`}
               </button>
             ))}
           </div>
@@ -215,7 +214,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500"
           >
-            <option value="all">Mọi thể loại ({games.length})</option>
+            <option value="all">All Categories ({games.length})</option>
             {categories.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -227,7 +226,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
           <div className="flex items-center gap-1 bg-slate-900 border border-slate-700/80 rounded-lg p-1 text-xs">
             <span className="text-slate-400 px-2 flex items-center gap-1">
               <Layers className="w-3.5 h-3.5 text-purple-400" />
-              <span>Phân loại:</span>
+              <span>Type:</span>
             </span>
             {(['all', 'base', 'expansion'] as const).map((opt) => (
               <button
@@ -239,7 +238,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                {opt === 'all' ? 'Tất cả' : opt === 'base' ? 'Base Game' : 'Bản mở rộng'}
+                {opt === 'all' ? 'All' : opt === 'base' ? 'Base Game' : 'Expansions'}
               </button>
             ))}
           </div>
@@ -256,10 +255,10 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   ? 'bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="Xem 3D mặt trước hộp game"
+              title="Inspect 3D front box covers"
             >
               <Grid3X3 className="w-3.5 h-3.5" />
-              <span>Mặt Hộp</span>
+              <span>Box Art</span>
             </button>
             <button
               onClick={() => setViewMode('spine')}
@@ -268,10 +267,10 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   ? 'bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/40'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
-              title="Xếp gáy hộp game đứng như trên kệ sách"
+              title="Shelf spine view (Kallax library style)"
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Gáy Kệ</span>
+              <span>Spines</span>
             </button>
           </div>
 
@@ -285,7 +284,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Song Song
+              Dual
             </button>
             <button
               onClick={() => setCabinetFocus('real')}
@@ -295,7 +294,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Real Collection ({realGames.length})
+              Authentic ({realGames.length})
             </button>
             <button
               onClick={() => setCabinetFocus('fake')}
@@ -305,7 +304,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              Replicas & Fake ({fakeGames.length})
+              Counterfeits ({fakeGames.length})
             </button>
           </div>
 
@@ -315,10 +314,10 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
               onClick={onEnrichBgg}
               disabled={isEnrichingBgg}
               className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50 whitespace-nowrap"
-              title="Dựa vào tên game tự động tìm ảnh hộp và điểm BoardGameGeek (BGG)"
+              title="Automatically find official retail box art & BGG ratings for all games"
             >
               <Sparkles className={`w-3.5 h-3.5 text-amber-400 ${isEnrichingBgg ? 'animate-spin' : ''}`} />
-              <span>{isEnrichingBgg ? 'Đang Lấy BGG...' : 'Tìm Ảnh & Điểm BGG'}</span>
+              <span>{isEnrichingBgg ? 'Fetching BGG...' : 'Enrich Box Art & BGG'}</span>
             </button>
           )}
         </div>
@@ -337,7 +336,6 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
           <div className="rounded-2xl overflow-hidden border border-amber-600/30 bg-[#16120e] shadow-2xl flex flex-col relative">
             {/* Top Cabinet Header with Rich Walnut & Brass Look */}
             <div className="bg-gradient-to-r from-[#29160d] via-[#3d1f11] to-[#29160d] border-b border-amber-600/30 p-4 md:p-5 relative overflow-hidden">
-              {/* Subtle top spotlight beam */}
               <div className="absolute top-0 left-1/4 right-1/4 h-12 bg-gradient-to-b from-amber-400/10 to-transparent blur-md pointer-events-none" />
 
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
@@ -364,20 +362,19 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   </div>
                 </div>
 
-                {/* Right stats in cabinet header */}
                 <div className="flex items-center gap-3 text-right">
                   <div className="bg-black/30 border border-amber-500/20 rounded-lg px-3 py-1.5">
                     <p className="text-[10px] text-amber-300/80 uppercase tracking-wider">
-                      Tổng Giá Trị
+                      Total Valuation
                     </p>
                     <p className="text-sm md:text-base font-bold text-amber-400 font-mono tabular-nums">
-                      {formatVnd(realTotalValue)}
+                      {formatCurrency(realTotalValue)}
                     </p>
                   </div>
                   <button
                     onClick={() => onOpenAddModal('real')}
                     className="p-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition-colors"
-                    title="Thêm game vào Real Collection"
+                    title="Add game to Real Collection"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -391,7 +388,6 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                 viewMode === 'spine' ? 'min-h-[380px]' : 'min-h-[500px]'
               }`}
             >
-              {/* Backboard vertical panel lines */}
               <div
                 className="absolute inset-0 opacity-15 pointer-events-none"
                 style={{
@@ -404,23 +400,23 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center my-auto">
                   <ShieldCheck className="w-12 h-12 text-amber-500/40 mb-3" />
                   <p className="text-sm font-semibold text-amber-200">
-                    Chưa có boardgame nào trong Real Collection
+                    No board games in Real Collection yet
                   </p>
                   <p className="text-xs text-amber-400/60 mt-1 max-w-sm">
-                    Hãy thêm game mới hoặc đồng bộ danh sách từ Google Sheet để lấp đầy kệ!
+                    Add new titles or sync your live collection from Google Sheet to fill your shelves!
                   </p>
                   <div className="flex items-center gap-2 mt-4">
                     <button
                       onClick={() => onOpenAddModal('real')}
                       className="px-3 py-1.5 text-xs font-semibold bg-amber-500 text-slate-950 rounded-lg hover:bg-amber-400 transition-colors"
                     >
-                      + Thêm vào Real Collection
+                      + Add to Real Collection
                     </button>
                     <button
                       onClick={onOpenSyncModal}
                       className="px-3 py-1.5 text-xs font-semibold bg-slate-800 text-slate-200 rounded-lg hover:bg-slate-700 transition-colors"
                     >
-                      Đồng Bộ Sheet
+                      Sync Sheet
                     </button>
                   </div>
                 </div>
@@ -428,7 +424,6 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                 <div className="space-y-8 relative z-10">
                   {realShelves.map((shelf, sIdx) => (
                     <div key={`real-shelf-${sIdx}`} className="flex flex-col">
-                      {/* Shelf Items (Boxes sitting on top of shelf plank) */}
                       <div
                         className={
                           viewMode === 'spine'
@@ -458,7 +453,6 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
               )}
             </div>
 
-            {/* Cabinet Bottom Plinth */}
             <div className="h-4 bg-[#140b06] border-t border-amber-900/40" />
           </div>
         )}
@@ -466,9 +460,8 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
         {/* ======================= REPLICAS & FAKE ======================= */}
         {(cabinetFocus === 'both' || cabinetFocus === 'fake') && (
           <div className="rounded-2xl overflow-hidden border border-rose-800/40 bg-[#121214] shadow-2xl flex flex-col relative">
-            {/* Top Cabinet Header with Distressed Industrial & Warning Look */}
+            {/* Top Cabinet Header */}
             <div className="bg-gradient-to-r from-[#201517] via-[#2d1b1f] to-[#201517] border-b border-rose-700/40 p-4 md:p-5 relative overflow-hidden">
-              {/* Subtle caution stripe bar */}
               <div
                 className="absolute top-0 left-0 right-0 h-1 opacity-70"
                 style={{
@@ -501,20 +494,19 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                   </div>
                 </div>
 
-                {/* Right stats in cabinet header */}
                 <div className="flex items-center gap-3 text-right">
                   <div className="bg-black/40 border border-rose-500/20 rounded-lg px-3 py-1.5">
                     <p className="text-[10px] text-rose-300/80 uppercase tracking-wider">
-                      Tổng Chi Phí Mua
+                      Total Cost Spent
                     </p>
                     <p className="text-sm md:text-base font-bold text-rose-400 font-mono tabular-nums">
-                      {formatVnd(fakeTotalValue)}
+                      {formatCurrency(fakeTotalValue)}
                     </p>
                   </div>
                   <button
                     onClick={() => onOpenAddModal('fake')}
                     className="p-2 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 transition-colors"
-                    title="Thêm game vào Replicas & Fake"
+                    title="Add game to Replicas & Fake"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -522,13 +514,12 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
               </div>
             </div>
 
-            {/* Cabinet Interior: Dark Distressed Backboard + Steel/Cedar Shelves */}
+            {/* Cabinet Interior */}
             <div
               className={`p-4 md:p-6 flex-1 flex flex-col justify-start bg-gradient-to-b from-[#141416] to-[#0a0a0c] relative ${
                 viewMode === 'spine' ? 'min-h-[380px]' : 'min-h-[500px]'
               }`}
             >
-              {/* Backboard industrial pattern */}
               <div
                 className="absolute inset-0 opacity-10 pointer-events-none"
                 style={{
@@ -541,23 +532,23 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center my-auto">
                   <AlertTriangle className="w-12 h-12 text-rose-500/40 mb-3" />
                   <p className="text-sm font-semibold text-rose-200">
-                    Chưa có boardgame nào trong Replicas & Fake
+                    No board games in Replicas & Fake yet
                   </p>
                   <p className="text-xs text-rose-400/60 mt-1 max-w-sm">
-                    Tủ này dành cho các bộ game in nhái, hàng F1 hoặc bản đối chứng để cảnh báo người chơi!
+                    This cabinet is reserved for counterfeit copies, bootlegs, or reference duplicates!
                   </p>
                   <div className="flex items-center gap-2 mt-4">
                     <button
                       onClick={() => onOpenAddModal('fake')}
                       className="px-3 py-1.5 text-xs font-semibold bg-rose-600 text-white rounded-lg hover:bg-rose-500 transition-colors"
                     >
-                      + Thêm vào Replicas & Fake
+                      + Add to Replicas & Fake
                     </button>
                     <button
                       onClick={onOpenSyncModal}
                       className="px-3 py-1.5 text-xs font-semibold bg-slate-800 text-slate-200 rounded-lg hover:bg-slate-700 transition-colors"
                     >
-                      Đồng Bộ Sheet
+                      Sync Sheet
                     </button>
                   </div>
                 </div>
@@ -565,7 +556,6 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                 <div className="space-y-8 relative z-10">
                   {fakeShelves.map((shelf, sIdx) => (
                     <div key={`fake-shelf-${sIdx}`} className="flex flex-col">
-                      {/* Shelf Items */}
                       <div
                         className={
                           viewMode === 'spine'
@@ -595,7 +585,6 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
               )}
             </div>
 
-            {/* Cabinet Bottom Plinth */}
             <div className="h-4 bg-[#09090b] border-t border-zinc-800/60" />
           </div>
         )}

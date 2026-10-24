@@ -1,6 +1,5 @@
 import React from 'react';
-import { Sheet, RefreshCw, Plus, Layers, GitCompare, BarChart3, HelpCircle } from 'lucide-react';
-
+import { Sheet, RefreshCw, Plus, Layers, GitCompare, BarChart3 } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface NavbarProps {
@@ -33,7 +32,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-[#090b0e]/95 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-8 py-3.5 transition-all">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 md:gap-4 xl:gap-6">
-        {/* Zone 1: Single text element wordmark */}
+        {/* Logo & Brand Wordmark */}
         <div className="flex items-center gap-3 shrink-0">
           <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-900/40 border border-amber-400/30">
             <Layers className="w-5 h-5 text-white" />
@@ -48,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
 
-        {/* Zone 2: 4 nav links, single-line, whitespace-nowrap shrink-0 */}
+        {/* Navigation Tabs */}
         <nav className="hidden md:flex items-center gap-1 min-w-0">
           <button
             onClick={() => setActiveTab('cabinets')}
@@ -59,8 +58,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Layers className="w-4 h-4" />
-            <span className="hidden 2xl:inline">2 Tủ Trưng Bày</span>
-            <span className="2xl:hidden">2 Tủ</span>
+            <span className="hidden 2xl:inline">Dual Cabinets</span>
+            <span className="2xl:hidden">Cabinets</span>
           </button>
 
           <button
@@ -72,8 +71,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <GitCompare className="w-4 h-4" />
-            <span className="hidden 2xl:inline">So Sánh Real &amp; Fake</span>
-            <span className="2xl:hidden">So Sánh</span>
+            <span className="hidden 2xl:inline">Authenticity Compare</span>
+            <span className="2xl:hidden">Compare</span>
           </button>
 
           <button
@@ -85,8 +84,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            <span className="hidden 2xl:inline">Thống Kê Bộ Sưu Tập</span>
-            <span className="2xl:hidden">Thống Kê</span>
+            <span className="hidden 2xl:inline">Collection Analytics</span>
+            <span className="2xl:hidden">Stats</span>
           </button>
 
           <button
@@ -98,18 +97,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Sheet className="w-4 h-4" />
-            <span className="hidden 2xl:inline">Nguồn Google Sheet</span>
+            <span className="hidden 2xl:inline">Google Sheet Sync</span>
             <span className="2xl:hidden">Sheet</span>
           </button>
         </nav>
 
-        {/* Zone 3: 1 primary action button + quick action */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
           {currentUser ? (
             <button
               onClick={onOpenSyncModal}
               className="flex items-center gap-2 p-1.5 pr-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 transition-colors text-xs text-slate-200"
-              title={`Đã kết nối Google: ${currentUser.email}`}
+              title={`Google connected: ${currentUser.email}`}
             >
               {currentUser.photoURL ? (
                 <img
@@ -130,8 +129,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={onSignInWithGoogle}
               className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
-              aria-label="Đăng nhập Google"
-              title="Đăng nhập Google Drive & Sheets"
+              aria-label="Sign in with Google"
+              title="Connect Google Drive & Sheets"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -148,7 +147,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
           >
             <Plus className="w-3.5 h-3.5 text-amber-400" />
-            <span>Thêm Game</span>
+            <span>Add Game</span>
           </button>
 
           <button
@@ -157,12 +156,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-lg shadow-md shadow-amber-500/20 active:scale-95 transition-all whitespace-nowrap shrink-0 disabled:opacity-60"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>{isSyncing ? 'Đang Tải...' : 'Đồng Bộ Sheet'}</span>
+            <span>{isSyncing ? 'Syncing...' : 'Sync Sheet'}</span>
           </button>
         </div>
       </div>
 
-      {/* Mobile nav strip */}
+      {/* Mobile nav bar */}
       <div className="md:hidden flex items-center justify-around pt-2.5 mt-2 border-t border-slate-800/60 text-xs">
         <button
           onClick={() => setActiveTab('cabinets')}
@@ -171,7 +170,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Tủ Game</span>
+          <span>Cabinets</span>
         </button>
         <button
           onClick={() => setActiveTab('compare')}
@@ -180,7 +179,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           <GitCompare className="w-4 h-4" />
-          <span>So Sánh</span>
+          <span>Compare</span>
         </button>
         <button
           onClick={() => setActiveTab('stats')}
@@ -189,7 +188,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           <BarChart3 className="w-4 h-4" />
-          <span>Thống Kê</span>
+          <span>Stats</span>
         </button>
         <button
           onClick={() => setActiveTab('sheet')}
@@ -198,7 +197,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           }`}
         >
           <Sheet className="w-4 h-4" />
-          <span>Google Sheet</span>
+          <span>Sheet</span>
         </button>
       </div>
     </header>

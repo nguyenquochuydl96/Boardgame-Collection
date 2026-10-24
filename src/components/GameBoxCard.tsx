@@ -21,15 +21,17 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
   const isOOS = game.status === 'OOS';
   const isExpansion = game.gameType === 'Expansion';
 
-  const formatVnd = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  const formatCurrency = (price: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 })
+      .format(price)
+      .replace('VND', '₫');
   };
 
   const displayImage = !imageError && game.imageUrl && game.imageUrl.trim().length > 10
     ? game.imageUrl
     : getGenerativeBoardGameBoxArt(game.name);
 
-  // Spine View (standing upright side-by-side on the shelf like books)
+  // Spine View (standing upright side-by-side on shelf like books)
   if (viewMode === 'spine') {
     const spineWidthClass =
       game.spineWidth === 'wide'
@@ -46,7 +48,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
         className={`group relative cursor-pointer select-none game-spine-3d shrink-0 transition-transform duration-300 ease-out hover:-translate-y-3 hover:z-30 ${
           isOOS ? 'opacity-50 grayscale contrast-80 hover:opacity-100 hover:grayscale-0 hover:contrast-100' : ''
         }`}
-        title={`${game.name} ${isExpansion ? '[Bản Mở Rộng]' : ''} ${isOOS ? '(Hết Hàng / OOS)' : ''} - Nhấn để xem chi tiết`}
+        title={`${game.name} ${isExpansion ? '[Expansion]' : ''} ${isOOS ? '(Out of Stock)' : ''} - Click to inspect`}
       >
         <div
           className={`${spineWidthClass} h-64 md:h-72 rounded-sm flex flex-col justify-between p-1.5 md:p-2 shadow-2xl relative overflow-hidden transition-all duration-300 border-t border-r border-white/20`}
@@ -66,7 +68,6 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             />
           ) : (
             <>
-              {/* Subtle cardboard grain and side vignette */}
               <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-black/60 pointer-events-none" />
               <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/75 pointer-events-none" />
             </>
@@ -98,14 +99,15 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
                 EXP
               </span>
             )}
+
             {isOOS && (
-              <span className="px-1 py-0.2 rounded bg-red-950 text-red-300 border border-red-600/70 font-mono font-bold text-[7px] tracking-wider leading-none shadow">
+              <span className="px-1 py-0.2 rounded bg-black/90 text-rose-400 border border-rose-500/80 font-mono font-extrabold text-[7px] tracking-wider uppercase shadow mt-0.5">
                 OOS
               </span>
             )}
           </div>
 
-          {/* Spine Title (fallback when no custom spine image) */}
+          {/* Spine Title (Vertical writing) */}
           {!game.spineImageUrl && (
             <div className="relative z-10 flex-1 flex items-center justify-center my-2 w-full overflow-hidden px-0.5">
               <span
@@ -122,11 +124,11 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             </div>
           )}
 
-          {/* Bottom Spine Footer: BGG Rating & Publisher (when fallback) */}
+          {/* Bottom Spine Footer: BGG Rating & Publisher */}
           <div className="relative z-10 flex flex-col items-center gap-0.5 pt-1.5 border-t border-white/20 mt-auto">
             <div
               className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-black/85 border border-amber-500/40 text-amber-300 font-mono font-bold text-[9px] md:text-[10px] shadow"
-              title={`Điểm BGG: ${(game.bggRating || game.rating).toFixed(1)}/10`}
+              title={`BGG Rating: ${(game.bggRating || game.rating).toFixed(1)}/10`}
             >
               <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
               <span>{(game.bggRating || game.rating).toFixed(1)}</span>
@@ -141,13 +143,12 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
 
         {/* Hover quick card tooltip with FRONT BOX ART */}
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:flex flex-col z-50 w-72 p-3 bg-slate-900/98 border border-amber-500/40 rounded-xl shadow-2xl text-left pointer-events-none backdrop-blur-md animate-fade-in">
-          {/* Mini Box Cover */}
-          <div className="w-full aspect-[4/3] rounded-lg overflow-hidden bg-slate-950 mb-2 border border-slate-700/80 shadow-inner flex items-center justify-center">
+          <div className="w-full aspect-[4/5] rounded-lg overflow-hidden bg-slate-950 mb-2 border border-slate-700/80 shadow-inner flex items-center justify-center">
             <img
               src={displayImage}
               alt={game.name}
               referrerPolicy="no-referrer"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-top"
             />
           </div>
           <div className="flex items-center justify-between gap-2">
@@ -175,7 +176,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
           <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800 text-[11px]">
             <span className="text-slate-300">{game.players} · {game.playtime}</span>
             <span className="font-bold text-amber-400 font-mono tabular-nums">
-              {formatVnd(game.price)}
+              {formatCurrency(game.price)}
             </span>
           </div>
         </div>
@@ -183,7 +184,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
     );
   }
 
-  // Front Box 3D View (showing the rich cover art, cardboard depth, and real/fake seal)
+  // 3D Front Box Art Card
   return (
     <div
       onClick={() => onSelect(game)}
@@ -207,17 +208,17 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
           }`}
         />
 
-        {/* Box Art Container */}
-        <div className="relative aspect-square w-full overflow-hidden bg-slate-900 flex items-center justify-center">
+        {/* Box Art Container - 4:5 Vertical Aspect Ratio for Retail Box Covers */}
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-slate-950 flex items-center justify-center">
           <img
             src={displayImage}
             alt={game.name}
             referrerPolicy="no-referrer"
             onError={() => setImageError(true)}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
           />
           {/* Subtle bottom scrim gradient for title legibility while keeping box art vibrant */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-transparent opacity-65 group-hover:opacity-40 transition-opacity pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/25 to-transparent opacity-70 group-hover:opacity-40 transition-opacity pointer-events-none" />
 
           {/* Real Collection vs Replicas & Fake Seal + Type + OOS Tag */}
           <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">
@@ -235,7 +236,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             {isExpansion ? (
               <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-950/90 text-purple-300 border border-purple-500/40 shadow-md backdrop-blur-sm text-[9px] font-bold tracking-wide">
                 <Layers className="w-3 h-3 text-purple-400" />
-                <span>BẢN MỞ RỘNG (EXP)</span>
+                <span>EXPANSION</span>
               </div>
             ) : (
               <div className="inline-flex items-center px-1.5 py-0.2 rounded bg-slate-900/80 text-slate-300 border border-slate-700/60 text-[8px] font-semibold tracking-wide">
@@ -245,7 +246,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             {isOOS && (
               <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/90 text-rose-300 border border-rose-500/70 shadow-lg text-[10px] font-mono font-bold tracking-wider uppercase backdrop-blur-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                <span>OOS · Hết Hàng</span>
+                <span>OUT OF STOCK</span>
               </div>
             )}
           </div>
@@ -254,7 +255,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
           <div className="absolute top-2.5 right-2.5 z-10 flex flex-col items-end gap-1">
             <div
               className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/85 border border-amber-500/40 text-amber-300 text-[11px] font-mono font-bold backdrop-blur-sm shadow-md"
-              title={`Điểm chính thức BoardGameGeek: ${(game.bggRating || game.rating).toFixed(1)}/10`}
+              title={`Official BGG Rating: ${(game.bggRating || game.rating).toFixed(1)}/10`}
             >
               <span className="text-[8px] font-extrabold text-amber-400 bg-amber-950/80 px-1 py-0.2 rounded uppercase tracking-wider border border-amber-500/30">
                 BGG
@@ -265,19 +266,19 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             {!isReal && game.bggRating && game.rating !== game.bggRating && (
               <div
                 className="px-1.5 py-0.5 rounded bg-rose-950/90 text-rose-300 border border-rose-600/50 text-[9px] font-mono font-bold shadow-sm"
-                title="Đánh giá chất lượng bản fake"
+                title="Counterfeit Quality Score"
               >
                 Fake: {game.rating.toFixed(1)}★
               </div>
             )}
           </div>
 
-          {/* Floating Action: Quick Move Between Cabinets */}
+          {/* Quick Action: Move Between Cabinets */}
           <div className="absolute bottom-2.5 right-2.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
             <button
               onClick={(e) => onToggleCabinet(game, e)}
               className="p-1.5 rounded-md bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-600 shadow-md transition-colors"
-              title={isReal ? 'Chuyển sang Replicas & Fake' : 'Chuyển sang Real Collection'}
+              title={isReal ? 'Move to Counterfeits Cabinet' : 'Move to Authentic Cabinet'}
             >
               <ArrowLeftRight className="w-3.5 h-3.5 text-amber-300" />
             </button>
@@ -294,20 +295,11 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             <h3 className="text-sm font-bold text-white drop-shadow-md line-clamp-2 leading-snug">
               {game.name}
             </h3>
-            {game.vietnameseName && (
-              <p
-                className="text-[11px] text-slate-300 truncate drop-shadow mt-0.5"
-                title={game.vietnameseName}
-              >
-                {game.vietnameseName}
-              </p>
-            )}
           </div>
         </div>
 
         {/* Card Info Details */}
         <div className="p-3 flex flex-col gap-2 flex-1 justify-between bg-slate-900/70 border-t border-slate-800/60">
-          {/* Metadata clean unboxed text with · separators */}
           <div
             className="flex items-center gap-1.5 text-[11px] text-slate-400"
             title={game.category}
@@ -317,7 +309,6 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             <span className="shrink-0 tabular-nums">{game.year}</span>
           </div>
 
-          {/* Players and Playtime */}
           <div className="flex items-center justify-between text-[11px] text-slate-300">
             <div className="flex items-center gap-1">
               <Users className="w-3.5 h-3.5 text-slate-400" />
@@ -349,11 +340,11 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
               )}
             </div>
             <span className="shrink-0 font-mono font-bold text-xs text-amber-400 tabular-nums whitespace-nowrap">
-              {formatVnd(game.price)}
+              {formatCurrency(game.price)}
             </span>
           </div>
 
-          {/* Gameplay Lore & Setting Story */}
+          {/* Gameplay Lore & Strategic Overview */}
           {game.gameplayStory && (
             <p className="text-[11px] text-slate-300/90 line-clamp-2 leading-relaxed mt-1 pt-1.5 border-t border-slate-800/60 group-hover:text-amber-200 transition-colors">
               {game.gameplayStory}

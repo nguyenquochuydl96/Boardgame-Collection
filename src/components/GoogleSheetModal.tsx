@@ -83,7 +83,6 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
   const [isCreatingSheet, setIsCreatingSheet] = useState(false);
   const [createdSheetResult, setCreatedSheetResult] = useState<{ id: string; url: string } | null>(null);
 
-  // Fetch Drive sheets when user is signed in
   useEffect(() => {
     if (isOpen && currentUser && accessToken) {
       loadDriveSheets();
@@ -98,20 +97,14 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
       const files = await listUserGoogleSheets(accessToken);
       setDriveSheets(files);
       if (files.length > 0 && activeTab === 'link') {
-        setActiveTab('drive');
+        // keep as is
       }
     } catch (err: any) {
-      console.error('Failed to load drive sheets:', err);
-      setDriveError(err.message || 'Không thể tải danh sách bảng tính từ Google Drive.');
+      console.error('Error loading Google Drive sheets:', err);
+      setDriveError(err.message || 'Unable to load Google Drive spreadsheets.');
     } finally {
       setIsLoadingDrive(false);
     }
-  };
-
-  const handleSelectDriveSheet = async (file: DriveSheetFile) => {
-    const sheetLink = file.webViewLink || `https://docs.google.com/spreadsheets/d/${file.id}/edit`;
-    setSheetUrl(sheetLink);
-    await onSyncSheet(sheetLink);
   };
 
   const handleCreateNewSheetOnDrive = async () => {
@@ -119,27 +112,27 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
       await onSignInWithGoogle();
       return;
     }
-
     setIsCreatingSheet(true);
     setDriveError(null);
     try {
-      const result = await createBoardgameSpreadsheetInDrive(
-        accessToken,
-        `Tủ BoardGame Vault (${new Date().toLocaleDateString('vi-VN')})`,
-        games
-      );
-      setCreatedSheetResult({ id: result.spreadsheetId, url: result.spreadsheetUrl });
-      setSheetUrl(result.spreadsheetUrl);
+      const result = await createBoardgameSpreadsheetInDrive(games, accessToken);
+      setCreatedSheetResult(result);
+      setSheetUrl(result.url);
       await loadDriveSheets();
+      await onSyncSheet(result.url);
     } catch (err: any) {
-      console.error('Failed to create sheet:', err);
-      setDriveError(err.message || 'Không thể tạo file Google Sheet mới trên Drive');
+      console.error('Error creating Google Sheet on Drive:', err);
+      setDriveError(err.message || 'Failed to create new spreadsheet on Google Drive.');
     } finally {
       setIsCreatingSheet(false);
     }
   };
 
-  if (!isOpen) return null;
+  const handleSelectDriveSheet = (file: DriveSheetFile) => {
+    const fullUrl = `https://docs.google.com/spreadsheets/d/${file.id}/edit`;
+    setSheetUrl(fullUrl);
+    onSyncSheet(fullUrl);
+  };
 
   const handleSyncUrl = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,32 +140,22 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
     await onSyncSheet(sheetUrl.trim());
   };
 
-  const handleDownloadSampleCsv = () => {
-    const csvContent = generateSampleCsvContent();
-    const blob = new Blob([new Uint8Array([0xef, 0xbb, 0xbf]), csvContent], {
-      type: 'text/csv;charset=utf-8;',
-    });
-    const url = URL.createObjectURL(blob);
+  const handleDownloadCsv = () => {
+    const csv = exportGamesToCsv(games);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'mau_danh_sach_boardgame_real_fake.csv');
-    document.body.appendChild(link);
+    link.href = URL.createObjectURL(blob);
+    link.download = `boardgame-vault-collection-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
-    document.body.removeChild(link);
   };
 
-  const handleExportCurrent = () => {
-    const csvContent = exportGamesToCsv(games);
-    const blob = new Blob([new Uint8Array([0xef, 0xbb, 0xbf]), csvContent], {
-      type: 'text/csv;charset=utf-8;',
-    });
-    const url = URL.createObjectURL(blob);
+  const handleDownloadSampleCsv = () => {
+    const csv = generateSampleCsvContent();
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `boardgame_vault_backup_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
+    link.href = URL.createObjectURL(blob);
+    link.download = `boardgame-vault-sample-template.csv`;
     link.click();
-    document.body.removeChild(link);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -186,13 +169,13 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
         const text = event.target?.result as string;
         const parsedGames = parseCsvToGames(text);
         if (parsedGames.length === 0) {
-          setUploadError('File CSV không chứa dòng dữ liệu boardgame hợp lệ.');
+          setUploadError('Could not find valid board game rows in this CSV file.');
           return;
         }
         onImportCsv(parsedGames);
         onClose();
       } catch (err: any) {
-        setUploadError(`Lỗi đọc file: ${err.message}`);
+        setUploadError(`CSV parse error: ${err.message}`);
       }
     };
     reader.readAsText(file);
@@ -200,11 +183,13 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
 
   const handleCopySampleHeaders = () => {
     const headers =
-      'Tên game\tTủ (Real Collection/Replicas & Fake)\tTrạng thái (On Hand/OOS)\tHình ảnh\tSố người chơi\tThời gian\tThể loại\tGiá tiền\tNhà phát hành\tNăm\tTình trạng\tDấu hiệu nhận biết / Ghi chú\tĐánh giá';
+      'Name\tCabinet (Real Collection/Replicas & Fake)\tStatus (On Hand/OOS)\tImage URL\tPlayers\tPlaytime\tCategory\tPrice\tPublisher\tYear\tCondition\tAuthenticity Notes\tRating';
     navigator.clipboard.writeText(headers);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
@@ -220,10 +205,10 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
             </div>
             <div>
               <h3 className="text-base md:text-lg font-bold text-white font-display">
-                Đồng Bộ Từ Google Sheet
+                Google Sheets Collection Sync
               </h3>
               <p className="text-xs text-slate-400">
-                Đồng bộ từ sheet <strong className="text-emerald-400">Boardgame Collection</strong> vào 2 tủ Real Collection &amp; Replicas &amp; Fake
+                Sync live data from sheet tab <strong className="text-emerald-400">"Boardgame Collection"</strong> into Authentic & Counterfeit cabinets
               </p>
             </div>
           </div>
@@ -246,7 +231,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
             }`}
           >
             <FolderOpen className="w-3.5 h-3.5" />
-            <span>Google Drive Của Tôi</span>
+            <span>Google Drive Workspace</span>
           </button>
           <button
             onClick={() => setActiveTab('link')}
@@ -257,7 +242,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
             }`}
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            <span>Dán Link Bảng Tính</span>
+            <span>Direct Spreadsheet Link</span>
           </button>
           <button
             onClick={() => setActiveTab('template')}
@@ -268,7 +253,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
             }`}
           >
             <HelpCircle className="w-3.5 h-3.5" />
-            <span>Hướng Dẫn & Mẫu CSV</span>
+            <span>Guide & CSV Template</span>
           </button>
         </div>
 
@@ -278,15 +263,14 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
           {activeTab === 'drive' && (
             <div className="space-y-4">
               {!currentUser ? (
-                /* Official Sign in with Google Button as mandated by skill */
                 <div className="p-6 rounded-xl bg-slate-900/90 border border-slate-800 text-center space-y-3">
                   <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto">
                     <Sheet className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">Đăng Nhập Bằng Google</h4>
+                    <h4 className="text-sm font-bold text-white">Sign In With Google</h4>
                     <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-                      Đăng nhập để xem danh sách các file Google Sheet có sẵn trong Google Drive của bạn và đồng bộ với 1 cú click.
+                      Connect your Google Drive to view your existing spreadsheets and sync with 1 click.
                     </p>
                   </div>
                   <div className="pt-2">
@@ -311,7 +295,6 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                   </div>
                 </div>
               ) : (
-                /* Authenticated User state */
                 <div className="space-y-4">
                   {/* User Bar */}
                   <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between">
@@ -337,10 +320,10 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                     <button
                       onClick={onSignOut}
                       className="p-1.5 text-xs text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1"
-                      title="Đăng xuất"
+                      title="Sign Out"
                     >
                       <LogOut className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Đăng xuất</span>
+                      <span className="hidden sm:inline">Sign Out</span>
                     </button>
                   </div>
 
@@ -349,10 +332,10 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                     <div>
                       <h4 className="text-xs font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Tạo Bảng Tính Mới Trên Google Drive</span>
+                        <span>Create New Spreadsheet on Google Drive</span>
                       </h4>
                       <p className="text-xs text-slate-300 mt-0.5">
-                        Tạo một file Google Sheet mới trong Google Drive của bạn chứa sẵn toàn bộ game Real & Fake.
+                        Creates an empty template or populates your current collection directly in your Drive.
                       </p>
                     </div>
                     <button
@@ -361,20 +344,20 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                       className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-all shadow-md flex items-center justify-center gap-2 shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>{isCreatingSheet ? 'Đang tạo...' : 'Tạo Sheet Mới'}</span>
+                      <span>{isCreatingSheet ? 'Creating...' : 'Create New Sheet'}</span>
                     </button>
                   </div>
 
                   {createdSheetResult && (
                     <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/50 text-xs text-emerald-200 flex items-center justify-between">
-                      <span>File mới đã được tạo trên Google Drive của bạn!</span>
+                      <span>Spreadsheet successfully created in your Google Drive!</span>
                       <a
                         href={createdSheetResult.url}
                         target="_blank"
                         rel="noreferrer"
                         className="font-bold underline flex items-center gap-1 text-white hover:text-amber-300"
                       >
-                        <span>Mở Bảng Tính</span>
+                        <span>Open Sheet</span>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     </div>
@@ -384,7 +367,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-slate-200">
-                        Bảng Tính Google Sheets Tìm Thấy Trên Drive ({driveSheets.length}):
+                        Spreadsheets Found on Drive ({driveSheets.length}):
                       </span>
                       <button
                         onClick={loadDriveSheets}
@@ -392,18 +375,18 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                         className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
                       >
                         <RefreshCw className={`w-3 h-3 ${isLoadingDrive ? 'animate-spin' : ''}`} />
-                        <span>Làm mới</span>
+                        <span>Refresh</span>
                       </button>
                     </div>
 
                     {isLoadingDrive ? (
                       <div className="p-8 text-center text-xs text-slate-400">
                         <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-400" />
-                        <span>Đang tìm kiếm các file Google Sheet trong Drive của bạn...</span>
+                        <span>Scanning Google Drive files...</span>
                       </div>
                     ) : driveSheets.length === 0 ? (
                       <div className="p-6 rounded-lg bg-slate-900 border border-slate-800 text-center text-xs text-slate-400">
-                        Chưa tìm thấy file Google Sheet nào trên Drive của bạn. Bạn có thể bấm "Tạo Sheet Mới" ở trên!
+                        No Google Sheets found. Click "Create New Sheet" above to get started!
                       </div>
                     ) : (
                       <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
@@ -418,7 +401,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                                 <p className="text-xs font-bold text-white truncate">{file.name}</p>
                                 {file.modifiedTime && (
                                   <p className="text-[10px] text-slate-500">
-                                    Cập nhật: {new Date(file.modifiedTime).toLocaleDateString('vi-VN')}
+                                    Updated: {new Date(file.modifiedTime).toLocaleDateString()}
                                   </p>
                                 )}
                               </div>
@@ -428,7 +411,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                               disabled={isSyncing}
                               className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-md transition-colors shrink-0 flex items-center gap-1"
                             >
-                              <span>Chọn & Đồng Bộ</span>
+                              <span>Select & Sync</span>
                             </button>
                           </div>
                         ))}
@@ -443,21 +426,20 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
           {/* TAB 2: MANUAL GOOGLE SHEET LINK */}
           {activeTab === 'link' && (
             <div className="space-y-4">
-              {/* Instruction banner */}
               <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2 text-xs">
                 <div className="font-semibold text-amber-300 flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Cách lấy link từ Google Sheet của bạn:</span>
+                  <span>How to connect your Google Sheet:</span>
                 </div>
                 <ul className="space-y-1.5 text-[11px] text-slate-300 list-disc pl-4 leading-relaxed">
                   <li>
-                    Mở bảng tính Google Sheet của bạn trên trình duyệt (ví dụ file <em>Expense &amp; Income Tracker</em> có tab <strong>"Boardgame Collection"</strong>).
+                    Open your Google Sheet (with a tab named <strong className="text-emerald-300">"Boardgame Collection"</strong>).
                   </li>
                   <li>
-                    Sao chép toàn bộ thanh địa chỉ URL trình duyệt (dạng <code>https://docs.google.com/spreadsheets/d/.../edit</code>) và dán vào ô bên dưới.
+                    Copy the browser URL bar (e.g. <code>https://docs.google.com/spreadsheets/d/.../edit#gid=0</code>) and paste it below.
                   </li>
                   <li>
-                    Bật quyền xem công khai: <strong>Chia sẻ &rarr; Bất kỳ ai có liên kết &rarr; Người xem</strong> (hoặc chuyển sang tab <strong>Google Drive</strong> ở trên để đăng nhập tài khoản).
+                    Enable view access: <strong>Share &rarr; Anyone with the link &rarr; Viewer</strong> (or switch to the Google Drive tab above to authenticate).
                   </li>
                 </ul>
               </div>
@@ -465,10 +447,10 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
               <form onSubmit={handleSyncUrl} className="space-y-3">
                 <div className="flex items-center justify-between text-xs text-slate-300">
                   <label className="font-semibold text-slate-200 uppercase tracking-wider">
-                    Dán Đường Dẫn Google Sheet (URL):
+                    Google Sheet URL:
                   </label>
                   <span className="text-[11px] text-emerald-300 font-medium bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-500/40">
-                    Tab ưu tiên: <strong>Boardgame Collection</strong>
+                    Target tab: <strong>Boardgame Collection</strong>
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -476,7 +458,7 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                     type="url"
                     value={sheetUrl}
                     onChange={(e) => setSheetUrl(e.target.value)}
-                    placeholder="Dán link dạng: https://docs.google.com/spreadsheets/d/.../edit#gid=0"
+                    placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=0"
                     className="flex-1 px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
                     required
                   />
@@ -486,12 +468,12 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                     className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-all shadow-md shadow-emerald-900/30 flex items-center justify-center gap-2 shrink-0"
                   >
                     <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                    <span>{isSyncing ? 'Đang Tải...' : 'Đồng Bộ Ngay'}</span>
+                    <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
                   </button>
                 </div>
                 <div className="flex items-center justify-between pt-1">
                   <p className="text-[11px] text-slate-400">
-                    Hệ thống sẽ tự động quét tab <span className="text-emerald-400 font-semibold">"Boardgame Collection"</span> và phân loại theo cột <span className="text-amber-300 font-semibold">Status (On Hand / OOS)</span>.
+                    The app scans tab <span className="text-emerald-400 font-semibold">"Boardgame Collection"</span> and sorts by <span className="text-amber-300 font-semibold">Status (On Hand / OOS)</span>.
                   </p>
                   <button
                     type="button"
@@ -499,141 +481,115 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
                       setSheetUrl(SAMPLE_GOOGLE_SHEET_URL);
                       onSyncSheet(SAMPLE_GOOGLE_SHEET_URL);
                     }}
-                    className="text-[11px] text-amber-400/80 hover:text-amber-300 underline shrink-0 ml-2"
+                    className="text-xs text-amber-400 hover:text-amber-300 underline"
                   >
-                    Tải 16 game mẫu (Demo)
+                    Use Sample Demo
                   </button>
                 </div>
               </form>
-
-              {/* Status alerts */}
-              {syncError && (
-                <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
-                  <span>{syncError}</span>
-                </div>
-              )}
-
-              {lastSyncedAt && !syncError && (
-                <div className="p-2.5 rounded-lg bg-emerald-950/30 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Đồng bộ thành công gần nhất: {lastSyncedAt}</span>
-                  </div>
-                  <span className="font-mono text-[11px] opacity-80">{games.length} boardgame</span>
-                </div>
-              )}
             </div>
           )}
 
-          {/* TAB 3: TEMPLATE & GUIDE */}
+          {/* TAB 3: CSV IMPORT & TEMPLATE GUIDE */}
           {activeTab === 'template' && (
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3">
-                <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <HelpCircle className="w-4 h-4" />
-                  <span>Cách Thiết Lập Bảng Tính (3 Bước Nhanh)</span>
-                </h4>
-                <ol className="space-y-2 text-xs text-slate-300 list-decimal pl-4 leading-relaxed">
-                  <li>
-                    <strong className="text-white">Tạo hoặc mở Google Sheet:</strong> Đặt tên sheet/tab là <span className="text-emerald-400 font-semibold">Boardgame Collection</span>. Bấm nút{' '}
-                    <button
-                      onClick={handleDownloadSampleCsv}
-                      className="text-emerald-400 hover:underline font-semibold"
-                    >
-                      Tải file mẫu CSV
-                    </button>{' '}
-                    ở dưới rồi upload lên Google Drive.
-                  </li>
-                  <li>
-                    <strong className="text-white">Mở quyền xem:</strong> Nhấn nút{' '}
-                    <span className="text-amber-300 font-semibold">Chia Sẻ (Share)</span> ➔ Chọn{' '}
-                    <span className="text-emerald-300 font-semibold">Bất kỳ ai có đường liên kết</span> (hoặc Đăng nhập Google ở tab 1).
-                  </li>
-                  <li>
-                    <strong className="text-white">Đồng bộ:</strong> Copy đường link và dán vào tab "Dán Link Bảng Tính".
-                  </li>
-                </ol>
-              </div>
-
-              {/* Supported Columns */}
-              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-300">
-                    Cột dữ liệu được hỗ trợ tự động:
-                  </span>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                    Standard Columns Format:
+                  </h4>
                   <button
                     onClick={handleCopySampleHeaders}
-                    className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-colors"
                   >
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>{copied ? 'Đã copy!' : 'Copy tên cột'}</span>
+                    <Copy className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{copied ? 'Copied!' : 'Copy Column Headers'}</span>
+                  </button>
+                </div>
+                <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 font-mono text-[11px] text-slate-300 overflow-x-auto whitespace-pre">
+                  Name | Cabinet (Real/Fake) | Status (On Hand/OOS) | Image URL | Players | Playtime | Category | Price | Publisher | Year | Condition | Authenticity Notes | Rating
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between gap-3">
+                  <div>
+                    <h5 className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Download className="w-4 h-4 text-emerald-400" />
+                      <span>Download Sample CSV Template</span>
+                    </h5>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Contains pre-formatted sample rows with official box covers and BGG stats.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleDownloadSampleCsv}
+                    className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg transition-colors"
+                  >
+                    Download Template (.csv)
                   </button>
                 </div>
 
-                <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 text-[11px] font-mono text-slate-400 space-y-1">
-                  <p>
-                    <span className="text-amber-300">Tên game</span> |{' '}
-                    <span className="text-amber-300">Loại tủ</span> (Real Collection hoặc Replicas &amp; Fake) |{' '}
-                    <span className="text-emerald-400 font-semibold">Status (On Hand / OOS)</span> |{' '}
-                    <span className="text-amber-300">Hình ảnh</span> (URL ảnh) |{' '}
-                    <span className="text-slate-300">Số người chơi</span> |{' '}
-                    <span className="text-slate-300">Thời gian</span> |{' '}
-                    <span className="text-slate-300">Thể loại</span> |{' '}
-                    <span className="text-slate-300">Giá tiền</span> |{' '}
-                    <span className="text-slate-300">Nhà phát hành</span> |{' '}
-                    <span className="text-slate-300">Năm</span> |{' '}
-                    <span className="text-slate-300">Tình trạng</span> |{' '}
-                    <span className="text-slate-300">Ghi chú / Dấu hiệu nhận biết</span> |{' '}
-                    <span className="text-slate-300">Đánh giá</span>
-                  </p>
+                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between gap-3">
+                  <div>
+                    <h5 className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Upload className="w-4 h-4 text-amber-400" />
+                      <span>Import Existing CSV File</span>
+                    </h5>
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Upload your collection CSV file directly without Google Sheets.
+                    </p>
+                  </div>
+                  <label className="w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-semibold rounded-lg text-center cursor-pointer transition-colors block">
+                    <span>Upload CSV File</span>
+                    <input
+                      type="file"
+                      accept=".csv,text/csv"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Quick CSV Export / Import Buttons */}
-          <div className="pt-4 border-t border-slate-800 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              onClick={handleDownloadSampleCsv}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <Download className="w-4 h-4 text-emerald-400" />
-              <span>Tải File Mẫu (CSV)</span>
-            </button>
+          {/* Sync status messages */}
+          {syncError && (
+            <div className="p-3.5 rounded-xl bg-rose-950/60 border border-rose-500/50 text-rose-200 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-bold text-white">Sync Error:</p>
+                <p className="mt-0.5 text-rose-300/90 leading-relaxed">{syncError}</p>
+              </div>
+            </div>
+          )}
 
-            <button
-              onClick={handleExportCurrent}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <Download className="w-4 h-4 text-amber-400" />
-              <span>Xuất Dữ Liệu Hiện Tại (CSV)</span>
-            </button>
-
-            <label className="sm:col-span-2 cursor-pointer px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 border-dashed text-slate-300 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-2">
-              <Upload className="w-4 h-4 text-sky-400" />
-              <span>Hoặc tải trực tiếp file CSV từ máy tính</span>
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
-          </div>
-
-          {uploadError && (
-            <p className="text-xs text-rose-400 text-center">{uploadError}</p>
+          {lastSyncedAt && !syncError && (
+            <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-xs text-emerald-300 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Last synced: {lastSyncedAt}</span>
+              </span>
+              <span className="text-slate-400">({games.length} total games)</span>
+            </div>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-end">
+        {/* Modal Footer */}
+        <div className="p-4 bg-slate-950/90 border-t border-slate-800 flex items-center justify-between">
+          <button
+            onClick={handleDownloadCsv}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Export Collection (.csv)</span>
+          </button>
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+            className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 hover:text-white transition-colors"
           >
-            Đóng
+            Close
           </button>
         </div>
       </div>

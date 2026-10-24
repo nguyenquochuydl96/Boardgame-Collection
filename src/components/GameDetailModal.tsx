@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BoardGame } from '../types/boardgame';
+import { getGenerativeBoardGameBoxArt } from '../services/bggService';
 import {
   X,
   ShieldCheck,
@@ -8,25 +9,22 @@ import {
   Clock,
   DollarSign,
   Calendar,
-  Layers,
-  ArrowLeftRight,
+  Star,
   ExternalLink,
   Edit2,
   Trash2,
+  ArrowLeftRight,
+  BookOpen,
   CheckCircle2,
   AlertCircle,
-  RotateCw,
-  BookOpen,
-  Star,
 } from 'lucide-react';
-import { getGenerativeBoardGameBoxArt } from '../services/bggService';
 
 interface GameDetailModalProps {
   game: BoardGame | null;
   onClose: () => void;
   onToggleCabinet: (game: BoardGame, e: React.MouseEvent) => void;
   onEdit: (game: BoardGame) => void;
-  onDelete: (id: string) => void;
+  onDelete: (gameId: string) => void;
 }
 
 export const GameDetailModal: React.FC<GameDetailModalProps> = ({
@@ -36,51 +34,43 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
   onEdit,
   onDelete,
 }) => {
-  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
   const [imageError, setImageError] = useState(false);
 
   if (!game) return null;
 
   const isReal = game.cabinetType === 'real';
 
-  const formatVnd = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  const formatCurrency = (price: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 })
+      .format(price)
+      .replace('VND', '₫');
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Bạn có chắc muốn xóa "${game.name}" khỏi tủ không?`)) {
+    if (window.confirm(`Are you sure you want to remove "${game.name}" from your collection?`)) {
       onDelete(game.id);
       onClose();
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div
-        className="relative w-full max-w-3xl bg-[#11141c] border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Top Header */}
-        <div
-          className={`p-4 md:px-6 flex items-center justify-between border-b ${
-            isReal
-              ? 'bg-gradient-to-r from-amber-950/60 to-slate-900 border-amber-600/30'
-              : 'bg-gradient-to-r from-rose-950/60 to-slate-900 border-rose-600/30'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-3xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col">
+        {/* Modal Top Bar */}
+        <div className="flex items-center justify-between p-4 md:px-6 bg-slate-950/80 border-b border-slate-800">
+          <div className="flex items-center gap-3">
             {isReal ? (
-              <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
                 <ShieldCheck className="w-5 h-5" />
               </div>
             ) : (
-              <div className="p-1.5 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30">
+              <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/40">
                 <AlertTriangle className="w-5 h-5" />
               </div>
             )}
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                {isReal ? 'REAL COLLECTION' : 'REPLICAS & FAKE'}
+                {isReal ? 'REAL COLLECTION · AUTHENTIC' : 'REPLICAS & FAKE · COUNTERFEIT'}
               </span>
               <h3 className="text-base md:text-lg font-bold text-white font-display truncate max-w-md">
                 {game.name}
@@ -92,20 +82,21 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             <button
               onClick={() => onEdit(game)}
               className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-              title="Chỉnh sửa thông tin"
+              title="Edit Game Details"
             >
               <Edit2 className="w-4 h-4" />
             </button>
             <button
               onClick={handleDelete}
               className="p-2 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 transition-colors"
-              title="Xóa game"
+              title="Delete Game"
             >
               <Trash2 className="w-4 h-4" />
             </button>
             <button
               onClick={onClose}
               className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+              title="Close"
             >
               <X className="w-5 h-5" />
             </button>
@@ -114,24 +105,23 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6">
-          {/* Main 2-column Inspection View */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             {/* Left: 3D Box / Image Showcase */}
             <div className="flex flex-col items-center">
-              <div className="relative w-full max-w-xs aspect-[3/4] rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-950 group">
+              <div className="relative w-full max-w-xs aspect-[4/5] rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-950 group flex items-center justify-center">
                 {!imageError && game.imageUrl ? (
                   <img
                     src={game.imageUrl}
                     alt={game.name}
                     referrerPolicy="no-referrer"
                     onError={() => setImageError(true)}
-                    className={`w-full h-full object-contain ${game.status === 'OOS' ? 'grayscale opacity-75' : ''}`}
+                    className={`w-full h-full object-cover object-top ${game.status === 'OOS' ? 'grayscale opacity-75' : ''}`}
                   />
                 ) : (
                   <img
                     src={getGenerativeBoardGameBoxArt(game.name)}
                     alt={game.name}
-                    className={`w-full h-full object-contain ${game.status === 'OOS' ? 'grayscale opacity-75' : ''}`}
+                    className={`w-full h-full object-cover object-top ${game.status === 'OOS' ? 'grayscale opacity-75' : ''}`}
                   />
                 )}
 
@@ -148,7 +138,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   </span>
                   {game.gameType === 'Expansion' && (
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold border border-purple-500/50 bg-purple-950/90 text-purple-200 uppercase tracking-wider backdrop-blur-md">
-                      Bản Mở Rộng (EXP)
+                      Expansion
                     </span>
                   )}
                   <span
@@ -158,7 +148,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                         : 'bg-emerald-900/80 text-emerald-300 border-emerald-500/40'
                     }`}
                   >
-                    {game.status === 'OOS' ? 'OOS · Out of Stock' : 'On Hand'}
+                    {game.status === 'OOS' ? 'Out of Stock' : 'On Hand'}
                   </span>
                 </div>
               </div>
@@ -170,19 +160,19 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
               >
                 <ArrowLeftRight className="w-4 h-4 text-amber-400" />
                 <span>
-                  {isReal ? 'Chuyển sang Replicas & Fake' : 'Chuyển sang Real Collection'}
+                  {isReal ? 'Move to Replicas & Fake' : 'Move to Real Collection'}
                 </span>
               </button>
             </div>
 
             {/* Right: Technical Specs & Details */}
             <div className="space-y-4">
-              {/* Essential specs grid */}
+              {/* Specs grid */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
                   <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
                     <Users className="w-3.5 h-3.5" />
-                    <span>Số người chơi</span>
+                    <span>Player Count</span>
                   </div>
                   <p className="text-sm font-semibold text-white">{game.players}</p>
                 </div>
@@ -190,7 +180,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
                   <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>Thời gian chơi</span>
+                    <span>Playing Time</span>
                   </div>
                   <p className="text-sm font-semibold text-white">{game.playtime}</p>
                 </div>
@@ -198,17 +188,17 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
                   <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
                     <DollarSign className="w-3.5 h-3.5" />
-                    <span>Giá trị / Giá mua</span>
+                    <span>Estimated Valuation</span>
                   </div>
                   <p className="text-sm font-bold text-amber-400 font-mono tabular-nums">
-                    {formatVnd(game.price)}
+                    {formatCurrency(game.price)}
                   </p>
                 </div>
 
                 <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
                   <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
                     <Calendar className="w-3.5 h-3.5" />
-                    <span>Năm phát hành</span>
+                    <span>Release Year</span>
                   </div>
                   <p className="text-sm font-semibold text-white">{game.year}</p>
                 </div>
@@ -217,27 +207,27 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
               {/* Category & Publisher */}
               <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Trạng thái:</span>
+                  <span className="text-slate-400">Inventory Status:</span>
                   <span className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
                     game.status === 'OOS'
                       ? 'bg-zinc-800 text-zinc-300 border border-zinc-700'
                       : 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30'
                   }`}>
-                    {game.status === 'OOS' ? 'OOS (Out of Stock)' : 'On Hand (Có sẵn)'}
+                    {game.status === 'OOS' ? 'Out of Stock' : 'On Hand'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Phân loại game:</span>
+                  <span className="text-slate-400">Classification:</span>
                   <span className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
                     game.gameType === 'Expansion'
                       ? 'bg-purple-950/60 text-purple-300 border border-purple-500/30'
                       : 'bg-blue-950/60 text-blue-300 border border-blue-500/30'
                   }`}>
-                    {game.gameType === 'Expansion' ? 'Bản Mở Rộng (Expansion)' : 'Base Game (Bản Gốc)'}
+                    {game.gameType === 'Expansion' ? 'Expansion' : 'Base Game'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Điểm BGG:</span>
+                  <span className="text-slate-400">Official BGG Rating:</span>
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-amber-400 flex items-center gap-1">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
@@ -250,27 +240,27 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                         rel="noreferrer"
                         className="text-[10px] text-sky-400 hover:text-sky-300 hover:underline flex items-center gap-0.5"
                       >
-                        <span>BGG Link</span>
+                        <span>BGG Profile</span>
                         <ExternalLink className="w-2.5 h-2.5" />
                       </a>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Thể loại:</span>
+                  <span className="text-slate-400">Category:</span>
                   <span className="font-semibold text-white">{game.category}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Nhà phát hành:</span>
+                  <span className="text-slate-400">Publisher:</span>
                   <span className="font-semibold text-slate-200">{game.publisher}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Tình trạng:</span>
+                  <span className="text-slate-400">Condition:</span>
                   <span className="font-semibold text-amber-300">{game.condition}</span>
                 </div>
                 {game.weightGrams && (
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Trọng lượng hộp:</span>
+                    <span className="text-slate-400">Box Weight:</span>
                     <span className="font-mono text-slate-200">{game.weightGrams}g</span>
                   </div>
                 )}
@@ -282,7 +272,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   <div className="flex items-center gap-2 mb-1.5">
                     <BookOpen className="w-4 h-4 text-amber-400" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-amber-200">
-                      Bối Cảnh & Lối Chơi (Gameplay & Lore)
+                      Gameplay Overview & Strategic Setting
                     </h4>
                   </div>
                   <p className="text-xs leading-relaxed text-slate-200">
@@ -291,7 +281,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                 </div>
               )}
 
-              {/* Authenticity Notes / Dấu hiệu nhận biết */}
+              {/* Authenticity Notes */}
               <div
                 className={`p-4 rounded-xl border ${
                   isReal
@@ -306,15 +296,15 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                     <AlertCircle className="w-4 h-4 text-rose-400" />
                   )}
                   <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                    {isReal ? 'Dấu Hiệu Chính Hãng (Authentic Traits)' : 'Dấu Hiệu Hàng Fake / Lỗi'}
+                    {isReal ? 'Authentic Verification Checklist' : 'Counterfeit Warning & Flaw Notes'}
                   </h4>
                 </div>
                 <p className="text-xs leading-relaxed text-slate-300">
-                  {game.authenticityNotes || 'Chưa có ghi chú nhận diện cho bản này.'}
+                  {game.authenticityNotes || 'No specific authenticity notes recorded.'}
                 </p>
               </div>
 
-              {/* Online Rulebook link if any */}
+              {/* Online Rulebook link */}
               {game.rulesUrl && (
                 <a
                   href={game.rulesUrl}
@@ -323,7 +313,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   className="inline-flex items-center gap-2 text-xs text-amber-400 hover:text-amber-300 hover:underline"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Xem sách hướng dẫn luật chơi chính thức</span>
+                  <span>View Official Publisher Rulebook</span>
                 </a>
               )}
             </div>
@@ -336,7 +326,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
           >
-            Đóng
+            Close
           </button>
         </div>
       </div>

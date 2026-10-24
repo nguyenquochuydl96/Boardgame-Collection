@@ -41,11 +41,11 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['catan', 'settlers of catan', 'the settlers of catan', 'đảo catan', 'catan nguoi khai hoang'],
     rating: 7.1,
     year: 1995,
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/en/a/a3/Catan-2015-boxart.jpg',
+    imageUrl: '/images/boxes/catan.jpg',
     minPlayers: 3,
     maxPlayers: 4,
     playtime: 75,
-    category: 'Chiến thuật / Giao thương',
+    category: 'Strategy / Trading',
     publisher: 'KOSMOS / Catan Studio',
   },
   {
@@ -54,11 +54,11 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['splendor', 'thuong nhan da quy', 'splendor thuong nhan'],
     rating: 7.4,
     year: 2014,
-    imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/boxes/splendor.jpg',
     minPlayers: 2,
     maxPlayers: 4,
     playtime: 30,
-    category: 'Xây dựng engine / Thẻ bài',
+    category: 'Engine Building / Cards',
     publisher: 'Space Cowboys',
   },
   {
@@ -67,11 +67,11 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['wingspan', 'doi canh thien nhien', 'chim canh', 'wingspan asia', 'wingspan oceania'],
     rating: 8.1,
     year: 2019,
-    imageUrl: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/boxes/wingspan.jpg',
     minPlayers: 1,
     maxPlayers: 5,
     playtime: 70,
-    category: 'Xây dựng engine / Sinh thái học',
+    category: 'Engine Building / Ecology',
     publisher: 'Stonemaier Games',
   },
   {
@@ -80,11 +80,11 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['azul', 'gach men azul', 'lat gach azul', 'azul stained glass'],
     rating: 7.8,
     year: 2017,
-    imageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/boxes/azul.jpg',
     minPlayers: 2,
     maxPlayers: 4,
     playtime: 40,
-    category: 'Tư duy trừu tượng / Ghép mẫu',
+    category: 'Abstract Strategy / Pattern Building',
     publisher: 'Next Move Games / Plan B',
   },
   {
@@ -93,11 +93,11 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['ticket to ride', 'doan tau toc hanh', 've tau toc hanh', 'ttr'],
     rating: 7.4,
     year: 2004,
-    imageUrl: 'https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/boxes/ticket-to-ride.jpg',
     minPlayers: 2,
     maxPlayers: 5,
     playtime: 60,
-    category: 'Giao thông / Nối đường ray',
+    category: 'Route Building / Trains',
     publisher: 'Days of Wonder',
   },
   {
@@ -106,11 +106,11 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['ticket to ride europe', 've tau chau au', 'ttr europe'],
     rating: 7.5,
     year: 2005,
-    imageUrl: 'https://images.unsplash.com/photo-1510519138171-c70d76b64028?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/boxes/ticket-to-ride.jpg',
     minPlayers: 2,
     maxPlayers: 5,
     playtime: 60,
-    category: 'Giao thông / Nối đường ray',
+    category: 'Route Building / Trains',
     publisher: 'Days of Wonder',
   },
   {
@@ -119,11 +119,11 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['carcassonne', 'thanh carcassonne', 'xay thanh', 'dat tile carcassonne'],
     rating: 7.4,
     year: 2000,
-    imageUrl: 'https://images.unsplash.com/photo-1563941402622-4e7a488bcc57?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/boxes/carcassonne.jpg',
     minPlayers: 2,
     maxPlayers: 5,
     playtime: 40,
-    category: 'Đặt ô bản đồ / Trung cổ',
+    category: 'Tile Placement / Medieval',
     publisher: 'Hans im Glück',
   },
   {
@@ -132,11 +132,11 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['avalon', 'the resistance avalon', 'the resistance: avalon', 'avalon tieng viet', 'khang chien avalon'],
     rating: 7.5,
     year: 2012,
-    imageUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/boxes/avalon.jpg',
     minPlayers: 5,
     maxPlayers: 10,
     playtime: 30,
-    category: 'Ẩn vai / Suy luận xã hội',
+    category: 'Social Deduction / Hidden Roles',
     publisher: 'Indie Boards & Cards',
   },
   {
@@ -145,11 +145,11 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['secret hitler', 'hitler an danh', 'hitler bi mat'],
     rating: 7.5,
     year: 2016,
-    imageUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/boxes/secret-hitler.png',
     minPlayers: 5,
     maxPlayers: 10,
     playtime: 45,
-    category: 'Ẩn vai / Đấu trí chính trị',
+    category: 'Social Deduction / Political Intrigue',
     publisher: 'Goat, Wolf, & Cabbage',
   },
   {
@@ -158,11 +158,11 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['exploding kittens', 'meo no', 'mèo nổ', 'exploding kitten', 'meo no tieng viet'],
     rating: 6.0,
     year: 2015,
-    imageUrl: 'https://images.unsplash.com/photo-1533738363-b7f9aef128ce?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/boxes/exploding-kittens.jpg',
     minPlayers: 2,
     maxPlayers: 5,
     playtime: 15,
-    category: 'Tiệc tùng / May rủi / Thẻ bài',
+    category: 'Party / Push Your Luck',
     publisher: 'Exploding Kittens',
   },
   {
@@ -171,11 +171,11 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['coup', 'dao chinh', 'đảo chính', 'coup cuoc chien gian diep', 'coup rebellion'],
     rating: 7.0,
     year: 2012,
-    imageUrl: 'https://images.unsplash.com/photo-1516245834210-c4c142787335?auto=format&fit=crop&w=800&q=80',
+    imageUrl: '/images/boxes/love-letter.jpg',
     minPlayers: 2,
     maxPlayers: 6,
     playtime: 15,
-    category: 'Tung hỏa mù / Ẩn vai',
+    category: 'Bluffing / Hidden Roles',
     publisher: 'Indie Boards & Cards',
   },
   {
@@ -1286,15 +1286,20 @@ export function cleanGameTitleForSearch(rawTitle: string): {
   // Check if string contains fake indicators
   const fakeKeywords = [
     'fake',
+    'counterfeit',
+    'replica',
+    'bootleg',
+    'knockoff',
+    'reproduction',
+    'copy',
+    'unlicensed',
+    'pirated',
     'nhái',
     'nhai',
     'rep',
-    'replica',
     'f1',
-    'bootleg',
     'in lậu',
     'inlau',
-    'copy',
     'bản nhái',
     'hàng nhái',
     'không bản quyền',
@@ -1305,7 +1310,7 @@ export function cleanGameTitleForSearch(rawTitle: string): {
 
   let isMarkedFake = fakeKeywords.some((k) => title.includes(k));
 
-  // Remove parenthetical noise e.g. "(Bản nhái)", "(Fake)", "(Settlers of Catan)", "(Tiếng Việt)", "(Token nhựa rỗng)"
+  // Remove parenthetical noise e.g. "(Counterfeit)", "(Fake)", "(Settlers of Catan)", "(Tiếng Việt)", "(Token nhựa rỗng)"
   title = title.replace(/\(.*?\)/g, ' ');
   title = title.replace(/\[.*?\]/g, ' ');
 
@@ -1315,9 +1320,12 @@ export function cleanGameTitleForSearch(rawTitle: string): {
   });
 
   const noiseWords = [
+    'authentic',
+    'original',
+    'genuine',
+    'retail',
     'chính hãng',
     'chinh hang',
-    'authentic',
     'real',
     'tiếng việt',
     'tieng viet',
@@ -1355,6 +1363,22 @@ function normalizeForComparison(str: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]/g, '');
+}
+
+function resolveCatalogImage(entry: CatalogEntry): string {
+  if (entry.imageUrl && !entry.imageUrl.includes('unsplash')) {
+    return entry.imageUrl;
+  }
+  // Try matching user collection box art
+  const userMatch = USER_46_GAMES.find(
+    (g) =>
+      normalizeForComparison(g.name) === normalizeForComparison(entry.name) ||
+      g.aliases?.some((a) => normalizeForComparison(a) === normalizeForComparison(entry.name))
+  );
+  if (userMatch && userMatch.imageUrl) {
+    return userMatch.imageUrl;
+  }
+  return getGenerativeBoardGameBoxArt(entry.name);
 }
 
 /**
@@ -1421,7 +1445,7 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
         bggId: entry.id,
         name: entry.name,
         rating: entry.rating,
-        imageUrl: entry.imageUrl,
+        imageUrl: resolveCatalogImage(entry),
         year: entry.year,
         minPlayers: entry.minPlayers,
         maxPlayers: entry.maxPlayers,
@@ -1438,7 +1462,7 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
           bggId: entry.id,
           name: entry.name,
           rating: entry.rating,
-          imageUrl: entry.imageUrl,
+          imageUrl: resolveCatalogImage(entry),
           year: entry.year,
           minPlayers: entry.minPlayers,
           maxPlayers: entry.maxPlayers,
@@ -1460,7 +1484,7 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
           bggId: entry.id,
           name: entry.name,
           rating: entry.rating,
-          imageUrl: entry.imageUrl,
+          imageUrl: resolveCatalogImage(entry),
           year: entry.year,
           minPlayers: entry.minPlayers,
           maxPlayers: entry.maxPlayers,
@@ -1477,7 +1501,7 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
             bggId: entry.id,
             name: entry.name,
             rating: entry.rating,
-            imageUrl: entry.imageUrl,
+            imageUrl: resolveCatalogImage(entry),
             year: entry.year,
             minPlayers: entry.minPlayers,
             maxPlayers: entry.maxPlayers,
@@ -1524,7 +1548,7 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
       bggId: bestEntry.id,
       name: bestEntry.name,
       rating: bestEntry.rating,
-      imageUrl: bestEntry.imageUrl,
+      imageUrl: resolveCatalogImage(bestEntry),
       year: bestEntry.year,
       minPlayers: bestEntry.minPlayers,
       maxPlayers: bestEntry.maxPlayers,
@@ -1885,8 +1909,8 @@ export async function resolveBggData(
         minPlayers: catalogMatch?.minPlayers || 2,
         maxPlayers: catalogMatch?.maxPlayers || 4,
         playtimeMinutes: catalogMatch?.playtimeMinutes || 45,
-        category: catalogMatch?.category || 'Chiến thuật',
-        publisher: wikiData.publisher || catalogMatch?.publisher || 'Board Game',
+        category: catalogMatch?.category || 'Strategy',
+        publisher: wikiData.publisher || catalogMatch?.publisher || 'Board Game Publisher',
         bggUrl: catalogMatch?.bggUrl || `https://boardgamegeek.com/geeksearch.php?action=search&q=${encodeURIComponent(title)}`,
         isExactMatch: true,
       };
@@ -1934,7 +1958,23 @@ export async function enrichCollectionWithBgg(
       const { cleanTitle, isMarkedFake } = cleanGameTitleForSearch(game.name);
 
       // Check fake indicators from all fields
-      const fakeWords = ['fake', 'nhai', 'nhái', 'rep', 'replica', 'f1', 'in lau', 'in lậu', 'bootleg', 'copy'];
+      const fakeWords = [
+        'fake',
+        'counterfeit',
+        'replica',
+        'bootleg',
+        'knockoff',
+        'reproduction',
+        'copy',
+        'unlicensed',
+        'pirated',
+        'nhai',
+        'nhái',
+        'rep',
+        'f1',
+        'in lau',
+        'in lậu',
+      ];
       const notesLower = (game.authenticityNotes || '').toLowerCase();
       const conditionLower = (game.condition || '').toLowerCase();
       const statusLower = (game.status || '').toLowerCase();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BoardGame, CabinetType } from '../types/boardgame';
-import { X, ShieldCheck, AlertTriangle, Save, Image, Sparkles } from 'lucide-react';
+import { BoardGame, CabinetType, GameStatus } from '../types/boardgame';
+import { X, ShieldCheck, AlertTriangle, Save, Upload, Link, Check } from 'lucide-react';
 
 interface AddEditGameModalProps {
   isOpen: boolean;
@@ -18,62 +18,59 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
   defaultCabinetType = 'real',
 }) => {
   const [name, setName] = useState('');
-  const [vietnameseName, setVietnameseName] = useState('');
   const [cabinetType, setCabinetType] = useState<CabinetType>(defaultCabinetType);
-  const [status, setStatus] = useState<'On Hand' | 'OOS'>('On Hand');
+  const [status, setStatus] = useState<GameStatus>('On Hand');
   const [imageUrl, setImageUrl] = useState('');
-  const [players, setPlayers] = useState('2 - 4 người');
+  const [players, setPlayers] = useState('2 - 4 players');
   const [minPlayers, setMinPlayers] = useState(2);
   const [maxPlayers, setMaxPlayers] = useState(4);
-  const [playtime, setPlaytime] = useState('45 phút');
-  const [category, setCategory] = useState('Chiến thuật');
-  const [price, setPrice] = useState(500000);
+  const [playtime, setPlaytime] = useState('60 mins');
+  const [category, setCategory] = useState('Strategy');
+  const [price, setPrice] = useState<number>(0);
   const [publisher, setPublisher] = useState('');
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [condition, setCondition] = useState('Mới 99%');
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [condition, setCondition] = useState('Brand New / Sealed');
   const [gameplayStory, setGameplayStory] = useState('');
   const [authenticityNotes, setAuthenticityNotes] = useState('');
-  const [rating, setRating] = useState(8.0);
+  const [rating, setRating] = useState<number>(8.0);
 
   useEffect(() => {
     if (editingGame) {
       setName(editingGame.name);
-      setVietnameseName(editingGame.vietnameseName || '');
       setCabinetType(editingGame.cabinetType);
       setStatus(editingGame.status || 'On Hand');
-      setImageUrl(editingGame.imageUrl);
-      setPlayers(editingGame.players);
-      setMinPlayers(editingGame.minPlayers);
-      setMaxPlayers(editingGame.maxPlayers);
-      setPlaytime(editingGame.playtime);
-      setCategory(editingGame.category);
-      setPrice(editingGame.price);
-      setPublisher(editingGame.publisher);
-      setYear(editingGame.year);
-      setCondition(editingGame.condition);
+      setImageUrl(editingGame.imageUrl || '');
+      setPlayers(editingGame.players || '2 - 4 players');
+      setMinPlayers(editingGame.minPlayers || 2);
+      setMaxPlayers(editingGame.maxPlayers || 4);
+      setPlaytime(editingGame.playtime || '60 mins');
+      setCategory(editingGame.category || 'Strategy');
+      setPrice(editingGame.price || 0);
+      setPublisher(editingGame.publisher || '');
+      setYear(editingGame.year || new Date().getFullYear());
+      setCondition(editingGame.condition || 'Brand New / Sealed');
       setGameplayStory(editingGame.gameplayStory || '');
-      setAuthenticityNotes(editingGame.authenticityNotes);
-      setRating(editingGame.rating);
+      setAuthenticityNotes(editingGame.authenticityNotes || '');
+      setRating(editingGame.rating || 8.0);
     } else {
       setName('');
-      setVietnameseName('');
       setCabinetType(defaultCabinetType);
       setStatus('On Hand');
       setImageUrl('');
-      setPlayers('2 - 4 người');
+      setPlayers('2 - 4 players');
       setMinPlayers(2);
       setMaxPlayers(4);
-      setPlaytime('45 phút');
-      setCategory('Chiến thuật');
-      setPrice(defaultCabinetType === 'real' ? 850000 : 120000);
+      setPlaytime('60 mins');
+      setCategory('Strategy');
+      setPrice(defaultCabinetType === 'real' ? 1200000 : 250000);
       setPublisher('');
       setYear(new Date().getFullYear());
-      setCondition(defaultCabinetType === 'real' ? 'Mới nguyên seal' : 'Bản in lỗi');
+      setCondition(defaultCabinetType === 'real' ? 'Brand New / Sealed' : 'Counterfeit Copy');
       setGameplayStory('');
       setAuthenticityNotes(
         defaultCabinetType === 'real'
-          ? 'Hộp carton nén dày, dập nổi vân linen, linh kiện chuẩn xịn.'
-          : 'Dấu hiệu fake/replica: Hộp carton mỏng, lưng bài lệch màu, token nhẹ không có lõi.'
+          ? 'Authentic Edition: Thick linen-finish cardboard box, crisp embossing, premium core cards.'
+          : 'Counterfeit Signs: Thin cardboard box, washed out colors, lightweight hollow tokens.'
       );
       setRating(defaultCabinetType === 'real' ? 8.5 : 4.5);
     }
@@ -88,14 +85,9 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
     const gameToSave: BoardGame = {
       id: editingGame?.id || `game-${Date.now().toString(36)}`,
       name: name.trim(),
-      vietnameseName: vietnameseName.trim() || undefined,
       cabinetType,
       status,
-      imageUrl:
-        imageUrl.trim() ||
-        (cabinetType === 'real'
-          ? 'https://upload.wikimedia.org/wikipedia/en/a/a3/Catan-2015-boxart.jpg'
-          : 'https://upload.wikimedia.org/wikipedia/en/a/a3/Catan-2015-boxart.jpg'),
+      imageUrl: imageUrl.trim() || '/images/boxes/brass-birmingham.png',
       players,
       minPlayers,
       maxPlayers,
@@ -103,10 +95,10 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
       playtimeMinutes: parseInt(playtime, 10) || 45,
       category,
       price: Number(price) || 0,
-      publisher: publisher.trim() || (cabinetType === 'real' ? 'Nhà xuất bản chính thức' : 'Chưa rõ nguồn gốc'),
+      publisher: publisher.trim() || (cabinetType === 'real' ? 'Official Publisher' : 'Unbranded / Unknown'),
       year: Number(year) || 2023,
       condition,
-      gameplayStory: gameplayStory.trim() || `Trò chơi ${name} với lối chơi cuốn hút và trải nghiệm chiến thuật đặc sắc.`,
+      gameplayStory: gameplayStory.trim() || `Deep strategic gameplay and memorable thematic table experience.`,
       authenticityNotes: authenticityNotes.trim(),
       boxColor: cabinetType === 'real' ? '#b45309' : '#991b1b',
       rating: Number(rating) || 8.0,
@@ -138,7 +130,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
               <AlertTriangle className="w-5 h-5 text-rose-400" />
             )}
             <h3 className="text-base md:text-lg font-bold text-white font-display">
-              {editingGame ? 'Chỉnh Sửa Boardgame' : 'Thêm Boardgame Vào Tủ'}
+              {editingGame ? 'Edit Board Game' : 'Add Board Game to Cabinet'}
             </h3>
           </div>
           <button
@@ -154,7 +146,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
           {/* Cabinet Type Selection */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-200">
-              Chọn Tủ Trưng Bày:
+              Select Destination Cabinet:
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -169,7 +161,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
                 <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
                 <div>
                   <p className="text-xs font-bold text-white">Real Collection</p>
-                  <p className="text-[11px] opacity-75">Bản chính hãng có bản quyền</p>
+                  <p className="text-[11px] opacity-75">Authentic licensed edition</p>
                 </div>
               </button>
 
@@ -185,7 +177,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
                 <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
                 <div>
                   <p className="text-xs font-bold text-white">Replicas & Fake</p>
-                  <p className="text-[11px] opacity-75">Bản replica / copy / đối chứng</p>
+                  <p className="text-[11px] opacity-75">Counterfeit, copy, or replica</p>
                 </div>
               </button>
             </div>
@@ -194,8 +186,8 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
           {/* Status Selection: On Hand vs OOS */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-200 flex items-center justify-between">
-              <span>Trạng thái kho (Status):</span>
-              <span className="text-[10px] text-slate-400 font-normal">Game OOS sẽ tự động xếp ở cuối kệ và làm mờ</span>
+              <span>Inventory Status:</span>
+              <span className="text-[10px] text-slate-400 font-normal">OOS games appear dimmed at the shelf bottom</span>
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -210,7 +202,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px_rgba(52,211,153,0.7)]" />
                 <div>
                   <p className="text-xs font-bold text-white">On Hand</p>
-                  <p className="text-[10px] text-slate-400">Có sẵn trên kệ trưng bày</p>
+                  <p className="text-[10px] text-slate-400">Physically in collection</p>
                 </div>
               </button>
 
@@ -225,54 +217,39 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
               >
                 <span className="w-2.5 h-2.5 rounded-full bg-zinc-400 shrink-0" />
                 <div>
-                  <p className="text-xs font-bold text-white">OOS (Out of Stock)</p>
-                  <p className="text-[10px] text-slate-400">Tạm hết / Chưa có mặt (xếp cuối, mờ)</p>
+                  <p className="text-xs font-bold text-white">Out of Stock (OOS)</p>
+                  <p className="text-[10px] text-slate-400">Sold / Lent / Missing</p>
                 </div>
               </button>
             </div>
           </div>
 
-          {/* Name & Vietnamese Name */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-300">
-                Tên Game Quốc Tế / Gốc: <span className="text-rose-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="VD: Catan, Splendor, Wingspan..."
-                required
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-300">
-                Tên Tiếng Việt (nếu có):
-              </label>
-              <input
-                type="text"
-                value={vietnameseName}
-                onChange={(e) => setVietnameseName(e.target.value)}
-                placeholder="VD: Người Khai Hoang, Thương Nhân..."
-                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
+          {/* Name */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-slate-300">
+              Game Title: <span className="text-rose-400">*</span>
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Brass: Birmingham, Catan, Wingspan..."
+              required
+              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500"
+            />
           </div>
 
           {/* Image URL */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-300">
-              Link Ảnh Bìa Board Game (URL):
+              Official Box Art Image URL:
             </label>
             <div className="flex gap-2">
               <input
                 type="url"
                 value={imageUrl}
                 onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://example.com/boardgame-cover.jpg"
+                placeholder="https://example.com/boardgame-box-art.jpg"
                 className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500"
               />
               {imageUrl && (
@@ -281,7 +258,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
                     src={imageUrl}
                     alt="Preview"
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover object-top"
                   />
                 </div>
               )}
@@ -291,34 +268,34 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
           {/* Players, Playtime, Category */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-300">Số Người Chơi:</label>
+              <label className="text-xs font-medium text-slate-300">Player Count:</label>
               <input
                 type="text"
                 value={players}
                 onChange={(e) => setPlayers(e.target.value)}
-                placeholder="VD: 3 - 4 người"
+                placeholder="e.g. 2 - 4 players"
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-300">Thời Gian Chơi:</label>
+              <label className="text-xs font-medium text-slate-300">Playing Time:</label>
               <input
                 type="text"
                 value={playtime}
                 onChange={(e) => setPlaytime(e.target.value)}
-                placeholder="VD: 60 - 90 phút"
+                placeholder="e.g. 60 - 90 mins"
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-300">Thể Loại:</label>
+              <label className="text-xs font-medium text-slate-300">Category / Genre:</label>
               <input
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                placeholder="Chiến thuật, Party, Bluffing..."
+                placeholder="e.g. Economic Strategy, Deck Building..."
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -328,7 +305,7 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-300">
-                Giá Tiền (VND):
+                Price / Valuation (VND):
               </label>
               <input
                 type="number"
@@ -340,18 +317,18 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-300">Nhà Phát Hành:</label>
+              <label className="text-xs font-medium text-slate-300">Publisher:</label>
               <input
                 type="text"
                 value={publisher}
                 onChange={(e) => setPublisher(e.target.value)}
-                placeholder="KOSMOS, Space Cowboys, Xưởng in..."
+                placeholder="e.g. Roxley Games, KOSMOS, AEG..."
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-300">Năm Phát Hành:</label>
+              <label className="text-xs font-medium text-slate-300">Release Year:</label>
               <input
                 type="number"
                 value={year}
@@ -364,23 +341,23 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
           {/* Condition & Rating */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-300">Tình Trạng Hộp:</label>
+              <label className="text-xs font-medium text-slate-300">Condition:</label>
               <select
                 value={condition}
                 onChange={(e) => setCondition(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500"
               >
-                <option value="Mới nguyên seal">Mới nguyên seal</option>
-                <option value="99% Likenew">99% Likenew</option>
-                <option value="Đã chơi vài lần">Đã chơi vài lần</option>
-                <option value="Hộp cũ xước">Hộp cũ xước</option>
-                <option value="Bản in lỗi">Bản in lỗi (Fake)</option>
+                <option value="Brand New / Sealed">Brand New / Sealed</option>
+                <option value="Mint (Like New)">Mint (Like New)</option>
+                <option value="Lightly Played">Lightly Played</option>
+                <option value="Worn / Shelfwear">Worn / Shelfwear</option>
+                <option value="Counterfeit Copy">Counterfeit Copy (Fake)</option>
               </select>
             </div>
 
             <div className="space-y-1">
               <label className="text-xs font-medium text-slate-300">
-                Đánh Giá (1 - 10★):
+                Rating (1.0 - 10.0★):
               </label>
               <input
                 type="number"
@@ -397,14 +374,14 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
           {/* Gameplay Lore & Story */}
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-300 flex items-center justify-between">
-              <span>Bối Cảnh & Lối Chơi Game (Gameplay & Lore):</span>
-              <span className="text-[10px] text-amber-400">Hiển thị dưới thẻ game trên kệ</span>
+              <span>Gameplay Overview & Lore:</span>
+              <span className="text-[10px] text-amber-400">Displayed on shelf cards</span>
             </label>
             <textarea
               rows={2}
               value={gameplayStory}
               onChange={(e) => setGameplayStory(e.target.value)}
-              placeholder="VD: Khai phá hòn đảo Catan, giao thương gỗ lúa gạch để xây dựng thuộc địa phồn vinh..."
+              placeholder="e.g. Build industrial networks of canals and railways in the English Industrial Revolution..."
               className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -413,14 +390,14 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-300">
               {cabinetType === 'real'
-                ? 'Đặc Điểm Kiểm Định Chính Hãng (Dập vân, lõi đen, linh kiện cao cấp...):'
-                : 'Dấu Hiệu Fake / Lỗi Nhận Biết (Màu in nhợt nhạt, hộp mỏng, thẻ trơn...):'}
+                ? 'Authentic Verification Checklist (Embossed foil, linen finish, dense tokens):'
+                : 'Counterfeit Flaws & Inspection Warnings (Washed out colors, thin box, blurry print):'}
             </label>
             <textarea
               rows={2}
               value={authenticityNotes}
               onChange={(e) => setAuthenticityNotes(e.target.value)}
-              placeholder="Ghi chú chi tiết để phân biệt với bản còn lại..."
+              placeholder="Detailed authenticity traits for verification..."
               className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500"
             />
           </div>
@@ -432,14 +409,14 @@ export const AddEditGameModal: React.FC<AddEditGameModalProps> = ({
               onClick={onClose}
               className="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white bg-slate-800 rounded-lg transition-colors"
             >
-              Hủy
+              Cancel
             </button>
             <button
               type="submit"
               className="px-5 py-2 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg shadow-md transition-all flex items-center gap-1.5"
             >
               <Save className="w-4 h-4" />
-              <span>{editingGame ? 'Cập Nhật Game' : 'Lưu Vào Tủ'}</span>
+              <span>{editingGame ? 'Update Game' : 'Save to Cabinet'}</span>
             </button>
           </div>
         </form>

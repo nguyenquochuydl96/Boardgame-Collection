@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import { BoardGame } from '../types/boardgame';
-import { ShieldCheck, AlertTriangle, Layers, DollarSign, Users, Award, PieChart, Star } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Layers, Award, PieChart } from 'lucide-react';
 
 interface StatsViewProps {
   games: BoardGame[];
   onSelectGame: (game: BoardGame) => void;
 }
 
-export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => {
+export const StatsView: React.FC<StatsViewProps> = ({ games }) => {
   const realGames = useMemo(() => games.filter((g) => g.cabinetType === 'real'), [games]);
   const fakeGames = useMemo(() => games.filter((g) => g.cabinetType === 'fake'), [games]);
 
@@ -24,8 +24,10 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
     return (fakeGames.reduce((acc, g) => acc + g.rating, 0) / fakeGames.length).toFixed(1);
   }, [fakeGames]);
 
-  const formatVnd = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  const formatCurrency = (price: number) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 })
+      .format(price)
+      .replace('VND', '₫');
   };
 
   // Category distribution
@@ -75,8 +77,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
             <Layers className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-slate-400 uppercase tracking-wider">Tổng Số Game</p>
-            <p className="text-xl font-bold text-white font-mono tabular-nums">{games.length} bộ</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wider">Total Games</p>
+            <p className="text-xl font-bold text-white font-mono tabular-nums">{games.length} titles</p>
             <p className="text-[11px] text-slate-400 mt-0.5">
               <span className="text-emerald-400 font-semibold">{onHandCount} On Hand</span> ·{' '}
               <span className="text-zinc-400 font-semibold">{oosCount} OOS</span>
@@ -95,9 +97,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
           <div>
             <p className="text-xs text-slate-400 uppercase tracking-wider">Real Collection</p>
             <p className="text-lg font-bold text-emerald-400 font-mono tabular-nums truncate">
-              {formatVnd(realTotal)}
+              {formatCurrency(realTotal)}
             </p>
-            <p className="text-[11px] text-slate-500 mt-0.5">{realGames.length} bộ · TB: {realAvgRating}★</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">{realGames.length} titles · Avg: {realAvgRating}★</p>
           </div>
         </div>
 
@@ -109,9 +111,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
           <div>
             <p className="text-xs text-slate-400 uppercase tracking-wider">Replicas & Fake</p>
             <p className="text-lg font-bold text-rose-400 font-mono tabular-nums truncate">
-              {formatVnd(fakeTotal)}
+              {formatCurrency(fakeTotal)}
             </p>
-            <p className="text-[11px] text-slate-500 mt-0.5">{fakeGames.length} bộ · TB: {fakeAvgRating}★</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">{fakeGames.length} titles · Avg: {fakeAvgRating}★</p>
           </div>
         </div>
 
@@ -121,12 +123,12 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-slate-400 uppercase tracking-wider">Tỉ Lệ Real</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wider">Authenticity Ratio</p>
             <p className="text-xl font-bold text-sky-400 font-mono tabular-nums">
-              {authenticityRate}% Real
+              {authenticityRate}% Authentic
             </p>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              {authenticityRate >= 70 ? 'Bộ sưu tập chất lượng cao' : 'Nhiều bản reprint/đối chứng'}
+              {authenticityRate >= 70 ? 'High-grade curated vault' : 'Mixed test collection'}
             </p>
           </div>
         </div>
@@ -136,7 +138,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
       <div className="bg-[#11141c] border border-slate-800 rounded-xl p-5 shadow-lg">
         <h3 className="text-sm font-bold text-white font-display mb-4 flex items-center gap-2">
           <PieChart className="w-4 h-4 text-amber-400" />
-          <span>Phân Bổ Thể Loại Game (Real vs Replicas & Fake)</span>
+          <span>Genre Breakdown (Real Collection vs Replicas & Fake)</span>
         </h3>
 
         <div className="space-y-3">
@@ -151,20 +153,19 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
                     <span className="text-emerald-400">{count.real} Real</span>
                     <span className="text-slate-600">·</span>
                     <span className="text-rose-400">{count.fake} Fake</span>
-                    <span className="text-slate-500">({count.total} tổng)</span>
+                    <span className="text-slate-500">({count.total} total)</span>
                   </div>
                 </div>
-                {/* Visual bar */}
                 <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden flex">
                   <div
                     className="h-full bg-emerald-500 transition-all"
                     style={{ width: `${realPct}%` }}
-                    title={`${realPct}% Real`}
+                    title={`${realPct}% Authentic`}
                   />
                   <div
                     className="h-full bg-rose-500 transition-all"
                     style={{ width: `${fakePct}%` }}
-                    title={`${fakePct}% Fake`}
+                    title={`${fakePct}% Counterfeit`}
                   />
                 </div>
               </div>
@@ -176,24 +177,24 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
       {/* Player Compatibility Matrix */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
-          <p className="text-xs text-slate-400">Chơi Solo (1 người)</p>
+          <p className="text-xs text-slate-400">Solo Play (1 Player)</p>
           <p className="text-xl font-bold text-amber-400 font-mono mt-1">{playerGroups.solo}</p>
-          <p className="text-[11px] text-slate-500">tựa game hỗ trợ</p>
+          <p className="text-[11px] text-slate-500">compatible titles</p>
         </div>
         <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
-          <p className="text-xs text-slate-400">Chơi Cặp Đôi (2 người)</p>
+          <p className="text-xs text-slate-400">Duo (2 Players)</p>
           <p className="text-xl font-bold text-amber-400 font-mono mt-1">{playerGroups.duo}</p>
-          <p className="text-[11px] text-slate-500">tựa game phù hợp</p>
+          <p className="text-[11px] text-slate-500">ideal titles</p>
         </div>
         <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
-          <p className="text-xs text-slate-400">Nhóm Vừa (4 - 5 người)</p>
+          <p className="text-xs text-slate-400">Medium Groups (4 - 5)</p>
           <p className="text-xl font-bold text-amber-400 font-mono mt-1">{playerGroups.medium}</p>
-          <p className="text-[11px] text-slate-500">tựa game lý tưởng</p>
+          <p className="text-[11px] text-slate-500">best with 4-5 players</p>
         </div>
         <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-center">
-          <p className="text-xs text-slate-400">Party Game (6+ người)</p>
+          <p className="text-xs text-slate-400">Party Games (6+ Players)</p>
           <p className="text-xl font-bold text-amber-400 font-mono mt-1">{playerGroups.party}</p>
-          <p className="text-[11px] text-slate-500">tựa game đông vui</p>
+          <p className="text-[11px] text-slate-500">large group games</p>
         </div>
       </div>
     </div>
