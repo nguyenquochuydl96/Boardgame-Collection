@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 720" width="160" height="720">
+  <defs>
+    <linearGradient id="bg-faraway" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7e22ce" />
+      <stop offset="100%" stop-color="#c2410c" />
+    </linearGradient>
+    <linearGradient id="edge-light" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3" />
+      <stop offset="10%" stop-color="#ffffff" stop-opacity="0.05" />
+      <stop offset="90%" stop-color="#000000" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.5" />
+    </linearGradient>
+    <linearGradient id="emboss" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25" />
+      <stop offset="5%" stop-color="transparent" />
+      <stop offset="95%" stop-color="transparent" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.6" />
+    </linearGradient>
+    <filter id="shadow-faraway" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+
+  <!-- Base Spine Cardboard Background -->
+  <rect width="160" height="720" fill="url(#bg-faraway)" rx="4" />
+
+  <!-- Spine 3D Cylinder / Book Depth Shading -->
+  <rect width="160" height="720" fill="url(#edge-light)" rx="4" />
+  <rect width="160" height="720" fill="url(#emboss)" rx="4" />
+
+  <!-- Top Accent Bar -->
+  <rect x="12" y="16" width="136" height="6" rx="3" fill="#facc15" opacity="0.9" />
+
+  <!-- Top Icon & Year -->
+  <g transform="translate(80, 55)" text-anchor="middle" filter="url(#shadow-faraway)">
+    <circle r="18" fill="#000000" fill-opacity="0.4" stroke="#facc15" stroke-width="1.5" />
+    <text y="5" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="900" fill="#facc15">2023</text>
+  </g>
+
+  <!-- Subtitle Tag -->
+  <g transform="translate(80, 95)" text-anchor="middle">
+    <rect x="-65" y="-10" width="130" height="20" rx="4" fill="#000000" fill-opacity="0.5" stroke="#facc15" stroke-opacity="0.3" stroke-width="1" />
+    <text y="4" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="800" letter-spacing="1" fill="#facc15">ALULA EXPEDITION</text>
+  </g>
+
+  <!-- Vertical Prominent Game Title -->
+  <!-- Centered rotated title text with crystal-clear high-contrast drop shadow -->
+  <g transform="translate(80, 370) rotate(-90)" text-anchor="middle" filter="url(#shadow-faraway)">
+    <text font-family="'Cinzel', 'Trajan Pro', 'Montserrat', Impact, system-ui, sans-serif" font-size="28" font-weight="900" letter-spacing="2" fill="#ffffff">
+      FARAWAY
+    </text>
+  </g>
+
+  <!-- Player Count & Time Indicator -->
+  <g transform="translate(80, 620)" text-anchor="middle">
+    <rect x="-55" y="-12" width="110" height="24" rx="12" fill="#000000" fill-opacity="0.7" stroke="#facc15" stroke-width="1" />
+    <text y="4" font-family="system-ui, monospace" font-size="11" font-weight="800" fill="#ffffff">👥 2-6 PLAYERS</text>
+  </g>
+
+  <!-- Bottom Publisher Seal / Logo -->
+  <g transform="translate(80, 685)" text-anchor="middle" filter="url(#shadow-faraway)">
+    <rect x="-65" y="-14" width="130" height="28" rx="4" fill="#000000" fill-opacity="0.85" stroke="#facc15" stroke-width="1.5" />
+    <text y="4" font-family="system-ui, sans-serif" font-size="10" font-weight="900" letter-spacing="1.5" fill="#facc15">★ CATCH UP GAMES ★</text>
+  </g>
+
+  <!-- Bottom Accent Bar -->
+  <rect x="12" y="706" width="136" height="4" rx="2" fill="#facc15" opacity="0.8" />
+</svg>

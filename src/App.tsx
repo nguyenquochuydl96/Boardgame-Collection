@@ -24,9 +24,9 @@ import {
   Info,
 } from 'lucide-react';
 
-const STORAGE_KEY = 'boardgame_vault_games_v5';
-const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v5';
-const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v5';
+const STORAGE_KEY = 'boardgame_vault_games_v6';
+const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v6';
+const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v6';
 
 export default function App() {
   // Navigation tab

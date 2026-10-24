@@ -514,17 +514,8 @@ export function parseGvizResponse(text: string): BoardGame[] {
       // Assign verified BGG rating if no explicit score was given in Google Sheet
       const finalRating = (hasExplicitRating && rating > 0) ? rating : (bggRating ?? rating);
 
-      // Reliable official box art image
-      let finalImageUrl = imageUrl && imageUrl.trim().length > 10 ? imageUrl.trim() : '';
-      if (!finalImageUrl || finalImageUrl.includes('placeholder') || finalImageUrl.includes('Catan-2015-boxart.jpg')) {
-        if (userMeta && userMeta.imageUrl) {
-          finalImageUrl = userMeta.imageUrl;
-        } else if (bggMatch && bggMatch.imageUrl) {
-          finalImageUrl = bggMatch.imageUrl;
-        } else {
-          finalImageUrl = getFallbackImage(name, cabinetType);
-        }
-      }
+      // Uniform high-quality generative box art for perfect fit and consistency across all shelves
+      let finalImageUrl = getGenerativeBoardGameBoxArt(name);
 
       const { min, max } = parsePlayerCount(players);
       const color = userMeta?.boxColor || (cabinetType === 'real' ? '#b45309' : '#991b1b');

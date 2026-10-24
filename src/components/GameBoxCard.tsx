@@ -147,7 +147,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
               src={displayImage}
               alt={game.name}
               referrerPolicy="no-referrer"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover"
             />
           </div>
           <div className="flex items-center justify-between gap-2">
@@ -208,13 +208,13 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
         />
 
         {/* Box Art Container */}
-        <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-900 flex items-center justify-center">
+        <div className="relative aspect-square w-full overflow-hidden bg-slate-900 flex items-center justify-center">
           <img
             src={displayImage}
             alt={game.name}
             referrerPolicy="no-referrer"
             onError={() => setImageError(true)}
-            className="w-full h-full object-contain bg-slate-950 transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover bg-slate-950 transition-transform duration-500 group-hover:scale-105"
           />
           {/* Subtle bottom scrim gradient for title legibility while keeping box art vibrant */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-transparent opacity-65 group-hover:opacity-40 transition-opacity pointer-events-none" />
