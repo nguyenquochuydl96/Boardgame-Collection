@@ -214,7 +214,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             alt={game.name}
             referrerPolicy="no-referrer"
             onError={() => setImageError(true)}
-            className="w-full h-full object-contain p-1 bg-slate-950 transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           {/* Subtle bottom scrim gradient for title legibility while keeping box art vibrant */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/25 to-transparent opacity-65 group-hover:opacity-40 transition-opacity pointer-events-none" />
