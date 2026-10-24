@@ -134,52 +134,20 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
         />
 
         {/* Box Art Container */}
-        <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-950">
-          {!imageError ? (
+        <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-900 flex items-center justify-center">
+          {game.imageUrl && !imageError ? (
             <img
               src={game.imageUrl}
               alt={game.name}
               referrerPolicy="no-referrer"
               onError={() => setImageError(true)}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-contain bg-slate-950 transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            // Professional Box Art Replica Card Fallback with Exact Title & Theme
-            <div
-              className="w-full h-full flex flex-col items-center justify-between p-4 text-center text-white relative overflow-hidden group-hover:scale-105 transition-transform duration-500 shadow-inner"
-              style={{
-                background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #090d16 100%)',
-                border: '3px solid #f59e0b',
-              }}
-            >
-              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:16px_16px]"></div>
-              
-              <div className="w-full flex justify-center pt-2">
-                <span className="px-3 py-1 bg-amber-500/20 border border-amber-500/50 rounded-full text-[11px] font-extrabold text-amber-300 tracking-wider">
-                  BOX ART REPLICA
-                </span>
-              </div>
-
-              <div className="my-auto flex flex-col items-center px-2">
-                <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border-2 border-amber-500/40 flex items-center justify-center mb-3 shadow-lg">
-                  <span className="text-2xl">🎲</span>
-                </div>
-                <h3 className="font-black text-lg text-white leading-tight drop-shadow-md line-clamp-3">
-                  {game.name}
-                </h3>
-                <p className="text-xs text-amber-200/80 font-medium mt-1">
-                  {game.category || 'Board Game'}
-                </p>
-              </div>
-
-              <div className="w-full pb-2 flex items-center justify-center">
-                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-widest bg-slate-900/80 px-3 py-1 rounded-md border border-slate-700">
-                  {game.publisher || 'Official Edition'}
-                </span>
-              </div>
+            <div className="w-full h-full flex items-center justify-center p-6 text-center text-slate-300 bg-slate-900">
+              <span className="font-bold text-base text-slate-200 leading-snug line-clamp-4">{game.name}</span>
             </div>
           )}
-
           {/* Dark scrim gradient for legibility */}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
 

@@ -339,7 +339,7 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['brass birmingham', 'brass: birmingham', 'brass cong nghiep'],
     rating: 8.6,
     year: 2018,
-    imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0246/2190/8043/t/5/assets/f78ba2a93e5e--BrassB-RetailBoxImage.png?v=1781038782',
     minPlayers: 2,
     maxPlayers: 4,
     playtime: 120,

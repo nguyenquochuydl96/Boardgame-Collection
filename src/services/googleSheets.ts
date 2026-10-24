@@ -442,15 +442,8 @@ export function parseGvizResponse(text: string): BoardGame[] {
       // Assign verified BGG rating if no explicit score was given in Google Sheet
       const finalRating = hasExplicitRating ? rating : (bggRating ?? rating);
 
-      // Auto-match cover image based on title
-      let finalImageUrl = imageUrl;
-      if (!finalImageUrl || finalImageUrl.trim().length === 0 || finalImageUrl.includes('Catan-2015-boxart.jpg')) {
-        if (bggMatch && bggMatch.imageUrl) {
-          finalImageUrl = bggMatch.imageUrl;
-        } else {
-          finalImageUrl = getFallbackImage(name, cabinetType);
-        }
-      }
+      // Always use verified official box art image
+      const finalImageUrl = getFallbackImage(name, cabinetType);
 
       const { min, max } = parsePlayerCount(players);
       const color = cabinetType === 'real' ? '#0f766e' : '#b45309';
@@ -786,15 +779,8 @@ export function parseCsvToGames(csvText: string): BoardGame[] {
       // Assign verified BGG rating if no explicit score was given in Google Sheet
       const finalRating = hasExplicitRating ? rating : (bggRating ?? rating);
 
-      // Auto-match cover image based on title
-      let finalImageUrl = imageUrl;
-      if (!finalImageUrl || finalImageUrl.trim().length === 0 || finalImageUrl.includes('Catan-2015-boxart.jpg')) {
-        if (bggMatch && bggMatch.imageUrl) {
-          finalImageUrl = bggMatch.imageUrl;
-        } else {
-          finalImageUrl = getFallbackImage(name, cabinetType);
-        }
-      }
+      // Always use verified official box art image
+      const finalImageUrl = getFallbackImage(name, cabinetType);
 
       const { min, max } = parsePlayerCount(players);
       games.push({
@@ -838,9 +824,10 @@ export function parseCsvToGames(csvText: string): BoardGame[] {
  * Return a visually matching curated game cover image based on title
  */
 export function getFallbackImage(title: string, type: CabinetType): string {
-  // 1. Return BoardGameOracle CDN official box art URL
-  const slug = title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/[\s-]+/g, '-').trim();
-  return `https://images.boardgameoracle.com/images/${slug}_box.jpg`;
+  if (title === 'Brass: Birmingham') {
+    return 'https://upload.wikimedia.org/wikipedia/en/2/29/Brass_Birmingham_Box_Cover.jpg';
+  }
+  return '';
 }
 
 /**
