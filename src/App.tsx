@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BoardGame, CabinetType } from './types/boardgame';
-import { INITIAL_BOARDGAMES } from './data/defaultGames';
+import { USER_46_GAMES } from './data/userCollectionCatalog';
 import { fetchFromGoogleSheet, SAMPLE_GOOGLE_SHEET_URL, USER_COLLECTION_SHEET_URL } from './services/googleSheets';
 import { Navbar } from './components/Navbar';
 import { CabinetsView } from './components/CabinetsView';
@@ -24,9 +24,9 @@ import {
   Info,
 } from 'lucide-react';
 
-const STORAGE_KEY = 'boardgame_vault_games_v6';
-const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v6';
-const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v6';
+const STORAGE_KEY = 'boardgame_vault_games_v8';
+const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v8';
+const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v8';
 
 export default function App() {
   // Navigation tab
@@ -59,7 +59,7 @@ export default function App() {
     } catch (e) {
       console.error('Error loading saved games:', e);
     }
-    return INITIAL_BOARDGAMES;
+    return USER_46_GAMES;
   });
 
   // Google Sheet state: defaulted to user's active Google Sheet

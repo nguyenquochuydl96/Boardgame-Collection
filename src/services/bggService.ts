@@ -1683,8 +1683,14 @@ export function getGenerativeBoardGameBoxArt(title: string): string {
         g.aliases?.some((a) => raw.includes(a.toLowerCase()) || a.toLowerCase().includes(raw))
       );
     });
-    if (match && match.imageUrl && !match.imageUrl.includes('placeholder')) {
-      return match.imageUrl;
+    if (match) {
+      if (match.imageUrl && !match.imageUrl.includes('placeholder')) {
+        return match.imageUrl;
+      }
+      // Derive box art filename from name slug (all images are already square 600x600px)
+      const slug = match.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      // Try common extensions
+      return `/images/boxes/${slug}.jpg`;
     }
   }
 
