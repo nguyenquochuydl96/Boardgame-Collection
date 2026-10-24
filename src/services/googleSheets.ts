@@ -838,14 +838,9 @@ export function parseCsvToGames(csvText: string): BoardGame[] {
  * Return a visually matching curated game cover image based on title
  */
 export function getFallbackImage(title: string, type: CabinetType): string {
-  // 1. First check our extensive BGG catalog
-  const bgg = findInBggCatalog(title);
-  if (bgg && bgg.imageUrl) {
-    return bgg.imageUrl;
-  }
-
-  // 2. Generate a custom tailored SVG cover art based on title
-  return getGenerativeBoardGameBoxArt(title);
+  // 1. Return BoardGameOracle CDN official box art URL
+  const slug = title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/[\s-]+/g, '-').trim();
+  return `https://images.boardgameoracle.com/images/${slug}_box.jpg`;
 }
 
 /**

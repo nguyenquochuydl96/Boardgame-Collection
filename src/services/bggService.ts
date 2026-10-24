@@ -1055,14 +1055,14 @@ export function getGenerativeBoardGameBoxArt(title: string): string {
     .reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 360, 0);
 
   const hue1 = hash;
-  const hue2 = (hash + 45) % 360;
+  const hue2 = (hash + 50) % 360;
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="hsl(${hue1}, 65%, 15%)" />
-      <stop offset="50%" stop-color="hsl(${hue2}, 55%, 10%)" />
-      <stop offset="100%" stop-color="hsl(${hue1}, 70%, 5%)" />
+      <stop offset="0%" stop-color="hsl(${hue1}, 70%, 12%)\" />
+      <stop offset="50%" stop-color="hsl(${hue2}, 60%, 8%)\" />
+      <stop offset="100%" stop-color="#090d16" />
     </linearGradient>
     <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#f59e0b" />
@@ -1071,31 +1071,33 @@ export function getGenerativeBoardGameBoxArt(title: string): string {
     </linearGradient>
   </defs>
   <rect width="600" height="800" fill="url(#bg)" />
-  <rect x="25" y="25" width="550" height="750" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="2" rx="16" />
-  <rect x="35" y="35" width="530" height="730" fill="none" stroke="rgba(245,158,11,0.25)" stroke-width="1" rx="12" />
+  <rect x="20" y="20" width="560" height="760" fill="none" stroke="url(#gold)" stroke-width="3" rx="12" />
+  <rect x="30" y="30" width="540" height="740" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1" rx="8" />
   
-  <!-- Emblem Centerpiece -->
-  <circle cx="300" cy="340" r="140" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3" />
-  <circle cx="300" cy="340" r="110" fill="none" stroke="rgba(245,158,11,0.3)" stroke-width="2" stroke-dasharray="6,6" />
-  <circle cx="300" cy="340" r="80" fill="hsl(${hue1}, 45%, 22%)" />
+  <!-- Decorative Header Ribbon -->
+  <path d="M 30 100 L 570 100" stroke="url(#gold)" stroke-width="2" stroke-dasharray="8,4" />
+  <rect x="180" y="76" width="240" height="48" rx="24" fill="hsl(${hue1}, 60%, 20%)" stroke="url(#gold)" stroke-width="2" />
+  <text x="300" y="107" font-family="system-ui, sans-serif" font-size="16" font-weight="700" fill="#fbbf24" text-anchor="middle" letter-spacing="3">OFFICIAL BOX ART</text>
+
+  <!-- Central Emblem -->
+  <circle cx="300" cy="340" r="120" fill="none" stroke="rgba(245,158,11,0.25)" stroke-width="2" stroke-dasharray="6,6" />
+  <circle cx="300" cy="340" r="95" fill="hsl(${hue1}, 50%, 18%)" stroke="url(#gold)" stroke-width="2" />
   
-  <!-- Dice & Meeple Iconography -->
-  <path d="M 280 320 L 320 320 L 320 360 L 280 360 Z" fill="none" stroke="#fef08a" stroke-width="3" rx="4" />
-  <circle cx="300" cy="340" r="5" fill="#fef08a" />
-  
-  <!-- Title -->
-  <text x="300" y="560" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="800" fill="#ffffff" text-anchor="middle">
-    ${escapeXml(title.slice(0, 24))}
+  <!-- Icon: Meeple / Star -->
+  <path d="M 300 280 L 315 315 L 350 320 L 325 345 L 332 380 L 300 360 L 268 380 L 275 345 L 250 320 L 285 315 Z" fill="url(#gold)" opacity="0.9" />
+
+  <!-- Game Title -->
+  <text x="300" y="520" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#ffffff" text-anchor="middle" filter="drop-shadow(0px 4px 8px rgba(0,0,0,0.8))">
+    ${escapeXml(title.length > 22 ? title.substring(0, 22) + '...' : title)}
   </text>
-  ${
-    title.length > 24
-      ? `<text x="300" y="605" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#cbd5e1" text-anchor="middle">${escapeXml(title.slice(24, 52))}</text>`
-      : ''
-  }
   
-  <!-- Tag -->
-  <rect x="220" y="660" width="160" height="32" rx="16" fill="rgba(245,158,11,0.2)" stroke="rgba(245,158,11,0.5)" />
-  <text x="300" y="681" font-family="system-ui, sans-serif" font-size="12" font-weight="700" fill="#fbbf24" text-anchor="middle" letter-spacing="2">BOARD GAME</text>
+  <text x="300" y="570" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="#93c5fd" text-anchor="middle">
+    ${escapeXml(title.length > 22 ? title.substring(22, 50) : 'Board Game Collection')}
+  </text>
+
+  <!-- Footer Tag -->
+  <rect x="150" y="660" width="300" height="50" rx="25" fill="rgba(15, 23, 42, 0.9)" stroke="url(#gold)" stroke-width="2" />
+  <text x="300" y="692" font-family="system-ui, sans-serif" font-size="16" font-weight="800" fill="#fef08a" text-anchor="middle" letter-spacing="1">VERIFIED BOARDGAME</text>
 </svg>`;
 
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
