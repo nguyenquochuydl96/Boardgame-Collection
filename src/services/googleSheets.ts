@@ -5,6 +5,7 @@ import {
   getGenerativeBoardGameBoxArt,
   cleanGameTitleForSearch,
   getUserGameMetadata,
+  enrichCollectionWithBgg,
 } from './bggService';
 
 export interface SheetParseResult {
@@ -82,9 +83,9 @@ function normalizeHeader(h: string): string {
 }
 
 /**
- * Maps a column name to a standard BoardGame field
+ * Maps a column name to a standard BoardGame field, with fallback to sample cell values
  */
-function identifyColumnField(header: string): keyof BoardGame | 'cabinetType' | 'unknown' {
+function identifyColumnField(header: string, sampleValues: any[] = []): keyof BoardGame | 'cabinetType' | 'unknown' {
   const norm = normalizeHeader(header);
 
   if (
@@ -263,6 +264,38 @@ function identifyColumnField(header: string): keyof BoardGame | 'cabinetType' | 
     return 'rating';
   }
 
+  // Fallback: If header is empty/unknown, check sample cell values from rows
+  if (sampleValues && sampleValues.length > 0) {
+    const stringSamples = sampleValues.map((s) => String(s).toLowerCase().trim());
+
+    // Check if values look like prices (e.g. 1800000, "$ 1,800,000", "75.000 đ")
+    const hasPrices = stringSamples.some((s) => {
+      const num = parseInt(s.replace(/[^0-9]/g, ''), 10);
+      return s.includes('$') || s.includes('đ') || s.includes('vnd') || (!isNaN(num) && num >= 10000);
+    });
+    if (hasPrices) return 'price';
+
+    // Check status values
+    if (stringSamples.some((s) => s.includes('on hand') || s.includes('oos') || s.includes('out of stock') || s.includes('hết hàng'))) {
+      return 'status';
+    }
+
+    // Check authenticity values
+    if (stringSamples.some((s) => s === 'real' || s === 'fake' || s === 'replica' || s === 'f1')) {
+      return 'cabinetType';
+    }
+
+    // Check game type values
+    if (stringSamples.some((s) => s === 'base game' || s === 'expansion' || s === 'mở rộng')) {
+      return 'gameType';
+    }
+
+    // Check image url values
+    if (stringSamples.some((s) => s.startsWith('http') || s.includes('.jpg') || s.includes('.png') || s.includes('.webp'))) {
+      return 'imageUrl';
+    }
+  }
+
   return 'unknown';
 }
 
@@ -383,11 +416,18 @@ export function parseGvizResponse(text: string): BoardGame[] {
     return [];
   }
 
-  // Column mapping
+  // Column mapping with sample-based detection
   const colMap: Record<number, keyof BoardGame | 'cabinetType' | 'unknown'> = {};
   table.cols.forEach((col: any, idx: number) => {
     const label = col.label || (table.rows[0]?.c?.[idx]?.v ? String(table.rows[0]?.c?.[idx]?.v) : `col_${idx}`);
-    colMap[idx] = identifyColumnField(label);
+    const samples: any[] = [];
+    for (let r = 1; r < Math.min(table.rows.length, 6); r++) {
+      const v = table.rows[r]?.c?.[idx]?.v ?? table.rows[r]?.c?.[idx]?.f;
+      if (v !== null && v !== undefined && String(v).trim() !== '') {
+        samples.push(v);
+      }
+    }
+    colMap[idx] = identifyColumnField(label, samples);
   });
 
   const hasLabels = table.cols.some((c: any) => c.label && c.label.trim().length > 0);
@@ -514,8 +554,12 @@ export function parseGvizResponse(text: string): BoardGame[] {
       // Assign verified BGG rating if no explicit score was given in Google Sheet
       const finalRating = (hasExplicitRating && rating > 0) ? rating : (bggRating ?? rating);
 
-      // Uniform high-quality generative box art for perfect fit and consistency across all shelves
-      let finalImageUrl = (imageUrl && imageUrl.trim().length > 10 ? imageUrl.trim() : null) || userMeta?.imageUrl || getGenerativeBoardGameBoxArt(name);
+      // Prioritize: Sheet Image URL > User 46 Catalog Image > BGG Catalog Image > Fallback
+      let finalImageUrl =
+        (imageUrl && imageUrl.trim().length > 10 ? imageUrl.trim() : null) ||
+        userMeta?.imageUrl ||
+        (bggMatch && bggMatch.imageUrl && !bggMatch.imageUrl.includes('images.unsplash.com') ? bggMatch.imageUrl : null) ||
+        getGenerativeBoardGameBoxArt(name);
 
       const { min, max } = parsePlayerCount(players);
       const color = userMeta?.boxColor || (cabinetType === 'real' ? '#b45309' : '#991b1b');
@@ -597,11 +641,12 @@ export async function fetchFromGoogleSheet(
       const tabName = matchTab?.title || details.sheets[0]?.title || targetTab;
       const { games } = await fetchSpreadsheetGamesViaApi(sheetId, tabName, accessToken);
       if (games && games.length > 0) {
+        const { enrichedGames } = await enrichCollectionWithBgg(games);
         return {
           success: true,
-          games,
+          games: enrichedGames,
           sourceType: 'gviz',
-          rowCount: games.length,
+          rowCount: enrichedGames.length,
         };
       }
     } catch (apiErr: any) {
@@ -622,11 +667,12 @@ export async function fetchFromGoogleSheet(
           const csvText = await pubRes.text();
           const games = parseCsvToGames(csvText);
           if (games.length > 0) {
+            const { enrichedGames } = await enrichCollectionWithBgg(games);
             return {
               success: true,
-              games,
+              games: enrichedGames,
               sourceType: 'csv',
-              rowCount: games.length,
+              rowCount: enrichedGames.length,
             };
           }
         }
@@ -668,21 +714,23 @@ export async function fetchFromGoogleSheet(
         if (text.includes('"status":"error"')) continue;
         const parsedGames = parseGvizResponse(text);
         if (parsedGames.length > 0) {
+          const { enrichedGames } = await enrichCollectionWithBgg(parsedGames);
           return {
             success: true,
-            games: parsedGames,
+            games: enrichedGames,
             sourceType: 'gviz',
-            rowCount: parsedGames.length,
+            rowCount: enrichedGames.length,
           };
         }
       } else {
         const parsedGames = parseCsvToGames(text);
         if (parsedGames.length > 0) {
+          const { enrichedGames } = await enrichCollectionWithBgg(parsedGames);
           return {
             success: true,
-            games: parsedGames,
+            games: enrichedGames,
             sourceType: 'csv',
-            rowCount: parsedGames.length,
+            rowCount: enrichedGames.length,
           };
         }
       }
@@ -765,7 +813,13 @@ export function parseCsvToGames(csvText: string): BoardGame[] {
   const headers = rows[0];
   const colMap: Record<number, keyof BoardGame | 'cabinetType' | 'unknown'> = {};
   headers.forEach((h, idx) => {
-    colMap[idx] = identifyColumnField(h);
+    const samples: any[] = [];
+    for (let r = 1; r < Math.min(rows.length, 6); r++) {
+      if (rows[r] && rows[r][idx]) {
+        samples.push(rows[r][idx]);
+      }
+    }
+    colMap[idx] = identifyColumnField(h, samples);
   });
 
   const games: BoardGame[] = [];
@@ -873,24 +927,22 @@ export function parseCsvToGames(csvText: string): BoardGame[] {
         gameType = 'Expansion';
       }
 
-      // 2. Look up BoardGameGeek data based on game title
+      // 2. Look up BoardGameGeek & User metadata based on game title
+      const userMeta = getUserGameMetadata(name);
       const bggMatch = findInBggCatalog(name);
-      const bggRating = bggMatch?.rating;
-      const bggId = bggMatch?.bggId;
+      const bggRating = userMeta?.rating || bggMatch?.rating;
+      const bggId = userMeta?.bggId || bggMatch?.bggId;
       const bggUrl = bggMatch?.bggUrl;
 
       // Assign verified BGG rating if no explicit score was given in Google Sheet
       const finalRating = (hasExplicitRating && rating > 0) ? rating : (bggRating ?? rating);
 
       // Reliable official box art image
-      let finalImageUrl = imageUrl && imageUrl.trim().length > 10 ? imageUrl.trim() : '';
-      if (!finalImageUrl || finalImageUrl.includes('placeholder') || finalImageUrl.includes('Catan-2015-boxart.jpg')) {
-        if (bggMatch && bggMatch.imageUrl) {
-          finalImageUrl = bggMatch.imageUrl;
-        } else {
-          finalImageUrl = getFallbackImage(name, cabinetType);
-        }
-      }
+      let finalImageUrl =
+        (imageUrl && imageUrl.trim().length > 10 ? imageUrl.trim() : null) ||
+        userMeta?.imageUrl ||
+        (bggMatch && bggMatch.imageUrl && !bggMatch.imageUrl.includes('images.unsplash.com') ? bggMatch.imageUrl : null) ||
+        getGenerativeBoardGameBoxArt(name);
 
       const { min, max } = parsePlayerCount(players);
       games.push({

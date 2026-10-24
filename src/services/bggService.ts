@@ -41,7 +41,7 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['catan', 'settlers of catan', 'the settlers of catan', 'đảo catan', 'catan nguoi khai hoang'],
     rating: 7.1,
     year: 1995,
-    imageUrl: 'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/en/a/a3/Catan-2015-boxart.jpg',
     minPlayers: 3,
     maxPlayers: 4,
     playtime: 75,
@@ -457,7 +457,7 @@ const BGG_CATALOG: CatalogEntry[] = [
     aliases: ['monopoly', 'co ty phu', 'cờ tỷ phú', 'monopoly deal'],
     rating: 4.4,
     year: 1935,
-    imageUrl: 'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/2/20/Monopoly_pack_horizontal.png',
     minPlayers: 2,
     maxPlayers: 8,
     playtime: 120,
@@ -1540,6 +1540,92 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
 }
 
 /**
+ * Searches Wikipedia REST API for official board game box cover art and lore.
+ * Works without API keys, zero rate-limiting for normal use, fully CORS enabled.
+ */
+export async function fetchWikipediaBoxArt(rawTitle: string): Promise<{
+  imageUrl: string;
+  gameplayStory?: string;
+  year?: number;
+  publisher?: string;
+} | null> {
+  const { cleanTitle } = cleanGameTitleForSearch(rawTitle);
+  if (!cleanTitle || cleanTitle.length < 2) return null;
+
+  const normalizedKey = cleanTitle.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cacheKey = `bgv_wiki_cover_${normalizedKey}`;
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed?.imageUrl) return parsed;
+    }
+  } catch {}
+
+  const slug = cleanTitle.replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '_');
+  const candidatePages = [
+    `${slug}_(board_game)`,
+    `${slug}_(game)`,
+    slug,
+  ];
+
+  for (const page of candidatePages) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(page)}`, {
+        signal: controller.signal,
+        headers: { Accept: 'application/json' },
+      });
+      clearTimeout(timeout);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const img = data.thumbnail?.source || data.originalimage?.source;
+      if (img && !img.includes('disambig') && !img.includes('Question_book') && !img.includes('no_image')) {
+        const result = {
+          imageUrl: img,
+          gameplayStory: data.extract || undefined,
+        };
+        try { localStorage.setItem(cacheKey, JSON.stringify(result)); } catch {}
+        return result;
+      }
+    } catch {}
+  }
+
+  // Fallback: search Wikipedia titles
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3500);
+    const sRes = await fetch(
+      `https://en.wikipedia.org/w/rest.php/v1/search/title?q=${encodeURIComponent(cleanTitle + ' board game')}&limit=2`,
+      { signal: controller.signal, headers: { Accept: 'application/json' } }
+    );
+    clearTimeout(timeout);
+    if (sRes.ok) {
+      const sData = await sRes.json();
+      if (sData.pages && sData.pages.length > 0) {
+        const pageKey = sData.pages[0].key;
+        const res = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageKey)}`);
+        if (res.ok) {
+          const data = await res.json();
+          const img = data.thumbnail?.source || data.originalimage?.source;
+          if (img && !img.includes('disambig')) {
+            const result = {
+              imageUrl: img,
+              gameplayStory: data.extract || undefined,
+            };
+            try { localStorage.setItem(cacheKey, JSON.stringify(result)); } catch {}
+            return result;
+          }
+        }
+      }
+    }
+  } catch {}
+
+  return null;
+}
+
+/**
  * Queries the official BoardGameGeek XML API2 with CORS fallback
  */
 export async function searchBggOnline(gameName: string): Promise<BggMatchResult | null> {
@@ -1774,23 +1860,57 @@ export async function resolveBggData(
 ): Promise<BggMatchResult | null> {
   if (!title || !title.trim()) return null;
 
-  // 1. Instant check against curated catalog
+  // 1. Instant check against curated catalog & 46 user games
   const catalogMatch = findInBggCatalog(title);
-  if (catalogMatch) {
+  if (
+    catalogMatch &&
+    catalogMatch.imageUrl &&
+    !catalogMatch.imageUrl.includes('images.unsplash.com') &&
+    !catalogMatch.imageUrl.includes('placeholder') &&
+    !catalogMatch.imageUrl.startsWith('data:image/svg+xml')
+  ) {
     return catalogMatch;
   }
 
-  // 2. Query live BGG API
+  // 2. Wikipedia lookup (high quality official box cover art and lore without API keys)
+  try {
+    const wikiData = await fetchWikipediaBoxArt(title);
+    if (wikiData && wikiData.imageUrl) {
+      return {
+        bggId: catalogMatch?.bggId || 0,
+        name: catalogMatch?.name || title,
+        rating: catalogMatch?.rating || 7.5,
+        imageUrl: wikiData.imageUrl,
+        year: wikiData.year || catalogMatch?.year || new Date().getFullYear(),
+        minPlayers: catalogMatch?.minPlayers || 2,
+        maxPlayers: catalogMatch?.maxPlayers || 4,
+        playtimeMinutes: catalogMatch?.playtimeMinutes || 45,
+        category: catalogMatch?.category || 'Chiến thuật',
+        publisher: wikiData.publisher || catalogMatch?.publisher || 'Board Game',
+        bggUrl: catalogMatch?.bggUrl || `https://boardgamegeek.com/geeksearch.php?action=search&q=${encodeURIComponent(title)}`,
+        isExactMatch: true,
+      };
+    }
+  } catch (err) {
+    console.warn('Wikipedia lookup error:', err);
+  }
+
+  // 3. Query live BGG API (with proxies)
   try {
     const liveMatch = await searchBggOnline(title);
-    if (liveMatch) {
+    if (liveMatch && liveMatch.imageUrl && !liveMatch.imageUrl.includes('placeholder')) {
       return liveMatch;
     }
   } catch (err) {
     console.warn('Live BGG lookup error:', err);
   }
 
-  // 3. Unknown game: return a clean generative placeholder with neutral rating
+  // 4. Return catalog match if any exists
+  if (catalogMatch) {
+    return catalogMatch;
+  }
+
+  // 5. Unknown game: return a clean generative placeholder with neutral rating
   return {
     bggId: 0,
     name: title,
@@ -1837,6 +1957,28 @@ export async function enrichCollectionWithBgg(
         updatedCount++;
       }
 
+      // Check user metadata first (user's 46 curated collection games)
+      const userMeta = getUserGameMetadata(game.name);
+      if (userMeta && userMeta.imageUrl) {
+        if (game.imageUrl !== userMeta.imageUrl) {
+          game = {
+            ...game,
+            imageUrl: userMeta.imageUrl,
+            spineImageUrl: userMeta.spineImageUrl || game.spineImageUrl,
+            boxColor: userMeta.boxColor || game.boxColor,
+          };
+          updatedCount++;
+        }
+      }
+
+      // Check if image is missing or a generic placeholder / unsplash
+      const isGenericImage =
+        !game.imageUrl ||
+        game.imageUrl.trim() === '' ||
+        game.imageUrl.includes('placeholder') ||
+        game.imageUrl.includes('images.unsplash.com') ||
+        game.imageUrl.startsWith('data:image/svg+xml');
+
       // Check BGG data
       const bgg = await resolveBggData(game.name);
       if (bgg) {
@@ -1848,22 +1990,13 @@ export async function enrichCollectionWithBgg(
           newGame.bggRating = bgg.rating;
           newGame.bggId = bgg.bggId || undefined;
           newGame.bggUrl = bgg.bggUrl;
-          // If current rating is default 8.0 or unset, set it to BGG rating
           if (!newGame.rating || newGame.rating === 8.0) {
             newGame.rating = bgg.rating;
           }
           updated = true;
         }
 
-        // Update image if current image is generic/broken or default catan
-        const isGenericImage =
-          !newGame.imageUrl ||
-          newGame.imageUrl.includes('Catan-2015-boxart.jpg') ||
-          newGame.imageUrl.includes('placeholder') ||
-          newGame.imageUrl.trim() === '';
-
-        if ((isGenericImage || bgg.isExactMatch) && bgg.imageUrl) {
-          // If the game is fake, we can still use the official cover box as the artwork!
+        if (isGenericImage && bgg.imageUrl && !bgg.imageUrl.startsWith('data:image/svg+xml')) {
           newGame.imageUrl = bgg.imageUrl;
           updated = true;
         }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BoardGame, CabinetType } from './types/boardgame';
 import { USER_46_GAMES } from './data/userCollectionCatalog';
 import { fetchFromGoogleSheet, SAMPLE_GOOGLE_SHEET_URL, USER_COLLECTION_SHEET_URL } from './services/googleSheets';
+import { enrichCollectionWithBgg } from './services/bggService';
 import { Navbar } from './components/Navbar';
 import { CabinetsView } from './components/CabinetsView';
 import { ComparisonMode } from './components/ComparisonMode';
@@ -71,6 +72,7 @@ export default function App() {
     return localStorage.getItem(LAST_SYNC_KEY) || undefined;
   });
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isEnrichingBgg, setIsEnrichingBgg] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -234,6 +236,25 @@ export default function App() {
     setIsAddModalOpen(true);
   };
 
+  const handleEnrichBgg = async () => {
+    setIsEnrichingBgg(true);
+    try {
+      showToast('Đang quét và tự động tìm ảnh & điểm BGG...');
+      const result = await enrichCollectionWithBgg(games);
+      if (result.updatedCount > 0) {
+        setGames(result.enrichedGames);
+        showToast(`Đã cập nhật ảnh & thông tin cho ${result.updatedCount} game thành công!`);
+      } else {
+        showToast('Tất cả game đã có đầy đủ ảnh và thông tin chuẩn xác!');
+      }
+    } catch (err) {
+      console.error('Enrich failed:', err);
+      showToast('Có lỗi xảy ra khi tìm dữ liệu BGG.');
+    } finally {
+      setIsEnrichingBgg(false);
+    }
+  };
+
   const realCount = games.filter((g) => g.cabinetType === 'real').length;
   const fakeCount = games.filter((g) => g.cabinetType === 'fake').length;
 
@@ -328,6 +349,8 @@ export default function App() {
             onToggleCabinet={handleToggleCabinet}
             onOpenAddModal={handleOpenAddModal}
             onOpenSyncModal={() => setIsSyncModalOpen(true)}
+            onEnrichBgg={handleEnrichBgg}
+            isEnrichingBgg={isEnrichingBgg}
             isDemoData={isDemoData}
           />
         )}
