@@ -515,7 +515,7 @@ export function parseGvizResponse(text: string): BoardGame[] {
       const finalRating = (hasExplicitRating && rating > 0) ? rating : (bggRating ?? rating);
 
       // Uniform high-quality generative box art for perfect fit and consistency across all shelves
-      let finalImageUrl = getGenerativeBoardGameBoxArt(name);
+      let finalImageUrl = (imageUrl && imageUrl.trim().length > 10 ? imageUrl.trim() : null) || userMeta?.imageUrl || getGenerativeBoardGameBoxArt(name);
 
       const { min, max } = parsePlayerCount(players);
       const color = userMeta?.boxColor || (cabinetType === 'real' ? '#b45309' : '#991b1b');
