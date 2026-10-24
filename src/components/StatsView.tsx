@@ -62,6 +62,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
 
   const onHandCount = useMemo(() => games.filter((g) => g.status !== 'OOS').length, [games]);
   const oosCount = useMemo(() => games.filter((g) => g.status === 'OOS').length, [games]);
+  const baseGamesCount = useMemo(() => games.filter((g) => g.gameType !== 'Expansion').length, [games]);
+  const expansionCount = useMemo(() => games.filter((g) => g.gameType === 'Expansion').length, [games]);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -78,6 +80,9 @@ export const StatsView: React.FC<StatsViewProps> = ({ games, onSelectGame }) => 
             <p className="text-[11px] text-slate-400 mt-0.5">
               <span className="text-emerald-400 font-semibold">{onHandCount} On Hand</span> ·{' '}
               <span className="text-zinc-400 font-semibold">{oosCount} OOS</span>
+            </p>
+            <p className="text-[10px] text-purple-400 mt-0.5 font-medium">
+              {baseGamesCount} Base · {expansionCount} Expansion
             </p>
           </div>
         </div>

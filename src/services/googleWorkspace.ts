@@ -84,7 +84,7 @@ function identifyColumn(header: string): keyof BoardGame | 'cabinetType' | 'unkn
     return 'name';
   }
   if (
-    norm === 'status' ||
+    norm.includes('status') ||
     norm.includes('onhand') ||
     norm.includes('oos') ||
     norm.includes('tinhtranghang') ||
@@ -94,13 +94,26 @@ function identifyColumn(header: string): keyof BoardGame | 'cabinetType' | 'unkn
     return 'status';
   }
   if (
-    norm.includes('loai') ||
-    norm.includes('tu') ||
-    norm.includes('type') ||
-    norm.includes('realfake') ||
+    norm === 'type' ||
+    norm === 'loaigame' ||
+    norm.includes('basegame') ||
+    norm.includes('expansion') ||
+    norm === 'gametype'
+  ) {
+    return 'gameType';
+  }
+  if (
+    norm.includes('authenticity') ||
     norm.includes('authentic') ||
+    norm.includes('realfake') ||
+    norm.includes('chinhhang') ||
     norm.includes('replica') ||
-    norm.includes('fake')
+    norm.includes('replicas') ||
+    norm.includes('fake') ||
+    norm.includes('inlau') ||
+    norm.includes('bannhai') ||
+    norm.includes('cabinet') ||
+    (norm.includes('tu') && !norm.includes('tulam') && !norm.includes('tuoi'))
   ) {
     return 'cabinetType';
   }
@@ -234,6 +247,7 @@ export async function fetchSpreadsheetGamesViaApi(
 
     let name = '';
     let cabinetType: CabinetType = 'real' as CabinetType;
+    let gameType: 'Base Game' | 'Expansion' = 'Base Game';
     let statusRaw = '';
     let status: 'On Hand' | 'OOS' = 'On Hand';
     let imageUrl = '';
@@ -256,12 +270,13 @@ export async function fetchSpreadsheetGamesViaApi(
 
       if (field === 'name') name = strVal;
       else if (field === 'cabinetType') cabinetType = parseType(strVal);
+      else if (field === 'gameType') {
+        const normG = normalizeHeader(strVal);
+        gameType = (normG.includes('expansion') || normG.includes('morong') || normG.includes('pack')) ? 'Expansion' : 'Base Game';
+      }
       else if (field === 'status') {
         statusRaw = strVal;
         status = parseStatus(strVal);
-        if (parseType(strVal) === 'fake') {
-          cabinetType = 'fake';
-        }
       } else if (field === 'imageUrl') imageUrl = strVal;
       else if (field === 'players') players = strVal;
       else if (field === 'playtime') playtime = strVal;
@@ -282,7 +297,7 @@ export async function fetchSpreadsheetGamesViaApi(
         if (parseType(strVal) === 'fake') cabinetType = 'fake';
       } else if (field === 'rating') {
         const rt = parseFloat(strVal);
-        if (!isNaN(rt)) {
+        if (!isNaN(rt) && rt > 0) {
           rating = rt;
           hasExplicitRating = true;
         }
@@ -290,6 +305,21 @@ export async function fetchSpreadsheetGamesViaApi(
     });
 
     if (name) {
+      // Discard header rows
+      const normName = normalizeHeader(name);
+      if (
+        normName === 'name' ||
+        normName === 'tengame' ||
+        normName === 'ten' ||
+        normName === 'title' ||
+        normName === 'boardgame' ||
+        normName === 'game' ||
+        normName === 'authenticity' ||
+        normName === 'currentstatus'
+      ) {
+        continue;
+      }
+
       // 1. Cross-field fake detection
       const { isMarkedFake } = cleanGameTitleForSearch(name);
       const fakeKeywords = ['fake', 'nhai', 'nhái', 'rep', 'replica', 'f1', 'in lau', 'in lậu', 'bootleg', 'copy', 'bản nhái', 'hàng nhái', 'không bản quyền'];
@@ -313,13 +343,23 @@ export async function fetchSpreadsheetGamesViaApi(
         }
       }
 
+      // Auto-detect gameType if title specifies expansion
+      if (
+        gameType === 'Base Game' &&
+        (normalizeHeader(name).includes('expansion') ||
+          normalizeHeader(name).includes('morong') ||
+          normalizeHeader(category).includes('expansion'))
+      ) {
+        gameType = 'Expansion';
+      }
+
       // 2. Look up BoardGameGeek data based on game title
       const bggMatch = findInBggCatalog(name);
       const bggRating = bggMatch?.rating;
       const bggId = bggMatch?.bggId;
       const bggUrl = bggMatch?.bggUrl;
 
-      const finalRating = hasExplicitRating ? rating : (bggRating ?? rating);
+      const finalRating = (hasExplicitRating && rating > 0) ? rating : (bggRating ?? rating);
 
       // Auto-match cover image based on title
       let finalImageUrl = imageUrl;
@@ -339,6 +379,7 @@ export async function fetchSpreadsheetGamesViaApi(
         id: `google-sheet-${r}-${Date.now().toString(36)}`,
         name,
         cabinetType,
+        gameType,
         status,
         imageUrl: finalImageUrl,
         players: players || (bggMatch ? `${bggMatch.minPlayers} - ${bggMatch.maxPlayers} người` : `${min} - ${max} người`),
@@ -346,7 +387,7 @@ export async function fetchSpreadsheetGamesViaApi(
         maxPlayers: max,
         playtime: playtime || (bggMatch ? `${bggMatch.playtimeMinutes} phút` : '45 phút'),
         playtimeMinutes: parseInt(playtime, 10) || bggMatch?.playtimeMinutes || 45,
-        category: category || bggMatch?.category || 'Chiến thuật',
+        category: category && category !== 'Chiến thuật' ? category : (bggMatch?.category || category || 'Chiến thuật'),
         price: price || (cabinetType === 'real' ? 850000 : 120000),
         publisher: publisher && publisher !== 'Chưa rõ' ? publisher : (bggMatch?.publisher || 'Chưa rõ'),
         year: year || bggMatch?.year || 2023,
@@ -361,9 +402,7 @@ export async function fetchSpreadsheetGamesViaApi(
             : 'Dấu hiệu: Bản replica / in lậu không có bản quyền chính thức.'),
         boxColor: cabinetType === 'real' ? '#b45309' : '#991b1b',
         rating: finalRating,
-        bggRating,
-        bggId,
-        bggUrl,
+        bggRating: bggRating || finalRating,
         addedDate: new Date().toISOString().split('T')[0],
       });
     }

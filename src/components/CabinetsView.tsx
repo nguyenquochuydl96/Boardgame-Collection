@@ -42,6 +42,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [playerFilter, setPlayerFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'base' | 'expansion'>('all');
 
   // Filter games based on search & filters
   const filteredGames = useMemo(() => {
@@ -63,9 +64,13 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
         (playerFilter === '4' && game.maxPlayers >= 4) ||
         (playerFilter === '6+' && game.maxPlayers >= 6);
 
-      return matchSearch && matchCategory && matchPlayers;
+      const matchType =
+        typeFilter === 'all' ||
+        (typeFilter === 'expansion' ? game.gameType === 'Expansion' : game.gameType !== 'Expansion');
+
+      return matchSearch && matchCategory && matchPlayers && matchType;
     });
-  }, [games, searchQuery, selectedCategory, playerFilter]);
+  }, [games, searchQuery, selectedCategory, playerFilter, typeFilter]);
 
   const realGames = useMemo(
     () => filteredGames.filter((g) => g.cabinetType === 'real'),
@@ -217,6 +222,27 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
               </option>
             ))}
           </select>
+
+          {/* Base Game vs Expansion Filter */}
+          <div className="flex items-center gap-1 bg-slate-900 border border-slate-700/80 rounded-lg p-1 text-xs">
+            <span className="text-slate-400 px-2 flex items-center gap-1">
+              <Layers className="w-3.5 h-3.5 text-purple-400" />
+              <span>Phân loại:</span>
+            </span>
+            {(['all', 'base', 'expansion'] as const).map((opt) => (
+              <button
+                key={opt}
+                onClick={() => setTypeFilter(opt)}
+                className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
+                  typeFilter === opt
+                    ? 'bg-purple-600 text-white font-semibold shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {opt === 'all' ? 'Tất cả' : opt === 'base' ? 'Base Game' : 'Bản mở rộng'}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Right: Cabinet Focus & View Mode Switcher */}

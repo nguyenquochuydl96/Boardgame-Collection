@@ -1,4 +1,5 @@
 import { BoardGame, CabinetType } from '../types/boardgame';
+import { USER_46_GAMES } from '../data/userCollectionCatalog';
 
 export interface BggMatchResult {
   bggId: number;
@@ -736,6 +737,539 @@ const BGG_CATALOG: CatalogEntry[] = [
     category: 'Đại chiến quái vật / Đổ xúc xắc',
     publisher: 'IELLO',
   },
+  {
+    id: 284160,
+    name: 'Iron Clays 200',
+    aliases: ['iron clays 200', 'iron clays', 'iron clay', 'iron clay 200', 'poker chip iron clays'],
+    rating: 8.8,
+    year: 2019,
+    imageUrl: 'https://images.unsplash.com/photo-1511193311914-0346f16efe90?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 99,
+    playtime: 120,
+    category: 'Phụ kiện cao cấp / Poker Chips',
+    publisher: 'Roxley Games',
+  },
+  {
+    id: 198773,
+    name: 'Codenames: Pictures',
+    aliases: ['codenames: pictures', 'codenames pictures', 'mat ma hinh anh', 'codenames picture'],
+    rating: 7.2,
+    year: 2016,
+    imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 8,
+    playtime: 15,
+    category: 'Mật mã hình ảnh / Tiệc tùng',
+    publisher: 'Czech Games Edition',
+  },
+  {
+    id: 395995,
+    name: 'Critter Kitchen',
+    aliases: ['critter kitchen', 'nha bep muong thu', 'critters kitchen'],
+    rating: 7.8,
+    year: 2024,
+    imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 5,
+    playtime: 60,
+    category: 'Nấu ăn / Quản lý tài nguyên',
+    publisher: 'Cardboard Alchemy',
+  },
+  {
+    id: 322289,
+    name: "Darwin's Journey",
+    aliases: ["darwin's journey", 'darwins journey', 'hanh trinh darwin'],
+    rating: 8.1,
+    year: 2023,
+    imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 120,
+    category: 'Worker Placement / Thám hiểm tiến hóa',
+    publisher: 'ThunderGRYPH Games',
+  },
+  {
+    id: 394236,
+    name: "Darwin's Journey: Scenarios mini-expansion",
+    aliases: ["darwin's journey: scenarios mini-expansion", 'darwins journey scenarios', 'darwin scenarios', 'darwins journey expansion'],
+    rating: 8.0,
+    year: 2023,
+    imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 120,
+    category: 'Bản mở rộng / Scenarios',
+    publisher: 'ThunderGRYPH Games',
+  },
+  {
+    id: 169654,
+    name: 'Deep Sea Adventure',
+    aliases: ['deep sea adventure', 'tham hiem day bien', 'oink deep sea', 'lan bien'],
+    rating: 6.8,
+    year: 2014,
+    imageUrl: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 6,
+    playtime: 30,
+    category: 'Lặn biển / May rủi / Oink Games',
+    publisher: 'Oink Games',
+  },
+  {
+    id: 337777,
+    name: 'Dokojong',
+    aliases: ['dokojong', 'dokojong oink', 'cho dokojong'],
+    rating: 6.9,
+    year: 2021,
+    imageUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 5,
+    playtime: 20,
+    category: 'Tung hỏa mù / Thẻ bài Oink Games',
+    publisher: 'Oink Games',
+  },
+  {
+    id: 397598,
+    name: 'Dune: Imperium – Uprising',
+    aliases: ['dune: imperium – uprising', 'dune: imperium - uprising', 'dune imperium uprising', 'dune uprising', 'xu cat dune uprising'],
+    rating: 8.7,
+    year: 2023,
+    imageUrl: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 120,
+    category: 'Chiến thuật sâu / Xây cỗ bài / Xứ Cát',
+    publisher: 'Dire Wolf',
+  },
+  {
+    id: 301476,
+    name: 'Durian',
+    aliases: ['durian', 'sau rieng durian', 'durian oink'],
+    rating: 6.7,
+    year: 2020,
+    imageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 7,
+    playtime: 15,
+    category: 'Nhà hàng hoa quả / Nói dối / Oink Games',
+    publisher: 'Oink Games',
+  },
+  {
+    id: 385761,
+    name: 'Faraway',
+    aliases: ['faraway', 'xa xoi faraway'],
+    rating: 7.6,
+    year: 2023,
+    imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 6,
+    playtime: 25,
+    category: 'Xây dựng cỗ bài / Đảo ngược thời gian',
+    publisher: 'Catch Up Games',
+  },
+  {
+    id: 418197,
+    name: 'Flip 7: With A Vengeance',
+    aliases: ['flip 7: with a vengeance', 'flip 7', 'flip seven', 'flip 7 with a vengeance'],
+    rating: 7.3,
+    year: 2024,
+    imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 8,
+    playtime: 20,
+    category: 'May rủi / Đổ số / Thẻ bài',
+    publisher: 'The Op Games',
+  },
+  {
+    id: 423659,
+    name: 'FlipToons',
+    aliases: ['fliptoons', 'flip toons'],
+    rating: 7.2,
+    year: 2024,
+    imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 6,
+    playtime: 20,
+    category: 'Phản xạ nhanh / Hoạt họa',
+    publisher: 'Board Game Circus',
+  },
+  {
+    id: 296912,
+    name: 'Fort',
+    aliases: ['fort', 'phao dai fort'],
+    rating: 7.2,
+    year: 2020,
+    imageUrl: 'https://images.unsplash.com/photo-1516245834210-c4c142787335?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 4,
+    playtime: 40,
+    category: 'Xây pháo đài trẻ thơ / Deckbuilding',
+    publisher: 'Leder Games',
+  },
+  {
+    id: 341169,
+    name: 'Great Western Trail: Second Edition',
+    aliases: ['great western trail: second edition', 'great western trail second edition', 'gwt second edition', 'gwt 2nd edition', 'great western trail'],
+    rating: 8.3,
+    year: 2021,
+    imageUrl: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 150,
+    category: 'Chăn bò miền Tây / Xây dựng công trình',
+    publisher: 'eggertspiele / Plan B Games',
+  },
+  {
+    id: 333255,
+    name: 'Keep the Heroes Out!',
+    aliases: ['keep the heroes out!', 'keep the heroes out', 'duoi anh hung'],
+    rating: 7.9,
+    year: 2022,
+    imageUrl: 'https://images.unsplash.com/photo-1563941402622-4e7a488bcc57?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 50,
+    category: 'Hợp tác thủ hầm ngục / Đóng vai quái vật',
+    publisher: 'Brueh Games',
+  },
+  {
+    id: 366223,
+    name: "Keep the Heroes Out!: Guild Master's Revenge Expansion",
+    aliases: ["keep the heroes out!: guild master's revenge expansion", 'guild masters revenge', 'keep the heroes out guild master'],
+    rating: 8.2,
+    year: 2023,
+    imageUrl: 'https://images.unsplash.com/photo-1563941402622-4e7a488bcc57?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 50,
+    category: 'Bản mở rộng Guild Master',
+    publisher: 'Brueh Games',
+  },
+  {
+    id: 366224,
+    name: 'Keep the Heroes Out!: The Great Dreamer Expansion',
+    aliases: ['keep the heroes out!: the great dreamer expansion', 'the great dreamer expansion', 'keep the heroes out cthulhu'],
+    rating: 8.3,
+    year: 2023,
+    imageUrl: 'https://images.unsplash.com/photo-1563941402622-4e7a488bcc57?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 50,
+    category: 'Bản mở rộng Cthulhu Dreamer',
+    publisher: 'Brueh Games',
+  },
+  {
+    id: 295373,
+    name: 'Long Shot: The Dice Game',
+    aliases: ['long shot: the dice game', 'long shot the dice game', 'long shot dice', 'dua ngua long shot'],
+    rating: 7.6,
+    year: 2022,
+    imageUrl: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 8,
+    playtime: 30,
+    category: 'Đua ngựa xúc xắc / Đặt cược',
+    publisher: 'Perplext',
+  },
+  {
+    id: 298729,
+    name: 'Marvel United',
+    aliases: ['marvel united', 'sieu anh hung marvel united'],
+    rating: 7.3,
+    year: 2020,
+    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 40,
+    category: 'Siêu anh hùng Marvel / Hợp tác',
+    publisher: 'CMON / Spin Master',
+  },
+  {
+    id: 332675,
+    name: 'Marvel United: X-Men',
+    aliases: ['marvel united: x-men', 'marvel united x-men', 'marvel united di nhan'],
+    rating: 7.7,
+    year: 2022,
+    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 5,
+    playtime: 45,
+    category: 'Dị Nhân X-Men / Hợp tác',
+    publisher: 'CMON / Spin Master',
+  },
+  {
+    id: 159581,
+    name: 'Maskmen',
+    aliases: ['maskmen', 'dau vat maskmen', 'maskmen oink'],
+    rating: 6.9,
+    year: 2014,
+    imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 6,
+    playtime: 20,
+    category: 'Đấu vật Lucha Libre / Leo thang thẻ bài',
+    publisher: 'Oink Games',
+  },
+  {
+    id: 284653,
+    name: 'Mind MGMT: The Psychic Espionage “Game.” + Upgrade Kit',
+    aliases: ['mind mgmt: the psychic espionage “game.” + upgrade kit', 'mind mgmt', 'mind management', 'mind mgmt game'],
+    rating: 8.1,
+    year: 2021,
+    imageUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 5,
+    playtime: 60,
+    category: 'Điệp viên tâm linh / Di chuyển ẩn vai',
+    publisher: 'Off the Page Games',
+  },
+  {
+    id: 118,
+    name: 'Modern Art',
+    aliases: ['modern art', 'dau gia tranh modern art'],
+    rating: 7.3,
+    year: 1992,
+    imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 3,
+    maxPlayers: 5,
+    playtime: 45,
+    category: 'Đấu giá tranh nghệ thuật / Kinh tế',
+    publisher: 'CMON / Hans im Glück',
+  },
+  {
+    id: 1258,
+    name: 'Phase 10',
+    aliases: ['phase 10', 'bai phase 10', '10 giai doan'],
+    rating: 5.2,
+    year: 1982,
+    imageUrl: 'https://images.unsplash.com/photo-1516245834210-c4c142787335?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 6,
+    playtime: 45,
+    category: 'Thẻ bài truyền thống / 10 giai đoạn',
+    publisher: 'Mattel',
+  },
+  {
+    id: 205896,
+    name: 'Rising Sun',
+    aliases: ['rising sun', 'nhat ban rising sun', 'mat troi moc'],
+    rating: 7.8,
+    year: 2018,
+    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 3,
+    maxPlayers: 5,
+    playtime: 120,
+    category: 'Thần thoại Nhật Bản / Chiếm lãnh thổ / Ngoại giao',
+    publisher: 'CMON',
+  },
+  {
+    id: 228965,
+    name: 'Rising Sun: Dynasty Invasion',
+    aliases: ['rising sun: dynasty invasion', 'dynasty invasion'],
+    rating: 7.9,
+    year: 2018,
+    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 3,
+    maxPlayers: 6,
+    playtime: 120,
+    category: 'Bản mở rộng Gia tộc xâm lược',
+    publisher: 'CMON',
+  },
+  {
+    id: 228964,
+    name: 'Rising Sun: Kami Unbound',
+    aliases: ['rising sun: kami unbound', 'kami unbound'],
+    rating: 7.8,
+    year: 2018,
+    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 3,
+    maxPlayers: 5,
+    playtime: 120,
+    category: 'Bản mở rộng Thần linh Kami',
+    publisher: 'CMON',
+  },
+  {
+    id: 228963,
+    name: 'Rising Sun: Monster Pack',
+    aliases: ['rising sun: monster pack', 'rising sun monsters'],
+    rating: 7.7,
+    year: 2018,
+    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 3,
+    maxPlayers: 5,
+    playtime: 120,
+    category: 'Bản mở rộng Quái vật huyền thoại',
+    publisher: 'CMON',
+  },
+  {
+    id: 9220,
+    name: 'Saboteur',
+    aliases: ['saboteur', 'dao vang saboteur', 'ke pha hoai'],
+    rating: 6.5,
+    year: 2004,
+    imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 3,
+    maxPlayers: 10,
+    playtime: 30,
+    category: 'Đào vàng / Kẻ phá hoại ẩn vai',
+    publisher: 'AMIGO',
+  },
+  {
+    id: 377470,
+    name: 'Sail',
+    aliases: ['sail', 'sail board game', 'cheo thuyen sail'],
+    rating: 7.8,
+    year: 2023,
+    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 2,
+    playtime: 20,
+    category: 'Hợp tác 2 người / Hàng hải vượt Kraken',
+    publisher: 'Allplay',
+  },
+  {
+    id: 395914,
+    name: 'Sail: Seafarers Expansion',
+    aliases: ['sail: seafarers expansion', 'sail seafarers'],
+    rating: 7.9,
+    year: 2023,
+    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 2,
+    playtime: 20,
+    category: 'Bản mở rộng Thủy thủ đoàn',
+    publisher: 'Allplay',
+  },
+  {
+    id: 291453,
+    name: 'SCOUT',
+    aliases: ['scout', 'scout oink', 'xiec scout'],
+    rating: 7.8,
+    year: 2019,
+    imageUrl: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 5,
+    playtime: 20,
+    category: 'Xiếc tạp kỹ / Leo thang thẻ bài lật số',
+    publisher: 'Oink Games',
+  },
+  {
+    id: 338960,
+    name: 'Slay the Spire: The Board Game',
+    aliases: ['slay the spire: the board game', 'slay the spire', 'slay the spire board game'],
+    rating: 8.6,
+    year: 2024,
+    imageUrl: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 90,
+    category: 'Hợp tác leo tháp / Deckbuilding Roguelike',
+    publisher: 'Contention Games',
+  },
+  {
+    id: 364073,
+    name: 'Splendor Duel',
+    aliases: ['splendor duel', 'thuong nhan da quy 2 nguoi'],
+    rating: 7.9,
+    year: 2022,
+    imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 2,
+    maxPlayers: 2,
+    playtime: 30,
+    category: 'Thương nhân đá quý đối kháng 2 người',
+    publisher: 'Space Cowboys',
+  },
+  {
+    id: 332290,
+    name: 'Stardew Valley: The Board Game',
+    aliases: ['stardew valley: the board game', 'stardew valley', 'nong trai stardew valley'],
+    rating: 7.4,
+    year: 2021,
+    imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 120,
+    category: 'Nông trại thung lũng / Hợp tác',
+    publisher: 'ConcernedApe',
+  },
+  {
+    id: 223770,
+    name: 'Startups',
+    aliases: ['startups', 'khoi nghiep startups', 'startups oink'],
+    rating: 7.4,
+    year: 2017,
+    imageUrl: 'https://images.unsplash.com/photo-1516245834210-c4c142787335?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 3,
+    maxPlayers: 6,
+    playtime: 20,
+    category: 'Đầu tư khởi nghiệp / Thẻ bài cổ đông',
+    publisher: 'Oink Games',
+  },
+  {
+    id: 356794,
+    name: 'Tiletum',
+    aliases: ['tiletum', 'tiletum euro'],
+    rating: 7.9,
+    year: 2022,
+    imageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 100,
+    category: 'Quản lý xúc xắc Phục hưng Châu Âu',
+    publisher: 'Board&Dice',
+  },
+  {
+    id: 265736,
+    name: 'Tiny Towns',
+    aliases: ['tiny towns', 'thi tran ti hon'],
+    rating: 7.3,
+    year: 2019,
+    imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 6,
+    playtime: 45,
+    category: 'Xây dựng thị trấn tí hon / Xếp mẫu tài nguyên',
+    publisher: 'Alderac Entertainment Group (AEG)',
+  },
+  {
+    id: 391193,
+    name: 'The White Castle',
+    aliases: ['the white castle', 'white castle', 'lau dai trang'],
+    rating: 7.8,
+    year: 2023,
+    imageUrl: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playtime: 80,
+    category: 'Lâu đài Himeji Nhật Bản / Euro game',
+    publisher: 'Devir',
+  },
+  {
+    id: 200424,
+    name: 'Waka Tanka',
+    aliases: ['waka tanka', 'than thu waka tanka'],
+    rating: 6.3,
+    year: 2016,
+    imageUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 3,
+    maxPlayers: 6,
+    playtime: 20,
+    category: 'Thần thú thổ dân / Tung hỏa mù vui nhộn',
+    publisher: 'Sweet November',
+  },
+  {
+    id: 368061,
+    name: 'Zoo Vadis',
+    aliases: ['zoo vadis', 'so thu zoo vadis'],
+    rating: 7.8,
+    year: 2023,
+    imageUrl: 'https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&w=800&q=80',
+    minPlayers: 3,
+    maxPlayers: 7,
+    playtime: 40,
+    category: 'Đàm phán chính trị sở thú / Tiến cử',
+    publisher: 'Bitewing Games',
+  },
 ];
 
 /**
@@ -827,14 +1361,62 @@ function normalizeForComparison(str: string): string {
  * Searches the curated BGG catalog using normalized fuzzy string matching
  */
 export function findInBggCatalog(rawName: string): BggMatchResult | null {
+  if (!rawName || !rawName.trim()) return null;
+
+  const rawNorm = normalizeForComparison(rawName);
   const { cleanTitle } = cleanGameTitleForSearch(rawName);
-  if (!cleanTitle) return null;
+  const cleanNorm = normalizeForComparison(cleanTitle);
 
-  const normQuery = normalizeForComparison(cleanTitle);
+  // 0. Primary check against USER_46_GAMES (Exact user collection)
+  for (const userGame of USER_46_GAMES) {
+    if (
+      normalizeForComparison(userGame.name) === rawNorm ||
+      normalizeForComparison(userGame.name) === cleanNorm ||
+      userGame.aliases.some(
+        (a) => normalizeForComparison(a) === rawNorm || normalizeForComparison(a) === cleanNorm
+      )
+    ) {
+      return {
+        bggId: userGame.bggId,
+        name: userGame.name,
+        rating: userGame.rating,
+        imageUrl: userGame.imageUrl,
+        year: userGame.year,
+        minPlayers: userGame.minPlayers,
+        maxPlayers: userGame.maxPlayers,
+        playtimeMinutes: userGame.playtime,
+        category: userGame.category,
+        publisher: userGame.publisher,
+        bggUrl: `https://boardgamegeek.com/boardgame/${userGame.bggId}`,
+        isExactMatch: true,
+      };
+    }
+  }
 
-  // 1. Exact match by name or alias
+  // 0b. Containment check against USER_46_GAMES
+  for (const userGame of USER_46_GAMES) {
+    const norm = normalizeForComparison(userGame.name);
+    if (rawNorm.length >= 4 && (rawNorm.includes(norm) || norm.includes(rawNorm))) {
+      return {
+        bggId: userGame.bggId,
+        name: userGame.name,
+        rating: userGame.rating,
+        imageUrl: userGame.imageUrl,
+        year: userGame.year,
+        minPlayers: userGame.minPlayers,
+        maxPlayers: userGame.maxPlayers,
+        playtimeMinutes: userGame.playtime,
+        category: userGame.category,
+        publisher: userGame.publisher,
+        bggUrl: `https://boardgamegeek.com/boardgame/${userGame.bggId}`,
+        isExactMatch: true,
+      };
+    }
+  }
+
+  // 1. Exact raw match against entry name or alias (crucial for expansions and full subtitles)
   for (const entry of BGG_CATALOG) {
-    if (normalizeForComparison(entry.name) === normQuery) {
+    if (normalizeForComparison(entry.name) === rawNorm) {
       return {
         bggId: entry.id,
         name: entry.name,
@@ -850,9 +1432,8 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
         isExactMatch: true,
       };
     }
-
     for (const alias of entry.aliases) {
-      if (normalizeForComparison(alias) === normQuery) {
+      if (normalizeForComparison(alias) === rawNorm) {
         return {
           bggId: entry.id,
           name: entry.name,
@@ -871,14 +1452,55 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
     }
   }
 
-  // 2. Partial substring / token containment match
+  // 2. Clean title match against entry name or alias
+  if (cleanNorm) {
+    for (const entry of BGG_CATALOG) {
+      if (normalizeForComparison(entry.name) === cleanNorm) {
+        return {
+          bggId: entry.id,
+          name: entry.name,
+          rating: entry.rating,
+          imageUrl: entry.imageUrl,
+          year: entry.year,
+          minPlayers: entry.minPlayers,
+          maxPlayers: entry.maxPlayers,
+          playtimeMinutes: entry.playtime,
+          category: entry.category,
+          publisher: entry.publisher,
+          bggUrl: `https://boardgamegeek.com/boardgame/${entry.id}`,
+          isExactMatch: true,
+        };
+      }
+      for (const alias of entry.aliases) {
+        if (normalizeForComparison(alias) === cleanNorm) {
+          return {
+            bggId: entry.id,
+            name: entry.name,
+            rating: entry.rating,
+            imageUrl: entry.imageUrl,
+            year: entry.year,
+            minPlayers: entry.minPlayers,
+            maxPlayers: entry.maxPlayers,
+            playtimeMinutes: entry.playtime,
+            category: entry.category,
+            publisher: entry.publisher,
+            bggUrl: `https://boardgamegeek.com/boardgame/${entry.id}`,
+            isExactMatch: true,
+          };
+        }
+      }
+    }
+  }
+
+  // 3. Partial substring / token containment match
   let bestEntry: CatalogEntry | null = null;
   let bestScore = 0;
+  const targetNorm = cleanNorm || rawNorm;
 
   for (const entry of BGG_CATALOG) {
     const normName = normalizeForComparison(entry.name);
-    if (normName.includes(normQuery) || normQuery.includes(normName)) {
-      const score = Math.min(normName.length, normQuery.length) / Math.max(normName.length, normQuery.length);
+    if (normName.includes(targetNorm) || targetNorm.includes(normName)) {
+      const score = Math.min(normName.length, targetNorm.length) / Math.max(normName.length, targetNorm.length);
       if (score > bestScore) {
         bestScore = score;
         bestEntry = entry;
@@ -887,8 +1509,8 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
 
     for (const alias of entry.aliases) {
       const normAlias = normalizeForComparison(alias);
-      if (normAlias.includes(normQuery) || normQuery.includes(normAlias)) {
-        const score = Math.min(normAlias.length, normQuery.length) / Math.max(normAlias.length, normQuery.length);
+      if (normAlias.includes(targetNorm) || targetNorm.includes(normAlias)) {
+        const score = Math.min(normAlias.length, targetNorm.length) / Math.max(normAlias.length, targetNorm.length);
         if (score > bestScore) {
           bestScore = score;
           bestEntry = entry;
@@ -1050,6 +1672,22 @@ export async function searchBggOnline(gameName: string): Promise<BggMatchResult 
  * preventing unrelated game covers from showing up.
  */
 export function getGenerativeBoardGameBoxArt(title: string): string {
+  if (title) {
+    const raw = title.toLowerCase().trim();
+    const match = USER_46_GAMES.find((g) => {
+      const gName = g.name.toLowerCase();
+      return (
+        gName === raw ||
+        raw.includes(gName) ||
+        gName.includes(raw) ||
+        g.aliases?.some((a) => raw.includes(a.toLowerCase()) || a.toLowerCase().includes(raw))
+      );
+    });
+    if (match && match.imageUrl && !match.imageUrl.includes('placeholder')) {
+      return match.imageUrl;
+    }
+  }
+
   const hash = title
     .split('')
     .reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) % 360, 0);
@@ -1236,3 +1874,30 @@ export async function enrichCollectionWithBgg(
 
   return { enrichedGames: enriched, updatedCount };
 }
+
+/**
+ * Retrieves full user collection metadata (box color, spine width, etc.)
+ */
+export function getUserGameMetadata(rawName: string) {
+  if (!rawName) return null;
+  const rawNorm = normalizeForComparison(rawName);
+  const { cleanTitle } = cleanGameTitleForSearch(rawName);
+  const cleanNorm = normalizeForComparison(cleanTitle);
+
+  for (const userGame of USER_46_GAMES) {
+    if (
+      normalizeForComparison(userGame.name) === rawNorm ||
+      normalizeForComparison(userGame.name) === cleanNorm ||
+      userGame.aliases.some(
+        (a) => normalizeForComparison(a) === rawNorm || normalizeForComparison(a) === cleanNorm
+      ) ||
+      (rawNorm.length >= 4 &&
+        (rawNorm.includes(normalizeForComparison(userGame.name)) ||
+          normalizeForComparison(userGame.name).includes(rawNorm)))
+    ) {
+      return userGame;
+    }
+  }
+  return null;
+}
+

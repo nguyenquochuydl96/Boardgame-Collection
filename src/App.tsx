@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BoardGame, CabinetType } from './types/boardgame';
 import { INITIAL_BOARDGAMES } from './data/defaultGames';
-import { fetchFromGoogleSheet, SAMPLE_GOOGLE_SHEET_URL } from './services/googleSheets';
+import { fetchFromGoogleSheet, SAMPLE_GOOGLE_SHEET_URL, USER_COLLECTION_SHEET_URL } from './services/googleSheets';
 import { Navbar } from './components/Navbar';
 import { CabinetsView } from './components/CabinetsView';
 import { ComparisonMode } from './components/ComparisonMode';
@@ -24,9 +24,9 @@ import {
   Info,
 } from 'lucide-react';
 
-const STORAGE_KEY = 'boardgame_vault_games_v2';
-const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v2';
-const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v2';
+const STORAGE_KEY = 'boardgame_vault_games_v5';
+const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v5';
+const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v5';
 
 export default function App() {
   // Navigation tab
@@ -39,10 +39,22 @@ export default function App() {
   // Games state with local storage fallback
   const [games, setGames] = useState<BoardGame[]>(() => {
     try {
+      // Clear legacy caches containing broken image URLs or unseparated cabinets
+      ['boardgame_vault_games_v2', 'boardgame_vault_games_v3', 'boardgame_vault_games_v4'].forEach((k) => {
+        try { localStorage.removeItem(k); } catch {}
+      });
+
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (
+          Array.isArray(parsed) &&
+          parsed.length >= 40 &&
+          !parsed.some((g: any) => g.name?.toLowerCase() === 'name') &&
+          parsed.some((g: any) => g.cabinetType === 'fake')
+        ) {
+          return parsed;
+        }
       }
     } catch (e) {
       console.error('Error loading saved games:', e);
@@ -50,10 +62,10 @@ export default function App() {
     return INITIAL_BOARDGAMES;
   });
 
-  // Google Sheet state: only treat as connected if user explicitly saved their own URL
+  // Google Sheet state: defaulted to user's active Google Sheet
   const [sheetUrl, setSheetUrl] = useState<string>(() => {
     const saved = localStorage.getItem(SHEET_URL_KEY);
-    return saved && !saved.includes('demo') ? saved : '';
+    return saved && !saved.includes('demo') ? saved : USER_COLLECTION_SHEET_URL;
   });
   const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(() => {
     return localStorage.getItem(LAST_SYNC_KEY) || undefined;
@@ -64,7 +76,7 @@ export default function App() {
 
   // Status indicator
   const isCustomSheetConnected = Boolean(
-    (sheetUrl && !sheetUrl.includes('demo') && sheetUrl !== SAMPLE_GOOGLE_SHEET_URL) || currentUser
+    (sheetUrl && !sheetUrl.includes('demo')) || currentUser
   );
   const isDemoData = !isCustomSheetConnected;
 

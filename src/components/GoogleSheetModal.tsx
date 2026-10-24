@@ -20,6 +20,7 @@ import {
   exportGamesToCsv,
   parseCsvToGames,
   SAMPLE_GOOGLE_SHEET_URL,
+  USER_COLLECTION_SHEET_URL,
 } from '../services/googleSheets';
 import { BoardGame } from '../types/boardgame';
 import {
@@ -61,14 +62,14 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
   onSignOut,
 }) => {
   const [sheetUrl, setSheetUrl] = useState(() =>
-    currentSheetUrl && !currentSheetUrl.includes('demo') ? currentSheetUrl : ''
+    currentSheetUrl || USER_COLLECTION_SHEET_URL
   );
   const [activeTab, setActiveTab] = useState<'drive' | 'link' | 'template'>('link');
   const [copied, setCopied] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (currentSheetUrl && !currentSheetUrl.includes('demo')) {
+    if (currentSheetUrl) {
       setSheetUrl(currentSheetUrl);
     }
   }, [currentSheetUrl]);

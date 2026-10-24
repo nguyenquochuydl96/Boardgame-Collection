@@ -17,7 +17,9 @@ import {
   AlertCircle,
   RotateCw,
   BookOpen,
+  Star,
 } from 'lucide-react';
+import { getGenerativeBoardGameBoxArt } from '../services/bggService';
 
 interface GameDetailModalProps {
   game: BoardGame | null;
@@ -117,24 +119,20 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
             {/* Left: 3D Box / Image Showcase */}
             <div className="flex flex-col items-center">
               <div className="relative w-full max-w-xs aspect-[3/4] rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-950 group">
-                {!imageError ? (
+                {!imageError && game.imageUrl ? (
                   <img
                     src={game.imageUrl}
                     alt={game.name}
                     referrerPolicy="no-referrer"
                     onError={() => setImageError(true)}
-                    className={`w-full h-full object-cover ${game.status === 'OOS' ? 'grayscale opacity-75' : ''}`}
+                    className={`w-full h-full object-contain ${game.status === 'OOS' ? 'grayscale opacity-75' : ''}`}
                   />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-slate-900">
-                    {isReal ? (
-                      <ShieldCheck className="w-12 h-12 text-amber-400 mb-2" />
-                    ) : (
-                      <AlertTriangle className="w-12 h-12 text-rose-400 mb-2" />
-                    )}
-                    <span className="text-sm font-bold text-white">{game.name}</span>
-                    <span className="text-xs text-slate-400 mt-1">{game.publisher}</span>
-                  </div>
+                  <img
+                    src={getGenerativeBoardGameBoxArt(game.name)}
+                    alt={game.name}
+                    className={`w-full h-full object-contain ${game.status === 'OOS' ? 'grayscale opacity-75' : ''}`}
+                  />
                 )}
 
                 {/* Box Badges */}
@@ -148,6 +146,11 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   >
                     {isReal ? 'Real Collection' : 'Replicas & Fake'}
                   </span>
+                  {game.gameType === 'Expansion' && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold border border-purple-500/50 bg-purple-950/90 text-purple-200 uppercase tracking-wider backdrop-blur-md">
+                      Bản Mở Rộng (EXP)
+                    </span>
+                  )}
                   <span
                     className={`px-2 py-0.5 rounded text-[10px] font-bold border uppercase tracking-wider backdrop-blur-md ${
                       game.status === 'OOS'
@@ -212,7 +215,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
               </div>
 
               {/* Category & Publisher */}
-              <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-1 text-xs">
+              <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Trạng thái:</span>
                   <span className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
@@ -222,6 +225,36 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   }`}>
                     {game.status === 'OOS' ? 'OOS (Out of Stock)' : 'On Hand (Có sẵn)'}
                   </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Phân loại game:</span>
+                  <span className={`font-semibold px-2 py-0.5 rounded text-[11px] ${
+                    game.gameType === 'Expansion'
+                      ? 'bg-purple-950/60 text-purple-300 border border-purple-500/30'
+                      : 'bg-blue-950/60 text-blue-300 border border-blue-500/30'
+                  }`}>
+                    {game.gameType === 'Expansion' ? 'Bản Mở Rộng (Expansion)' : 'Base Game (Bản Gốc)'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Điểm BGG:</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-amber-400 flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      {game.rating ? Number(game.rating).toFixed(1) : '7.5'} / 10
+                    </span>
+                    {game.bggId && (
+                      <a
+                        href={`https://boardgamegeek.com/boardgame/${game.bggId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[10px] text-sky-400 hover:text-sky-300 hover:underline flex items-center gap-0.5"
+                      >
+                        <span>BGG Link</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Thể loại:</span>

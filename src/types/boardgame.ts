@@ -25,6 +25,9 @@ export interface BoardGame {
   bggUrl?: string; // Direct link to BoardGameGeek page
   addedDate?: string;
   status?: 'On Hand' | 'OOS'; // Inventory status: On Hand or Out of Stock (OOS)
+  gameType?: 'Base Game' | 'Expansion'; // Base Game or Expansion
+  spineImageUrl?: string; // Optional spine / shelf-side box art
+  spineWidth?: 'narrow' | 'medium' | 'wide'; // Box thickness on shelf
   counterpartId?: string; // Link to the matching real/fake version if any
   rulesUrl?: string;
   barcode?: string;

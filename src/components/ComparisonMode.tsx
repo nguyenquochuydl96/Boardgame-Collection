@@ -150,7 +150,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
                   src={currentReal.imageUrl}
                   alt={currentReal.name}
                   referrerPolicy="no-referrer"
-                  className="w-28 h-36 object-cover rounded-lg shadow-lg border border-amber-500/30 shrink-0"
+                  className="w-28 h-36 object-contain bg-black/50 rounded-lg shadow-lg border border-amber-500/30 shrink-0 p-1"
                 />
                 <div className="space-y-1.5">
                   <h3 className="text-base font-bold text-white font-display">
@@ -229,7 +229,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
                   src={currentFake.imageUrl}
                   alt={currentFake.name}
                   referrerPolicy="no-referrer"
-                  className="w-28 h-36 object-cover rounded-lg shadow-lg border border-rose-500/30 shrink-0"
+                  className="w-28 h-36 object-contain bg-black/50 rounded-lg shadow-lg border border-rose-500/30 shrink-0 p-1"
                 />
                 <div className="space-y-1.5">
                   <h3 className="text-base font-bold text-white font-display">
