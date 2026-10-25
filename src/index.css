@@ -26,29 +26,86 @@
   transform-style: preserve-3d;
 }
 
-/* Realistic Cabinet Shelves */
+/* Holographic / Foil Card & Rarity Glow */
+@keyframes holo-shimmer {
+  0% { background-position: -200% -200%; }
+  100% { background-position: 200% 200%; }
+}
+
+.holo-card-effect {
+  position: relative;
+}
+
+.holo-card-effect::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(251,191,36,0.15) 50%, rgba(255,255,255,0) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+.holo-card-effect:hover::after {
+  opacity: 1;
+}
+
+.gold-glow-border {
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.4), 0 10px 25px -5px rgba(217, 119, 6, 0.25);
+}
+
+.ruby-glow-border {
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.4), 0 10px 25px -5px rgba(225, 29, 72, 0.25);
+}
+
+/* Realistic Cabinet Shelves with Ambient LED Top Backlight */
 .shelf-wood-real {
-  background: linear-gradient(180deg, #3d2212 0%, #2b180d 60%, #1f1008 100%);
-  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.8), inset 0 2px 0 0 rgba(217, 119, 6, 0.3);
+  background: linear-gradient(180deg, #422410 0%, #2b180d 60%, #170b05 100%);
+  box-shadow: inset 0 3px 6px rgba(251, 191, 36, 0.15), 0 16px 30px -4px rgba(0, 0, 0, 0.9);
+  position: relative;
+}
+
+.shelf-wood-real::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.6), transparent);
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
 }
 
 .shelf-lip-real {
-  background: linear-gradient(90deg, #451a03 0%, #78350f 50%, #451a03 100%);
+  background: linear-gradient(90deg, #3d1c08 0%, #78350f 50%, #3d1c08 100%);
   border-top: 2px solid #b45309;
-  border-bottom: 3px solid #1c0c05;
-  box-shadow: 0 14px 20px rgba(0, 0, 0, 0.7);
+  border-bottom: 3px solid #140602;
+  box-shadow: 0 14px 20px rgba(0, 0, 0, 0.8);
 }
 
 .shelf-wood-fake {
   background: linear-gradient(180deg, #27272a 0%, #18181b 60%, #09090b 100%);
-  box-shadow: 0 12px 24px -4px rgba(0, 0, 0, 0.8), inset 0 2px 0 0 rgba(161, 161, 170, 0.2);
+  box-shadow: inset 0 3px 6px rgba(244, 63, 94, 0.15), 0 16px 30px -4px rgba(0, 0, 0, 0.9);
+  position: relative;
+}
+
+.shelf-wood-fake::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(244, 63, 94, 0.6), transparent);
+  box-shadow: 0 0 8px rgba(244, 63, 94, 0.8);
 }
 
 .shelf-lip-fake {
   background: linear-gradient(90deg, #3f3f46 0%, #52525b 50%, #3f3f46 100%);
   border-top: 2px solid #71717a;
   border-bottom: 3px solid #09090b;
-  box-shadow: 0 14px 20px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 14px 20px rgba(0, 0, 0, 0.8);
 }
 
 /* 3D Physical Board Game Box Depth */

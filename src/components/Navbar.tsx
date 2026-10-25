@@ -1,5 +1,5 @@
-import React from 'react';
-import { Sheet, RefreshCw, Plus, Layers, GitCompare, BarChart3 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sheet, RefreshCw, Plus, Layers, GitCompare, BarChart3, Palette } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface NavbarProps {
@@ -14,6 +14,8 @@ interface NavbarProps {
   sheetConnected: boolean;
   currentUser?: User | null;
   onSignInWithGoogle?: () => Promise<void>;
+  currentTheme?: 'mahogany' | 'cyberpunk' | 'parchment';
+  setTheme?: (theme: 'mahogany' | 'cyberpunk' | 'parchment') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -28,7 +30,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   sheetConnected,
   currentUser,
   onSignInWithGoogle,
+  currentTheme = 'mahogany',
+  setTheme,
 }) => {
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false);
   return (
     <header className="sticky top-0 z-40 bg-[#090b0e]/95 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-8 py-3.5 transition-all">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 md:gap-4 xl:gap-6">
@@ -142,6 +147,43 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           ) : null}
 
+          {setTheme && (
+            <div className="relative">
+              <button
+                onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+                className="flex items-center gap-1.5 px-2.5 py-2 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors"
+                title="Change Shelf Theme"
+              >
+                <Palette className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden xl:inline capitalize">{currentTheme}</span>
+              </button>
+              {showThemeDropdown && (
+                <div className="absolute right-0 mt-2 w-44 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden">
+                  <button
+                    onClick={() => { setTheme('mahogany'); setShowThemeDropdown(false); }}
+                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800 ${currentTheme === 'mahogany' ? 'text-amber-400 font-bold bg-amber-500/10' : 'text-slate-300'}`}
+                  >
+                    <span>🌲 Mahogany & Brass</span>
+                    {currentTheme === 'mahogany' && <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>}
+                  </button>
+                  <button
+                    onClick={() => { setTheme('cyberpunk'); setShowThemeDropdown(false); }}
+                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800 ${currentTheme === 'cyberpunk' ? 'text-cyan-400 font-bold bg-cyan-500/10' : 'text-slate-300'}`}
+                  >
+                    <span>🌌 Cyberpunk Dark</span>
+                    {currentTheme === 'cyberpunk' && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>}
+                  </button>
+                  <button
+                    onClick={() => { setTheme('parchment'); setShowThemeDropdown(false); }}
+                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800 ${currentTheme === 'parchment' ? 'text-amber-200 font-bold bg-amber-200/10' : 'text-slate-300'}`}
+                  >
+                    <span>📜 Parchment & Ink</span>
+                    {currentTheme === 'parchment' && <span className="w-1.5 h-1.5 rounded-full bg-amber-200"></span>}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           <button
             onClick={onOpenAddModal}
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"

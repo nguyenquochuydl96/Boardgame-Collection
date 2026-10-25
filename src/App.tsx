@@ -32,6 +32,7 @@ const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v10';
 export default function App() {
   // Navigation tab
   const [activeTab, setActiveTab] = useState<'cabinets' | 'compare' | 'stats' | 'sheet'>('cabinets');
+  const [currentTheme, setCurrentTheme] = useState<'mahogany' | 'cyberpunk' | 'parchment'>('mahogany');
 
   // Google Workspace Auth state
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -279,6 +280,8 @@ export default function App() {
           }
         }}
         onOpenSyncModal={() => setIsSyncModalOpen(true)}
+        currentTheme={currentTheme}
+        setTheme={setCurrentTheme}
         onOpenAddModal={() => handleOpenAddModal('real')}
         isSyncing={isSyncing}
         totalGames={games.length}
@@ -344,11 +347,14 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8">
         {activeTab === 'cabinets' && (
           <CabinetsView
+        currentTheme={currentTheme}
             games={games}
             onSelectGame={(game) => setSelectedGame(game)}
             onToggleCabinet={handleToggleCabinet}
             onOpenAddModal={handleOpenAddModal}
             onOpenSyncModal={() => setIsSyncModalOpen(true)}
+        currentTheme={currentTheme}
+        setTheme={setCurrentTheme}
             onEnrichBgg={handleEnrichBgg}
             isEnrichingBgg={isEnrichingBgg}
             isDemoData={isDemoData}

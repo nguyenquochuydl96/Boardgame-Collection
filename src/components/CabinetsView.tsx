@@ -25,6 +25,7 @@ interface CabinetsViewProps {
   onEnrichBgg?: () => void;
   isEnrichingBgg?: boolean;
   isDemoData?: boolean;
+  currentTheme?: 'mahogany' | 'cyberpunk' | 'parchment';
 }
 
 export const CabinetsView: React.FC<CabinetsViewProps> = ({
@@ -36,6 +37,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
   onEnrichBgg,
   isEnrichingBgg,
   isDemoData,
+  currentTheme = 'mahogany',
 }) => {
   const [cabinetFocus, setCabinetFocus] = useState<'both' | 'real' | 'fake'>('both');
   const [viewMode, setViewMode] = useState<'front' | 'spine'>('front');
@@ -102,6 +104,27 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
     }
     return chunks;
   };
+
+    const themeClasses = {
+    mahogany: {
+      realWrapper: 'bg-gradient-to-br from-[#1a110a] via-[#120a05] to-[#0c0602] border-amber-900/40 shadow-2xl shadow-amber-950/20',
+      fakeWrapper: 'bg-gradient-to-br from-[#18181b] via-[#09090b] to-[#030304] border-rose-950/40 shadow-2xl shadow-rose-950/20',
+      realHeader: 'from-amber-950/80 via-amber-900/40 to-transparent border-amber-500/30 text-amber-300',
+      fakeHeader: 'from-rose-950/80 via-rose-900/40 to-transparent border-rose-500/30 text-rose-300',
+    },
+    cyberpunk: {
+      realWrapper: 'bg-gradient-to-br from-[#030712] via-[#090d16] to-[#020617] border-cyan-500/30 shadow-2xl shadow-cyan-950/40',
+      fakeWrapper: 'bg-gradient-to-br from-[#0f0518] via-[#09030f] to-[#020104] border-fuchsia-500/30 shadow-2xl shadow-fuchsia-950/40',
+      realHeader: 'from-cyan-950/90 via-cyan-900/40 to-transparent border-cyan-400/40 text-cyan-300',
+      fakeHeader: 'from-fuchsia-950/90 via-fuchsia-900/40 to-transparent border-fuchsia-400/40 text-fuchsia-300',
+    },
+    parchment: {
+      realWrapper: 'bg-gradient-to-br from-[#1f1915] via-[#15110e] to-[#0d0a08] border-amber-700/30 shadow-2xl',
+      fakeWrapper: 'bg-gradient-to-br from-[#1c1917] via-[#121110] to-[#0a0908] border-stone-700/30 shadow-2xl',
+      realHeader: 'from-amber-900/70 via-stone-900/50 to-transparent border-amber-600/30 text-amber-200',
+      fakeHeader: 'from-stone-900/70 via-stone-950/50 to-transparent border-stone-600/30 text-stone-300',
+    }
+  }[currentTheme];
 
   const isBothCabinets = cabinetFocus === 'both';
   const shelfColumns = isBothCabinets
@@ -333,7 +356,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
       >
         {/* ======================= REAL COLLECTION ======================= */}
         {(cabinetFocus === 'both' || cabinetFocus === 'real') && (
-          <div className="rounded-2xl overflow-hidden border border-amber-600/30 bg-[#16120e] shadow-2xl flex flex-col relative">
+          <div className={`rounded-2xl overflow-hidden border flex flex-col relative transition-all duration-300 ${themeClasses.realWrapper}`}>
             {/* Top Cabinet Header with Rich Walnut & Brass Look */}
             <div className="bg-gradient-to-r from-[#29160d] via-[#3d1f11] to-[#29160d] border-b border-amber-600/30 p-4 md:p-5 relative overflow-hidden">
               <div className="absolute top-0 left-1/4 right-1/4 h-12 bg-gradient-to-b from-amber-400/10 to-transparent blur-md pointer-events-none" />
