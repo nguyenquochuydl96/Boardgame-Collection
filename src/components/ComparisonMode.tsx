@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BoardGame } from '../types/boardgame';
+import { resolveImageUrl } from '../utils/imageUrl';
 import { ShieldCheck, AlertTriangle, ArrowRight, CheckCircle2, XCircle, Scale, Sparkles } from 'lucide-react';
 
 interface ComparisonModeProps {
@@ -112,7 +113,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
               {/* Game Cover & Specs */}
               <div className="flex gap-4 mt-4">
                 <img
-                  src={currentReal.imageUrl}
+                  src={resolveImageUrl(currentReal.imageUrl)}
                   alt={currentReal.name}
                   referrerPolicy="no-referrer"
                   className="w-28 h-36 object-cover object-top bg-black/50 rounded-lg shadow-lg border border-amber-500/30 shrink-0 p-1"
@@ -191,7 +192,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
               {/* Game Cover & Specs */}
               <div className="flex gap-4 mt-4">
                 <img
-                  src={currentFake.imageUrl}
+                  src={resolveImageUrl(currentFake.imageUrl)}
                   alt={currentFake.name}
                   referrerPolicy="no-referrer"
                   className="w-28 h-36 object-cover object-top bg-black/50 rounded-lg shadow-lg border border-rose-500/30 shrink-0 p-1"

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BoardGame } from '../types/boardgame';
 import { getGenerativeBoardGameBoxArt } from '../services/bggService';
+import { resolveImageUrl } from '../utils/imageUrl';
 import { ShieldCheck, AlertTriangle, Users, Clock, ArrowLeftRight, Eye, Star, Layers } from 'lucide-react';
 
 interface GameBoxCardProps {
@@ -27,9 +28,10 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
       .replace('VND', '₫');
   };
 
-  const displayImage = !imageError && game.imageUrl && game.imageUrl.trim().length > 10
+  const rawImage = !imageError && game.imageUrl && game.imageUrl.trim().length > 10
     ? game.imageUrl
     : getGenerativeBoardGameBoxArt(game.name);
+  const displayImage = resolveImageUrl(rawImage);
 
   // Modern Board Game Box End Spine View (Standing upright on shelf)
   if (viewMode === 'spine') {

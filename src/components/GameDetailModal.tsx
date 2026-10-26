@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BoardGame } from '../types/boardgame';
 import { getGenerativeBoardGameBoxArt } from '../services/bggService';
+import { resolveImageUrl } from '../utils/imageUrl';
 import {
   X,
   ShieldCheck,
@@ -53,9 +54,10 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
     }
   };
 
-  const modalImage = !imageError && game.imageUrl && game.imageUrl.trim().length > 10
+  const rawModalImage = !imageError && game.imageUrl && game.imageUrl.trim().length > 10
     ? game.imageUrl
     : getGenerativeBoardGameBoxArt(game.name);
+  const modalImage = resolveImageUrl(rawModalImage);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
