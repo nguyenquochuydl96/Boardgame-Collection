@@ -347,14 +347,12 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8">
         {activeTab === 'cabinets' && (
           <CabinetsView
-        currentTheme={currentTheme}
+            currentTheme={currentTheme}
             games={games}
             onSelectGame={(game) => setSelectedGame(game)}
             onToggleCabinet={handleToggleCabinet}
             onOpenAddModal={handleOpenAddModal}
             onOpenSyncModal={() => setIsSyncModalOpen(true)}
-        currentTheme={currentTheme}
-        setTheme={setCurrentTheme}
             onEnrichBgg={handleEnrichBgg}
             isEnrichingBgg={isEnrichingBgg}
             isDemoData={isDemoData}
