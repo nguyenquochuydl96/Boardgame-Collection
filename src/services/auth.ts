@@ -1,4 +1,4 @@
-import { initializeApp, getApps } from 'firebase/app';
+﻿import { initializeApp, getApps } from 'firebase/app';
 import {
   getAuth,
   signInWithPopup,
@@ -51,7 +51,7 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     const result = await signInWithPopup(auth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (!credential?.accessToken) {
-      throw new Error('Không thể lấy access token từ Google Auth.');
+      throw new Error('Unable to obtain access token from Google Auth.');
     }
 
     cachedAccessToken = credential.accessToken;

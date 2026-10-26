@@ -53,6 +53,10 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
     }
   };
 
+  const modalImage = !imageError && game.imageUrl && game.imageUrl.trim().length > 10
+    ? game.imageUrl
+    : getGenerativeBoardGameBoxArt(game.name);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
       <div className="relative w-full max-w-3xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden my-8 max-h-[90vh] flex flex-col">
@@ -106,27 +110,31 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            {/* Left: 3D Box / Image Showcase */}
+            {/* Left: 3D Box / Image Showcase - Full Uncropped Retail Box Cover */}
             <div className="flex flex-col items-center">
-              <div className="relative w-full max-w-xs aspect-[4/5] rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-950 group flex items-center justify-center">
-                {!imageError && game.imageUrl ? (
-                  <img
-                    src={game.imageUrl}
-                    alt={game.name}
-                    referrerPolicy="no-referrer"
-                    onError={() => setImageError(true)}
-                    className={`w-full h-full object-cover object-top ${game.status === 'OOS' ? 'grayscale opacity-75' : ''}`}
-                  />
-                ) : (
-                  <img
-                    src={getGenerativeBoardGameBoxArt(game.name)}
-                    alt={game.name}
-                    className={`w-full h-full object-cover object-top ${game.status === 'OOS' ? 'grayscale opacity-75' : ''}`}
-                  />
-                )}
+              <div className="relative w-full max-w-xs aspect-[4/5] rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-950 group flex items-center justify-center p-3">
+                {/* Ambient blurred backdrop */}
+                <img
+                  src={modalImage}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-35 scale-125 pointer-events-none"
+                />
+                <div className="absolute inset-0 bg-slate-950/40 pointer-events-none" />
+
+                {/* Foreground 100% full uncropped box art */}
+                <img
+                  src={modalImage}
+                  alt={game.name}
+                  referrerPolicy="no-referrer"
+                  onError={() => setImageError(true)}
+                  className={`relative z-10 max-h-full max-w-full object-contain rounded-lg shadow-2xl border border-white/10 transition-transform duration-300 group-hover:scale-102 ${
+                    game.status === 'OOS' ? 'grayscale opacity-75' : ''
+                  }`}
+                />
 
                 {/* Box Badges */}
-                <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
+                <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 items-start">
                   <span
                     className={`px-2.5 py-1 rounded text-xs font-bold border backdrop-blur-md ${
                       isReal
@@ -231,7 +239,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-amber-400 flex items-center gap-1">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      {game.rating ? Number(game.rating).toFixed(1) : '7.5'} / 10
+                      {(game.bggRating || game.rating).toFixed(1)} / 10
                     </span>
                     {game.bggId && (
                       <a

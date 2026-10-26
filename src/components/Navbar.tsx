@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Sheet, RefreshCw, Plus, Layers, GitCompare, BarChart3, Palette } from 'lucide-react';
 import { User } from 'firebase/auth';
 
@@ -163,21 +163,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onClick={() => { setTheme('mahogany'); setShowThemeDropdown(false); }}
                     className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800 ${currentTheme === 'mahogany' ? 'text-amber-400 font-bold bg-amber-500/10' : 'text-slate-300'}`}
                   >
-                    <span>🌲 Mahogany & Brass</span>
+                    <span>Mahogany & Brass</span>
                     {currentTheme === 'mahogany' && <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>}
                   </button>
                   <button
                     onClick={() => { setTheme('cyberpunk'); setShowThemeDropdown(false); }}
                     className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800 ${currentTheme === 'cyberpunk' ? 'text-cyan-400 font-bold bg-cyan-500/10' : 'text-slate-300'}`}
                   >
-                    <span>🌌 Cyberpunk Dark</span>
+                    <span>Cyberpunk Dark</span>
                     {currentTheme === 'cyberpunk' && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>}
                   </button>
                   <button
                     onClick={() => { setTheme('parchment'); setShowThemeDropdown(false); }}
                     className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800 ${currentTheme === 'parchment' ? 'text-amber-200 font-bold bg-amber-200/10' : 'text-slate-300'}`}
                   >
-                    <span>📜 Parchment & Ink</span>
+                    <span>Parchment & Ink</span>
                     {currentTheme === 'parchment' && <span className="w-1.5 h-1.5 rounded-full bg-amber-200"></span>}
                   </button>
                 </div>

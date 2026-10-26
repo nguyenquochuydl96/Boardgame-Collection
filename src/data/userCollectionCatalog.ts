@@ -1,4 +1,4 @@
-﻿export interface GameDef {
+export interface GameDef {
   name: string;
   aliases: string[];
   cabinetType: 'real' | 'fake';
@@ -127,7 +127,7 @@ export const USER_46_GAMES: GameDef[] = [
     "publisher": "ThunderGryph Games",
     "boxColor": "#78350f",
     "spineWidth": "medium",
-    "gameplayStory": "Retrace Charles Darwin's voyage aboard the HMS Beagle through the GalÃ¡pagos Islands, discovering new species and establishing evolutionary theory.",
+    "gameplayStory": "Retrace Charles Darwin's voyage aboard the HMS Beagle through the Galapagos Islands, discovering new species and establishing evolutionary theory.",
     "authenticityNotes": "Authentic Edition: Embossed leatherette textured box, heat-pressed wax seal markers, thick warp-resistant museum boards.",
     "imageUrl": "/images/boxes/darwins-journey.webp",
     "spineImageUrl": "/images/spines/darwins-journey.svg"

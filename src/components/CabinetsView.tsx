@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { BoardGame } from '../types/boardgame';
 import { GameBoxCard } from './GameBoxCard';
 import {
@@ -14,6 +14,7 @@ import {
   Sparkles,
   Plus,
   RefreshCw,
+  X,
 } from 'lucide-react';
 
 interface CabinetsViewProps {
@@ -206,7 +207,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
               onClick={() => setSearchQuery('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
             >
-              ✕
+              <X className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
