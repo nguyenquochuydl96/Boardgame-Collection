@@ -514,16 +514,16 @@ export function parseGvizResponse(text: string): BoardGame[] {
       // Assign verified BGG rating if no explicit score was given in Google Sheet
       const finalRating = (hasExplicitRating && rating > 0) ? rating : (bggRating ?? rating);
 
-      // Reliable official box art image
-      let finalImageUrl = imageUrl && imageUrl.trim().length > 10 ? imageUrl.trim() : '';
-      if (!finalImageUrl || finalImageUrl.includes('placeholder') || finalImageUrl.includes('Catan-2015-boxart.jpg')) {
-        if (userMeta && userMeta.imageUrl) {
-          finalImageUrl = userMeta.imageUrl;
-        } else if (bggMatch && bggMatch.imageUrl) {
-          finalImageUrl = bggMatch.imageUrl;
-        } else {
-          finalImageUrl = getFallbackImage(name, cabinetType);
-        }
+      // Prioritize User Catalog Image > Sheet Image > BGG Image > Fallback
+      let finalImageUrl = '';
+      if (userMeta && userMeta.imageUrl) {
+        finalImageUrl = userMeta.imageUrl;
+      } else if (imageUrl && imageUrl.trim().length > 10 && !imageUrl.includes('placeholder') && !imageUrl.includes('Catan-2015-boxart.jpg')) {
+        finalImageUrl = imageUrl.trim();
+      } else if (bggMatch && bggMatch.imageUrl) {
+        finalImageUrl = bggMatch.imageUrl;
+      } else {
+        finalImageUrl = getFallbackImage(name, cabinetType);
       }
 
       const { min, max } = parsePlayerCount(players);
