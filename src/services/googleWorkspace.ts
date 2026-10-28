@@ -1,4 +1,4 @@
-﻿import { BoardGame, CabinetType } from '../types/boardgame';
+import { BoardGame, CabinetType } from '../types/boardgame';
 import { parseCsvRows } from './googleSheets';
 import {
   findInBggCatalog,
@@ -9,15 +9,15 @@ import {
 export interface DriveSheetFile {
   id: string;
   name: string;
-        'Condition',
+  modifiedTime?: string;
   webViewLink?: string;
 }
 
 /**
  * Lists Google Sheets in the user's Google Drive
  */
-        'Condition',
-        'Condition',
+export async function listUserGoogleSheets(accessToken: string): Promise<DriveSheetFile[]> {
+  const query = encodeURIComponent("mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
   const url = `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name,modifiedTime,webViewLink)&orderBy=modifiedTime%20desc&pageSize=25`;
 
   const res = await fetch(url, {
@@ -28,7 +28,7 @@ export interface DriveSheetFile {
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData?.error?.message || `Failed to load Google Drive files (HTTP ${res.status})`);
+    throw new Error(errorData?.error?.message || `Lỗi tải danh sách Google Drive (HTTP ${res.status})`);
   }
 
   const data = await res.json();
@@ -40,7 +40,7 @@ export interface DriveSheetFile {
  */
 export async function getSpreadsheetDetails(
   spreadsheetId: string,
-        'Condition',
+  accessToken: string
 ): Promise<{ title: string; sheets: { title: string; sheetId: number }[] }> {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=properties.title,sheets.properties`;
 
@@ -52,7 +52,7 @@ export async function getSpreadsheetDetails(
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData?.error?.message || `Failed to access Google Sheet (HTTP ${res.status})`);
+    throw new Error(errorData?.error?.message || `Lỗi truy cập Google Sheet (HTTP ${res.status})`);
   }
 
   const data = await res.json();
@@ -78,7 +78,7 @@ function normalizeHeader(h: string): string {
     .replace(/[^a-z0-9]/g, '');
 }
 
-        'Condition',
+function identifyColumn(header: string): keyof BoardGame | 'cabinetType' | 'unknown' {
   const norm = normalizeHeader(header);
   if (norm.includes('tengame') || norm.includes('ten') || norm === 'name' || norm === 'title' || norm === 'boardgame') {
     return 'name';
@@ -120,10 +120,10 @@ function normalizeHeader(h: string): string {
   if (norm.includes('anh') || norm.includes('hinhanh') || norm.includes('image') || norm.includes('photo') || norm.includes('cover')) {
     return 'imageUrl';
   }
-        'Players',
+  if (norm.includes('songuoi') || norm.includes('players') || norm.includes('nguoichoi')) {
     return 'players';
   }
-        'Playtime',
+  if (norm.includes('thoigian') || norm.includes('thoiluong') || norm.includes('playtime') || norm.includes('time')) {
     return 'playtime';
   }
   if (norm.includes('theloai') || norm.includes('category') || norm.includes('genre')) {
@@ -150,7 +150,7 @@ function normalizeHeader(h: string): string {
     norm.includes('description') ||
     norm.includes('story') ||
     norm.includes('lore') ||
-        'Authenticity Notes',
+    norm.includes('gioithieu')
   ) {
     return 'gameplayStory';
   }
@@ -163,7 +163,7 @@ function normalizeHeader(h: string): string {
   return 'unknown';
 }
 
-        'Condition',
+function parseType(val: string): CabinetType {
   const norm = normalizeHeader(val);
   if (
     norm.includes('fake') ||
@@ -210,8 +210,8 @@ function parseStatus(val: string): 'On Hand' | 'OOS' {
 export async function fetchSpreadsheetGamesViaApi(
   spreadsheetId: string,
   tabName: string,
-        'Condition',
-        'Condition',
+  accessToken: string
+): Promise<{ games: BoardGame[]; sheetTitle: string; tabName: string }> {
   const range = encodeURIComponent(`${tabName}!A1:Z500`);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
 
@@ -223,14 +223,14 @@ export async function fetchSpreadsheetGamesViaApi(
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData?.error?.message || `Failed to read Google Sheet cells (HTTP ${res.status})`);
+    throw new Error(errorData?.error?.message || `Lỗi đọc ô tính Google Sheet (HTTP ${res.status})`);
   }
 
   const data = await res.json();
   const rows: any[][] = data.values || [];
 
   if (rows.length < 2) {
-    throw new Error(`Spreadsheet "${tabName}" contains no data rows.`);
+    throw new Error(`Bảng tính "${tabName}" không có dữ liệu hàng nào.`);
   }
 
   const headers = rows[0];
@@ -251,13 +251,13 @@ export async function fetchSpreadsheetGamesViaApi(
     let statusRaw = '';
     let status: 'On Hand' | 'OOS' = 'On Hand';
     let imageUrl = '';
-    let players = '2 - 4 players';
-    let playtime = '45 mins';
-    let category = 'Strategy';
+    let players = '2 - 4 người';
+    let playtime = '45 phút';
+    let category = 'Chiến thuật';
     let price = 500000;
-    let publisher = 'Official Publisher';
+    let publisher = 'Chưa rõ';
     let year = 2023;
-    let condition = 'Brand New (Sealed)';
+    let condition = 'Mới 99%';
     let gameplayStory = '';
     let authenticityNotes = '';
     let rating = 8.0;
@@ -269,7 +269,7 @@ export async function fetchSpreadsheetGamesViaApi(
       const field = colMap[cIdx];
 
       if (field === 'name') name = strVal;
-        'Condition',
+      else if (field === 'cabinetType') cabinetType = parseType(strVal);
       else if (field === 'gameType') {
         const normG = normalizeHeader(strVal);
         gameType = (normG.includes('expansion') || normG.includes('morong') || normG.includes('pack')) ? 'Expansion' : 'Base Game';
@@ -290,11 +290,11 @@ export async function fetchSpreadsheetGamesViaApi(
         if (!isNaN(y)) year = y;
       } else if (field === 'condition') {
         condition = strVal;
-        'Condition',
+        if (parseType(strVal) === 'fake') cabinetType = 'fake';
       } else if (field === 'gameplayStory') gameplayStory = strVal;
       else if (field === 'authenticityNotes') {
         authenticityNotes = strVal;
-        'Condition',
+        if (parseType(strVal) === 'fake') cabinetType = 'fake';
       } else if (field === 'rating') {
         const rt = parseFloat(strVal);
         if (!isNaN(rt) && rt > 0) {
@@ -322,7 +322,7 @@ export async function fetchSpreadsheetGamesViaApi(
 
       // 1. Cross-field fake detection
       const { isMarkedFake } = cleanGameTitleForSearch(name);
-      const fakeKeywords = ['fake', 'nhai', 'rep', 'replica', 'f1', 'in lau', 'bootleg', 'copy', 'counterfeit'];
+      const fakeKeywords = ['fake', 'nhai', 'nhái', 'rep', 'replica', 'f1', 'in lau', 'in lậu', 'bootleg', 'copy', 'bản nhái', 'hàng nhái', 'không bản quyền'];
       const anyFieldFake =
         isMarkedFake ||
         fakeKeywords.some(
@@ -382,28 +382,28 @@ export async function fetchSpreadsheetGamesViaApi(
         gameType,
         status,
         imageUrl: finalImageUrl,
-        players: players || (bggMatch ? `${bggMatch.minPlayers} - ${bggMatch.maxPlayers} players` : `${min} - ${max} players`),
+        players: players || (bggMatch ? `${bggMatch.minPlayers} - ${bggMatch.maxPlayers} người` : `${min} - ${max} người`),
         minPlayers: min,
         maxPlayers: max,
-        playtime: playtime || (bggMatch ? ${bggMatch.playtimeMinutes} mins : '45 mins'),
+        playtime: playtime || (bggMatch ? `${bggMatch.playtimeMinutes} phút` : '45 phút'),
         playtimeMinutes: parseInt(playtime, 10) || bggMatch?.playtimeMinutes || 45,
-        category: category && category !== 'Strategy' ? category : (bggMatch?.category || category || 'Strategy'),
+        category: category && category !== 'Chiến thuật' ? category : (bggMatch?.category || category || 'Chiến thuật'),
         price: price || (cabinetType === 'real' ? 850000 : 120000),
-        publisher: publisher && publisher !== 'Unknown Publisher' ? publisher : (bggMatch?.publisher || 'Unknown Publisher'),
+        publisher: publisher && publisher !== 'Chưa rõ' ? publisher : (bggMatch?.publisher || 'Chưa rõ'),
         year: year || bggMatch?.year || 2023,
-        condition: condition || (cabinetType === 'real' ? 'Brand New (Sealed)' : 'Replica / Fake Edition'),
+        condition: condition || (cabinetType === 'real' ? 'Mới nguyên seal' : 'Bản Fake / Replica'),
         gameplayStory:
           gameplayStory ||
-          `Strategic board game experience with engaging tabletop mechanics and deep tactical decisions. Enjoy playing ${name}!`,
+          `Trò chơi ${name} thuộc thể loại ${category || bggMatch?.category || 'chiến thuật'}, với lối chơi kịch tính và chiều sâu hấp dẫn.`,
         authenticityNotes:
           authenticityNotes ||
           (cabinetType === 'real'
-            ? 'Official authentic retail edition with verified components and publisher copyright.'
-            : 'Counterfeit warning: Bootleg or reproduction without official publisher copyright.'),
+            ? 'Sản phẩm chính hãng với tem kiểm định, chất liệu cao cấp.'
+            : 'Dấu hiệu: Bản replica / in lậu không có bản quyền chính thức.'),
         boxColor: cabinetType === 'real' ? '#b45309' : '#991b1b',
         rating: finalRating,
         bggRating: bggRating || finalRating,
-        'Condition',
+        addedDate: new Date().toISOString().split('T')[0],
       });
     }
   }
@@ -415,7 +415,7 @@ export async function fetchSpreadsheetGamesViaApi(
  * Creates a brand new Google Sheet directly in user's Google Drive with full boardgame data!
  */
 export async function createBoardgameSpreadsheetInDrive(
-        'Condition',
+  accessToken: string,
   title: string,
   games: BoardGame[]
 ): Promise<{ spreadsheetId: string; spreadsheetUrl: string }> {
@@ -428,12 +428,12 @@ export async function createBoardgameSpreadsheetInDrive(
     },
     body: JSON.stringify({
       properties: {
-      title: title || 'BoardGame Vault Collection (Real & Fake)',
+        title: title || 'Bộ Sưu Tập BoardGame Vault (Real & Fake)',
       },
       sheets: [
         {
           properties: {
-          title: 'Board Game Catalog',
+            title: 'Danh Sách BoardGame',
           },
         },
       ],
@@ -442,7 +442,7 @@ export async function createBoardgameSpreadsheetInDrive(
 
   if (!createRes.ok) {
     const errorData = await createRes.json().catch(() => ({}));
-    throw new Error(errorData?.error?.message || 'Failed to create new Google Sheet file on Drive');
+    throw new Error(errorData?.error?.message || 'Không thể tạo file Google Sheet mới trên Drive');
   }
 
   const created = await createRes.json();
@@ -451,18 +451,18 @@ export async function createBoardgameSpreadsheetInDrive(
 
   // 2. Populate values
   const headers = [
-        'Game Title',
-        'Cabinet Type (Real/Fake)',
-        'Image URL',
-        'Players',
-        'Playtime',
-        'Category',
-        'Price (VND)',
-        'Publisher',
-        'Release Year',
-        'Condition',
-        'Authenticity Notes / Description',
-        'BGG Rating',
+    'Tên game',
+    'Loại tủ (Real/Fake)',
+    'Hình ảnh (URL)',
+    'Số người chơi',
+    'Thời gian chơi',
+    'Thể loại',
+    'Giá tiền (VND)',
+    'Nhà phát hành',
+    'Năm phát hành',
+    'Tình trạng',
+    'Dấu hiệu nhận biết / Ghi chú',
+    'Đánh giá',
   ];
 
   const valueRows = games.map((g) => [
@@ -488,7 +488,7 @@ export async function createBoardgameSpreadsheetInDrive(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      range: 'Board Game Catalog!A1',
+      range: 'Danh Sách BoardGame!A1',
       majorDimension: 'ROWS',
       values: [headers, ...valueRows],
     }),

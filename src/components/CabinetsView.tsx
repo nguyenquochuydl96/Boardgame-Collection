@@ -129,9 +129,9 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
 
   const isBothCabinets = cabinetFocus === 'both';
   const shelfColumns = isBothCabinets
-    ? 'grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3 md:gap-4'
-    : 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4';
-  const gamesPerRow = viewMode === 'spine' ? 8 : isBothCabinets ? 2 : 4;
+    ? 'grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 md:gap-6 items-end'
+    : 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 items-end';
+  const gamesPerRow = viewMode === 'spine' ? 8 : isBothCabinets ? 3 : 4;
   const realShelves = chunkIntoShelves(sortedRealGames, gamesPerRow);
   const fakeShelves = chunkIntoShelves(sortedFakeGames, gamesPerRow);
 

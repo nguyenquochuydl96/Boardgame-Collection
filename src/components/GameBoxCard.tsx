@@ -186,93 +186,82 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
     );
   }
 
-  // 3D Front Box Art Card - Full Uncropped Box Art Showcase
+  // 3D Front Box Art Card - Adaptive Physical Shelf Stand
   return (
     <div
       onClick={() => onSelect(game)}
-      className={`group relative cursor-pointer perspective-1000 flex flex-col h-full ${
-        isOOS ? 'opacity-55 grayscale contrast-90 hover:opacity-90 hover:grayscale-0 hover:contrast-100 transition-all duration-300' : ''
+      className={`group relative cursor-pointer select-none flex flex-col items-center justify-end w-full transition-transform duration-300 ease-out hover:-translate-y-2.5 z-10 hover:z-30 ${
+        isOOS ? 'opacity-55 grayscale contrast-90 hover:opacity-100 hover:grayscale-0 hover:contrast-100' : ''
       }`}
     >
+      {/* 3D Physical Board Game Box */}
       <div
-        className={`game-box-3d relative rounded-lg overflow-hidden flex flex-col h-full bg-slate-900/90 border transition-all duration-300 ${
+        className={`game-box-3d relative rounded-md overflow-hidden transition-all duration-300 flex flex-col justify-end w-full max-w-[340px] bg-slate-950 ${
           isReal
-            ? 'border-amber-500/30 hover:border-amber-400 shadow-xl shadow-amber-950/20'
-            : 'border-rose-900/40 hover:border-rose-500/60 shadow-xl shadow-rose-950/20'
+            ? 'shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_12px_rgba(245,158,11,0.15)] border border-amber-500/30 group-hover:border-amber-400 group-hover:shadow-[0_18px_36px_rgba(0,0,0,0.95),0_6px_20px_rgba(245,158,11,0.3)]'
+            : 'shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_12px_rgba(244,63,94,0.15)] border border-rose-600/30 group-hover:border-rose-400 group-hover:shadow-[0_18px_36px_rgba(0,0,0,0.95),0_6px_20px_rgba(244,63,94,0.3)]'
         }`}
       >
-        {/* Box Top Lip Depth Simulation */}
+        {/* Telescoping Box Top Lid Thickness Simulation */}
         <div
-          className={`h-1.5 w-full ${
+          className={`h-1.5 w-full shrink-0 ${
             isReal
-              ? 'bg-gradient-to-r from-amber-600 via-amber-400 to-amber-700'
-              : 'bg-gradient-to-r from-rose-700 via-rose-500 to-rose-800'
+              ? 'bg-gradient-to-r from-amber-600 via-amber-300 to-amber-700'
+              : 'bg-gradient-to-r from-rose-700 via-rose-400 to-rose-800'
           }`}
         />
 
-        {/* Box Art Container - Layered Uncropped Presentation (Full Retail Box Cover Visible) */}
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-slate-950 flex items-center justify-center p-2.5">
-          {/* Ambient blurred backdrop image filling the card container seamlessly */}
+        {/* Box Art Container - 100% Uncropped Retail Box Cover (Full Box Visible) */}
+        <div className="relative w-full overflow-hidden bg-slate-950 flex items-center justify-center p-2 min-h-[180px] max-h-[300px]">
+          {/* Subtle ambient backdrop filling the box depth */}
           <img
             src={displayImage}
             alt=""
             aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover blur-xl opacity-35 scale-125 pointer-events-none"
+            className="absolute inset-0 w-full h-full object-cover blur-xl opacity-30 scale-125 pointer-events-none"
           />
           <div className="absolute inset-0 bg-slate-950/40 pointer-events-none" />
 
-          {/* Foreground: 100% Uncropped Retail Box Cover (No edge cropping for landscape/square boxes) */}
+          {/* 100% Uncropped Retail Box Cover Image */}
           <img
             src={displayImage}
             alt={game.name}
             referrerPolicy="no-referrer"
             onError={() => setImageError(true)}
-            className="relative z-10 max-h-full max-w-full object-contain rounded-sm shadow-[0_12px_24px_rgba(0,0,0,0.85)] border border-white/10 transition-transform duration-500 group-hover:scale-105"
+            className="relative z-10 max-h-[280px] max-w-full object-contain rounded-[2px] shadow-[0_8px_20px_rgba(0,0,0,0.8)] border border-white/10 transition-transform duration-500 group-hover:scale-[1.03]"
           />
 
-          {/* Subtle bottom scrim gradient for title legibility */}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-transparent to-transparent opacity-80 pointer-events-none z-10" />
-
-          {/* Real Collection vs Replicas & Fake Seal + Type + OOS Tag */}
+          {/* Authentic Real / Fake Badge */}
           <div className="absolute top-2.5 left-2.5 z-20 flex flex-col gap-1 items-start">
             {isReal ? (
-              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 shadow-md backdrop-blur-sm text-[10px] font-bold tracking-wide">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>REAL COLLECTION</span>
+              <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 shadow-md backdrop-blur-sm text-[9px] font-black tracking-wider uppercase">
+                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                <span>REAL</span>
               </div>
             ) : (
-              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-950/90 text-rose-300 border border-rose-500/40 shadow-md backdrop-blur-sm text-[10px] font-bold tracking-wide">
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
-                <span>REPLICAS & FAKE</span>
+              <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-950/90 text-rose-300 border border-rose-500/50 shadow-md backdrop-blur-sm text-[9px] font-black tracking-wider uppercase">
+                <AlertTriangle className="w-3 h-3 text-rose-400" />
+                <span>FAKE</span>
               </div>
             )}
-            {isExpansion ? (
-              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-950/90 text-purple-300 border border-purple-500/40 shadow-md backdrop-blur-sm text-[9px] font-bold tracking-wide">
-                <Layers className="w-3 h-3 text-purple-400" />
-                <span>EXPANSION</span>
-              </div>
-            ) : (
-              <div className="inline-flex items-center px-1.5 py-0.2 rounded bg-slate-900/80 text-slate-300 border border-slate-700/60 text-[8px] font-semibold tracking-wide">
-                BASE GAME
-              </div>
+            {isExpansion && (
+              <span className="px-1.5 py-0.5 rounded bg-purple-950/90 text-purple-300 border border-purple-500/60 font-black text-[8px] tracking-wider uppercase shadow backdrop-blur-sm">
+                EXP
+              </span>
             )}
             {isOOS && (
-              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-black/90 text-rose-300 border border-rose-500/70 shadow-lg text-[10px] font-mono font-bold tracking-wider uppercase backdrop-blur-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                <span>OUT OF STOCK</span>
-              </div>
+              <span className="px-1.5 py-0.5 rounded bg-black/90 text-rose-400 border border-rose-500/80 font-mono font-black text-[8px] tracking-wider uppercase shadow backdrop-blur-sm">
+                OOS
+              </span>
             )}
           </div>
 
           {/* BGG Rating Badge */}
           <div className="absolute top-2.5 right-2.5 z-20 flex flex-col items-end gap-1">
             <div
-              className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/85 border border-amber-500/40 text-amber-300 text-[11px] font-mono font-bold backdrop-blur-sm shadow-md"
-              title={`Official BGG Rating: ${(game.bggRating || game.rating).toFixed(1)}/10`}
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/85 border border-amber-500/40 text-amber-300 text-[10px] font-mono font-bold backdrop-blur-sm shadow-md"
+              title={`BGG Rating: ${(game.bggRating || game.rating).toFixed(1)}/10`}
             >
-              <span className="text-[8px] font-extrabold text-amber-400 bg-amber-950/80 px-1 py-0.2 rounded uppercase tracking-wider border border-amber-500/30">
-                BGG
-              </span>
               <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
               <span>{(game.bggRating || game.rating).toFixed(1)}</span>
             </div>
@@ -286,7 +275,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             )}
           </div>
 
-          {/* Quick Action: Move Between Cabinets */}
+          {/* Quick Action: Move Between Cabinets on Hover */}
           <div className="absolute bottom-2.5 right-2.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
             <button
               onClick={(e) => onToggleCabinet(game, e)}
@@ -296,73 +285,83 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
               <ArrowLeftRight className="w-3.5 h-3.5 text-amber-300" />
             </button>
             <div className="p-1.5 rounded-md bg-slate-800/90 text-slate-200 border border-slate-600 shadow-md">
-              <Eye className="w-3.5 h-3.5" />
+              <Eye className="w-3.5 h-3.5 text-amber-400" />
             </div>
           </div>
 
-          {/* Bottom Title on Image */}
+          {/* Box Bottom Title Overlay */}
           <div
-            className="absolute bottom-2.5 left-2.5 right-12 z-20"
+            className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-2.5 pt-6 z-10 flex flex-col justify-end"
             title={game.name}
           >
-            <h3 className="text-sm font-bold text-white drop-shadow-md line-clamp-2 leading-snug">
+            <h3 className="text-xs md:text-sm font-bold text-white drop-shadow-md line-clamp-1 leading-snug">
               {game.name}
             </h3>
+            <div className="flex items-center justify-between text-[10px] text-slate-300 mt-0.5">
+              <span className="truncate max-w-[130px] text-slate-400">{game.publisher} · {game.year}</span>
+              <span className="font-mono font-bold text-amber-400 tabular-nums">
+                {formatCurrency(game.price)}
+              </span>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Card Info Details */}
-        <div className="p-3 flex flex-col gap-2 flex-1 justify-between bg-slate-900/70 border-t border-slate-800/60">
-          <div
-            className="flex items-center gap-1.5 text-[11px] text-slate-400"
-            title={game.category}
-          >
-            <span className="min-w-0 flex-1 truncate">{game.category}</span>
-            <span aria-hidden="true" className="shrink-0">·</span>
-            <span className="shrink-0 tabular-nums">{game.year}</span>
-          </div>
+      {/* Shelf Plinth Tag (Nameplate resting directly on the wooden shelf) */}
+      <div className="w-full max-w-[340px] mt-1.5 px-2.5 py-1 rounded bg-black/60 border border-white/10 backdrop-blur-sm flex items-center justify-between text-[10px] text-slate-300 shadow-md">
+        <div className="flex items-center gap-1.5 text-slate-400">
+          <Users className="w-3.5 h-3.5 text-amber-400/80" />
+          <span className="font-medium text-slate-300">{game.players}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-slate-400">
+          <Clock className="w-3.5 h-3.5 text-amber-400/80" />
+          <span className="font-medium text-slate-300">{game.playtime}</span>
+        </div>
+        <span
+          className="text-[9px] font-semibold text-amber-300/90 truncate max-w-[80px]"
+          title={game.category}
+        >
+          {game.category.split('/')[0]}
+        </span>
+      </div>
 
-          <div className="flex items-center justify-between text-[11px] text-slate-300">
-            <div className="flex items-center gap-1">
-              <Users className="w-3.5 h-3.5 text-slate-400" />
-              <span>{game.players}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              <span>{game.playtime}</span>
-            </div>
-          </div>
+      {/* Ground Contact Shadow casting onto the wooden shelf plank */}
+      <div className="w-4/5 h-2 -mt-0.5 bg-black/80 blur-[3px] rounded-full pointer-events-none" />
 
-          {/* Condition & Price & Status */}
-          <div className="flex items-baseline justify-between gap-2 pt-2 border-t border-slate-800/80">
-            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <span
-                className="text-[11px] text-slate-300 truncate"
-                title={game.condition}
-              >
-                {game.condition}
-              </span>
-              {isOOS ? (
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-950/80 text-rose-400 border border-rose-800/60 shrink-0">
-                  OOS
-                </span>
-              ) : (
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 shrink-0">
-                  On Hand
-                </span>
-              )}
-            </div>
-            <span className="shrink-0 font-mono font-bold text-xs text-amber-400 tabular-nums whitespace-nowrap">
-              {formatCurrency(game.price)}
+      {/* Hover Quick Card Popup Tooltip */}
+      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 hidden group-hover:flex flex-col z-50 w-72 p-3 bg-slate-900/98 border border-amber-500/40 rounded-xl shadow-2xl text-left pointer-events-none backdrop-blur-md animate-fade-in">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-bold text-white truncate">{game.name}</p>
+          {isOOS ? (
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-950 text-rose-300 border border-rose-500/40">
+              OOS
             </span>
-          </div>
-
-          {/* Gameplay Lore & Strategic Overview */}
-          {game.gameplayStory && (
-            <p className="text-[11px] text-slate-300/90 line-clamp-2 leading-relaxed mt-1 pt-1.5 border-t border-slate-800/60 group-hover:text-amber-200 transition-colors">
-              {game.gameplayStory}
-            </p>
+          ) : (
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/40">
+              On Hand
+            </span>
           )}
+        </div>
+        <div className="flex items-center gap-2 mt-1 text-[10px] text-slate-400">
+          <span>{game.publisher} · {game.year}</span>
+          <span>·</span>
+          <span className="text-amber-300 font-bold font-mono">★ {(game.bggRating || game.rating).toFixed(1)} BGG</span>
+        </div>
+        {game.condition && (
+          <p className="text-[10px] text-amber-300/80 mt-1 font-mono">
+            Condition: {game.condition}
+          </p>
+        )}
+        {game.gameplayStory && (
+          <p className="text-[10px] text-slate-300 line-clamp-3 mt-1.5 leading-snug">
+            {game.gameplayStory}
+          </p>
+        )}
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800 text-[11px]">
+          <span className="text-slate-300">{game.players} · {game.playtime}</span>
+          <span className="font-bold text-amber-400 font-mono tabular-nums">
+            {formatCurrency(game.price)}
+          </span>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-﻿import { BoardGame, CabinetType } from '../types/boardgame';
+import { BoardGame, CabinetType } from '../types/boardgame';
 import { INITIAL_BOARDGAMES } from '../data/defaultGames';
 import {
   findInBggCatalog,
@@ -268,15 +268,15 @@ function identifyColumnField(header: string, sampleValues: any[] = []): keyof Bo
   if (sampleValues && sampleValues.length > 0) {
     const stringSamples = sampleValues.map((s) => String(s).toLowerCase().trim());
 
-    // Check if values look like prices (e.g. 1800000, "$ 1,800,000", "75000 vnd")
+    // Check if values look like prices (e.g. 1800000, "$ 1,800,000", "75.000 đ")
     const hasPrices = stringSamples.some((s) => {
       const num = parseInt(s.replace(/[^0-9]/g, ''), 10);
-      return s.includes('$') || s.includes('vnd') || (!isNaN(num) && num >= 10000);
+      return s.includes('$') || s.includes('đ') || s.includes('vnd') || (!isNaN(num) && num >= 10000);
     });
     if (hasPrices) return 'price';
 
     // Check status values
-    if (stringSamples.some((s) => s.includes('on hand') || s.includes('oos') || s.includes('out of stock'))) {
+    if (stringSamples.some((s) => s.includes('on hand') || s.includes('oos') || s.includes('out of stock') || s.includes('hết hàng'))) {
       return 'status';
     }
 
@@ -286,7 +286,7 @@ function identifyColumnField(header: string, sampleValues: any[] = []): keyof Bo
     }
 
     // Check game type values
-    if (stringSamples.some((s) => s === 'base game' || s === 'expansion')) {
+    if (stringSamples.some((s) => s === 'base game' || s === 'expansion' || s === 'mở rộng')) {
       return 'gameType';
     }
 
@@ -309,11 +309,11 @@ export function parseCabinetType(val: string): CabinetType {
     norm.includes('fake') ||
     norm.includes('replica') ||
     norm.includes('replicas') ||
-        'counterfeit',
+    norm.includes('nhai') ||
     norm.includes('f1') ||
     norm.includes('rep') ||
     norm.includes('bootleg') ||
-        'counterfeit',
+    norm.includes('khongbanquyen') ||
     norm.includes('inlau') ||
     norm.includes('hangfake') ||
     norm.includes('bannhai') ||
@@ -343,7 +343,7 @@ export function parseStatus(val: string): 'On Hand' | 'OOS' {
     norm.includes('tamhet') ||
     norm.includes('chayhang') ||
     norm.includes('daban') ||
-        'counterfeit',
+    norm.includes('khongcosan')
   ) {
     return 'OOS';
   }
@@ -369,7 +369,7 @@ export function parseGameType(val: string): 'Base Game' | 'Expansion' {
 }
 
 /**
-   * Parses numeric price from string like "1,250,000", "$50"
+ * Parses numeric price from string like "1.250.000 đ", "1250000", "$50"
  */
 function parsePrice(val: any): number {
   if (typeof val === 'number') return val;
@@ -521,15 +521,15 @@ export function parseGvizResponse(text: string): BoardGame[] {
         'copy',
         'reproduction',
         'unlicensed',
-        // filter fake keyword
-        'counterfeit',
+        'nhai',
+        'nhái',
         'rep',
         'f1',
-        // filter fake keyword
-        'counterfeit',
-        'counterfeit',
-        'counterfeit',
-        'counterfeit',
+        'in lau',
+        'in lậu',
+        'bản nhái',
+        'hàng nhái',
+        'không bản quyền',
       ];
       const anyFieldFake =
         isMarkedFake ||
@@ -602,9 +602,9 @@ export function parseGvizResponse(text: string): BoardGame[] {
         maxPlayers: userMeta?.maxPlayers || bggMatch?.maxPlayers || max,
         playtime: playtime || (userMeta ? `${userMeta.playtime} mins` : (bggMatch ? `${bggMatch.playtimeMinutes} mins` : '45 mins')),
         playtimeMinutes: userMeta?.playtime || bggMatch?.playtimeMinutes || parseInt(playtime, 10) || 45,
-        category: category && category !== 'Strategy' ? category : (userMeta?.category || bggMatch?.category || category || 'Strategy'),
+        category: category && category !== 'Chiến thuật' && category !== 'Strategy' ? category : (userMeta?.category || bggMatch?.category || category || 'Strategy'),
         price: price || (userMeta?.price ?? (cabinetType === 'real' ? 850000 : 120000)),
-        publisher: publisher && publisher !== 'Unknown Publisher' ? publisher : (userMeta?.publisher || bggMatch?.publisher || 'Unknown Publisher'),
+        publisher: publisher && publisher !== 'Đang cập nhật' && publisher !== 'Chưa rõ' && publisher !== 'Unknown Publisher' ? publisher : (userMeta?.publisher || bggMatch?.publisher || 'Unknown Publisher'),
         year: year || userMeta?.year || bggMatch?.year || 2023,
         condition: condition || (cabinetType === 'real' ? 'Brand New (Sealed)' : 'Replica / Fake Edition'),
         gameplayStory:
@@ -769,7 +769,7 @@ export async function fetchFromGoogleSheet(
   }
 
   throw new Error(
-    'Unable to read data from this Google Sheet link. Please ensure your Sheet is shared as public view, or import a CSV file directly.'
+    'Không thể đọc dữ liệu từ liên kết Google Sheet này. Vui lòng đảm bảo Sheet đã mở quyền "Bất kỳ ai có liên kết đều có thể xem", hoặc nhập/tải file CSV trực tiếp.'
   );
 }
 
@@ -922,15 +922,15 @@ export function parseCsvToGames(csvText: string): BoardGame[] {
         'copy',
         'reproduction',
         'unlicensed',
-        // filter fake keyword
-        'counterfeit',
+        'nhai',
+        'nhái',
         'rep',
         'f1',
-        // filter fake keyword
-        'counterfeit',
-        'counterfeit',
-        'counterfeit',
-        'counterfeit',
+        'in lau',
+        'in lậu',
+        'bản nhái',
+        'hàng nhái',
+        'không bản quyền',
       ];
       const anyFieldFake =
         isMarkedFake ||
@@ -993,9 +993,9 @@ export function parseCsvToGames(csvText: string): BoardGame[] {
         maxPlayers: userMeta?.maxPlayers || bggMatch?.maxPlayers || max,
         playtime: playtime || (userMeta ? `${userMeta.playtime} mins` : (bggMatch ? `${bggMatch.playtimeMinutes} mins` : '45 mins')),
         playtimeMinutes: userMeta?.playtime || bggMatch?.playtimeMinutes || parseInt(playtime, 10) || 45,
-        category: category && category !== 'Strategy' ? category : (userMeta?.category || bggMatch?.category || category || 'Strategy'),
+        category: category && category !== 'Chiến thuật' && category !== 'Strategy' ? category : (userMeta?.category || bggMatch?.category || category || 'Strategy'),
         price: price || (userMeta?.price ?? (cabinetType === 'real' ? 850000 : 120000)),
-        publisher: publisher && publisher !== 'Unknown Publisher' ? publisher : (userMeta?.publisher || bggMatch?.publisher || 'Unknown Publisher'),
+        publisher: publisher && publisher !== 'Chưa rõ' && publisher !== 'Unknown Publisher' ? publisher : (userMeta?.publisher || bggMatch?.publisher || 'Unknown Publisher'),
         year: year || userMeta?.year || bggMatch?.year || 2023,
         condition: condition || (cabinetType === 'real' ? 'Brand New (Sealed)' : 'Replica / Fake Edition'),
         gameplayStory:
