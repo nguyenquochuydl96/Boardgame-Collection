@@ -3,7 +3,7 @@
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    background-color: #0c0e12;
+    background-color: #071526;
     color: #f1f5f9;
     overflow-x: hidden;
   }
@@ -40,7 +40,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(251,191,36,0.15) 50%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,107,0,0.15) 50%, rgba(255,255,255,0) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -52,7 +52,7 @@
 }
 
 .gold-glow-border {
-  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.4), 0 10px 25px -5px rgba(217, 119, 6, 0.25);
+  box-shadow: 0 0 0 1px rgba(255, 107, 0, 0.4), 0 10px 25px -5px rgba(255, 107, 0, 0.25);
 }
 
 .ruby-glow-border {
@@ -61,8 +61,8 @@
 
 /* Realistic Cabinet Shelves with Ambient LED Top Backlight */
 .shelf-wood-real {
-  background: linear-gradient(180deg, #422410 0%, #2b180d 60%, #170b05 100%);
-  box-shadow: inset 0 3px 6px rgba(251, 191, 36, 0.15), 0 16px 30px -4px rgba(0, 0, 0, 0.9);
+  background: linear-gradient(180deg, #0e2847 0%, #081a2e 60%, #05101d 100%);
+  box-shadow: inset 0 3px 6px rgba(255, 107, 0, 0.15), 0 16px 30px -4px rgba(0, 0, 0, 0.9);
   position: relative;
 }
 
@@ -73,19 +73,19 @@
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.6), transparent);
-  box-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
+  background: linear-gradient(90deg, transparent, rgba(255, 107, 0, 0.7), transparent);
+  box-shadow: 0 0 10px rgba(255, 107, 0, 0.8);
 }
 
 .shelf-lip-real {
-  background: linear-gradient(90deg, #3d1c08 0%, #78350f 50%, #3d1c08 100%);
-  border-top: 2px solid #b45309;
-  border-bottom: 3px solid #140602;
+  background: linear-gradient(90deg, #091e36 0%, #102e52 50%, #091e36 100%);
+  border-top: 2px solid #ff6b00;
+  border-bottom: 3px solid #040c17;
   box-shadow: 0 14px 20px rgba(0, 0, 0, 0.8);
 }
 
 .shelf-wood-fake {
-  background: linear-gradient(180deg, #27272a 0%, #18181b 60%, #09090b 100%);
+  background: linear-gradient(180deg, #1b263b 0%, #0f172a 60%, #080d19 100%);
   box-shadow: inset 0 3px 6px rgba(244, 63, 94, 0.15), 0 16px 30px -4px rgba(0, 0, 0, 0.9);
   position: relative;
 }
@@ -102,9 +102,9 @@
 }
 
 .shelf-lip-fake {
-  background: linear-gradient(90deg, #3f3f46 0%, #52525b 50%, #3f3f46 100%);
-  border-top: 2px solid #71717a;
-  border-bottom: 3px solid #09090b;
+  background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+  border-top: 2px solid #64748b;
+  border-bottom: 3px solid #090d19;
   box-shadow: 0 14px 20px rgba(0, 0, 0, 0.8);
 }
 
@@ -116,7 +116,7 @@
 
 .game-box-3d:hover {
   transform: translateY(-8px) scale(1.03) rotateZ(-0.5deg);
-  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.9), 0 0 15px rgba(251, 191, 36, 0.15);
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.9), 0 0 15px rgba(255, 107, 0, 0.2);
 }
 
 .game-spine-3d {
@@ -130,80 +130,28 @@
 
 /* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #071526;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: #163558;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #ff6b00;
 }
 
-/* Official Google Sign-In Button */
-.gsi-material-button {
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  background-color: WHITE;
-  border: 1px solid #747775;
-  border-radius: 8px;
-  box-sizing: border-box;
-  color: #1f1f1f;
-  cursor: pointer;
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  height: 40px;
-  outline: none;
-  overflow: hidden;
-  padding: 0 16px;
-  position: relative;
-  text-align: center;
-  transition: background-color .218s, border-color .218s, box-shadow .218s;
-  vertical-align: middle;
-  white-space: nowrap;
-  width: auto;
-  display: inline-flex;
-  align-items: center;
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-.gsi-material-button .gsi-material-button-icon {
-  height: 20px;
-  margin-right: 12px;
-  min-width: 20px;
-  width: 20px;
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
-.gsi-material-button .gsi-material-button-content-wrapper {
-  align-items: center;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  height: 100%;
-  justify-content: space-between;
-  position: relative;
-  width: 100%;
-}
-
-.gsi-material-button .gsi-material-button-contents {
-  flex-grow: 1;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: top;
-}
-
-.gsi-material-button:hover {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  background-color: #f8fafc;
-}
-

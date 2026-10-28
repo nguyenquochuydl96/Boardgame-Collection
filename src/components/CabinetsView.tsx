@@ -192,7 +192,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
       )}
 
       {/* Control Bar & Filter Strip */}
-      <div className="bg-[#12161f] border border-slate-800/80 rounded-xl p-4 shadow-lg flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 md:gap-4">
+      <div className="bg-[#091D33] border border-[#163558] rounded-2xl p-4 shadow-xl flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 md:gap-4">
         {/* Search input */}
         <div className="relative flex-1 min-w-[240px]">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -201,7 +201,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by title, publisher, category, counterfeit signs..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700/80 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/80 transition-colors"
+            className="w-full pl-10 pr-4 py-2.5 bg-[#0C243E] border border-[#1A3F69] rounded-full text-sm text-white placeholder-[#6080A2] focus:outline-none focus:border-[#FF6B00] transition-colors"
           />
           {searchQuery && (
             <button
@@ -216,7 +216,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Players filter */}
-          <div className="flex items-center gap-1 bg-slate-900 border border-slate-700/80 rounded-lg p-1 text-xs">
+          <div className="flex items-center gap-1 bg-[#0C243E] border border-[#1A3F69] rounded-full p-1 text-xs">
             <span className="text-slate-400 px-2">Players:</span>
             {(['all', '2', '4', '6+'] as const).map((opt) => (
               <button
@@ -237,7 +237,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
           <select
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500"
+            className="bg-[#0C243E] border border-[#1A3F69] rounded-full px-3.5 py-2 text-xs font-semibold text-[#8EADC8] hover:text-white focus:outline-none focus:border-[#FF6B00]"
           >
             <option value="all">All Categories ({games.length})</option>
             {categories.map((c) => (
@@ -248,7 +248,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
           </select>
 
           {/* Base Game vs Expansion Filter */}
-          <div className="flex items-center gap-1 bg-slate-900 border border-slate-700/80 rounded-lg p-1 text-xs">
+          <div className="flex items-center gap-1 bg-[#0C243E] border border-[#1A3F69] rounded-full p-1 text-xs">
             <span className="text-slate-400 px-2 flex items-center gap-1">
               <Layers className="w-3.5 h-3.5 text-purple-400" />
               <span>Type:</span>
@@ -272,7 +272,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
         {/* Right: Cabinet Focus & View Mode Switcher */}
         <div className="flex flex-wrap items-center gap-2">
           {/* View mode (Front box vs Spine view) */}
-          <div className="flex items-center bg-slate-900 border border-slate-700/80 rounded-lg p-1 text-xs">
+          <div className="flex items-center bg-[#0C243E] border border-[#1A3F69] rounded-full p-1 text-xs">
             <button
               onClick={() => setViewMode('front')}
               className={`px-2.5 py-1 rounded flex items-center gap-1.5 transition-colors whitespace-nowrap ${
@@ -300,7 +300,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
           </div>
 
           {/* Cabinet Focus Switcher */}
-          <div className="flex items-center bg-slate-900 border border-slate-700/80 rounded-lg p-1 text-xs">
+          <div className="flex items-center bg-[#0C243E] border border-[#1A3F69] rounded-full p-1 text-xs">
             <button
               onClick={() => setCabinetFocus('both')}
               className={`px-2.5 py-1 rounded transition-colors whitespace-nowrap ${
@@ -338,7 +338,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
             <button
               onClick={onEnrichBgg}
               disabled={isEnrichingBgg}
-              className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-orange-500/30 border border-amber-500/40 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50 whitespace-nowrap"
+              className="px-3.5 py-1.5 rounded-full bg-[#0E2642] hover:bg-[#143459] border border-[#1E4570] text-[#FF6B00] text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95 disabled:opacity-50 whitespace-nowrap"
               title="Automatically find official retail box art & BGG ratings for all games"
             >
               <Sparkles className={`w-3.5 h-3.5 text-amber-400 ${isEnrichingBgg ? 'animate-spin' : ''}`} />

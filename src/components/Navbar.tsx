@@ -1,10 +1,10 @@
-﻿import React, { useState } from 'react';
-import { Sheet, RefreshCw, Plus, Layers, GitCompare, BarChart3, Palette } from 'lucide-react';
+import React, { useState } from 'react';
+import { Home, Sheet, Plus, Layers, GitCompare, BarChart3, Palette, RefreshCw } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface NavbarProps {
-  activeTab: 'cabinets' | 'compare' | 'stats' | 'sheet';
-  setActiveTab: (tab: 'cabinets' | 'compare' | 'stats' | 'sheet') => void;
+  activeTab: 'overview' | 'cabinets' | 'compare' | 'stats' | 'sheet';
+  setActiveTab: (tab: 'overview' | 'cabinets' | 'compare' | 'stats' | 'sheet') => void;
   onOpenSyncModal: () => void;
   onOpenAddModal: () => void;
   isSyncing: boolean;
@@ -34,76 +34,90 @@ export const Navbar: React.FC<NavbarProps> = ({
   setTheme,
 }) => {
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
+
   return (
-    <header className="sticky top-0 z-40 bg-[#090b0e]/95 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-8 py-3.5 transition-all">
+    <header className="sticky top-0 z-40 bg-[#071526]/95 backdrop-blur-md border-b border-[#163558] px-4 md:px-8 py-3 transition-all">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 md:gap-4 xl:gap-6">
         {/* Logo & Brand Wordmark */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center shadow-lg shadow-amber-900/40 border border-amber-400/30">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#FF6B00] to-[#FF8C33] flex items-center justify-center shadow-lg shadow-[#FF6B00]/30 border border-[#FF9E4D]/30">
             <Layers className="w-5 h-5 text-white" />
           </div>
           <button
-            onClick={() => setActiveTab('cabinets')}
+            onClick={() => setActiveTab('overview')}
             className="text-left group"
           >
-            <span className="text-lg md:text-xl font-bold tracking-tight text-white font-display block whitespace-nowrap">
+            <span className="text-lg md:text-xl font-bold tracking-tight text-white font-display block whitespace-nowrap group-hover:text-[#FF6B00] transition-colors">
               BoardGame Vault
             </span>
           </button>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav className="hidden md:flex items-center gap-1 min-w-0">
+        {/* Navigation Tabs (Overview & Detailed Cabinets) */}
+        <nav className="hidden md:flex items-center gap-1.5 min-w-0 bg-[#0B1E34] p-1 rounded-full border border-[#163558]">
+          {/* 1. Overview Tab */}
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-3.5 py-1.5 text-xs lg:text-[13px] font-semibold rounded-full transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+              activeTab === 'overview'
+                ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/40'
+                : 'text-[#8EADC8] hover:text-white hover:bg-[#122A47]'
+            }`}
+          >
+            <Home className="w-4 h-4" />
+            <span>Tổng Quan</span>
+          </button>
+
+          {/* 2. Detailed Cabinets Tab */}
           <button
             onClick={() => setActiveTab('cabinets')}
-            className={`px-2.5 2xl:px-3.5 py-1.5 text-xs lg:text-[13px] 2xl:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 text-xs lg:text-[13px] font-semibold rounded-full transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               activeTab === 'cabinets'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/40'
+                : 'text-[#8EADC8] hover:text-white hover:bg-[#122A47]'
             }`}
           >
             <Layers className="w-4 h-4" />
-            <span className="hidden 2xl:inline">Dual Cabinets</span>
-            <span className="2xl:hidden">Cabinets</span>
+            <span>2 Kệ Game Chi Tiết</span>
           </button>
 
+          {/* 3. Compare Tab */}
           <button
             onClick={() => setActiveTab('compare')}
-            className={`px-2.5 2xl:px-3.5 py-1.5 text-xs lg:text-[13px] 2xl:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 text-xs lg:text-[13px] font-semibold rounded-full transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               activeTab === 'compare'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/40'
+                : 'text-[#8EADC8] hover:text-white hover:bg-[#122A47]'
             }`}
           >
             <GitCompare className="w-4 h-4" />
-            <span className="hidden 2xl:inline">Authenticity Compare</span>
-            <span className="2xl:hidden">Compare</span>
+            <span>So Sánh Thật/Giả</span>
           </button>
 
+          {/* 4. Analytics Tab */}
           <button
             onClick={() => setActiveTab('stats')}
-            className={`px-2.5 2xl:px-3.5 py-1.5 text-xs lg:text-[13px] 2xl:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 text-xs lg:text-[13px] font-semibold rounded-full transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               activeTab === 'stats'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/40'
+                : 'text-[#8EADC8] hover:text-white hover:bg-[#122A47]'
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            <span className="hidden 2xl:inline">Collection Analytics</span>
-            <span className="2xl:hidden">Stats</span>
+            <span>Analytics</span>
           </button>
 
+          {/* 5. Google Sheet Tab */}
           <button
             onClick={() => setActiveTab('sheet')}
-            className={`px-2.5 2xl:px-3.5 py-1.5 text-xs lg:text-[13px] 2xl:text-sm font-medium rounded-md transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 text-xs lg:text-[13px] font-semibold rounded-full transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
               activeTab === 'sheet'
-                ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/40'
+                : 'text-[#8EADC8] hover:text-white hover:bg-[#122A47]'
             }`}
           >
             <Sheet className="w-4 h-4" />
-            <span className="hidden 2xl:inline">Google Sheet Sync</span>
-            <span className="2xl:hidden">Sheet</span>
+            <span>Google Sheet</span>
           </button>
         </nav>
 
@@ -112,7 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {currentUser ? (
             <button
               onClick={onOpenSyncModal}
-              className="flex items-center gap-2 p-1.5 pr-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 transition-colors text-xs text-slate-200"
+              className="flex items-center gap-2 p-1.5 pr-3 rounded-full bg-[#0E233C] hover:bg-[#142C4C] border border-[#163558] transition-colors text-xs text-[#8EADC8] hover:text-white"
               title={`Google connected: ${currentUser.email}`}
             >
               {currentUser.photoURL ? (
@@ -126,14 +140,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                   G
                 </div>
               )}
-              <span className="hidden sm:inline max-w-[100px] truncate text-[11px]">
+              <span className="hidden sm:inline max-w-[100px] truncate text-[11px] font-semibold">
                 {currentUser.displayName || currentUser.email?.split('@')[0]}
               </span>
             </button>
           ) : onSignInWithGoogle ? (
             <button
               onClick={onSignInWithGoogle}
-              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-[#8EADC8] hover:text-white bg-[#0E233C] hover:bg-[#142C4C] border border-[#163558] rounded-full transition-colors whitespace-nowrap shrink-0"
               aria-label="Sign in with Google"
               title="Connect Google Drive & Sheets"
             >
@@ -147,100 +161,23 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           ) : null}
 
-          {setTheme && (
-            <div className="relative">
-              <button
-                onClick={() => setShowThemeDropdown(!showThemeDropdown)}
-                className="flex items-center gap-1.5 px-2.5 py-2 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors"
-                title="Change Shelf Theme"
-              >
-                <Palette className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden xl:inline capitalize">{currentTheme}</span>
-              </button>
-              {showThemeDropdown && (
-                <div className="absolute right-0 mt-2 w-44 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 py-1.5 overflow-hidden">
-                  <button
-                    onClick={() => { setTheme('mahogany'); setShowThemeDropdown(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800 ${currentTheme === 'mahogany' ? 'text-amber-400 font-bold bg-amber-500/10' : 'text-slate-300'}`}
-                  >
-                    <span>Mahogany & Brass</span>
-                    {currentTheme === 'mahogany' && <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>}
-                  </button>
-                  <button
-                    onClick={() => { setTheme('cyberpunk'); setShowThemeDropdown(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800 ${currentTheme === 'cyberpunk' ? 'text-cyan-400 font-bold bg-cyan-500/10' : 'text-slate-300'}`}
-                  >
-                    <span>Cyberpunk Dark</span>
-                    {currentTheme === 'cyberpunk' && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>}
-                  </button>
-                  <button
-                    onClick={() => { setTheme('parchment'); setShowThemeDropdown(false); }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-800 ${currentTheme === 'parchment' ? 'text-amber-200 font-bold bg-amber-200/10' : 'text-slate-300'}`}
-                  >
-                    <span>Parchment & Ink</span>
-                    {currentTheme === 'parchment' && <span className="w-1.5 h-1.5 rounded-full bg-amber-200"></span>}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
           <button
             onClick={onOpenAddModal}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#0E233C] hover:bg-[#142C4C] border border-[#163558] rounded-full transition-colors whitespace-nowrap shrink-0"
           >
-            <Plus className="w-3.5 h-3.5 text-amber-400" />
-            <span>Add Game</span>
+            <Plus className="w-3.5 h-3.5 text-[#FF6B00]" />
+            <span>Thêm Game</span>
           </button>
 
           <button
             onClick={onOpenSyncModal}
             disabled={isSyncing}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 rounded-lg shadow-md shadow-amber-500/20 active:scale-95 transition-all whitespace-nowrap shrink-0 disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-[#FF6B00] to-[#FF8C33] hover:from-[#FF7A1A] hover:to-[#FFA04D] rounded-full shadow-md shadow-[#FF6B00]/30 active:scale-95 transition-all whitespace-nowrap shrink-0 disabled:opacity-60"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
             <span>{isSyncing ? 'Syncing...' : 'Sync Sheet'}</span>
           </button>
         </div>
-      </div>
-
-      {/* Mobile nav bar */}
-      <div className="md:hidden flex items-center justify-around pt-2.5 mt-2 border-t border-slate-800/60 text-xs">
-        <button
-          onClick={() => setActiveTab('cabinets')}
-          className={`flex flex-col items-center gap-1 py-1 px-2 ${
-            activeTab === 'cabinets' ? 'text-amber-400 font-semibold' : 'text-slate-400'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          <span>Cabinets</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('compare')}
-          className={`flex flex-col items-center gap-1 py-1 px-2 ${
-            activeTab === 'compare' ? 'text-amber-400 font-semibold' : 'text-slate-400'
-          }`}
-        >
-          <GitCompare className="w-4 h-4" />
-          <span>Compare</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('stats')}
-          className={`flex flex-col items-center gap-1 py-1 px-2 ${
-            activeTab === 'stats' ? 'text-amber-400 font-semibold' : 'text-slate-400'
-          }`}
-        >
-          <BarChart3 className="w-4 h-4" />
-          <span>Stats</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('sheet')}
-          className={`flex flex-col items-center gap-1 py-1 px-2 ${
-            activeTab === 'sheet' ? 'text-amber-400 font-semibold' : 'text-slate-400'
-          }`}
-        >
-          <Sheet className="w-4 h-4" />
-          <span>Sheet</span>
-        </button>
       </div>
     </header>
   );

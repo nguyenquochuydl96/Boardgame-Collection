@@ -4,9 +4,11 @@ import { USER_46_GAMES } from './data/userCollectionCatalog';
 import { fetchFromGoogleSheet, SAMPLE_GOOGLE_SHEET_URL, USER_COLLECTION_SHEET_URL } from './services/googleSheets';
 import { enrichCollectionWithBgg } from './services/bggService';
 import { Navbar } from './components/Navbar';
+import { OverviewView } from './components/OverviewView';
 import { CabinetsView } from './components/CabinetsView';
 import { ComparisonMode } from './components/ComparisonMode';
 import { StatsView } from './components/StatsView';
+import { BottomDock } from './components/BottomDock';
 import { GoogleSheetModal } from './components/GoogleSheetModal';
 import { GameDetailModal } from './components/GameDetailModal';
 import { AddEditGameModal } from './components/AddEditGameModal';
@@ -16,13 +18,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   Sheet,
-  RefreshCw,
-  Plus,
-  GitCompare,
-  BarChart3,
-  Layers,
   Sparkles,
-  Info,
 } from 'lucide-react';
 
 const STORAGE_KEY = 'boardgame_vault_games_v11';
@@ -30,8 +26,37 @@ const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v11';
 const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v11';
 
 export default function App() {
-  // Navigation tab
-  const [activeTab, setActiveTab] = useState<'cabinets' | 'compare' | 'stats' | 'sheet'>('cabinets');
+  // Navigation tab - Default to 'overview' with hash support (#cabinets, #overview, etc.)
+  const [activeTab, setActiveTabState] = useState<'overview' | 'cabinets' | 'compare' | 'stats' | 'sheet'>(() => {
+    try {
+      const h = window.location.hash.replace('#', '');
+      if (['overview', 'cabinets', 'compare', 'stats', 'sheet'].includes(h)) {
+        return h as any;
+      }
+    } catch {}
+    return 'overview';
+  });
+
+  const setActiveTab = (tab: 'overview' | 'cabinets' | 'compare' | 'stats' | 'sheet') => {
+    setActiveTabState(tab);
+    try {
+      window.location.hash = tab;
+    } catch {}
+  };
+
+  useEffect(() => {
+    const handleHash = () => {
+      try {
+        const h = window.location.hash.replace('#', '');
+        if (['overview', 'cabinets', 'compare', 'stats', 'sheet'].includes(h)) {
+          setActiveTabState(h as any);
+        }
+      } catch {}
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
   const [currentTheme, setCurrentTheme] = useState<'mahogany' | 'cyberpunk' | 'parchment'>('mahogany');
 
   // Google Workspace Auth state
@@ -163,7 +188,7 @@ export default function App() {
     }
   };
 
-  // Google Sheet sync handler (supports both public links & authenticated Google Drive/Sheets API)
+  // Google Sheet sync handler
   const handleSyncSheet = async (url: string) => {
     setIsSyncing(true);
     setSyncError(null);
@@ -260,10 +285,10 @@ export default function App() {
   const fakeCount = games.filter((g) => g.cabinetType === 'fake').length;
 
   return (
-    <div className="min-h-screen bg-[#0a0d14] text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen bg-[#071526] text-slate-100 flex flex-col font-sans selection:bg-[#FF6B00] selection:text-white pb-16">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-18 right-4 z-50 px-4 py-2.5 rounded-lg bg-amber-500 text-slate-950 font-semibold text-xs shadow-2xl animate-fade-in flex items-center gap-2 border border-amber-300">
+        <div className="fixed top-18 right-4 z-50 px-4 py-2.5 rounded-full bg-[#FF6B00] text-white font-semibold text-xs shadow-2xl animate-fade-in flex items-center gap-2 border border-[#FFA154]">
           <Sparkles className="w-4 h-4 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -293,15 +318,15 @@ export default function App() {
       />
 
       {/* Hero Strip / Google Sheet Status Ribbon */}
-      <div className="border-b border-slate-800/80 bg-gradient-to-r from-[#11141c] via-[#161a24] to-[#11141c] px-4 md:px-8 py-3">
+      <div className="border-b border-[#163558] bg-[#0A1E35] px-4 md:px-8 py-2.5">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
           {/* Left: Google Sheet sync info */}
           <div className="flex items-center gap-2 text-slate-300">
-            <div className={`w-2 h-2 rounded-full ${isCustomSheetConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-            <span className="font-medium text-slate-400">Data Source:</span>
+            <div className={`w-2.5 h-2.5 rounded-full ${isCustomSheetConnected ? 'bg-emerald-400 animate-pulse' : 'bg-[#FF6B00]'}`} />
+            <span className="font-medium text-[#8EADC8]">Data Source:</span>
             <button
               onClick={() => setIsSyncModalOpen(true)}
-              className="text-amber-400 hover:text-amber-300 font-semibold truncate max-w-[200px] sm:max-w-xs hover:underline flex items-center gap-1"
+              className="text-[#FF6B00] hover:text-[#FFA154] font-bold truncate max-w-[200px] sm:max-w-xs hover:underline flex items-center gap-1"
             >
               <span>
                 {currentUser
@@ -312,7 +337,7 @@ export default function App() {
               </span>
             </button>
             {lastSyncedAt && isCustomSheetConnected && (
-              <span className="text-slate-500 hidden md:inline">
+              <span className="text-[#6080A2] hidden md:inline">
                 (Synced: {lastSyncedAt})
               </span>
             )}
@@ -325,7 +350,7 @@ export default function App() {
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>{realCount} Real Collection</span>
               </span>
-              <span className="text-slate-600">·</span>
+              <span className="text-[#25466D]">·</span>
               <span className="inline-flex items-center gap-1 text-rose-400 font-semibold">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span>{fakeCount} Replicas & Fake</span>
@@ -334,7 +359,7 @@ export default function App() {
 
             <button
               onClick={() => setIsSyncModalOpen(true)}
-              className="text-amber-400 hover:text-amber-300 hover:underline flex items-center gap-1 text-[11px] font-semibold"
+              className="text-[#FF6B00] hover:text-[#FFA154] hover:underline flex items-center gap-1 text-[11px] font-bold"
             >
               <Sheet className="w-3.5 h-3.5 text-emerald-400" />
               <span>{isCustomSheetConnected ? 'Configure Sheet' : 'Connect Google Sheet'}</span>
@@ -345,18 +370,48 @@ export default function App() {
 
       {/* Main Content Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8">
-        {activeTab === 'cabinets' && (
-          <CabinetsView
-            currentTheme={currentTheme}
+        {/* VIEW TỔNG QUAN NGOÀI (Overview / Dashboard Home) */}
+        {activeTab === 'overview' && (
+          <OverviewView
             games={games}
             onSelectGame={(game) => setSelectedGame(game)}
-            onToggleCabinet={handleToggleCabinet}
+            onOpenCabinets={(focus) => setActiveTab('cabinets')}
             onOpenAddModal={handleOpenAddModal}
             onOpenSyncModal={() => setIsSyncModalOpen(true)}
-            onEnrichBgg={handleEnrichBgg}
-            isEnrichingBgg={isEnrichingBgg}
-            isDemoData={isDemoData}
+            currentUser={currentUser}
+            onSignInWithGoogle={handleSignInWithGoogle}
+            sheetConnected={Boolean(sheetUrl)}
           />
+        )}
+
+        {/* VIEW 2 KỆ GAME CHI TIẾT (Dual Cabinets Detailed View) */}
+        {activeTab === 'cabinets' && (
+          <div className="space-y-4">
+            {/* Quick Header Banner to jump back to Overview */}
+            <div className="flex items-center justify-between bg-[#0A1E35] border border-[#163558] p-3.5 rounded-2xl">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className="text-xs font-bold text-[#FF6B00] hover:text-[#FFA154] flex items-center gap-1.5 transition-colors"
+              >
+                <span>← Quay lại View Tổng quan</span>
+              </button>
+              <span className="text-xs text-[#8EADC8] font-semibold">
+                Kệ Game Chi Tiết 3D · 1:1 Box Art & Gáy Game (Spines)
+              </span>
+            </div>
+
+            <CabinetsView
+              currentTheme={currentTheme}
+              games={games}
+              onSelectGame={(game) => setSelectedGame(game)}
+              onToggleCabinet={handleToggleCabinet}
+              onOpenAddModal={handleOpenAddModal}
+              onOpenSyncModal={() => setIsSyncModalOpen(true)}
+              onEnrichBgg={handleEnrichBgg}
+              isEnrichingBgg={isEnrichingBgg}
+              isDemoData={isDemoData}
+            />
+          </div>
         )}
 
         {activeTab === 'compare' && (
@@ -374,23 +429,37 @@ export default function App() {
         )}
       </main>
 
+      {/* Persistent Floating Bottom Dock (Mobile & Desktop Quick Switcher) */}
+      <BottomDock
+        activeTab={activeTab}
+        setActiveTab={(tab) => {
+          if (tab === 'sheet') {
+            setIsSyncModalOpen(true);
+          } else {
+            setActiveTab(tab);
+          }
+        }}
+        onOpenSyncModal={() => setIsSyncModalOpen(true)}
+        onOpenAddModal={() => handleOpenAddModal('real')}
+      />
+
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-[#07090d] py-6 px-4 md:px-8 text-center text-xs text-slate-500">
+      <footer className="border-t border-[#163558] bg-[#05101D] py-6 px-4 md:px-8 text-center text-xs text-[#6080A2]">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <p>
-            BoardGame Vault — Physical shelf collection manager & Real vs Fake authenticity tracker connected with Google Sheets & Drive.
+            BoardGame Vault — Bộ sưu tập kệ game vật lý & Truy xuất nguồn gốc Real vs Fake liên kết Google Sheets.
           </p>
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsSyncModalOpen(true)}
-              className="hover:text-slate-300 transition-colors"
+              className="hover:text-white transition-colors"
             >
               Configure Google Sheet
             </button>
             <span>·</span>
             <button
               onClick={() => handleOpenAddModal('real')}
-              className="hover:text-slate-300 transition-colors"
+              className="hover:text-white transition-colors"
             >
               + Add Game
             </button>
