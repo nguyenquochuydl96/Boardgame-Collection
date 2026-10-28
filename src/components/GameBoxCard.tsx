@@ -186,20 +186,20 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
     );
   }
 
-  // 3D Front Box Art Card - Adaptive Physical Shelf Stand
+  // 3D Front Box Art Card - Uniform 1:1 Kallax Cube Shelf Slot
   return (
     <div
       onClick={() => onSelect(game)}
-      className={`group relative cursor-pointer select-none flex flex-col items-center justify-end w-full transition-transform duration-300 ease-out hover:-translate-y-2.5 z-10 hover:z-30 ${
+      className={`group relative cursor-pointer select-none flex flex-col items-center justify-end w-full transition-transform duration-300 ease-out hover:-translate-y-2 z-10 hover:z-30 ${
         isOOS ? 'opacity-55 grayscale contrast-90 hover:opacity-100 hover:grayscale-0 hover:contrast-100' : ''
       }`}
     >
-      {/* 3D Physical Board Game Box */}
+      {/* 3D Uniform Board Game Compartment */}
       <div
-        className={`game-box-3d relative rounded-md overflow-hidden transition-all duration-300 flex flex-col justify-end w-full max-w-[340px] bg-slate-950 ${
+        className={`game-box-3d relative rounded-xl overflow-hidden transition-all duration-300 flex flex-col w-full bg-[#0d111a] ${
           isReal
-            ? 'shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_12px_rgba(245,158,11,0.15)] border border-amber-500/30 group-hover:border-amber-400 group-hover:shadow-[0_18px_36px_rgba(0,0,0,0.95),0_6px_20px_rgba(245,158,11,0.3)]'
-            : 'shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_12px_rgba(244,63,94,0.15)] border border-rose-600/30 group-hover:border-rose-400 group-hover:shadow-[0_18px_36px_rgba(0,0,0,0.95),0_6px_20px_rgba(244,63,94,0.3)]'
+            ? 'shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_12px_rgba(245,158,11,0.12)] border border-amber-500/30 group-hover:border-amber-400 group-hover:shadow-[0_18px_36px_rgba(0,0,0,0.95),0_6px_20px_rgba(245,158,11,0.25)]'
+            : 'shadow-[0_12px_28px_rgba(0,0,0,0.85),0_4px_12px_rgba(244,63,94,0.12)] border border-rose-600/30 group-hover:border-rose-400 group-hover:shadow-[0_18px_36px_rgba(0,0,0,0.95),0_6px_20px_rgba(244,63,94,0.25)]'
         }`}
       >
         {/* Telescoping Box Top Lid Thickness Simulation */}
@@ -211,24 +211,24 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
           }`}
         />
 
-        {/* Box Art Container - 100% Uncropped Retail Box Cover (Full Box Visible) */}
-        <div className="relative w-full overflow-hidden bg-slate-950 flex items-center justify-center p-2 min-h-[180px] max-h-[300px]">
+        {/* Uniform 1:1 Square Compartment (aspect-square) */}
+        <div className="relative w-full aspect-square overflow-hidden bg-gradient-to-b from-slate-950/90 via-slate-950 to-[#07090e] flex items-center justify-center p-3">
           {/* Subtle ambient backdrop filling the box depth */}
           <img
             src={displayImage}
             alt=""
             aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover blur-xl opacity-30 scale-125 pointer-events-none"
+            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-25 scale-125 pointer-events-none"
           />
-          <div className="absolute inset-0 bg-slate-950/40 pointer-events-none" />
+          <div className="absolute inset-0 shadow-[inset_0_2px_8px_rgba(0,0,0,0.7)] pointer-events-none" />
 
-          {/* 100% Uncropped Retail Box Cover Image */}
+          {/* 100% Uncropped Retail Box Cover (Uniformly Contained - No edge cropped, no zoom) */}
           <img
             src={displayImage}
             alt={game.name}
             referrerPolicy="no-referrer"
             onError={() => setImageError(true)}
-            className="relative z-10 max-h-[280px] max-w-full object-contain rounded-[2px] shadow-[0_8px_20px_rgba(0,0,0,0.8)] border border-white/10 transition-transform duration-500 group-hover:scale-[1.03]"
+            className="relative z-10 max-h-full max-w-full object-contain rounded-[3px] shadow-[0_10px_24px_rgba(0,0,0,0.9)] border border-white/10 transition-transform duration-500 group-hover:scale-[1.04]"
           />
 
           {/* Authentic Real / Fake Badge */}
@@ -291,7 +291,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
 
           {/* Box Bottom Title Overlay */}
           <div
-            className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-2.5 pt-6 z-10 flex flex-col justify-end"
+            className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-2.5 pt-7 z-10 flex flex-col justify-end"
             title={game.name}
           >
             <h3 className="text-xs md:text-sm font-bold text-white drop-shadow-md line-clamp-1 leading-snug">
@@ -305,24 +305,24 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Shelf Plinth Tag (Nameplate resting directly on the wooden shelf) */}
-      <div className="w-full max-w-[340px] mt-1.5 px-2.5 py-1 rounded bg-black/60 border border-white/10 backdrop-blur-sm flex items-center justify-between text-[10px] text-slate-300 shadow-md">
-        <div className="flex items-center gap-1.5 text-slate-400">
-          <Users className="w-3.5 h-3.5 text-amber-400/80" />
-          <span className="font-medium text-slate-300">{game.players}</span>
+        {/* Shelf Plinth Tag (Uniform Height h-8) */}
+        <div className="w-full h-8 px-2.5 bg-[#090c14] border-t border-white/5 flex items-center justify-between text-[10px] text-slate-300 shrink-0">
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <Users className="w-3.5 h-3.5 text-amber-400/80" />
+            <span className="font-medium text-slate-300">{game.players}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <Clock className="w-3.5 h-3.5 text-amber-400/80" />
+            <span className="font-medium text-slate-300">{game.playtime}</span>
+          </div>
+          <span
+            className="text-[9px] font-semibold text-amber-300/90 truncate max-w-[80px]"
+            title={game.category}
+          >
+            {game.category.split('/')[0]}
+          </span>
         </div>
-        <div className="flex items-center gap-1.5 text-slate-400">
-          <Clock className="w-3.5 h-3.5 text-amber-400/80" />
-          <span className="font-medium text-slate-300">{game.playtime}</span>
-        </div>
-        <span
-          className="text-[9px] font-semibold text-amber-300/90 truncate max-w-[80px]"
-          title={game.category}
-        >
-          {game.category.split('/')[0]}
-        </span>
       </div>
 
       {/* Ground Contact Shadow casting onto the wooden shelf plank */}
