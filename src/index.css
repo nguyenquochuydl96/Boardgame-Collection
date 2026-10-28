@@ -13,7 +13,75 @@
   }
 }
 
-/* 3D Shelf & Box Perspective */
+/* Cinematic Collector Vault UI/UX Overhaul Classes */
+.cinematic-bg {
+  background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0c0e12 70%);
+}
+
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel-hover:hover {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(251, 191, 36, 0.3);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 25px rgba(251, 191, 36, 0.15);
+}
+
+/* Holographic foil card effect */
+.holo-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.holo-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 25%,
+    rgba(236, 72, 153, 0.1) 50%,
+    rgba(59, 130, 246, 0.1) 75%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.holo-card:hover::after {
+  opacity: 1;
+}
+
+/* Rarity Glow Borders */
+.gold-glow {
+  box-shadow: 0 0 20px -4px rgba(251, 191, 36, 0.4), inset 0 0 10px -4px rgba(251, 191, 36, 0.2);
+  border-color: rgba(251, 191, 36, 0.6);
+}
+
+.ruby-glow {
+  box-shadow: 0 0 20px -4px rgba(244, 63, 94, 0.4), inset 0 0 10px -4px rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.6);
+}
+
+.ambient-light {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(15, 23, 42, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
 .perspective-1000 {
   perspective: 1000px;
 }
