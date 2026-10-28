@@ -18,6 +18,7 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
   onToggleCabinet,
 }) => {
   const [imageError, setImageError] = useState(false);
+  const [isPortraitBox, setIsPortraitBox] = useState(game.spineWidth === 'narrow');
   const isReal = game.cabinetType === 'real';
   const isOOS = game.status === 'OOS';
   const isExpansion = game.gameType === 'Expansion';
@@ -212,7 +213,11 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
         />
 
         {/* Uniform 1:1 Square Compartment (aspect-square) */}
-        <div className="relative w-full aspect-square overflow-hidden bg-gradient-to-b from-slate-950/90 via-slate-950 to-[#07090e] flex items-center justify-center p-3">
+        <div
+          className={`relative w-full aspect-square overflow-hidden bg-gradient-to-b from-slate-950/90 via-slate-950 to-[#07090e] flex items-center justify-center ${
+            isPortraitBox ? 'p-0' : 'p-3'
+          }`}
+        >
           {/* Subtle ambient backdrop filling the box depth */}
           <img
             src={displayImage}
@@ -220,15 +225,25 @@ export const GameBoxCard: React.FC<GameBoxCardProps> = ({
             aria-hidden="true"
             className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-25 scale-125 pointer-events-none"
           />
-          <div className="absolute inset-0 shadow-[inset_0_2px_8px_rgba(0,0,0,0.7)] pointer-events-none" />
+          <div className="absolute inset-0 shadow-[inset_0_2px_8px_rgba(0,0,0,0.7)] pointer-events-none z-10" />
 
-          {/* 100% Uncropped Retail Box Cover (Uniformly Contained - No edge cropped, no zoom) */}
+          {/* Retail Box Cover: Full-Bleed Cover for Small/Portrait Boxes, Contain for Square/Landscape Boxes */}
           <img
             src={displayImage}
             alt={game.name}
             referrerPolicy="no-referrer"
             onError={() => setImageError(true)}
-            className="relative z-10 max-h-full max-w-full object-contain rounded-[3px] shadow-[0_10px_24px_rgba(0,0,0,0.9)] border border-white/10 transition-transform duration-500 group-hover:scale-[1.04]"
+            onLoad={(e) => {
+              const { naturalWidth, naturalHeight } = e.currentTarget;
+              if (naturalWidth && naturalHeight && naturalWidth / naturalHeight < 0.78) {
+                setIsPortraitBox(true);
+              }
+            }}
+            className={
+              isPortraitBox
+                ? 'w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105'
+                : 'relative z-10 max-h-full max-w-full object-contain rounded-[3px] shadow-[0_10px_24px_rgba(0,0,0,0.9)] border border-white/10 transition-transform duration-500 group-hover:scale-[1.04]'
+            }
           />
 
           {/* Authentic Real / Fake Badge */}
