@@ -11,8 +11,8 @@ export const StatsView: React.FC<StatsViewProps> = ({ games }) => {
   const realGames = useMemo(() => games.filter((g) => g.cabinetType === 'real'), [games]);
   const fakeGames = useMemo(() => games.filter((g) => g.cabinetType === 'fake'), [games]);
 
-  const realTotal = useMemo(() => realGames.reduce((acc, g) => acc + g.price, 0), [realGames]);
-  const fakeTotal = useMemo(() => fakeGames.reduce((acc, g) => acc + g.price, 0), [fakeGames]);
+  const realTotal = useMemo(() => realGames.filter((g) => g.status !== 'OOS').reduce((acc, g) => acc + g.price, 0), [realGames]);
+  const fakeTotal = useMemo(() => fakeGames.filter((g) => g.status !== 'OOS').reduce((acc, g) => acc + g.price, 0), [fakeGames]);
 
   const realAvgRating = useMemo(() => {
     if (realGames.length === 0) return 0;

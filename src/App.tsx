@@ -25,9 +25,9 @@ import {
   Info,
 } from 'lucide-react';
 
-const STORAGE_KEY = 'boardgame_vault_games_v10';
-const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v10';
-const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v10';
+const STORAGE_KEY = 'boardgame_vault_games_v11';
+const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v11';
+const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v11';
 
 export default function App() {
   // Navigation tab
@@ -42,7 +42,7 @@ export default function App() {
   const [games, setGames] = useState<BoardGame[]>(() => {
     try {
       // Clear legacy caches containing broken image URLs or unseparated cabinets
-      ['boardgame_vault_games_v2', 'boardgame_vault_games_v3', 'boardgame_vault_games_v4', 'boardgame_vault_games_v8', 'boardgame_vault_games_v9'].forEach((k) => {
+      ['boardgame_vault_games_v2', 'boardgame_vault_games_v3', 'boardgame_vault_games_v4', 'boardgame_vault_games_v8', 'boardgame_vault_games_v9', 'boardgame_vault_games_v10'].forEach((k) => {
         try { localStorage.removeItem(k); } catch {}
       });
 

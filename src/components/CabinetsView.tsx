@@ -136,12 +136,13 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
   const fakeShelves = chunkIntoShelves(sortedFakeGames, gamesPerRow);
 
   // Statistics
+  // Statistics: Total valuation / spent ONLY sums On Hand games (OOS games retain cost for historical record only)
   const realTotalValue = useMemo(
-    () => realGames.reduce((acc, g) => acc + g.price, 0),
+    () => realGames.filter((g) => g.status !== 'OOS').reduce((acc, g) => acc + g.price, 0),
     [realGames]
   );
   const fakeTotalValue = useMemo(
-    () => fakeGames.reduce((acc, g) => acc + g.price, 0),
+    () => fakeGames.filter((g) => g.status !== 'OOS').reduce((acc, g) => acc + g.price, 0),
     [fakeGames]
   );
 
@@ -389,7 +390,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                 <div className="flex items-center gap-3 text-right">
                   <div className="bg-black/30 border border-amber-500/20 rounded-lg px-3 py-1.5">
                     <p className="text-[10px] text-amber-300/80 uppercase tracking-wider">
-                      Total Valuation
+                      Total Valuation (On Hand)
                     </p>
                     <p className="text-sm md:text-base font-bold text-amber-400 font-mono tabular-nums">
                       {formatCurrency(realTotalValue)}
@@ -521,7 +522,7 @@ export const CabinetsView: React.FC<CabinetsViewProps> = ({
                 <div className="flex items-center gap-3 text-right">
                   <div className="bg-black/40 border border-rose-500/20 rounded-lg px-3 py-1.5">
                     <p className="text-[10px] text-rose-300/80 uppercase tracking-wider">
-                      Total Cost Spent
+                      Total Cost Spent (On Hand)
                     </p>
                     <p className="text-sm md:text-base font-bold text-rose-400 font-mono tabular-nums">
                       {formatCurrency(fakeTotalValue)}
