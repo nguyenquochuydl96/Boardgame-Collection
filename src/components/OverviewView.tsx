@@ -246,6 +246,133 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
         })}
       </div>
 
+      {/* 3.5 FILTERED RESULTS SECTION (When search or category tag is active) */}
+      {(searchQuery.trim() !== '' || selectedTag !== 'all') && (
+        <section className="space-y-4 pt-1 animate-fade-in bg-[#08182B]/60 p-4 sm:p-5 rounded-3xl border border-[#163558]">
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-[#142C48]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#FF6B00]/15 border border-[#FF6B00]/30 flex items-center justify-center text-[#FF6B00]">
+                <Search className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-bold tracking-tight text-white font-display">
+                    {searchQuery.trim()
+                      ? `Kết Quả Tìm Kiếm: "${searchQuery}"`
+                      : `Danh Mục: ${tags.find((t) => t.id === selectedTag)?.label || selectedTag}`}
+                  </h2>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#122A47] text-[#FF6B00] font-bold border border-[#1C3D66]">
+                    {filteredGames.length} game
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#8EADC8]">
+                  {searchQuery.trim()
+                    ? 'Tìm thấy dựa trên tên tiếng Anh, tên Việt hóa, NXB hoặc thể loại'
+                    : 'Đã lọc theo danh mục được chọn trên thanh tab'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedTag('all');
+              }}
+              className="text-xs font-semibold text-[#8EADC8] hover:text-[#FF6B00] px-3 py-1.5 rounded-lg bg-[#0C223A] border border-[#18395E] transition-all hover:border-[#FF6B00]/40"
+            >
+              ✕ Đặt lại bộ lọc
+            </button>
+          </div>
+
+          {filteredGames.length === 0 ? (
+            <div className="text-center py-10 rounded-2xl bg-[#091D33]/60 border border-[#163558] p-6 space-y-2">
+              <p className="text-sm text-slate-200 font-semibold">Không tìm thấy board game nào phù hợp.</p>
+              <p className="text-xs text-[#8EADC8]">Thử đổi từ khóa tìm kiếm hoặc bấm Đặt lại bộ lọc để xem toàn bộ danh mục.</p>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedTag('all');
+                }}
+                className="mt-3 px-4 py-2 rounded-full bg-[#FF6B00] text-white text-xs font-bold hover:bg-[#FF7A1A] transition-all"
+              >
+                Xem Toàn Bộ Bộ Sưu Tập
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4 pt-1">
+              {filteredGames.map((game) => (
+                <div
+                  key={game.id}
+                  onClick={() => onSelectGame(game)}
+                  className="group relative rounded-2xl overflow-hidden bg-[#0C223A] border border-[#163558] hover:border-[#FF6B00] shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col justify-between"
+                >
+                  {/* Box Cover */}
+                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-slate-900">
+                    <img
+                      src={game.imageUrl}
+                      alt={game.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#071526] via-transparent to-black/40" />
+
+                    {/* Status Badge */}
+                    <div className="absolute top-2 left-2">
+                      {game.status === 'OOS' ? (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-zinc-800/80 text-zinc-300 border border-zinc-600">
+                          OOS
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">
+                          On Hand
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Cabinet Type Badge */}
+                    <div className="absolute top-2 right-2">
+                      {game.cabinetType === 'real' ? (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
+                          Real
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40">
+                          Fake
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Title & Info */}
+                  <div className="p-3 bg-[#091D33] space-y-1">
+                    <h4 className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-[#FF6B00] transition-colors">
+                      {game.name}
+                    </h4>
+                    {game.vietnameseName && (
+                      <p className="text-[10px] text-[#8EADC8] truncate italic">
+                        {game.vietnameseName}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between text-[11px] text-[#8EADC8] pt-1">
+                      <span className="truncate">{game.category.split('/')[0]}</span>
+                      <span className="font-bold text-amber-400 shrink-0">{game.rating ? `${game.rating} ★` : ''}</span>
+                    </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectGame(game);
+                      }}
+                      className="mt-2 w-full py-1.5 px-3 rounded-full bg-[#122E4E] group-hover:bg-[#FF6B00] text-white text-[11px] font-bold transition-all shadow-sm flex items-center justify-center gap-1"
+                    >
+                      <span>Xem Chi Tiết</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
       {/* 4. DUAL CABINETS GATEWAY CARDS (Chuyển nhanh sang View Chi Tiết 2 Kệ Game) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">

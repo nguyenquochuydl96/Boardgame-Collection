@@ -23,7 +23,8 @@ export interface BggMatchResult {
 interface CatalogEntry {
   id: number;
   name: string;
-  alases: strng[];
+  aliases?: string[];
+  alases?: string[];
   rating: number;
   year: number;
   imageUrl: string;
@@ -1456,7 +1457,7 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
         isExactMatch: true,
       };
     }
-    for (const alias of entry.aliases) {
+    for (const alias of (entry.aliases || entry.alases || [])) {
       if (normalizeForComparison(alias) === rawNorm) {
         return {
           bggId: entry.id,
@@ -1495,7 +1496,7 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
           isExactMatch: true,
         };
       }
-      for (const alias of entry.aliases) {
+      for (const alias of (entry.aliases || entry.alases || [])) {
         if (normalizeForComparison(alias) === cleanNorm) {
           return {
             bggId: entry.id,
@@ -1531,7 +1532,7 @@ export function findInBggCatalog(rawName: string): BggMatchResult | null {
       }
     }
 
-    for (const alias of entry.aliases) {
+    for (const alias of (entry.aliases || entry.alases || [])) {
       const normAlias = normalizeForComparison(alias);
       if (normAlias.includes(targetNorm) || targetNorm.includes(normAlias)) {
         const score = Math.min(normAlias.length, targetNorm.length) / Math.max(normAlias.length, targetNorm.length);

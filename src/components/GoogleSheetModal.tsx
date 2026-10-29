@@ -115,11 +115,11 @@ export const GoogleSheetModal: React.FC<GoogleSheetModalProps> = ({
     setIsCreatingSheet(true);
     setDriveError(null);
     try {
-      const result = await createBoardgameSpreadsheetInDrive(games, accessToken);
-      setCreatedSheetResult(result);
-      setSheetUrl(result.url);
+      const result = await createBoardgameSpreadsheetInDrive(accessToken, 'Bộ Sưu Tập BoardGame Vault (Real & Fake)', games);
+      setCreatedSheetResult({ id: result.spreadsheetId, url: result.spreadsheetUrl });
+      setSheetUrl(result.spreadsheetUrl);
       await loadDriveSheets();
-      await onSyncSheet(result.url);
+      await onSyncSheet(result.spreadsheetUrl);
     } catch (err: any) {
       console.error('Error creating Google Sheet on Drive:', err);
       setDriveError(err.message || 'Failed to create new spreadsheet on Google Drive.');

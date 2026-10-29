@@ -1,4 +1,5 @@
 export type CabinetType = 'real' | 'fake';
+export type GameStatus = 'On Hand' | 'OOS';
 
 export interface BoardGame {
   id: string;
@@ -24,7 +25,7 @@ export interface BoardGame {
   bggId?: number; // BGG Thing ID
   bggUrl?: string; // Direct link to BoardGameGeek page
   addedDate?: string;
-  status?: 'On Hand' | 'OOS'; // Inventory status: On Hand or Out of Stock (OOS)
+  status?: GameStatus; // Inventory status: On Hand or Out of Stock (OOS)
   gameType?: 'Base Game' | 'Expansion'; // Base Game or Expansion
   spineImageUrl?: string; // Optional spine / shelf-side box art
   spineWidth?: 'narrow' | 'medium' | 'wide'; // Box thickness on shelf

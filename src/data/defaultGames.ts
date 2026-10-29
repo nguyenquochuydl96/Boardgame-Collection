@@ -15,7 +15,7 @@ export const INITIAL_BOARDGAMES: BoardGame[] = USER_46_GAMES.map((g, index) => (
   price: g.price,
   publisher: g.publisher,
   year: g.year,
-  condition: g.condition,
+  condition: (g as any).condition || 'Like New',
   gameplayStory: g.gameplayStory,
   authenticityNotes: g.authenticityNotes,
   boxColor: g.boxColor,

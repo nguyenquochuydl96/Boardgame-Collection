@@ -39,15 +39,15 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-amber-950/40 via-slate-900 to-rose-950/40 border border-slate-800 rounded-2xl p-6 text-center shadow-xl">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold mb-3">
+      <div className="bg-gradient-to-r from-[#0C223A] via-[#091D33] to-[#061424] border border-[#163558] rounded-2xl p-6 text-center shadow-xl">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF6B00]/15 border border-[#FF6B00]/30 text-[#FF6B00] text-xs font-semibold mb-3">
           <Scale className="w-3.5 h-3.5" />
           <span>VISUAL AUTHENTICITY COMPARISON</span>
         </div>
         <h2 className="text-xl md:text-2xl font-bold text-white font-display">
           Compare Authentic vs Counterfeit Editions
         </h2>
-        <p className="text-sm text-slate-400 mt-1 max-w-2xl mx-auto">
+        <p className="text-sm text-[#8EADC8] mt-1 max-w-2xl mx-auto">
           Examine side-by-side differences in box construction, linen card finishes, component weights, and publisher quality.
         </p>
       </div>
@@ -55,7 +55,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
       {/* Selectors Bar */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Real Selector */}
-        <div className="bg-[#18120c] border border-amber-600/30 rounded-xl p-4 flex flex-col gap-2">
+        <div className="bg-[#091D33] border border-emerald-500/30 rounded-xl p-4 flex flex-col gap-2">
           <label className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>Select Authentic Game (Real Collection):</span>
@@ -63,7 +63,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
           <select
             value={selectedRealId}
             onChange={(e) => setSelectedRealId(e.target.value)}
-            className="w-full bg-slate-900 border border-amber-500/40 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
+            className="w-full bg-[#0C223A] border border-[#1A3F69] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400"
           >
             {realGames.map((g) => (
               <option key={g.id} value={g.id}>
@@ -74,7 +74,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
         </div>
 
         {/* Fake Selector */}
-        <div className="bg-[#181416] border border-rose-700/40 rounded-xl p-4 flex flex-col gap-2">
+        <div className="bg-[#091D33] border border-rose-500/30 rounded-xl p-4 flex flex-col gap-2">
           <label className="text-xs font-bold text-rose-400 flex items-center gap-1.5">
             <AlertTriangle className="w-4 h-4 text-rose-400" />
             <span>Select Counterfeit / Replica Game:</span>
@@ -82,7 +82,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
           <select
             value={selectedFakeId}
             onChange={(e) => setSelectedFakeId(e.target.value)}
-            className="w-full bg-slate-900 border border-rose-500/40 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-rose-400"
+            className="w-full bg-[#0C223A] border border-[#1A3F69] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-rose-400"
           >
             {fakeGames.map((g) => (
               <option key={g.id} value={g.id}>
@@ -97,10 +97,10 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
       {currentReal && currentFake && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* LEFT: REAL CARD */}
-          <div className="rounded-2xl bg-gradient-to-b from-[#1c140d] to-[#120d09] border-2 border-emerald-500/40 p-5 shadow-2xl flex flex-col justify-between">
+          <div className="rounded-2xl bg-gradient-to-b from-[#0C223A] to-[#071526] border-2 border-emerald-500/40 p-5 shadow-2xl flex flex-col justify-between">
             <div>
               {/* Badge & Title */}
-              <div className="flex items-center justify-between pb-3 border-b border-amber-700/30">
+              <div className="flex items-center justify-between pb-3 border-b border-[#163558]">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 text-xs font-bold">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
                   <span>REAL COLLECTION · AUTHENTIC</span>
@@ -132,7 +132,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
                     Condition: {currentReal.condition}
                   </p>
                   {currentReal.weightGrams && (
-                    <p className="text-xs text-slate-400 font-mono">
+                    <p className="text-xs text-[#8EADC8] font-mono">
                       Weight: {currentReal.weightGrams}g (retail standard)
                     </p>
                   )}
@@ -140,7 +140,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
               </div>
 
               {/* Highlights */}
-              <div className="mt-5 space-y-2.5 pt-4 border-t border-amber-900/40">
+              <div className="mt-5 space-y-2.5 pt-4 border-t border-[#163558]">
                 <h4 className="text-xs font-bold text-amber-200 uppercase tracking-wider">
                   Authentic Publisher Quality:
                 </h4>
@@ -169,17 +169,17 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
 
             <button
               onClick={() => onSelectGame(currentReal)}
-              className="mt-6 w-full py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-lg transition-colors"
+              className="mt-6 w-full py-2 bg-[#FF6B00]/20 hover:bg-[#FF6B00]/30 border border-[#FF6B00]/40 text-[#FF6B00] text-xs font-bold rounded-lg transition-colors"
             >
               Inspect Authentic Edition
             </button>
           </div>
 
           {/* RIGHT: FAKE CARD */}
-          <div className="rounded-2xl bg-gradient-to-b from-[#1e1416] to-[#120d0f] border-2 border-rose-500/40 p-5 shadow-2xl flex flex-col justify-between">
+          <div className="rounded-2xl bg-gradient-to-b from-[#0C223A] to-[#071526] border-2 border-rose-500/40 p-5 shadow-2xl flex flex-col justify-between">
             <div>
               {/* Badge & Title */}
-              <div className="flex items-center justify-between pb-3 border-b border-rose-700/30">
+              <div className="flex items-center justify-between pb-3 border-b border-[#163558]">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-rose-950 text-rose-300 border border-rose-500/40 text-xs font-bold">
                   <AlertTriangle className="w-4 h-4 text-rose-400" />
                   <span>REPLICAS & FAKE · COUNTERFEIT</span>
@@ -211,7 +211,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
                     Condition: {currentFake.condition}
                   </p>
                   {currentFake.weightGrams && (
-                    <p className="text-xs text-slate-400 font-mono">
+                    <p className="text-xs text-[#8EADC8] font-mono">
                       Weight: {currentFake.weightGrams}g (lighter than authentic box)
                     </p>
                   )}
@@ -219,7 +219,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
               </div>
 
               {/* Flaws */}
-              <div className="mt-5 space-y-2.5 pt-4 border-t border-rose-900/40">
+              <div className="mt-5 space-y-2.5 pt-4 border-t border-[#163558]">
                 <h4 className="text-xs font-bold text-rose-200 uppercase tracking-wider">
                   Counterfeit Flaws & Inspection Warnings:
                 </h4>
@@ -258,9 +258,9 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
 
       {/* Valuation Difference Summary Strip */}
       {currentReal && currentFake && (
-        <div className="bg-[#121620] border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+        <div className="bg-[#091D33] border border-[#163558] rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
           <div>
-            <p className="text-xs text-slate-400 uppercase tracking-wider">
+            <p className="text-xs text-[#8EADC8] uppercase tracking-wider">
               Valuation Discrepancy & Player Advisory
             </p>
             <p className="text-sm font-semibold text-slate-200 mt-0.5">
@@ -273,7 +273,7 @@ export const ComparisonMode: React.FC<ComparisonModeProps> = ({ games, onSelectG
               ).
             </p>
           </div>
-          <p className="text-xs text-slate-400 max-w-md">
+          <p className="text-xs text-[#8EADC8] max-w-md">
             Advisory: In social deduction or card-driven games (like Avalon, Exploding Kittens, Codenames), color discrepancies on counterfeit card backs reveal identities and compromise gameplay integrity.
           </p>
         </div>
