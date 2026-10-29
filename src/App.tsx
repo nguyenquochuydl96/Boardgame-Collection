@@ -12,6 +12,7 @@ import { BottomDock } from './components/BottomDock';
 import { GoogleSheetModal } from './components/GoogleSheetModal';
 import { GameDetailModal } from './components/GameDetailModal';
 import { AddEditGameModal } from './components/AddEditGameModal';
+import { SmartGamePickerModal } from './components/SmartGamePickerModal';
 import { initAuth, googleSignIn, logout, getAccessToken } from './services/auth';
 import { User } from 'firebase/auth';
 import {
@@ -116,6 +117,25 @@ export default function App() {
   const [addModalCabinet, setAddModalCabinet] = useState<CabinetType>('real');
   const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null);
   const [editingGame, setEditingGame] = useState<BoardGame | null>(null);
+  const [isGamePickerOpen, setIsGamePickerOpen] = useState(() => {
+    try {
+      return typeof window !== 'undefined' && window.location.search.includes('picker=');
+    } catch {
+      return false;
+    }
+  });
+  const [gamePickerInitialTab, setGamePickerInitialTab] = useState<'recommend' | 'wheel'>(() => {
+    try {
+      return typeof window !== 'undefined' && window.location.search.includes('picker=wheel') ? 'wheel' : 'recommend';
+    } catch {
+      return 'recommend';
+    }
+  });
+
+  const handleOpenGamePicker = (tab: 'recommend' | 'wheel' = 'recommend') => {
+    setGamePickerInitialTab(tab);
+    setIsGamePickerOpen(true);
+  };
 
   // PWA and Online/Offline state
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -364,6 +384,7 @@ export default function App() {
         onSignInWithGoogle={handleSignInWithGoogle}
         onInstallPwa={handleInstallPwa}
         isInstallable={isInstallable}
+        onOpenGamePicker={handleOpenGamePicker}
       />
 
       {/* Hero Strip / Google Sheet Status Ribbon */}
@@ -437,6 +458,7 @@ export default function App() {
             currentUser={currentUser}
             onSignInWithGoogle={handleSignInWithGoogle}
             sheetConnected={Boolean(sheetUrl)}
+            onOpenGamePicker={handleOpenGamePicker}
           />
         )}
 
@@ -559,6 +581,14 @@ export default function App() {
         onSave={handleSaveGame}
         editingGame={editingGame}
         defaultCabinetType={addModalCabinet}
+      />
+      {/* Smart Game Picker & Lucky Wheel Modal */}
+      <SmartGamePickerModal
+        isOpen={isGamePickerOpen}
+        onClose={() => setIsGamePickerOpen(false)}
+        games={games}
+        onSelectGame={(game) => setSelectedGame(game)}
+        initialTab={gamePickerInitialTab}
       />
     </div>
   );

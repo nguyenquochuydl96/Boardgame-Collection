@@ -3,6 +3,8 @@ import { BoardGame } from '../types/boardgame';
 import { MultiFilterModal, FilterState, DEFAULT_FILTER_STATE } from './MultiFilterModal';
 import { filterAndSortGames } from '../utils/filterGames';
 import {
+  Dices,
+  RotateCw,
   ShieldCheck,
   AlertTriangle,
   Search,
@@ -32,6 +34,7 @@ interface OverviewViewProps {
   currentUser?: User | null;
   onSignInWithGoogle?: () => Promise<void>;
   sheetConnected: boolean;
+  onOpenGamePicker: (initialTab?: 'recommend' | 'wheel') => void;
 }
 
 export const OverviewView: React.FC<OverviewViewProps> = ({
@@ -43,6 +46,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   currentUser,
   onSignInWithGoogle,
   sheetConnected,
+  onOpenGamePicker,
 }) => {
   const [searchQuery, setSearchQuery] = useState(() => {
     try {
@@ -523,6 +527,52 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           )}
         </section>
       )}
+
+      {/* 3.8 SMART GAME PICKER HERO BANNER ("Hôm Nay Chơi Gì?") */}
+      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#0C223A] via-[#102B48] to-[#0A1D33] border border-[#1E436D] p-5 sm:p-6 shadow-2xl">
+        <div className="absolute top-0 right-0 w-96 h-full bg-gradient-to-l from-[#FF6B00]/15 to-transparent pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FF6B00] to-[#FF8C33] flex items-center justify-center text-white shadow-xl shadow-[#FF6B00]/30 shrink-0 border border-[#FFA154]/30">
+              <Dices className="w-8 h-8 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/40">
+                  Decision Assistant
+                </span>
+                <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>AI Smart Match & Lucky Wheel</span>
+                </span>
+              </div>
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white font-display mt-0.5">
+                Hôm Nay Chơi Gì?
+              </h2>
+              <p className="text-xs text-[#8EADC8] mt-1 max-w-xl">
+                Bạn đang băn khoăn chưa biết chọn tựa game nào cho buổi chơi hôm nay? Hãy để Trợ lý đề xuất Top 3 game chuẩn số người & thời gian, hoặc thử vận may cùng Vòng quay may mắn!
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full sm:w-auto">
+            <button
+              onClick={() => onOpenGamePicker('recommend')}
+              className="flex-1 sm:flex-initial py-2.5 px-5 rounded-full bg-[#FF6B00] hover:bg-[#FF7A1A] text-white text-xs font-bold shadow-lg shadow-[#FF6B00]/30 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Gợi Ý Game Chuẩn Nhóm</span>
+            </button>
+            <button
+              onClick={() => onOpenGamePicker('wheel')}
+              className="flex-1 sm:flex-initial py-2.5 px-4.5 rounded-full bg-[#0E2642] hover:bg-[#153457] text-[#FF6B00] hover:text-white border border-[#1A3F69] hover:border-[#FF6B00]/50 text-xs font-bold transition-all flex items-center justify-center gap-2"
+            >
+              <RotateCw className="w-4 h-4" />
+              <span>Vòng Quay May Mắn</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* 4. DUAL CABINETS GATEWAY CARDS (Chuyển nhanh sang View Chi Tiết 2 Kệ Game) */}
       <div className="space-y-3">

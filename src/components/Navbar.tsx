@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Sheet, Plus, Layers, GitCompare, BarChart3, Palette, RefreshCw, Smartphone } from 'lucide-react';
+import { Home, Sheet, Plus, Layers, GitCompare, BarChart3, Palette, RefreshCw, Smartphone, Dices } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface NavbarProps {
@@ -18,6 +18,7 @@ interface NavbarProps {
   setTheme?: (theme: 'mahogany' | 'cyberpunk' | 'parchment') => void;
   onInstallPwa?: () => void;
   isInstallable?: boolean;
+  onOpenGamePicker?: (tab?: 'recommend' | 'wheel') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -36,6 +37,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setTheme,
   onInstallPwa,
   isInstallable,
+  onOpenGamePicker,
 }) => {
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
 
@@ -82,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <Layers className="w-4 h-4" />
-            <span>2 Kệ Game Chi Tiết</span>
+<span className="hidden lg:inline">2 Kệ Game Chi Tiết</span><span className="lg:hidden">Kệ Game</span>
           </button>
 
           {/* 3. Compare Tab */}
@@ -95,7 +97,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <GitCompare className="w-4 h-4" />
-            <span>So Sánh Thật/Giả</span>
+<span className="hidden lg:inline">So Sánh Thật/Giả</span><span className="lg:hidden">So Sánh</span>
           </button>
 
           {/* 4. Analytics Tab */}
@@ -126,7 +128,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {currentUser ? (
             <button
               onClick={onOpenSyncModal}
@@ -164,6 +166,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden 2xl:inline">Google Sign-in</span>
             </button>
           ) : null}
+
+          {onOpenGamePicker && (
+            <button
+              onClick={() => onOpenGamePicker('recommend')}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-300 hover:text-white bg-gradient-to-r from-amber-500/15 to-[#FF6B00]/20 hover:from-[#FF6B00] hover:to-[#FF8C33] border border-amber-500/40 hover:border-[#FFA154] rounded-full transition-all shadow-sm shrink-0"
+              title="Trợ lý Hôm Nay Chơi Gì & Vòng quay may mắn"
+            >
+              <Dices className="w-3.5 h-3.5 text-[#FF6B00]" />
+              <span className="hidden sm:inline">Hôm Nay Chơi Gì?</span>
+            </button>
+          )}
 
           {onInstallPwa && (
             <button
