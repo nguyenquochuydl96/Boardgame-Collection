@@ -5,6 +5,7 @@ import { filterAndSortGames } from '../utils/filterGames';
 import {
   Dices,
   RotateCw,
+  Shield,
   ShieldCheck,
   AlertTriangle,
   Search,
@@ -35,6 +36,7 @@ interface OverviewViewProps {
   onSignInWithGoogle?: () => Promise<void>;
   sheetConnected: boolean;
   onOpenGamePicker: (initialTab?: 'recommend' | 'wheel') => void;
+  onOpenSleeveManager?: () => void;
 }
 
 export const OverviewView: React.FC<OverviewViewProps> = ({
@@ -47,6 +49,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   onSignInWithGoogle,
   sheetConnected,
   onOpenGamePicker,
+  onOpenSleeveManager,
 }) => {
   const [searchQuery, setSearchQuery] = useState(() => {
     try {
@@ -180,6 +183,18 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               <span>⚡ Level: 80</span>
               <span className="text-[#4A6B8A]">·</span>
               <span className="text-[#8EADC8]">{games.length} Board Games Sourced</span>
+            {onOpenSleeveManager && (
+              <>
+                <span className="text-[#4A6B8A]">·</span>
+                <button
+                  onClick={onOpenSleeveManager}
+                  className="text-emerald-400 hover:underline font-bold flex items-center gap-1"
+                >
+                  <Shield className="w-3 h-3" />
+                  <span>Sleeve Tracker</span>
+                </button>
+              </>
+            )}
             </p>
           </div>
         </div>

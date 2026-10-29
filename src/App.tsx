@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BoardGame, CabinetType, PlaySession } from './types/boardgame';
+import { BoardGame, CabinetType, PlaySession, SleeveSpec } from './types/boardgame';
+import { SleeveManagerModal } from './components/SleeveManagerModal';
 import { DEFAULT_PLAY_SESSIONS } from './data/defaultPlays';
 import { PlayLogView } from './components/PlayLogView';
 import { PlaySessionModal } from './components/PlaySessionModal';
@@ -165,6 +166,22 @@ export default function App() {
   const handleDeleteSession = (id: string) => {
     setSessions((prev) => prev.filter((s) => s.id !== id));
     showToast('Đã xóa ván chơi khỏi nhật ký.');
+  };
+
+  // Sleeve & Upgrade Manager State
+  const [isSleeveModalOpen, setIsSleeveModalOpen] = useState(() => {
+    try {
+      return typeof window !== 'undefined' && window.location.search.includes('sleeve=');
+    } catch {
+      return false;
+    }
+  });
+
+  const handleUpdateGameSleeves = (gameId: string, specs: SleeveSpec[]) => {
+    setGames((prev) =>
+      prev.map((g) => (g.id === gameId ? { ...g, sleeves: specs } : g))
+    );
+    showToast('Đã cập nhật tình trạng bọc bài (Sleeves)!');
   };
 
   const [isGamePickerOpen, setIsGamePickerOpen] = useState(() => {
@@ -435,6 +452,7 @@ export default function App() {
         onInstallPwa={handleInstallPwa}
         isInstallable={isInstallable}
         onOpenGamePicker={handleOpenGamePicker}
+        onOpenSleeveManager={() => setIsSleeveModalOpen(true)}
       />
 
       {/* Hero Strip / Google Sheet Status Ribbon */}
@@ -509,6 +527,7 @@ export default function App() {
             onSignInWithGoogle={handleSignInWithGoogle}
             sheetConnected={Boolean(sheetUrl)}
             onOpenGamePicker={handleOpenGamePicker}
+            onOpenSleeveManager={() => setIsSleeveModalOpen(true)}
           />
         )}
 
@@ -630,6 +649,10 @@ export default function App() {
         onEdit={handleEditGame}
         onDelete={handleDeleteGame}
         onLogPlay={(game) => handleOpenPlayModal(game)}
+        onOpenSleeveManager={() => {
+          setSelectedGame(null);
+          setIsSleeveModalOpen(true);
+        }}
       />
 
       {/* Add / Edit Game Modal */}
@@ -653,6 +676,15 @@ export default function App() {
         games={games}
         onSaveSession={handleSaveSession}
         preSelectedGame={playModalGame}
+      />
+
+      {/* Sleeve & Upgrade Manager Modal */}
+      <SleeveManagerModal
+        isOpen={isSleeveModalOpen}
+        onClose={() => setIsSleeveModalOpen(false)}
+        games={games}
+        onUpdateGameSleeves={handleUpdateGameSleeves}
+        onSelectGame={(game) => setSelectedGame(game)}
       />
 
       {/* Smart Game Picker & Lucky Wheel Modal */}

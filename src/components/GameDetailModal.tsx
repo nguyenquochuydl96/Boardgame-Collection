@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { BoardGame } from '../types/boardgame';
+import { getGameSleeveSpecs, getGameUpgrades } from '../utils/sleeveCatalog';
 import { getGenerativeBoardGameBoxArt } from '../services/bggService';
 import { resolveImageUrl } from '../utils/imageUrl';
 import {
   X,
   Trophy,
+  Shield,
+  Box,
   ShieldCheck,
   AlertTriangle,
   Users,
@@ -28,6 +31,7 @@ interface GameDetailModalProps {
   onEdit: (game: BoardGame) => void;
   onDelete: (gameId: string) => void;
   onLogPlay?: (game: BoardGame) => void;
+  onOpenSleeveManager?: () => void;
 }
 
 export const GameDetailModal: React.FC<GameDetailModalProps> = ({
@@ -37,6 +41,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
   onEdit,
   onDelete,
   onLogPlay,
+  onOpenSleeveManager,
 }) => {
   const [imageError, setImageError] = useState(false);
 
@@ -278,6 +283,66 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* Card Sleeves & Upgrades Section */}
+              {(() => {
+                const specs = getGameSleeveSpecs(game);
+                const upgrades = getGameUpgrades(game);
+                return (
+                  <div className="p-3.5 rounded-xl bg-[#091D33] border border-[#163558] space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-emerald-400" />
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-300">
+                          Bọc Bài (Sleeves) & Phụ Kiện Nâng Cấp
+                        </h4>
+                      </div>
+                      {onOpenSleeveManager && (
+                        <button
+                          onClick={onOpenSleeveManager}
+                          className="text-[11px] text-[#FF6B00] hover:underline font-semibold"
+                        >
+                          Mở Tracker →
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      {specs.length === 0 ? (
+                        <div className="p-2 rounded-lg bg-[#0C223A] border border-[#142C48] w-full text-center">
+                          <span className="text-[11px] text-[#8EADC8] italic">Tựa game này không sử dụng thẻ bài (hoặc là phụ kiện gaming).</span>
+                        </div>
+                      ) : (
+                        specs.map((s, idx) => (
+                          <div key={idx} className="p-2 rounded-lg bg-[#0C223A] border border-[#142C48] flex-1 min-w-[140px]">
+                            <span className="text-[10px] text-[#8EADC8] block">{s.size}</span>
+                            <span className="font-bold text-white font-mono">{s.sleevedCount}/{s.cardCount} lá</span>
+                            <span className="text-[10px] text-emerald-400 ml-1.5 font-semibold">
+                              {s.sleevedCount >= s.cardCount ? '✓ Đã bọc đủ' : 'Cần bọc thêm'}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {upgrades.length > 0 && (
+                      <div className="pt-2 border-t border-[#142C48] space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
+                          Phụ kiện Deluxe đã trang bị:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {upgrades.map((u) => (
+                            <span key={u.id} className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-medium flex items-center gap-1">
+                              <span>✓</span>
+                              <span>{u.name}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Gameplay & Lore Story */}
               {game.gameplayStory && (

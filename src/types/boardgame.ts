@@ -33,6 +33,9 @@ export interface BoardGame {
   rulesUrl?: string;
   barcode?: string;
   weightGrams?: number;
+  sleeves?: SleeveSpec[];
+  sleeveStatus?: SleeveStatus;
+  upgrades?: UpgradeItem[];
 }
 
 export interface SheetConfig {
@@ -73,4 +76,22 @@ export interface PlaySession {
   location?: string;
   notes?: string;
   createdAt: string;
+}
+
+
+export type SleeveStatus = 'Fully Sleeved' | 'Partially Sleeved' | 'Needs Sleeves' | 'No Sleeves Needed';
+
+export interface SleeveSpec {
+  size: string; // e.g. "63.5 x 88 mm (Standard)"
+  cardCount: number;
+  sleevedCount: number;
+  brand?: string;
+}
+
+export interface UpgradeItem {
+  id: string;
+  name: string;
+  category: 'Insert' | 'Coins' | 'Tokens' | 'Playmat' | 'Other';
+  costVnd?: number;
+  installed: boolean;
 }

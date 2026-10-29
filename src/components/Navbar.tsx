@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Sheet, Plus, Layers, GitCompare, BarChart3, Palette, RefreshCw, Smartphone, Dices, Trophy } from 'lucide-react';
+import { Home, Sheet, Plus, Layers, GitCompare, BarChart3, Palette, RefreshCw, Smartphone, Dices, Trophy, Shield } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface NavbarProps {
@@ -19,6 +19,7 @@ interface NavbarProps {
   onInstallPwa?: () => void;
   isInstallable?: boolean;
   onOpenGamePicker?: (tab?: 'recommend' | 'wheel') => void;
+  onOpenSleeveManager?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -38,6 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onInstallPwa,
   isInstallable,
   onOpenGamePicker,
+  onOpenSleeveManager,
 }) => {
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
 
@@ -189,6 +191,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Dices className="w-3.5 h-3.5 text-[#FF6B00]" />
               <span className="hidden sm:inline">Hôm Nay Chơi Gì?</span>
+            </button>
+          )}
+
+          {onOpenSleeveManager && (
+            <button
+              onClick={onOpenSleeveManager}
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-300 hover:text-white bg-emerald-500/15 hover:bg-emerald-600 border border-emerald-500/30 rounded-full transition-all shrink-0"
+              title="Quản lý bọc bài (Sleeves) & Phụ kiện nâng cấp"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>Bọc Bài</span>
             </button>
           )}
 
