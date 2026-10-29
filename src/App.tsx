@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { BoardGame, CabinetType } from './types/boardgame';
+import { BoardGame, CabinetType, PlaySession } from './types/boardgame';
+import { DEFAULT_PLAY_SESSIONS } from './data/defaultPlays';
+import { PlayLogView } from './components/PlayLogView';
+import { PlaySessionModal } from './components/PlaySessionModal';
 import { USER_46_GAMES } from './data/userCollectionCatalog';
 import { fetchFromGoogleSheet, SAMPLE_GOOGLE_SHEET_URL, USER_COLLECTION_SHEET_URL } from './services/googleSheets';
 import { enrichCollectionWithBgg } from './services/bggService';
@@ -27,20 +30,21 @@ import {
 const STORAGE_KEY = 'boardgame_vault_games_v11';
 const SHEET_URL_KEY = 'boardgame_vault_sheet_url_v11';
 const LAST_SYNC_KEY = 'boardgame_vault_last_sync_v11';
+const STORAGE_PLAYS_KEY = 'boardgame_vault_plays_v1';
 
 export default function App() {
   // Navigation tab - Default to 'overview' with hash support (#cabinets, #overview, etc.)
-  const [activeTab, setActiveTabState] = useState<'overview' | 'cabinets' | 'compare' | 'stats' | 'sheet'>(() => {
+  const [activeTab, setActiveTabState] = useState<'overview' | 'cabinets' | 'plays' | 'compare' | 'stats' | 'sheet'>(() => {
     try {
       const h = window.location.hash.replace('#', '');
-      if (['overview', 'cabinets', 'compare', 'stats', 'sheet'].includes(h)) {
+      if (['overview', 'cabinets', 'plays', 'compare', 'stats', 'sheet'].includes(h)) {
         return h as any;
       }
     } catch {}
     return 'overview';
   });
 
-  const setActiveTab = (tab: 'overview' | 'cabinets' | 'compare' | 'stats' | 'sheet') => {
+  const setActiveTab = (tab: 'overview' | 'cabinets' | 'plays' | 'compare' | 'stats' | 'sheet') => {
     setActiveTabState(tab);
     try {
       window.location.hash = tab;
@@ -51,7 +55,7 @@ export default function App() {
     const handleHash = () => {
       try {
         const h = window.location.hash.replace('#', '');
-        if (['overview', 'cabinets', 'compare', 'stats', 'sheet'].includes(h)) {
+        if (['overview', 'cabinets', 'plays', 'compare', 'stats', 'sheet'].includes(h)) {
           setActiveTabState(h as any);
         }
       } catch {}
@@ -117,6 +121,52 @@ export default function App() {
   const [addModalCabinet, setAddModalCabinet] = useState<CabinetType>('real');
   const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null);
   const [editingGame, setEditingGame] = useState<BoardGame | null>(null);
+  // Play Sessions State
+  const [sessions, setSessions] = useState<PlaySession[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_PLAYS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Error loading play sessions:', e);
+    }
+    return DEFAULT_PLAY_SESSIONS;
+  });
+
+  const [isPlayModalOpen, setIsPlayModalOpen] = useState(() => {
+    try {
+      return typeof window !== 'undefined' && window.location.search.includes('play=new');
+    } catch {
+      return false;
+    }
+  });
+  const [playModalGame, setPlayModalGame] = useState<BoardGame | null>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_PLAYS_KEY, JSON.stringify(sessions));
+    } catch (e) {
+      console.error('Error saving play sessions:', e);
+    }
+  }, [sessions]);
+
+  const handleOpenPlayModal = (game?: BoardGame) => {
+    setPlayModalGame(game || null);
+    setIsPlayModalOpen(true);
+  };
+
+  const handleSaveSession = (newSession: PlaySession) => {
+    setSessions((prev) => [newSession, ...prev]);
+    showToast(`Đã lưu ván chơi cho "${newSession.gameName}"!`);
+  };
+
+  const handleDeleteSession = (id: string) => {
+    setSessions((prev) => prev.filter((s) => s.id !== id));
+    showToast('Đã xóa ván chơi khỏi nhật ký.');
+  };
+
   const [isGamePickerOpen, setIsGamePickerOpen] = useState(() => {
     try {
       return typeof window !== 'undefined' && window.location.search.includes('picker=');
@@ -492,6 +542,16 @@ export default function App() {
           </div>
         )}
 
+        {activeTab === 'plays' && (
+          <PlayLogView
+            sessions={sessions}
+            games={games}
+            onOpenNewSessionModal={handleOpenPlayModal}
+            onDeleteSession={handleDeleteSession}
+            onSelectGame={(game) => setSelectedGame(game)}
+          />
+        )}
+
         {activeTab === 'compare' && (
           <ComparisonMode
             games={games}
@@ -569,6 +629,7 @@ export default function App() {
         onToggleCabinet={handleToggleCabinet}
         onEdit={handleEditGame}
         onDelete={handleDeleteGame}
+        onLogPlay={(game) => handleOpenPlayModal(game)}
       />
 
       {/* Add / Edit Game Modal */}
@@ -582,6 +643,18 @@ export default function App() {
         editingGame={editingGame}
         defaultCabinetType={addModalCabinet}
       />
+      {/* Play Session Logger Modal */}
+      <PlaySessionModal
+        isOpen={isPlayModalOpen}
+        onClose={() => {
+          setIsPlayModalOpen(false);
+          setPlayModalGame(null);
+        }}
+        games={games}
+        onSaveSession={handleSaveSession}
+        preSelectedGame={playModalGame}
+      />
+
       {/* Smart Game Picker & Lucky Wheel Modal */}
       <SmartGamePickerModal
         isOpen={isGamePickerOpen}

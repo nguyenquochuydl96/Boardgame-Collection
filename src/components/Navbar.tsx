@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Home, Sheet, Plus, Layers, GitCompare, BarChart3, Palette, RefreshCw, Smartphone, Dices } from 'lucide-react';
+import { Home, Sheet, Plus, Layers, GitCompare, BarChart3, Palette, RefreshCw, Smartphone, Dices, Trophy } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface NavbarProps {
-  activeTab: 'overview' | 'cabinets' | 'compare' | 'stats' | 'sheet';
-  setActiveTab: (tab: 'overview' | 'cabinets' | 'compare' | 'stats' | 'sheet') => void;
+  activeTab: 'overview' | 'cabinets' | 'plays' | 'compare' | 'stats' | 'sheet';
+  setActiveTab: (tab: 'overview' | 'cabinets' | 'plays' | 'compare' | 'stats' | 'sheet') => void;
   onOpenSyncModal: () => void;
   onOpenAddModal: () => void;
   isSyncing: boolean;
@@ -85,6 +85,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Layers className="w-4 h-4" />
 <span className="hidden lg:inline">2 Kệ Game Chi Tiết</span><span className="lg:hidden">Kệ Game</span>
+          </button>
+
+          {/* 3. Nhật Ký Ván Chơi Tab */}
+          <button
+            onClick={() => setActiveTab('plays')}
+            className={`px-3 py-1.5 text-xs lg:text-[13px] font-semibold rounded-full transition-all whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+              activeTab === 'plays'
+                ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/40'
+                : 'text-[#8EADC8] hover:text-white hover:bg-[#122A47]'
+            }`}
+          >
+            <Trophy className="w-3.5 h-3.5" />
+            <span className="hidden xl:inline">Nhật Ký Ván Chơi</span>
+            <span className="xl:hidden">Nhật Ký</span>
           </button>
 
           {/* 3. Compare Tab */}

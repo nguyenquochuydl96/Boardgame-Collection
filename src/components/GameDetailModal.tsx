@@ -4,6 +4,7 @@ import { getGenerativeBoardGameBoxArt } from '../services/bggService';
 import { resolveImageUrl } from '../utils/imageUrl';
 import {
   X,
+  Trophy,
   ShieldCheck,
   AlertTriangle,
   Users,
@@ -26,6 +27,7 @@ interface GameDetailModalProps {
   onToggleCabinet: (game: BoardGame, e: React.MouseEvent) => void;
   onEdit: (game: BoardGame) => void;
   onDelete: (gameId: string) => void;
+  onLogPlay?: (game: BoardGame) => void;
 }
 
 export const GameDetailModal: React.FC<GameDetailModalProps> = ({
@@ -34,6 +36,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
   onToggleCabinet,
   onEdit,
   onDelete,
+  onLogPlay,
 }) => {
   const [imageError, setImageError] = useState(false);
 
@@ -331,7 +334,19 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-slate-900/90 border-t border-slate-800 flex items-center justify-end">
+        <div className="p-4 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between">
+          {onLogPlay && (
+            <button
+              onClick={() => {
+                onClose();
+                onLogPlay(game);
+              }}
+              className="px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-[#FF6B00] to-[#FF8C33] hover:from-[#FF7A1A] hover:to-[#FFA04D] rounded-xl shadow-md shadow-[#FF6B00]/30 transition-all flex items-center gap-1.5"
+            >
+              <Trophy className="w-3.5 h-3.5" />
+              <span>Ghi Nhận Ván Chơi Này</span>
+            </button>
+          )}
           <button
             onClick={onClose}
             className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"

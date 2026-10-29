@@ -1,9 +1,9 @@
 import React from 'react';
-import { Home, Layers, GitCompare, BarChart3, Sheet, Plus } from 'lucide-react';
+import { Home, Layers, GitCompare, BarChart3, Sheet, Plus, Trophy } from 'lucide-react';
 
 interface BottomDockProps {
-  activeTab: 'overview' | 'cabinets' | 'compare' | 'stats' | 'sheet';
-  setActiveTab: (tab: 'overview' | 'cabinets' | 'compare' | 'stats' | 'sheet') => void;
+  activeTab: 'overview' | 'cabinets' | 'plays' | 'compare' | 'stats' | 'sheet';
+  setActiveTab: (tab: 'overview' | 'cabinets' | 'plays' | 'compare' | 'stats' | 'sheet') => void;
   onOpenSyncModal: () => void;
   onOpenAddModal: () => void;
 }
@@ -43,6 +43,20 @@ export const BottomDock: React.FC<BottomDockProps> = ({
         >
           <Layers className="w-4 h-4" />
           <span>Shelves</span>
+        </button>
+
+        {/* 2.5 Plays / Nhật Ký */}
+        <button
+          onClick={() => setActiveTab('plays')}
+          className={`flex items-center gap-1 px-3 py-2 rounded-full text-xs font-semibold transition-all duration-200 ${
+            activeTab === 'plays'
+              ? 'bg-[#FF6B00] text-white shadow-lg shadow-[#FF6B00]/40 scale-105'
+              : 'text-[#8EADC8] hover:text-white hover:bg-[#122b4a]/60'
+          }`}
+          title="Nhật ký ván chơi & Thành tích"
+        >
+          <Trophy className="w-4 h-4" />
+          <span>Plays</span>
         </button>
 
         {/* 3. Authenticity Compare */}

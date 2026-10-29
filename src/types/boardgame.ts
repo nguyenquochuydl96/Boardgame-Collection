@@ -52,3 +52,25 @@ export interface ComparisonPair {
     fakeDetail: string;
   }[];
 }
+
+
+export interface PlayerScore {
+  playerId: string;
+  playerName: string;
+  score: number;
+  isWinner: boolean;
+  roleOrFaction?: string;
+}
+
+export interface PlaySession {
+  id: string;
+  gameId: string;
+  gameName: string;
+  gameImageUrl: string;
+  date: string;
+  durationMinutes: number;
+  players: PlayerScore[];
+  location?: string;
+  notes?: string;
+  createdAt: string;
+}
