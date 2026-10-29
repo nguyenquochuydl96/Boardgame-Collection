@@ -15,16 +15,16 @@
     <meta name="mobile-web-app-capable" content="yes" />
 
     <!-- Favicons & Touch Icons -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate icon" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="alternate icon" href="./favicon.png" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="manifest" href="./manifest.json" />
 
     <!-- Open Graph & Social Sharing -->
     <meta property="og:title" content="BoardGame Vault - Authentic & Counterfeit Cabinet Collection" />
     <meta property="og:description" content="Quản lý và tra cứu bộ sưu tập board game vật lý 2 kệ Real & Fake, đồng bộ Google Sheets & Drive." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/icons/icon-512.png" />
+    <meta property="og:image" content="./icons/icon-512.png" />
     <meta name="twitter:card" content="summary_large_image" />
 
     <!-- Fonts -->
@@ -39,7 +39,7 @@
       // Register Service Worker for PWA and offline support
       if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(
+          navigator.serviceWorker.register('./sw.js').then(
             (reg) => {
               console.log('[PWA] ServiceWorker registered successfully with scope:', reg.scope);
             },

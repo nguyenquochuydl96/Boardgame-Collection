@@ -4,10 +4,8 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
-  const base = process.env.GITHUB_ACTIONS ? '/Boardgame-Collection/' : './';
-
   return {
-    base,
+    base: './',
     publicDir: 'public',
     plugins: [react(), tailwindcss()],
     resolve: {
