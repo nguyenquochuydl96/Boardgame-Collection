@@ -19,6 +19,8 @@ import {
   AlertTriangle,
   Sheet,
   Sparkles,
+  Smartphone,
+  WifiOff,
 } from 'lucide-react';
 
 const STORAGE_KEY = 'boardgame_vault_games_v11';
@@ -114,6 +116,51 @@ export default function App() {
   const [addModalCabinet, setAddModalCabinet] = useState<CabinetType>('real');
   const [selectedGame, setSelectedGame] = useState<BoardGame | null>(null);
   const [editingGame, setEditingGame] = useState<BoardGame | null>(null);
+
+  // PWA and Online/Offline state
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleBeforeInstall = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      showToast('Đã khôi phục kết nối Internet!');
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      showToast('Đang ở chế độ Offline. Bộ sưu tập vẫn hoạt động mượt mà!');
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const handleInstallPwa = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if (choice && choice.outcome === 'accepted') {
+        setIsInstallable(false);
+        showToast('Đã cài đặt thành công ứng dụng BoardGame Vault!');
+      }
+      setDeferredPrompt(null);
+    } else {
+      showToast('Trên iOS: Bấm biểu tượng Chia Sẻ (Share) -> Chọn "Thêm vào Màn hình chính"');
+    }
+  };
 
   // Initialize Firebase Auth listener on load
   useEffect(() => {
@@ -315,6 +362,8 @@ export default function App() {
         sheetConnected={Boolean(sheetUrl)}
         currentUser={currentUser}
         onSignInWithGoogle={handleSignInWithGoogle}
+        onInstallPwa={handleInstallPwa}
+        isInstallable={isInstallable}
       />
 
       {/* Hero Strip / Google Sheet Status Ribbon */}
@@ -339,6 +388,13 @@ export default function App() {
             {lastSyncedAt && isCustomSheetConnected && (
               <span className="text-[#6080A2] hidden md:inline">
                 (Synced: {lastSyncedAt})
+              </span>
+            )}
+
+            {!isOnline && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-bold">
+                <WifiOff className="w-3 h-3" />
+                <span>Offline Ready</span>
               </span>
             )}
           </div>

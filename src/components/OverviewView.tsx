@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { BoardGame } from '../types/boardgame';
+import { MultiFilterModal, FilterState, DEFAULT_FILTER_STATE } from './MultiFilterModal';
+import { filterAndSortGames } from '../utils/filterGames';
 import {
   ShieldCheck,
   AlertTriangle,
@@ -42,32 +44,61 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
   onSignInWithGoogle,
   sheetConnected,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('search') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [selectedTag, setSelectedTag] = useState<string>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('tag') || 'all';
+    } catch {
+      return 'all';
+    }
+  });
   const [showNotificationList, setShowNotificationList] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(() => typeof window !== 'undefined' && window.location.search.includes('filter=open'));
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTER_STATE);
 
-  // Filter games based on search and selected tag
+  // Active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.cabinet !== 'all') count++;
+    if (filters.playerCount !== 'all') count++;
+    if (filters.playtime !== 'all') count++;
+    if (filters.status !== 'all') count++;
+    if (filters.gameType !== 'all') count++;
+    if (filters.minRating > 0) count++;
+    if (filters.category !== 'all') count++;
+    if (filters.sortBy !== 'default') count++;
+    return count;
+  }, [filters]);
+
+  // Combine quick pill tag with custom filters
+  const effectiveFilters = useMemo<FilterState>(() => {
+    const f = { ...filters };
+    if (selectedTag === 'real') f.cabinet = 'real';
+    else if (selectedTag === 'fake') f.cabinet = 'fake';
+    else if (selectedTag === 'strategy') f.category = 'strategy';
+    else if (selectedTag === 'party') f.category = 'party';
+    else if (selectedTag === 'coop') f.category = 'coop';
+    else if (selectedTag === 'expansion') f.gameType = 'expansion';
+    return f;
+  }, [filters, selectedTag]);
+
+  // Filter games based on search, tags, and multi-filters
   const filteredGames = useMemo(() => {
-    return games.filter((g) => {
-      const matchSearch =
-        !searchQuery ||
-        g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (g.vietnameseName && g.vietnameseName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        g.publisher.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        g.category.toLowerCase().includes(searchQuery.toLowerCase());
+    return filterAndSortGames(games, searchQuery, effectiveFilters);
+  }, [games, searchQuery, effectiveFilters]);
 
-      const matchTag =
-        selectedTag === 'all' ||
-        (selectedTag === 'real' && g.cabinetType === 'real') ||
-        (selectedTag === 'fake' && g.cabinetType === 'fake') ||
-        (selectedTag === 'strategy' && (g.category.toLowerCase().includes('strategy') || g.category.toLowerCase().includes('economic') || g.category.toLowerCase().includes('worker'))) ||
-        (selectedTag === 'party' && (g.category.toLowerCase().includes('deduction') || g.category.toLowerCase().includes('bluffing') || g.category.toLowerCase().includes('party'))) ||
-        (selectedTag === 'coop' && g.category.toLowerCase().includes('coop')) ||
-        (selectedTag === 'expansion' && g.gameType === 'Expansion');
-
-      return matchSearch && matchTag;
-    });
-  }, [games, searchQuery, selectedTag]);
+  const isSearchOrFilterActive =
+    searchQuery.trim() !== '' ||
+    selectedTag !== 'all' ||
+    activeFiltersCount > 0;
 
   // Real & Fake partition
   const realGames = useMemo(() => games.filter((g) => g.cabinetType === 'real'), [games]);
@@ -217,11 +248,20 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             className="w-full bg-[#091D33] hover:bg-[#0C243E] focus:bg-[#0E2845] border border-[#163558] focus:border-[#FF6B00] text-white placeholder-[#6080A2] text-sm rounded-full pl-12 pr-12 py-3.5 shadow-inner transition-all outline-none"
           />
           <button
-            onClick={() => setSelectedTag('all')}
-            className="absolute right-3.5 p-1.5 rounded-full hover:bg-[#163558] text-[#8EADC8] hover:text-[#FF6B00] transition-colors"
-            title="Bộ lọc nâng cao"
+            onClick={() => setIsFilterModalOpen(true)}
+            className={`absolute right-3.5 p-2 rounded-full transition-all relative flex items-center justify-center ${
+              activeFiltersCount > 0
+                ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/40'
+                : 'hover:bg-[#163558] text-[#8EADC8] hover:text-[#FF6B00]'
+            }`}
+            title="Mở Bộ lọc đa tiêu chí (Multi-filter)"
           >
-            <SlidersHorizontal className="w-5 h-5" />
+            <SlidersHorizontal className="w-4 h-4" />
+            {activeFiltersCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-slate-950 text-[10px] font-black flex items-center justify-center shadow">
+                {activeFiltersCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -233,7 +273,12 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           return (
             <button
               key={tag.id}
-              onClick={() => setSelectedTag(tag.id)}
+              onClick={() => {
+                setSelectedTag(tag.id);
+                if (tag.id === 'all') {
+                  setFilters(DEFAULT_FILTER_STATE);
+                }
+              }}
               className={`px-4.5 py-2.2 rounded-full font-semibold whitespace-nowrap transition-all duration-200 ${
                 isActive
                   ? 'bg-white text-slate-950 shadow-md shadow-white/10 scale-105 font-bold'
@@ -244,10 +289,116 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
             </button>
           );
         })}
+
+        {/* Quick Multi-filter button in pill bar */}
+        <button
+          onClick={() => setIsFilterModalOpen(true)}
+          className={`px-3.5 py-2 rounded-full font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+            activeFiltersCount > 0
+              ? 'bg-[#FF6B00] text-white shadow-md shadow-[#FF6B00]/30'
+              : 'bg-[#122A47] text-[#8EADC8] hover:text-white border border-[#1E436E]'
+          }`}
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5" />
+          <span>Bộ Lọc Nâng Cao {activeFiltersCount > 0 ? `(${activeFiltersCount})` : ''}</span>
+        </button>
       </div>
 
+      {/* Active Filter Chips Bar (Dismissible) */}
+      {activeFiltersCount > 0 && (
+        <div className="flex flex-wrap items-center gap-2 pt-0.5 animate-fade-in text-xs">
+          <span className="text-[#8EADC8] font-medium flex items-center gap-1.5 mr-1">
+            <SlidersHorizontal className="w-3.5 h-3.5 text-[#FF6B00]" />
+            <span>Đang lọc:</span>
+          </span>
+
+          {filters.cabinet !== 'all' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0C223A] text-white border border-[#18395E]">
+              <span>Kệ: {filters.cabinet === 'real' ? 'Real Collection' : 'Replicas & Fake'}</span>
+              <button
+                onClick={() => setFilters((p) => ({ ...p, cabinet: 'all' }))}
+                className="hover:text-[#FF6B00] text-[#8EADC8] ml-0.5 font-bold"
+              >
+                ✕
+              </button>
+            </span>
+          )}
+
+          {filters.playerCount !== 'all' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0C223A] text-white border border-[#18395E]">
+              <span>Người chơi: {filters.playerCount === '1' ? 'Solo (1)' : filters.playerCount === '2' ? 'Duo (2)' : `${filters.playerCount} người`}</span>
+              <button
+                onClick={() => setFilters((p) => ({ ...p, playerCount: 'all' }))}
+                className="hover:text-[#FF6B00] text-[#8EADC8] ml-0.5 font-bold"
+              >
+                ✕
+              </button>
+            </span>
+          )}
+
+          {filters.playtime !== 'all' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0C223A] text-white border border-[#18395E]">
+              <span>Thời lượng: {filters.playtime === 'quick' ? '< 30m' : filters.playtime === 'medium' ? '30-60m' : filters.playtime === 'standard' ? '60-90m' : '> 90m'}</span>
+              <button
+                onClick={() => setFilters((p) => ({ ...p, playtime: 'all' }))}
+                className="hover:text-[#FF6B00] text-[#8EADC8] ml-0.5 font-bold"
+              >
+                ✕
+              </button>
+            </span>
+          )}
+
+          {filters.status !== 'all' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0C223A] text-white border border-[#18395E]">
+              <span>Kho: {filters.status}</span>
+              <button
+                onClick={() => setFilters((p) => ({ ...p, status: 'all' }))}
+                className="hover:text-[#FF6B00] text-[#8EADC8] ml-0.5 font-bold"
+              >
+                ✕
+              </button>
+            </span>
+          )}
+
+          {filters.minRating > 0 && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0C223A] text-white border border-[#18395E]">
+              <span className="text-amber-400">★</span>
+              <span>&gt;= {filters.minRating}</span>
+              <button
+                onClick={() => setFilters((p) => ({ ...p, minRating: 0 }))}
+                className="hover:text-[#FF6B00] text-[#8EADC8] ml-0.5 font-bold"
+              >
+                ✕
+              </button>
+            </span>
+          )}
+
+          {filters.sortBy !== 'default' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0C223A] text-white border border-[#18395E]">
+              <span>Sắp xếp: {filters.sortBy.replace('-desc', ' ↓').replace('-asc', ' ↑')}</span>
+              <button
+                onClick={() => setFilters((p) => ({ ...p, sortBy: 'default' }))}
+                className="hover:text-[#FF6B00] text-[#8EADC8] ml-0.5 font-bold"
+              >
+                ✕
+              </button>
+            </span>
+          )}
+
+          <button
+            onClick={() => {
+              setFilters(DEFAULT_FILTER_STATE);
+              setSelectedTag('all');
+            }}
+            className="text-xs text-[#FF6B00] hover:text-[#FFA154] font-bold underline ml-1"
+          >
+            Xóa tất cả
+          </button>
+        </div>
+      )}
+
       {/* 3.5 FILTERED RESULTS SECTION (When search or category tag is active) */}
-      {(searchQuery.trim() !== '' || selectedTag !== 'all') && (
+      {isSearchOrFilterActive && (
         <section className="space-y-4 pt-1 animate-fade-in bg-[#08182B]/60 p-4 sm:p-5 rounded-3xl border border-[#163558]">
           <div className="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-[#142C48]">
             <div className="flex items-center gap-2.5">
@@ -739,6 +890,15 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
         </div>
       </div>
+      {/* Multi-Filter Modal Drawer */}
+      <MultiFilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        filters={filters}
+        onUpdateFilters={(newFilters) => setFilters(newFilters)}
+        onResetFilters={() => setFilters(DEFAULT_FILTER_STATE)}
+        totalFilteredCount={filteredGames.length}
+      />
     </div>
   );
 };

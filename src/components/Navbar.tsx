@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Sheet, Plus, Layers, GitCompare, BarChart3, Palette, RefreshCw } from 'lucide-react';
+import { Home, Sheet, Plus, Layers, GitCompare, BarChart3, Palette, RefreshCw, Smartphone } from 'lucide-react';
 import { User } from 'firebase/auth';
 
 interface NavbarProps {
@@ -16,6 +16,8 @@ interface NavbarProps {
   onSignInWithGoogle?: () => Promise<void>;
   currentTheme?: 'mahogany' | 'cyberpunk' | 'parchment';
   setTheme?: (theme: 'mahogany' | 'cyberpunk' | 'parchment') => void;
+  onInstallPwa?: () => void;
+  isInstallable?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -32,6 +34,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSignInWithGoogle,
   currentTheme = 'mahogany',
   setTheme,
+  onInstallPwa,
+  isInstallable,
 }) => {
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
 
@@ -160,6 +164,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="hidden 2xl:inline">Google Sign-in</span>
             </button>
           ) : null}
+
+          {onInstallPwa && (
+            <button
+              onClick={onInstallPwa}
+              className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-[#FF6B00] hover:text-white bg-[#FF6B00]/15 hover:bg-[#FF6B00] border border-[#FF6B00]/30 rounded-full transition-all whitespace-nowrap shrink-0"
+              title="Cài đặt BoardGame Vault như ứng dụng độc lập trên điện thoại hoặc máy tính"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Cài App</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenAddModal}
