@@ -47,6 +47,7 @@ export const GameDetailPage: React.FC = () => {
   const [notesSaved, setNotesSaved] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [visibleSessionsCount, setVisibleSessionsCount] = useState(15);
 
   // Edit modal state
   const [editName, setEditName] = useState(game?.name || '');
@@ -395,13 +396,23 @@ export const GameDetailPage: React.FC = () => {
 
               {gameSessions.length > 0 ? (
                 <div className="space-y-3">
-                  {gameSessions.map((session) => (
+                  {gameSessions.slice(0, visibleSessionsCount).map((session) => (
                     <SessionCard
                       key={session.id}
                       session={session}
                       playersById={playersById}
                     />
                   ))}
+                  {visibleSessionsCount < gameSessions.length && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setVisibleSessionsCount((prev) => prev + 20)}
+                      className="w-full justify-center"
+                    >
+                      Xem thêm ván chơi ({gameSessions.length - visibleSessionsCount} ván nữa)
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <Card className="p-8 text-center space-y-3">

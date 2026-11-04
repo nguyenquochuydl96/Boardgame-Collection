@@ -50,6 +50,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         <img
           src={avatar}
           alt={name}
+          loading="lazy"
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover"
         />
