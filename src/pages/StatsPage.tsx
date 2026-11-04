@@ -20,6 +20,7 @@ import {
   Play,
   Search,
   ArrowUpRight,
+  ChevronRight,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
@@ -28,6 +29,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { PlayerChip } from '../components/player/PlayerChip';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
+import { StreakDetailModal } from '../components/player/StreakDetailModal';
 import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
@@ -36,6 +38,8 @@ import {
   calculateGameStats,
   calculateHeadToHead,
   calculateLongestWinStreak,
+  calculatePlayerStreaks,
+  StreakData,
   formatDate,
   formatDuration,
 } from '../lib/utils';
@@ -58,6 +62,9 @@ export const StatsPage: React.FC = () => {
   const [showPlayedGamesModal, setShowPlayedGamesModal] = useState(false);
   const [playedGamesTab, setPlayedGamesTab] = useState<'played' | 'unplayed'>('played');
   const [playedGamesSearch, setPlayedGamesSearch] = useState('');
+
+  const [selectedStreakPlayer, setSelectedStreakPlayer] = useState<Player | null>(null);
+  const [selectedStreakData, setSelectedStreakData] = useState<StreakData | null>(null);
 
   // --- 1. OVERVIEW & H-INDEX METRICS ---
   const playCountByGame = useMemo(() => {
@@ -629,16 +636,22 @@ export const StatsPage: React.FC = () => {
                   {playerStreaks.slice(0, 6).map(({ player, streak }) => (
                     <div
                       key={player.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-surface)] border border-white/[0.06]"
+                      onClick={() => {
+                        const sDetails = calculatePlayerStreaks(player.id, sessions);
+                        setSelectedStreakPlayer(player);
+                        setSelectedStreakData(sDetails.longestWinStreak);
+                      }}
+                      className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-surface)] border border-white/[0.06] hover:border-amber-400/50 hover:shadow-md transition-all cursor-pointer group select-none"
+                      title="Nhấp để xem chi tiết chuỗi thắng và ván bắt đầu"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <PlayerAvatar player={player} size="sm" />
-                        <span className="font-display font-bold text-xs text-white truncate">
+                        <span className="font-display font-bold text-xs text-white truncate group-hover:text-amber-300 transition-colors">
                           {player.name}
                         </span>
                       </div>
-                      <span className="font-mono font-bold text-xs text-orange-300 shrink-0">
-                        🔥 {streak} ván liên tiếp
+                      <span className="font-mono font-bold text-xs text-orange-300 shrink-0 flex items-center gap-1 group-hover:underline">
+                        🔥 {streak} ván liên tiếp <ChevronRight className="w-3 h-3 opacity-60" />
                       </span>
                     </div>
                   ))}
@@ -1255,6 +1268,18 @@ export const StatsPage: React.FC = () => {
             </div>
           </div>
         </Modal>
+
+        {/* Player Streak Detail Modal */}
+        <StreakDetailModal
+          isOpen={selectedStreakPlayer !== null && selectedStreakData !== null}
+          onClose={() => {
+            setSelectedStreakPlayer(null);
+            setSelectedStreakData(null);
+          }}
+          player={selectedStreakPlayer}
+          type="win"
+          streakData={selectedStreakData}
+        />
       </div>
     </PageTransition>
   );

@@ -14,7 +14,9 @@ import {
   Search,
   Quote,
   Flame,
+  CloudRain,
   ArrowRight,
+  ChevronRight,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
@@ -22,11 +24,12 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { PlayerFormModal } from '../components/player/PlayerFormModal';
+import { StreakDetailModal } from '../components/player/StreakDetailModal';
 import { SessionCard } from '../components/session/SessionCard';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useGameStore } from '../store/useGameStore';
-import { calculateLongestWinStreak, formatDate } from '../lib/utils';
+import { calculatePlayerStreaks, formatDate } from '../lib/utils';
 import { getPlayStyleInfo } from '../lib/boardgameAvatars';
 import { cn } from '../components/ui/cn';
 
@@ -41,6 +44,7 @@ export const PlayerDetailPage: React.FC = () => {
   const games = useGameStore((s) => s.games);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [activeStreakType, setActiveStreakType] = useState<'win' | 'loss' | null>(null);
   const [breakdownSearch, setBreakdownSearch] = useState('');
   const [breakdownSort, setBreakdownSort] = useState<'plays' | 'winRate' | 'wins' | 'name'>('plays');
 
@@ -85,7 +89,11 @@ export const PlayerDetailPage: React.FC = () => {
   }).length;
   const overallWinRate =
     totalPlays > 0 ? Math.round((totalWins / totalPlays) * 100) : 0;
-  const bestStreak = calculateLongestWinStreak(player.id, allSessions);
+
+  // Complete streaks details (win streak & loss streak with full session list)
+  const streaks = useMemo(() => {
+    return calculatePlayerStreaks(player.id, allSessions);
+  }, [player.id, allSessions]);
 
   // Per-game breakdown
   const perGameStats = useMemo(() => {
@@ -354,16 +362,18 @@ export const PlayerDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* 4 QUICK STAT BADGES */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2.5 w-full lg:w-auto tabular-nums">
-            <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[100px]">
+          {/* 5 INTERACTIVE QUICK STAT BADGES */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 w-full lg:w-auto tabular-nums">
+            {/* 1. Số Ván */}
+            <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[95px]">
               <span className="text-[11px] text-[var(--text-secondary)] block">Số Ván</span>
               <p className="font-display font-extrabold text-xl text-white mt-0.5">
                 {totalPlays}
               </p>
             </div>
 
-            <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[100px]">
+            {/* 2. Tỉ Lệ Thắng */}
+            <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[95px]">
               <span className="text-[11px] text-[var(--text-secondary)] block">Tỉ Lệ Thắng</span>
               <p className="font-display font-extrabold text-xl text-emerald-400 mt-0.5">
                 {overallWinRate}%
@@ -371,28 +381,57 @@ export const PlayerDetailPage: React.FC = () => {
               <span className="text-[10px] text-[var(--text-muted)]">({totalWins} thắng)</span>
             </div>
 
-            <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[100px]">
-              <span className="text-[11px] text-[var(--text-secondary)] block">Chuỗi Thắng</span>
-              <p className="font-display font-extrabold text-xl text-amber-400 mt-0.5 flex items-center justify-center gap-1">
-                <Flame className="w-4 h-4 fill-current text-orange-400" />
-                {bestStreak}W
+            {/* 3. Chuỗi Thắng Kỷ Lục (Clickable) */}
+            <div
+              onClick={() => setActiveStreakType('win')}
+              className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-amber-500/30 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/15 text-center min-w-[105px] cursor-pointer transition-all select-none group"
+              title="Nhấp để xem chi tiết chuỗi thắng liên tiếp và ván bắt đầu"
+            >
+              <div className="flex items-center justify-center gap-1 text-[11px] text-amber-400 font-bold group-hover:text-amber-300">
+                <Flame className="w-3.5 h-3.5 fill-current text-orange-400" />
+                <span>Chuỗi Thắng</span>
+              </div>
+              <p className="font-display font-black text-xl text-white mt-0.5 group-hover:text-amber-300 transition-colors">
+                {streaks.longestWinStreak.count}W
               </p>
+              <span className="text-[10px] text-amber-400/90 group-hover:underline flex items-center justify-center gap-0.5 mt-0.5 font-medium">
+                Chi tiết <ChevronRight className="w-2.5 h-2.5" />
+              </span>
             </div>
 
+            {/* 4. Chuỗi Thua Kỷ Lục (Clickable) */}
+            <div
+              onClick={() => setActiveStreakType('loss')}
+              className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-rose-500/30 hover:border-rose-400 hover:shadow-lg hover:shadow-rose-500/15 text-center min-w-[105px] cursor-pointer transition-all select-none group"
+              title="Nhấp để xem chi tiết chuỗi thua liên tiếp và ván bắt đầu"
+            >
+              <div className="flex items-center justify-center gap-1 text-[11px] text-rose-400 font-bold group-hover:text-rose-300">
+                <CloudRain className="w-3.5 h-3.5 text-rose-400" />
+                <span>Chuỗi Thua</span>
+              </div>
+              <p className="font-display font-black text-xl text-white mt-0.5 group-hover:text-rose-300 transition-colors">
+                {streaks.longestLossStreak.count}L
+              </p>
+              <span className="text-[10px] text-rose-400/90 group-hover:underline flex items-center justify-center gap-0.5 mt-0.5 font-medium">
+                Chi tiết <ChevronRight className="w-2.5 h-2.5" />
+              </span>
+            </div>
+
+            {/* 5. Đối Thủ / Thắng Trận */}
             {rivalInfo && rivalInfo.player ? (
-              <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-rose-500/30 text-center min-w-[110px]">
-                <span className="text-[11px] text-rose-300 block flex items-center justify-center gap-1">
+              <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-purple-500/30 text-center min-w-[105px]">
+                <span className="text-[11px] text-purple-300 block flex items-center justify-center gap-1">
                   <Swords className="w-3 h-3" /> Đối Thủ
                 </span>
                 <p className="font-display font-bold text-xs text-white truncate mt-1">
                   {rivalInfo.player.name}
                 </p>
                 <span className="text-[10px] text-amber-300 font-mono">
-                  {rivalInfo.playerWins} - {rivalInfo.rivalWins} ({rivalInfo.plays} ván)
+                  {rivalInfo.playerWins} - {rivalInfo.rivalWins}
                 </span>
               </div>
             ) : (
-              <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[100px]">
+              <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[95px]">
                 <span className="text-[11px] text-[var(--text-secondary)] block">Thắng Trận</span>
                 <p className="font-display font-extrabold text-xl text-amber-400 mt-0.5">
                   {totalWins}
@@ -728,6 +767,19 @@ export const PlayerDetailPage: React.FC = () => {
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           player={player}
+        />
+
+        {/* STREAK DETAIL MODAL (WIN & LOSS STREAKS DRILLDOWN) */}
+        <StreakDetailModal
+          isOpen={activeStreakType !== null}
+          onClose={() => setActiveStreakType(null)}
+          player={player}
+          type={activeStreakType || 'win'}
+          streakData={
+            activeStreakType === 'loss'
+              ? streaks.longestLossStreak
+              : streaks.longestWinStreak
+          }
         />
       </div>
     </PageTransition>

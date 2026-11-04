@@ -308,32 +308,110 @@ export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
   };
 }
 
-export function calculateLongestWinStreak(
+export interface StreakData {
+  count: number;
+  startDate?: string;
+  endDate?: string;
+  sessions: PlaySession[];
+}
+
+export interface PlayerStreakDetails {
+  longestWinStreak: StreakData;
+  longestLossStreak: StreakData;
+  currentStreak: {
+    type: 'win' | 'loss' | 'none';
+    count: number;
+    startDate?: string;
+    endDate?: string;
+    sessions: PlaySession[];
+  };
+}
+
+/**
+ * Calculates complete player streak metrics (longest win streak, longest loss streak, and current active streak)
+ * with the exact timeline of sessions in each streak.
+ */
+export function calculatePlayerStreaks(
   playerId: string,
   sessions: PlaySession[]
-): number {
+): PlayerStreakDetails {
   const sorted = [...sessions]
-    .filter((s) => s.players.some((p) => p.playerId === playerId))
+    .filter((s) => s.players?.some((p) => p.playerId === playerId))
     .sort(
       (a, b) =>
         new Date(a.datePlayed).getTime() - new Date(b.datePlayed).getTime()
     );
 
-  let maxStreak = 0;
-  let currentStreak = 0;
+  let curWins: PlaySession[] = [];
+  let maxWins: PlaySession[] = [];
+
+  let curLosses: PlaySession[] = [];
+  let maxLosses: PlaySession[] = [];
 
   for (const s of sorted) {
-    const p = s.players.find((pl) => pl.playerId === playerId);
+    const p = s.players?.find((pl) => pl.playerId === playerId);
     const won = Boolean(p?.isWinner || s.winnerId === playerId);
+
     if (won) {
-      currentStreak += 1;
-      if (currentStreak > maxStreak) maxStreak = currentStreak;
+      curWins.push(s);
+      if (curWins.length >= maxWins.length) {
+        maxWins = [...curWins];
+      }
+      curLosses = [];
     } else {
-      currentStreak = 0;
+      curLosses.push(s);
+      if (curLosses.length >= maxLosses.length) {
+        maxLosses = [...curLosses];
+      }
+      curWins = [];
     }
   }
 
-  return maxStreak;
+  let currentStreakType: 'win' | 'loss' | 'none' = 'none';
+  let currentSessions: PlaySession[] = [];
+  if (curWins.length > 0) {
+    currentStreakType = 'win';
+    currentSessions = curWins;
+  } else if (curLosses.length > 0) {
+    currentStreakType = 'loss';
+    currentSessions = curLosses;
+  }
+
+  return {
+    longestWinStreak: {
+      count: maxWins.length,
+      startDate: maxWins[0]?.datePlayed,
+      endDate: maxWins[maxWins.length - 1]?.datePlayed,
+      sessions: maxWins, // Chronological (from first match of streak to last)
+    },
+    longestLossStreak: {
+      count: maxLosses.length,
+      startDate: maxLosses[0]?.datePlayed,
+      endDate: maxLosses[maxLosses.length - 1]?.datePlayed,
+      sessions: maxLosses,
+    },
+    currentStreak: {
+      type: currentStreakType,
+      count: currentSessions.length,
+      startDate: currentSessions[0]?.datePlayed,
+      endDate: currentSessions[currentSessions.length - 1]?.datePlayed,
+      sessions: currentSessions,
+    },
+  };
+}
+
+export function calculateLongestWinStreak(
+  playerId: string,
+  sessions: PlaySession[]
+): number {
+  return calculatePlayerStreaks(playerId, sessions).longestWinStreak.count;
+}
+
+export function calculateLongestLossStreak(
+  playerId: string,
+  sessions: PlaySession[]
+): number {
+  return calculatePlayerStreaks(playerId, sessions).longestLossStreak.count;
 }
 
 export interface HeadToHeadSummary {
@@ -439,7 +517,6 @@ export function getCollectionTotalValue(games: BoardGame[]): number {
     .reduce((sum, g) => sum + (g.purchasePrice || 0), 0);
 }
 
-
 /**
  * Resolves an avatar string to a valid image src URL or null if it's an emoji/short text.
  * Robustly handles:
@@ -477,7 +554,6 @@ export function getSafeDisplayAvatar(avatar?: string | null, fallback = '👤'):
   }
   return trimmed;
 }
-
 
 /**
  * Compresses an uploaded image file on canvas to a lightweight data URL (~160x160 JPEG)
