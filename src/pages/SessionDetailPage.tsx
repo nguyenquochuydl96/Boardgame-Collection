@@ -10,6 +10,11 @@ import {
   Trash2,
   Edit3,
   Maximize2,
+  Plus,
+  UserCheck,
+  Check,
+  X,
+  Trophy,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
@@ -24,6 +29,24 @@ import {
   formatDate,
   formatDuration,
 } from '../lib/utils';
+import { PlayerScore } from '../types';
+import { cn } from '../components/ui/cn';
+
+interface EditablePlayerRow {
+  playerId: string;
+  playerName: string;
+  score: string;
+  isWinner: boolean;
+  isFirstPlayer: boolean;
+}
+
+function toDatetimeLocal(isoString?: string): string {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 export const SessionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,40 +55,43 @@ export const SessionDetailPage: React.FC = () => {
   const session = useSessionStore((s) => s.sessions.find((x) => x.id === id));
   const updateSession = useSessionStore((s) => s.updateSession);
   const deleteSession = useSessionStore((s) => s.deleteSession);
-  const players = usePlayerStore((s) => s.players);
+  const savedPlayers = usePlayerStore((s) => s.players);
 
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
+
+  // Edit Modal State
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editLocation, setEditLocation] = useState(session?.location || '');
-  const [editDuration, setEditDuration] = useState(
-    session?.durationMinutes?.toString() || '60'
-  );
-  const [editNotes, setEditNotes] = useState(session?.notes || '');
+  const [editDatetime, setEditDatetime] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editDuration, setEditDuration] = useState('60');
+  const [editNotes, setEditNotes] = useState('');
+  const [editPlayers, setEditPlayers] = useState<EditablePlayerRow[]>([]);
+  const [addPlayerSelectId, setAddPlayerSelectId] = useState('');
 
   if (!session) {
     return (
       <PageTransition>
         <Card className="p-8 text-center space-y-4">
-          <h1 className="font-display font-bold text-2xl text-white">
-            Session Not Found
+          <h1 className="font-display font-bold text-2xl text-[var(--text-primary)]">
+            Không tìm thấy ván chơi
           </h1>
-          <p className="text-sm text-[#94a3b8]">
-            This recorded play session could not be found.
+          <p className="text-sm text-[var(--text-secondary)]">
+            Ván chơi này có thể đã bị xóa hoặc đường dẫn không đúng.
           </p>
           <Link to="/sessions">
-            <Button variant="primary">Back to Sessions</Button>
+            <Button variant="primary">Quay lại danh sách</Button>
           </Link>
         </Card>
       </PageTransition>
     );
   }
 
-  const playersById = Object.fromEntries(players.map((p) => [p.id, p]));
-  const firstPlayer = session.players.find(
+  const playersById = Object.fromEntries(savedPlayers.map((p) => [p.id, p]));
+  const firstPlayer = session.players?.find(
     (p) => p.playerId === session.firstPlayerId
   );
 
-  const sortedResults = [...session.players].sort((a, b) => {
+  const sortedResults = [...(session.players || [])].sort((a, b) => {
     if (a.isWinner && !b.isWinner) return -1;
     if (!a.isWinner && b.isWinner) return 1;
     if (typeof a.score === 'number' && typeof b.score === 'number') {
@@ -74,100 +100,230 @@ export const SessionDetailPage: React.FC = () => {
     return (a.rank || 99) - (b.rank || 99);
   });
 
+  // Open Edit Modal with full state initialized
+  const handleOpenEdit = () => {
+    setEditDatetime(toDatetimeLocal(session.datePlayed));
+    setEditLocation(session.location || '');
+    setEditDuration(String(session.durationMinutes || 60));
+    setEditNotes(session.notes || '');
+
+    const rows: EditablePlayerRow[] = (session.players || []).map((p) => ({
+      playerId: p.playerId,
+      playerName: p.playerName,
+      score: typeof p.score === 'number' ? String(p.score) : '',
+      isWinner: Boolean(p.isWinner || session.winnerId === p.playerId),
+      isFirstPlayer: session.firstPlayerId === p.playerId,
+    }));
+
+    setEditPlayers(rows);
+    setAddPlayerSelectId('');
+    setIsEditOpen(true);
+  };
+
+  // Toggle winner for a player
+  const handleToggleWinner = (playerId: string) => {
+    setEditPlayers((prev) =>
+      prev.map((p) =>
+        p.playerId === playerId ? { ...p, isWinner: !p.isWinner } : p
+      )
+    );
+  };
+
+  // Set exclusive first player
+  const handleSetFirstPlayer = (playerId: string) => {
+    setEditPlayers((prev) =>
+      prev.map((p) => ({
+        ...p,
+        isFirstPlayer: p.playerId === playerId ? !p.isFirstPlayer : false,
+      }))
+    );
+  };
+
+  // Change a player's score
+  const handleScoreChange = (playerId: string, scoreVal: string) => {
+    setEditPlayers((prev) =>
+      prev.map((p) => (p.playerId === playerId ? { ...p, score: scoreVal } : p))
+    );
+  };
+
+  // Remove player from session
+  const handleRemovePlayer = (playerId: string) => {
+    setEditPlayers((prev) => prev.filter((p) => p.playerId !== playerId));
+  };
+
+  // Add new player to session
+  const handleAddPlayer = () => {
+    if (!addPlayerSelectId) return;
+    const playerToAdd = savedPlayers.find((p) => p.id === addPlayerSelectId);
+    if (!playerToAdd) return;
+
+    if (editPlayers.some((p) => p.playerId === playerToAdd.id)) return;
+
+    setEditPlayers((prev) => [
+      ...prev,
+      {
+        playerId: playerToAdd.id,
+        playerName: playerToAdd.name,
+        score: '',
+        isWinner: false,
+        isFirstPlayer: false,
+      },
+    ]);
+    setAddPlayerSelectId('');
+  };
+
+  // Auto pick highest score as winner
+  const handleAutoWinner = () => {
+    let maxScore = -Infinity;
+    let winnerId = '';
+    for (const p of editPlayers) {
+      const num = Number(p.score);
+      if (!isNaN(num) && num > maxScore) {
+        maxScore = num;
+        winnerId = p.playerId;
+      }
+    }
+    if (winnerId) {
+      setEditPlayers((prev) =>
+        prev.map((p) => ({
+          ...p,
+          isWinner: p.playerId === winnerId,
+        }))
+      );
+    }
+  };
+
+  // Save changes
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Map rows to PlayerScore[]
+    const updatedScores: PlayerScore[] = editPlayers.map((p) => {
+      const num = p.score.trim() === '' ? undefined : Number(p.score);
+      return {
+        playerId: p.playerId,
+        playerName: p.playerName,
+        score: num,
+        isWinner: p.isWinner,
+        rank: 1,
+      };
+    });
+
+    // Sort to recalculate ranks
+    const sorted = [...updatedScores].sort((a, b) => {
+      if (a.isWinner && !b.isWinner) return -1;
+      if (!a.isWinner && b.isWinner) return 1;
+      return (b.score ?? -999999) - (a.score ?? -999999);
+    });
+
+    sorted.forEach((item, idx) => {
+      item.rank = idx + 1;
+    });
+
+    const activeWinner = editPlayers.find((p) => p.isWinner);
+    const activeFirstPlayer = editPlayers.find((p) => p.isFirstPlayer);
+
+    const newDate = editDatetime
+      ? new Date(editDatetime).toISOString()
+      : session.datePlayed;
+
     updateSession(session.id, {
+      datePlayed: newDate,
       location: editLocation.trim() || undefined,
       durationMinutes: Number(editDuration) || session.durationMinutes,
       notes: editNotes.trim() || undefined,
+      players: sorted,
+      winnerId: activeWinner ? activeWinner.playerId : undefined,
+      firstPlayerId: activeFirstPlayer ? activeFirstPlayer.playerId : undefined,
     });
+
     setIsEditOpen(false);
   };
 
   const handleDelete = () => {
-    deleteSession(session.id);
-    navigate('/sessions');
+    if (window.confirm('Bạn có chắc chắn muốn xóa ván chơi này khỏi lịch sử?')) {
+      deleteSession(session.id);
+      navigate('/sessions');
+    }
   };
+
+  const availablePlayersToAdd = savedPlayers.filter(
+    (p) => !editPlayers.some((ep) => ep.playerId === p.id)
+  );
 
   return (
     <PageTransition>
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Navigation Bar */}
         <div className="flex items-center justify-between gap-4">
           <Link
             to="/sessions"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[#94a3b8] hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Sessions
+            Về danh sách ván chơi
           </Link>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setEditLocation(session.location || '');
-                setEditDuration(String(session.durationMinutes || 60));
-                setEditNotes(session.notes || '');
-                setIsEditOpen(true);
-              }}
-            >
-              <Edit3 className="w-4 h-4" />
-              Edit
+            <Button variant="secondary" size="sm" onClick={handleOpenEdit}>
+              <Edit3 className="w-4 h-4 mr-1.5 text-[var(--accent-neon)]" />
+              Chỉnh Sửa
             </Button>
             <Button variant="danger" size="sm" onClick={handleDelete}>
-              <Trash2 className="w-4 h-4" />
-              Delete
+              <Trash2 className="w-4 h-4 mr-1.5" />
+              Xóa
             </Button>
           </div>
         </div>
 
         {/* Hero Banner */}
-        <div className="rounded-3xl overflow-hidden bg-[#16162a] border border-white/15 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 shadow-2xl">
+        <div className="rounded-3xl overflow-hidden bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 shadow-2xl">
           <Link to={`/collection/${session.gameId}`} className="shrink-0">
             <img
               src={session.gameThumbnail}
               alt={session.gameName}
               referrerPolicy="no-referrer"
-              className="w-24 h-32 rounded-2xl object-cover border border-white/15 hover:scale-105 transition-transform"
+              className="w-24 h-32 rounded-2xl object-cover border border-[var(--border-subtle)] hover:scale-105 transition-transform bg-[var(--bg-elevated)]"
             />
           </Link>
 
-          <div className="space-y-3 flex-1">
+          <div className="space-y-3 flex-1 min-w-0">
             <Link
               to={`/collection/${session.gameId}`}
-              className="font-display font-extrabold text-2xl sm:text-3xl text-white hover:text-[#a78bfa] transition-colors block"
+              className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] hover:text-[var(--accent-neon)] transition-colors block truncate"
             >
               {session.gameName}
             </Link>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-[#cbd5e1] tabular-nums">
+            <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-[var(--text-secondary)] tabular-nums">
               <span className="inline-flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-[#a78bfa]" />
+                <Calendar className="w-4 h-4 text-[var(--accent-neon)]" />
                 {formatDate(session.datePlayed)}
               </span>
               {session.durationMinutes && (
                 <span className="inline-flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-[#22d3ee]" />
+                  <Clock className="w-4 h-4 text-[var(--accent-secondary)]" />
                   {formatDuration(session.durationMinutes)}
                 </span>
               )}
               {session.location && (
-                <span className="inline-flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-[#ec4899]" />
-                  {session.location}
+                <span className="inline-flex items-center gap-1.5 truncate max-w-[240px]">
+                  <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span className="truncate">{session.location}</span>
                 </span>
               )}
             </div>
 
             {firstPlayer && (
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-[#1e1e35] border border-white/10 text-xs text-[#cbd5e1]">
-                <Sparkles className="w-3.5 h-3.5 text-[#a78bfa]" />
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--accent-secondary)]" />
                 <span>
-                  First Player: <strong className="text-white">{firstPlayer.playerName}</strong> (picked via{' '}
-                  {FIRST_PLAYER_METHOD_LABELS[session.firstPlayerMethod] ||
-                    session.firstPlayerMethod}
-                  )
+                  Người đi đầu:{' '}
+                  <strong className="text-[var(--text-primary)] font-bold">
+                    {firstPlayer.playerName}
+                  </strong>{' '}
+                  ({FIRST_PLAYER_METHOD_LABELS[session.firstPlayerMethod] ||
+                    session.firstPlayerMethod})
                 </span>
               </div>
             )}
@@ -176,21 +332,27 @@ export const SessionDetailPage: React.FC = () => {
 
         {/* Player Results Table */}
         <Card className="p-6 space-y-4">
-          <h2 className="font-display font-bold text-xl text-white">
-            Final Standings & Scores
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
+              Bảng Điểm &amp; Xếp Hạng
+            </h2>
+            <Button variant="ghost" size="sm" onClick={handleOpenEdit}>
+              <Edit3 className="w-3.5 h-3.5 mr-1" />
+              Sửa Điểm &amp; Người Thắng
+            </Button>
+          </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-white/10">
+          <div className="overflow-x-auto rounded-2xl border border-[var(--border-subtle)]">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#1e1e35] text-xs text-[#94a3b8]">
+              <thead className="bg-[var(--bg-elevated)] text-xs text-[var(--text-secondary)]">
                 <tr>
-                  <th className="py-3.5 px-4 font-semibold">Rank</th>
-                  <th className="py-3.5 px-4 font-semibold">Player</th>
-                  <th className="py-3.5 px-4 font-semibold text-right">Score</th>
-                  <th className="py-3.5 px-4 font-semibold text-right">Result</th>
+                  <th className="py-3.5 px-4 font-semibold">Hạng</th>
+                  <th className="py-3.5 px-4 font-semibold">Người chơi</th>
+                  <th className="py-3.5 px-4 font-semibold text-right">Điểm</th>
+                  <th className="py-3.5 px-4 font-semibold text-right">Kết quả</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.06] bg-[#16162a] tabular-nums">
+              <tbody className="divide-y divide-[var(--border-subtle)] bg-[var(--bg-surface)] tabular-nums">
                 {sortedResults.map((entry, idx) => {
                   const savedPlayer = playersById[entry.playerId];
                   const isWin =
@@ -201,13 +363,13 @@ export const SessionDetailPage: React.FC = () => {
                       key={entry.playerId}
                       className={isWin ? 'bg-amber-500/[0.08]' : ''}
                     >
-                      <td className="py-3.5 px-4 font-mono font-bold text-[#94a3b8]">
+                      <td className="py-3.5 px-4 font-mono font-bold text-[var(--text-secondary)]">
                         #{entry.rank || idx + 1}
                       </td>
                       <td className="py-3.5 px-4">
                         <Link
                           to={`/players/${entry.playerId}`}
-                          className="inline-flex items-center gap-2.5 font-display font-bold text-white hover:text-[#a78bfa] transition-colors"
+                          className="inline-flex items-center gap-2.5 font-display font-bold text-[var(--text-primary)] hover:text-[var(--accent-neon)] transition-colors"
                         >
                           <PlayerAvatar
                             player={savedPlayer}
@@ -217,17 +379,17 @@ export const SessionDetailPage: React.FC = () => {
                           <span>{entry.playerName}</span>
                         </Link>
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-base text-white">
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-base text-[var(--text-primary)]">
                         {typeof entry.score === 'number' ? entry.score : '—'}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         {isWin ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">
                             <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                            Winner
+                            Chiến Thắng
                           </span>
                         ) : (
-                          <span className="text-xs text-[#94a3b8]">Played</span>
+                          <span className="text-xs text-[var(--text-secondary)]">Đã chơi</span>
                         )}
                       </td>
                     </tr>
@@ -238,22 +400,23 @@ export const SessionDetailPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Notes & Photos Gallery */}
+        {/* Notes & Memories */}
         {session.notes && (
           <Card className="p-6 space-y-2">
-            <h2 className="font-display font-bold text-lg text-white">
-              Table Notes & Memories
+            <h2 className="font-display font-bold text-lg text-[var(--text-primary)]">
+              Ghi Chú Ván Chơi
             </h2>
-            <p className="text-sm sm:text-base text-[#cbd5e1] leading-relaxed">
+            <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
               {session.notes}
             </p>
           </Card>
         )}
 
+        {/* Photos Gallery */}
         {session.photos && session.photos.length > 0 && (
           <Card className="p-6 space-y-4">
-            <h2 className="font-display font-bold text-lg text-white">
-              Session Photos ({session.photos.length})
+            <h2 className="font-display font-bold text-lg text-[var(--text-primary)]">
+              Hình Ảnh Kỷ Niệm ({session.photos.length})
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {session.photos.map((photo, index) => (
@@ -261,7 +424,7 @@ export const SessionDetailPage: React.FC = () => {
                   key={index}
                   type="button"
                   onClick={() => setFullscreenPhoto(photo)}
-                  className="group relative aspect-video rounded-2xl overflow-hidden border border-white/10 cursor-pointer"
+                  className="group relative aspect-video rounded-2xl overflow-hidden border border-[var(--border-subtle)] cursor-pointer"
                 >
                   <img
                     src={photo}
@@ -281,53 +444,220 @@ export const SessionDetailPage: React.FC = () => {
         <Modal
           isOpen={Boolean(fullscreenPhoto)}
           onClose={() => setFullscreenPhoto(null)}
-          title="Session Photo"
+          title="Ảnh Kỷ Niệm Ván Chơi"
           maxWidthClass="max-w-4xl"
         >
           {fullscreenPhoto && (
             <img
               src={fullscreenPhoto}
               alt="Fullscreen session memory"
-              className="w-full max-h-[75vh] object-contain rounded-xl"
+              className="w-full max-h-[75vh] object-contain rounded-xl mx-auto"
             />
           )}
         </Modal>
 
-        {/* Edit Session Modal */}
+        {/* FULL EDIT SESSION MODAL */}
         <Modal
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
-          title="Edit Session Details"
+          title="Chỉnh Sửa Chi Tiết Ván Chơi"
+          maxWidthClass="max-w-2xl"
         >
-          <form onSubmit={handleSaveEdit} className="space-y-4">
-            <Input
-              label="Location"
-              value={editLocation}
-              onChange={(e) => setEditLocation(e.target.value)}
-            />
-            <Input
-              label="Duration (Minutes)"
-              type="number"
-              value={editDuration}
-              onChange={(e) => setEditDuration(e.target.value)}
-            />
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-[#94a3b8]">
-                Notes
+          <form onSubmit={handleSaveEdit} className="space-y-5 text-sm">
+            {/* 1. Date & Time, Duration, Location */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
+                  Ngày &amp; Giờ chơi
+                </label>
+                <input
+                  type="datetime-local"
+                  value={editDatetime}
+                  onChange={(e) => setEditDatetime(e.target.value)}
+                  className="w-full min-h-[44px] rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
+                  Thời lượng (Phút)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={editDuration}
+                  onChange={(e) => setEditDuration(e.target.value)}
+                  className="w-full min-h-[44px] rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                  placeholder="60"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
+                  Địa điểm chơi
+                </label>
+                <input
+                  type="text"
+                  value={editLocation}
+                  onChange={(e) => setEditLocation(e.target.value)}
+                  placeholder="e.g. Heo's House, Lafam..."
+                  className="w-full min-h-[44px] rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                />
+              </div>
+            </div>
+
+            {/* 2. Players & Scores Section */}
+            <div className="space-y-3 pt-3 border-t border-[var(--border-subtle)]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-[var(--text-primary)] text-sm">
+                    Người Chơi, Điểm Số &amp; Người Thắng
+                  </h3>
+                  <p className="text-[11px] text-[var(--text-secondary)]">
+                    Nhập điểm số, bấm vương miện 👑 để chỉ định người chiến thắng
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAutoWinner}
+                  className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--bg-elevated)] text-[var(--accent-secondary)] hover:brightness-110 border border-[var(--border-subtle)] cursor-pointer"
+                >
+                  ⚡ Tự chọn điểm cao nhất
+                </button>
+              </div>
+
+              {/* Player Rows */}
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {editPlayers.map((p) => {
+                  const saved = playersById[p.playerId];
+                  return (
+                    <div
+                      key={p.playerId}
+                      className={cn(
+                        'flex items-center justify-between gap-3 p-2.5 rounded-xl border transition-colors',
+                        p.isWinner
+                          ? 'bg-amber-500/10 border-amber-500/30'
+                          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)]'
+                      )}
+                    >
+                      {/* Avatar & Name */}
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <PlayerAvatar player={saved} name={p.playerName} size="sm" />
+                        <span className="font-bold text-xs text-[var(--text-primary)] truncate">
+                          {p.playerName}
+                        </span>
+                      </div>
+
+                      {/* Controls */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {/* First player toggle */}
+                        <button
+                          type="button"
+                          onClick={() => handleSetFirstPlayer(p.playerId)}
+                          title="Chỉ định người đi đầu"
+                          className={cn(
+                            'px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer',
+                            p.isFirstPlayer
+                              ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
+                              : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
+                          )}
+                        >
+                          Đi đầu
+                        </button>
+
+                        {/* Winner Crown button */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleWinner(p.playerId)}
+                          title={p.isWinner ? 'Bỏ chọn chiến thắng' : 'Chọn người chiến thắng'}
+                          className={cn(
+                            'p-1.5 rounded-lg border transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold',
+                            p.isWinner
+                              ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md'
+                              : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-amber-400'
+                          )}
+                        >
+                          <Crown className="w-3.5 h-3.5 fill-current" />
+                          <span className="text-[10px] hidden sm:inline">
+                            {p.isWinner ? 'Thắng' : 'Thua'}
+                          </span>
+                        </button>
+
+                        {/* Score Input */}
+                        <input
+                          type="number"
+                          placeholder="Điểm"
+                          value={p.score}
+                          onChange={(e) => handleScoreChange(p.playerId, e.target.value)}
+                          className="w-20 min-h-[36px] rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2.5 py-1 text-right font-mono font-bold text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                        />
+
+                        {/* Remove Player Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePlayer(p.playerId)}
+                          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                          title="Xóa khỏi ván chơi này"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Add player row */}
+              {availablePlayersToAdd.length > 0 && (
+                <div className="flex items-center gap-2 pt-1">
+                  <select
+                    aria-label="Thêm người chơi vào ván"
+                    value={addPlayerSelectId}
+                    onChange={(e) => setAddPlayerSelectId(e.target.value)}
+                    className="flex-1 min-h-[38px] px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] cursor-pointer"
+                  >
+                    <option value="">+ Chọn thêm bạn bè vào ván chơi...</option>
+                    {availablePlayersToAdd.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={handleAddPlayer}
+                    disabled={!addPlayerSelectId}
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    Thêm
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* 3. Notes */}
+            <div className="space-y-1.5 pt-2 border-t border-[var(--border-subtle)]">
+              <label className="block text-xs font-semibold text-[var(--text-secondary)]">
+                Ghi chú ván chơi
               </label>
               <textarea
                 rows={3}
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
-                className="w-full rounded-xl bg-[#1e1e35] border border-white/15 p-3 text-sm text-white"
+                placeholder="Chiến thuật, kỷ niệm đáng nhớ, combo thẻ bài..."
+                className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-3 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
               />
             </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <Button variant="ghost" onClick={() => setIsEditOpen(false)}>
-                Cancel
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]">
+              <Button variant="ghost" size="sm" onClick={() => setIsEditOpen(false)}>
+                Hủy bỏ
               </Button>
               <Button type="submit" variant="primary">
-                Save Changes
+                <Check className="w-4 h-4 mr-1.5" />
+                Lưu Thay Đổi
               </Button>
             </div>
           </form>
