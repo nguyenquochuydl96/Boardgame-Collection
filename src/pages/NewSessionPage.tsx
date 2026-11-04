@@ -21,6 +21,8 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { PlayerChip } from '../components/player/PlayerChip';
 import { PlayerScoreRow } from '../components/session/PlayerScoreRow';
+import { ScoringSheetMatrix } from '../components/session/ScoringSheetMatrix';
+import { getScoringTemplateForGame } from '../lib/scoringPresets';
 import { RandomPlayerWheel } from '../components/session/RandomPlayerWheel';
 import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
@@ -96,6 +98,10 @@ export const NewSessionPage: React.FC = () => {
 
   // Step 5: Scores
   const [lowScoreWins, setLowScoreWins] = useState(false);
+  const [scoringMode, setScoringMode] = useState<'detailed' | 'quick'>('detailed');
+  const [breakdownsByPlayerId, setBreakdownsByPlayerId] = useState<
+    Record<string, Record<string, number>>
+  >({});
   const [scoresByPlayerId, setScoresByPlayerId] = useState<
     Record<string, number | undefined>
   >({});
@@ -122,6 +128,11 @@ export const NewSessionPage: React.FC = () => {
   const selectedGame = useMemo(
     () => games.find((g) => g.id === selectedGameId) || games[0],
     [games, selectedGameId]
+  );
+
+  const scoringTemplate = useMemo(
+    () => getScoringTemplateForGame(selectedGame?.name),
+    [selectedGame?.name]
   );
 
   const filteredGames = useMemo(() => {
@@ -169,24 +180,32 @@ export const NewSessionPage: React.FC = () => {
       return activeSessionPlayers.map((p) => {
         const sc = scoresByPlayerId[p.id];
         const rankIdx = sortedForRank.findIndex((x) => x.id === p.id);
+        const bd = breakdownsByPlayerId[p.id];
+        const hasBd = bd && Object.values(bd).some((v) => v !== 0);
         return {
           playerId: p.id,
           playerName: p.name,
           score: sc,
           rank: rankIdx >= 0 ? rankIdx + 1 : undefined,
           isWinner: sc !== undefined && sc === targetBest,
+          scoreBreakdown: hasBd ? bd : undefined,
         };
       });
     }
 
-    return activeSessionPlayers.map((p, idx) => ({
-      playerId: p.id,
-      playerName: p.name,
-      score: scoresByPlayerId[p.id],
-      rank: idx + 1,
-      isWinner: manualWinnerIds.includes(p.id),
-    }));
-  }, [activeSessionPlayers, scoresByPlayerId, lowScoreWins, manualWinnerIds]);
+    return activeSessionPlayers.map((p, idx) => {
+      const bd = breakdownsByPlayerId[p.id];
+      const hasBd = bd && Object.values(bd).some((v) => v !== 0);
+      return {
+        playerId: p.id,
+        playerName: p.name,
+        score: scoresByPlayerId[p.id],
+        rank: idx + 1,
+        isWinner: manualWinnerIds.includes(p.id),
+        scoreBreakdown: hasBd ? bd : undefined,
+      };
+    });
+  }, [activeSessionPlayers, scoresByPlayerId, lowScoreWins, manualWinnerIds, breakdownsByPlayerId]);
 
   const handleTogglePlayer = (playerId: string) => {
     setSelectedPlayerIds((prev) =>
@@ -671,41 +690,86 @@ export const NewSessionPage: React.FC = () => {
               <Card className="p-6 sm:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h1 className="font-display font-extrabold text-2xl text-white">
-                      Step 5 — Score Entry
+                    <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
+                      Bước 5 — Nhập Điểm & Bảng Điểm
                     </h1>
-                    <p className="text-sm text-[#94a3b8]">
-                      Enter final scores — the crown automatically highlights the leader
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Tự động tính tổng điểm theo từng hạng mục riêng của game và gắn vương miện người chiến thắng
                     </p>
                   </div>
 
-                  <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#16162a] border border-white/10 text-xs font-semibold text-[#cbd5e1] cursor-pointer">
+                  <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] cursor-pointer">
                     <input
                       type="checkbox"
                       checked={lowScoreWins}
                       onChange={(e) => setLowScoreWins(e.target.checked)}
-                      className="rounded border-white/20 bg-[#1e1e35] text-[#7c3aed]"
+                      className="rounded border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--accent-primary)]"
                     />
-                    Lowest score wins
+                    Điểm thấp nhất thắng
                   </label>
                 </div>
 
-                <div className="space-y-3">
-                  {computedPlayerScores.map((ps) => {
-                    const pl = allAvailablePlayers.find(
-                      (x) => x.id === ps.playerId
-                    );
-                    return (
-                      <PlayerScoreRow
-                        key={ps.playerId}
-                        playerScore={ps}
-                        player={pl}
-                        onScoreChange={handleScoreChange}
-                        onToggleWinner={handleToggleManualWinner}
-                      />
-                    );
-                  })}
+                {/* Mode Selector Tabs */}
+                <div className="flex flex-wrap items-center gap-2 p-1.5 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl w-fit">
+                  <button
+                    type="button"
+                    onClick={() => setScoringMode('detailed')}
+                    className={cn(
+                      'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2',
+                      scoringMode === 'detailed'
+                        ? 'bg-[var(--accent-primary)] text-white shadow-md'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    )}
+                  >
+                    <span>📊 Bảng Tính Điểm:</span>
+                    <span className="text-[var(--accent-neon)] font-extrabold">{scoringTemplate.displayName}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScoringMode('quick')}
+                    className={cn(
+                      'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
+                      scoringMode === 'quick'
+                        ? 'bg-[var(--accent-primary)] text-white shadow-md'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    )}
+                  >
+                    <span>⚡ Nhập Tổng Điểm Nhanh</span>
+                  </button>
                 </div>
+
+                {scoringMode === 'detailed' ? (
+                  <div className="space-y-4">
+                    <ScoringSheetMatrix
+                      players={activeSessionPlayers}
+                      initialCategories={scoringTemplate.categories}
+                      initialBreakdowns={breakdownsByPlayerId}
+                      lowScoreWins={lowScoreWins}
+                      onScoresUpdate={(totals, breakdowns) => {
+                        setScoresByPlayerId(totals);
+                        setBreakdownsByPlayerId(breakdowns);
+                        setManualWinnerIds([]);
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {computedPlayerScores.map((ps) => {
+                      const pl = allAvailablePlayers.find(
+                        (x) => x.id === ps.playerId
+                      );
+                      return (
+                        <PlayerScoreRow
+                          key={ps.playerId}
+                          playerScore={ps}
+                          player={pl}
+                          onScoreChange={handleScoreChange}
+                          onToggleWinner={handleToggleManualWinner}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
               </Card>
             )}
 

@@ -29,7 +29,9 @@ import {
   formatDate,
   formatDuration,
 } from '../lib/utils';
-import { PlayerScore } from '../types';
+import { PlayerScore, Player } from '../types';
+import { ScoringSheetMatrix } from '../components/session/ScoringSheetMatrix';
+import { getScoringTemplateForGame, ScoringCategory } from '../lib/scoringPresets';
 import { cn } from '../components/ui/cn';
 
 interface EditablePlayerRow {
@@ -67,6 +69,8 @@ export const SessionDetailPage: React.FC = () => {
   const [editNotes, setEditNotes] = useState('');
   const [editPlayers, setEditPlayers] = useState<EditablePlayerRow[]>([]);
   const [addPlayerSelectId, setAddPlayerSelectId] = useState('');
+  const [editBreakdowns, setEditBreakdowns] = useState<Record<string, Record<string, number>>>({});
+  const [editScoreMode, setEditScoreMode] = useState<'quick' | 'detailed'>('quick');
 
   if (!session) {
     return (
@@ -100,6 +104,49 @@ export const SessionDetailPage: React.FC = () => {
     return (a.rank || 99) - (b.rank || 99);
   });
 
+  const scoringTemplate = React.useMemo(
+    () => getScoringTemplateForGame(session?.gameName),
+    [session?.gameName]
+  );
+
+  const hasBreakdown = React.useMemo(() => {
+    return (
+      session?.players.some(
+        (p) => p.scoreBreakdown && Object.keys(p.scoreBreakdown).length > 0
+      ) ?? false
+    );
+  }, [session?.players]);
+
+  const breakdownCategories = React.useMemo(() => {
+    if (!session || !hasBreakdown) return [];
+    const catMap = new Map<string, ScoringCategory>();
+
+    // Add template categories first
+    scoringTemplate.categories.forEach((c) => catMap.set(c.id, c));
+
+    // Add any extra custom category found in players' scoreBreakdowns
+    session.players.forEach((p) => {
+      if (p.scoreBreakdown) {
+        Object.keys(p.scoreBreakdown).forEach((k) => {
+          if (!catMap.has(k)) {
+            catMap.set(k, {
+              id: k,
+              name: k.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+              icon: '✨',
+              multiplier: 1,
+            });
+          }
+        });
+      }
+    });
+
+    return Array.from(catMap.values()).filter((cat) => {
+      return session.players.some(
+        (p) => typeof p.scoreBreakdown?.[cat.id] === 'number' && p.scoreBreakdown?.[cat.id] !== 0
+      ) || scoringTemplate.categories.some((tc) => tc.id === cat.id);
+    });
+  }, [session, hasBreakdown, scoringTemplate]);
+
   // Open Edit Modal with full state initialized
   const handleOpenEdit = () => {
     setEditDatetime(toDatetimeLocal(session.datePlayed));
@@ -117,6 +164,15 @@ export const SessionDetailPage: React.FC = () => {
 
     setEditPlayers(rows);
     setAddPlayerSelectId('');
+
+    const initialBreakdowns: Record<string, Record<string, number>> = {};
+    (session.players || []).forEach((p) => {
+      if (p.scoreBreakdown) {
+        initialBreakdowns[p.playerId] = { ...p.scoreBreakdown };
+      }
+    });
+    setEditBreakdowns(initialBreakdowns);
+    setEditScoreMode(hasBreakdown ? 'detailed' : 'quick');
     setIsEditOpen(true);
   };
 
@@ -200,12 +256,15 @@ export const SessionDetailPage: React.FC = () => {
     // Map rows to PlayerScore[]
     const updatedScores: PlayerScore[] = editPlayers.map((p) => {
       const num = p.score.trim() === '' ? undefined : Number(p.score);
+      const bd = editBreakdowns[p.playerId];
+      const hasBd = bd && Object.values(bd).some((v) => v !== 0);
       return {
         playerId: p.playerId,
         playerName: p.playerName,
         score: num,
         isWinner: p.isWinner,
         rank: 1,
+        scoreBreakdown: hasBd ? bd : undefined,
       };
     });
 
@@ -400,6 +459,134 @@ export const SessionDetailPage: React.FC = () => {
           </div>
         </Card>
 
+        {/* Chi Tiết Bảng Điểm Thành Phần */}
+        {hasBreakdown && breakdownCategories.length > 0 && (
+          <Card className="p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-xl shadow-inner">
+                  📊
+                </div>
+                <div>
+                  <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
+                    Chi Tiết Bảng Điểm Thành Phần
+                  </h2>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    {scoringTemplate.displayName} · Phân tích điểm theo từng hạng mục
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-mono px-3 py-1 rounded-xl bg-[var(--bg-elevated)] text-[var(--accent-neon)] border border-[var(--border-subtle)] w-fit">
+                {breakdownCategories.length} Hạng Mục
+              </span>
+            </div>
+
+            <div className="overflow-x-auto rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)]">
+                    <th className="py-3 px-4 font-bold text-[var(--text-secondary)] min-w-[200px]">
+                      Hạng Mục Tính Điểm
+                    </th>
+                    {session.players.map((p) => {
+                      const savedPlayer = playersById[p.playerId];
+                      const isLeader = p.isWinner || session.winnerId === p.playerId;
+                      return (
+                        <th
+                          key={p.playerId}
+                          className={cn(
+                            'py-3 px-3 text-center min-w-[110px] transition-colors',
+                            isLeader && 'bg-amber-500/10'
+                          )}
+                        >
+                          <div className="flex flex-col items-center gap-1">
+                            <PlayerAvatar player={savedPlayer} name={p.playerName} size="sm" />
+                            <span className="font-bold text-[var(--text-primary)] truncate max-w-[90px]">
+                              {p.playerName}
+                            </span>
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-subtle)] tabular-nums">
+                  {breakdownCategories.map((cat) => {
+                    const scoresInCat = session.players.map((p) => p.scoreBreakdown?.[cat.id] ?? 0);
+                    const maxScoreInCat = Math.max(...scoresInCat);
+                    const isPenalty = (cat.multiplier ?? 1) < 0;
+
+                    return (
+                      <tr key={cat.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-2.5 px-4 font-medium text-[var(--text-primary)]">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base leading-none">{cat.icon || '🎲'}</span>
+                            <span>{cat.name}</span>
+                            {isPenalty && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold shrink-0">
+                                - trừ điểm
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        {session.players.map((p) => {
+                          const val = p.scoreBreakdown?.[cat.id];
+                          const numVal = typeof val === 'number' ? val : 0;
+                          const isTop = maxScoreInCat > 0 && numVal === maxScoreInCat;
+
+                          return (
+                            <td
+                              key={p.playerId}
+                              className={cn(
+                                'py-2.5 px-3 text-center font-mono font-bold text-xs',
+                                isTop ? 'text-amber-400 font-extrabold' : 'text-[var(--text-secondary)]',
+                                isPenalty && numVal > 0 && 'text-rose-400'
+                              )}
+                            >
+                              <div className="flex items-center justify-center gap-1">
+                                <span>{numVal}</span>
+                                {isTop && !isPenalty && (
+                                  <span className="text-xs" title="Cao nhất mục này">
+                                    🥇
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-[var(--bg-elevated)] border-t-2 border-[var(--border-glow)] font-bold">
+                    <td className="py-3 px-4 font-extrabold text-[var(--text-primary)]">
+                      TỔNG ĐIỂM
+                    </td>
+                    {session.players.map((p) => {
+                      const isLeader = p.isWinner || session.winnerId === p.playerId;
+                      return (
+                        <td
+                          key={p.playerId}
+                          className={cn(
+                            'py-3 px-3 text-center font-mono text-sm font-extrabold',
+                            isLeader ? 'bg-amber-500/20 text-amber-300' : 'text-[var(--text-primary)]'
+                          )}
+                        >
+                          <div className="flex items-center justify-center gap-1">
+                            {isLeader && <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />}
+                            <span>{p.score ?? 0}</span>
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </Card>
+        )}
+
         {/* Notes & Memories */}
         {session.notes && (
           <Card className="p-6 space-y-2">
@@ -508,23 +695,66 @@ export const SessionDetailPage: React.FC = () => {
 
             {/* 2. Players & Scores Section */}
             <div className="space-y-3 pt-3 border-t border-[var(--border-subtle)]">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="font-bold text-[var(--text-primary)] text-sm">
                     Người Chơi, Điểm Số &amp; Người Thắng
                   </h3>
                   <p className="text-[11px] text-[var(--text-secondary)]">
-                    Nhập điểm số, bấm vương miện 👑 để chỉ định người chiến thắng
+                    Chọn nhập nhanh hoặc tính điểm chi tiết theo bảng điểm riêng
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleAutoWinner}
-                  className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--bg-elevated)] text-[var(--accent-secondary)] hover:brightness-110 border border-[var(--border-subtle)] cursor-pointer"
-                >
-                  ⚡ Tự chọn điểm cao nhất
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditScoreMode(editScoreMode === 'detailed' ? 'quick' : 'detailed')}
+                    className="px-3 py-1 rounded-xl text-xs font-bold bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--accent-neon)] hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span>{editScoreMode === 'detailed' ? '⚡ Chuyển sang Nhập Nhanh' : '📊 Bảng Điểm Chi Tiết'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAutoWinner}
+                    className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-[var(--bg-elevated)] text-[var(--accent-secondary)] hover:brightness-110 border border-[var(--border-subtle)] cursor-pointer"
+                  >
+                    ⚡ Chọn điểm cao nhất
+                  </button>
+                </div>
               </div>
+
+              {editScoreMode === 'detailed' ? (
+                <div className="space-y-3 p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+                  <div className="text-xs font-bold text-[var(--accent-neon)]">
+                    📊 {scoringTemplate.displayName}
+                  </div>
+                  <ScoringSheetMatrix
+                    players={editPlayers.map((ep) => {
+                      const sp = playersById[ep.playerId];
+                      return (
+                        sp || {
+                          id: ep.playerId,
+                          name: ep.playerName,
+                          avatar: '🎲',
+                          color: '#f97316',
+                          createdAt: new Date().toISOString(),
+                        }
+                      );
+                    })}
+                    initialCategories={scoringTemplate.categories}
+                    initialBreakdowns={editBreakdowns}
+                    onScoresUpdate={(totals, breakdowns) => {
+                      setEditBreakdowns(breakdowns);
+                      setEditPlayers((prev) =>
+                        prev.map((p) => ({
+                          ...p,
+                          score: totals[p.playerId] !== undefined ? String(totals[p.playerId]) : p.score,
+                        }))
+                      );
+                    }}
+                  />
+                </div>
+              ) : null}
 
               {/* Player Rows */}
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
