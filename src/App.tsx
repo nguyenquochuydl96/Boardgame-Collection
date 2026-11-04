@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'motion/react';
 import { AppShell } from './components/layout/AppShell';
 import { HomePage } from './pages/HomePage';
@@ -41,13 +41,12 @@ const AnimatedRoutes: React.FC = () => {
 
 export function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AppShell>
         <AnimatedRoutes />
       </AppShell>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
 export default App;
-
