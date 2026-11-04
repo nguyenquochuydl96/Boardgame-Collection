@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Player } from '../types';
 import { generateId } from '../lib/utils';
+import { getRandomBoardgameAvatar, getDeterministicAvatar } from '../lib/boardgameAvatars';
 
 export const INITIAL_PLAYERS: Player[] = [
   {
@@ -48,8 +49,11 @@ export const usePlayerStore = create<PlayerStore>()(
     (set, get) => ({
       players: INITIAL_PLAYERS,
       addPlayer: (playerData) => {
+        const defaultBg = getRandomBoardgameAvatar();
         const newPlayer: Player = {
           ...playerData,
+          avatar: playerData.avatar?.trim() || defaultBg.emoji,
+          color: playerData.color || defaultBg.color,
           id: generateId(),
           createdAt: new Date().toISOString(),
         };
@@ -61,13 +65,27 @@ export const usePlayerStore = create<PlayerStore>()(
       bulkAddPlayers: (newPlayers, replaceExisting = false) => {
         set((state) => {
           if (replaceExisting) {
-            return { players: newPlayers };
+            return {
+              players: newPlayers.map((p) => {
+                if (!p.avatar || !p.avatar.trim()) {
+                  const bg = getDeterministicAvatar(p.name || p.id);
+                  return { ...p, avatar: bg.emoji, color: p.color || bg.color };
+                }
+                return p;
+              }),
+            };
           }
           const existingNames = new Set(state.players.map((p) => p.name.toLowerCase()));
           const existingIds = new Set(state.players.map((p) => p.id));
-          const toAdd = newPlayers.filter(
-            (p) => !existingNames.has(p.name.toLowerCase()) && !existingIds.has(p.id)
-          );
+          const toAdd = newPlayers
+            .filter((p) => !existingNames.has(p.name.toLowerCase()) && !existingIds.has(p.id))
+            .map((p) => {
+              if (!p.avatar || !p.avatar.trim()) {
+                const bg = getDeterministicAvatar(p.name || p.id);
+                return { ...p, avatar: bg.emoji, color: p.color || bg.color };
+              }
+              return p;
+            });
           return { players: [...state.players, ...toAdd] };
         });
       },

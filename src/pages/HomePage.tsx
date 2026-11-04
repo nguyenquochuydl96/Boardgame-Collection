@@ -138,7 +138,7 @@ export const HomePage: React.FC = () => {
           </div>
         </motion.section>
 
-        {/* Animated Stat Cards Grid */}
+        {/* Animated Stat Cards Grid (Clickable to target analytics/collection) */}
         <motion.section
           variants={fadeUpItem}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
@@ -149,6 +149,7 @@ export const HomePage: React.FC = () => {
             icon={<Dices className="w-5 h-5" />}
             accentColor="var(--accent-primary)"
             subtitle={`${games.length} total in vault`}
+            href="/collection?status=own"
           />
           <StatCard
             label="Sessions Played"
@@ -156,6 +157,7 @@ export const HomePage: React.FC = () => {
             icon={<Gamepad2 className="w-5 h-5" />}
             accentColor="var(--accent-secondary)"
             subtitle="All-time tabletop logs"
+            href="/sessions"
           />
           <StatCard
             label="Hours Played"
@@ -164,6 +166,7 @@ export const HomePage: React.FC = () => {
             icon={<Clock className="w-5 h-5" />}
             accentColor="var(--accent-green)"
             subtitle={`${totalMinutesPlayed} minutes at the table`}
+            href="/stats"
           />
           <StatCard
             label="Collection Value"
@@ -172,6 +175,7 @@ export const HomePage: React.FC = () => {
             icon={<Wallet className="w-5 h-5" />}
             accentColor="var(--accent-pink)"
             subtitle="Active shelf valuation"
+            href="/collection"
           />
         </motion.section>
 
@@ -321,30 +325,57 @@ export const HomePage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 tabular-nums">
-              <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                <span className="text-xs text-[var(--text-secondary)]">In Vault (Own)</span>
-                <div className="font-display font-extrabold text-2xl text-emerald-400 mt-0.5">
+              <Link
+                to="/collection?status=own"
+                className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-emerald-400/60 hover:shadow-lg transition-all group cursor-pointer block"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-emerald-400 font-semibold transition-colors">In Vault (Own)</span>
+                  <span className="text-xs text-[var(--text-muted)] group-hover:text-emerald-400">→</span>
+                </div>
+                <div className="font-display font-extrabold text-2xl text-emerald-400 mt-1">
                   <AnimatedNumber value={games.filter((g) => g.status === 'own').length} />
                 </div>
-              </div>
-              <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                <span className="text-xs text-[var(--text-secondary)]">Lent Out</span>
-                <div className="font-display font-extrabold text-2xl text-orange-400 mt-0.5">
+              </Link>
+
+              <Link
+                to="/collection?status=lent_out"
+                className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-orange-400/60 hover:shadow-lg transition-all group cursor-pointer block"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-orange-400 font-semibold transition-colors">Lent Out</span>
+                  <span className="text-xs text-[var(--text-muted)] group-hover:text-orange-400">→</span>
+                </div>
+                <div className="font-display font-extrabold text-2xl text-orange-400 mt-1">
                   <AnimatedNumber value={games.filter((g) => g.status === 'lent_out').length} />
                 </div>
-              </div>
-              <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                <span className="text-xs text-[var(--text-secondary)]">Sold Archive</span>
-                <div className="font-display font-extrabold text-2xl text-pink-400 mt-0.5">
+              </Link>
+
+              <Link
+                to="/collection?status=sold"
+                className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-pink-400/60 hover:shadow-lg transition-all group cursor-pointer block"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-pink-400 font-semibold transition-colors">Sold Archive</span>
+                  <span className="text-xs text-[var(--text-muted)] group-hover:text-pink-400">→</span>
+                </div>
+                <div className="font-display font-extrabold text-2xl text-pink-400 mt-1">
                   <AnimatedNumber value={games.filter((g) => g.status === 'sold').length} />
                 </div>
-              </div>
-              <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                <span className="text-xs text-[var(--text-secondary)]">Wishlist</span>
-                <div className="font-display font-extrabold text-2xl text-[var(--accent-neon)] mt-0.5">
+              </Link>
+
+              <Link
+                to="/collection?status=wishlist"
+                className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--accent-neon)] hover:shadow-lg transition-all group cursor-pointer block"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-[var(--accent-neon)] font-semibold transition-colors">Wishlist</span>
+                  <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--accent-neon)]">→</span>
+                </div>
+                <div className="font-display font-extrabold text-2xl text-[var(--accent-neon)] mt-1">
                   <AnimatedNumber value={games.filter((g) => g.status === 'wishlist').length} />
                 </div>
-              </div>
+              </Link>
             </div>
 
             <Link to="/collection" className="block">

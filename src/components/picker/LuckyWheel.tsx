@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { motion, useAnimation, AnimatePresence } from 'motion/react';
-import { RotateCcw, Crown, Play } from 'lucide-react';
+import { motion, useAnimation } from 'motion/react';
+import { RotateCcw } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { PickerItem } from './MysteryCardShuffle';
 import { playTickSound, playFanfareSound, triggerConfetti } from '../../lib/soundEffects';
+import { resolveAvatarImage, getSafeDisplayAvatar } from '../../lib/utils';
 
 export interface LuckyWheelProps {
   items: PickerItem[];
@@ -120,6 +121,7 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
 
   const radius = 140;
   const center = 160;
+  const avatarR = count > 10 ? 10 : count > 6 ? 12 : 14;
 
   return (
     <div className="flex flex-col items-center justify-center py-4 space-y-6">
@@ -139,16 +141,36 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
           className="w-full h-full drop-shadow-2xl"
           viewBox="0 0 320 320"
         >
+          <defs>
+            {items.map((item, idx) => {
+              const imageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
+              if (!imageSrc) return null;
+              const midAngle = idx * sliceAngle + sliceAngle / 2;
+              const pos = polarToCartesian(center, center, radius * 0.74, midAngle);
+              return (
+                <clipPath key={`clip-${item.id}`} id={`avatar-clip-${idx}`}>
+                  <circle cx={pos.x} cy={pos.y} r={avatarR} />
+                </clipPath>
+              );
+            })}
+          </defs>
+
           {items.map((item, idx) => {
             const startAngle = idx * sliceAngle;
             const endAngle = (idx + 1) * sliceAngle;
             const pathData = describeArcSector(center, center, radius, startAngle, endAngle);
             const midAngle = startAngle + sliceAngle / 2;
-            const textPos = polarToCartesian(center, center, radius * 0.65, midAngle);
+            const textAngle = midAngle + (midAngle > 90 && midAngle < 270 ? 180 : 0);
+
+            // Positioning: Avatar at outer radius (0.74), Name closer to center (0.42)
+            const avatarPos = polarToCartesian(center, center, radius * 0.74, midAngle);
+            const textPos = polarToCartesian(center, center, radius * 0.42, midAngle);
             const color = item.color || SLICE_COLORS[idx % SLICE_COLORS.length];
+            const imageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
 
             return (
               <g key={item.id}>
+                {/* Sector Background */}
                 <path
                   d={pathData}
                   fill={color}
@@ -156,18 +178,64 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
                   strokeWidth="2"
                   className="transition-colors"
                 />
+
+                {/* Avatar on Slice */}
+                {imageSrc ? (
+                  <g>
+                    <circle
+                      cx={avatarPos.x}
+                      cy={avatarPos.y}
+                      r={avatarR + 1}
+                      fill="#ffffff"
+                      stroke="rgba(0,0,0,0.5)"
+                      strokeWidth="1"
+                    />
+                    <image
+                      href={imageSrc}
+                      x={avatarPos.x - avatarR}
+                      y={avatarPos.y - avatarR}
+                      width={avatarR * 2}
+                      height={avatarR * 2}
+                      clipPath={`url(#avatar-clip-${idx})`}
+                      preserveAspectRatio="xMidYMid slice"
+                    />
+                  </g>
+                ) : (
+                  <g>
+                    <circle
+                      cx={avatarPos.x}
+                      cy={avatarPos.y}
+                      r={avatarR}
+                      fill="rgba(0,0,0,0.35)"
+                      stroke="#ffffff"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x={avatarPos.x}
+                      y={avatarPos.y + 0.5}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fontSize={avatarR * 1.25}
+                      transform={`rotate(${textAngle}, ${avatarPos.x}, ${avatarPos.y})`}
+                    >
+                      {getSafeDisplayAvatar(item.avatar, '🎲')}
+                    </text>
+                  </g>
+                )}
+
+                {/* Player / Game Name */}
                 <text
                   x={textPos.x}
                   y={textPos.y}
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="#ffffff"
-                  fontSize={count > 12 ? '9' : count > 8 ? '11' : '13'}
+                  fontSize={count > 12 ? '8.5' : count > 8 ? '10' : '11.5'}
                   fontWeight="bold"
-                  transform={`rotate(${midAngle + (midAngle > 90 && midAngle < 270 ? 180 : 0)}, ${textPos.x}, ${textPos.y})`}
-                  style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
+                  transform={`rotate(${textAngle}, ${textPos.x}, ${textPos.y})`}
+                  style={{ textShadow: '0 2px 4px rgba(0,0,0,0.85)' }}
                 >
-                  {item.name.length > 12 ? item.name.slice(0, 10) + '…' : item.name}
+                  {item.name.length > 9 ? item.name.slice(0, 8) + '…' : item.name}
                 </text>
               </g>
             );
@@ -205,3 +273,5 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
     </div>
   );
 };
+
+export default LuckyWheel;

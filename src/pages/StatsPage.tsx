@@ -17,9 +17,15 @@ import {
   Crown,
   Medal,
   Award,
+  Play,
+  Search,
+  ArrowUpRight,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
+import { Modal } from '../components/ui/Modal';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 import { PlayerChip } from '../components/player/PlayerChip';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { cn } from '../components/ui/cn';
@@ -48,6 +54,10 @@ export const StatsPage: React.FC = () => {
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>(() =>
     players.slice(0, 2).map((p) => p.id)
   );
+
+  const [showPlayedGamesModal, setShowPlayedGamesModal] = useState(false);
+  const [playedGamesTab, setPlayedGamesTab] = useState<'played' | 'unplayed'>('played');
+  const [playedGamesSearch, setPlayedGamesSearch] = useState('');
 
   // --- 1. OVERVIEW & H-INDEX METRICS ---
   const playCountByGame = useMemo(() => {
@@ -105,6 +115,21 @@ export const StatsPage: React.FC = () => {
       nextHIndexGame: sortedGamesByPlays[h], // index h is (h+1)-th game
     };
   }, [sortedGamesByPlays]);
+
+  const playedGamesList = useMemo(() => {
+    return sortedGamesByPlays.filter((g) => g.plays > 0);
+  }, [sortedGamesByPlays]);
+
+  const unplayedGamesList = useMemo(() => {
+    return sortedGamesByPlays.filter((g) => g.plays === 0);
+  }, [sortedGamesByPlays]);
+
+  const filteredModalGames = useMemo(() => {
+    const list = playedGamesTab === 'played' ? playedGamesList : unplayedGamesList;
+    if (!playedGamesSearch.trim()) return list;
+    const q = playedGamesSearch.toLowerCase();
+    return list.filter((item) => item.name.toLowerCase().includes(q));
+  }, [playedGamesTab, playedGamesList, unplayedGamesList, playedGamesSearch]);
 
   // Session duration extremes
   const sortedByDuration = useMemo(() => {
@@ -461,59 +486,83 @@ export const StatsPage: React.FC = () => {
                 </Card>
               )}
 
-              {leastPlayedGame && (
-                <Card className="p-5 flex flex-col justify-between">
-                  <span className="text-xs font-semibold text-[#94a3b8]">
+              <Card
+                onClick={() => setShowPlayedGamesModal(true)}
+                className="p-5 flex flex-col justify-between cursor-pointer hover:border-amber-400/60 hover:shadow-xl hover:shadow-amber-500/10 transition-all group select-none"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-[#94a3b8] group-hover:text-amber-300 transition-colors">
                     Tổng Số Tựa Game Đã Chơi
                   </span>
-                  <div>
-                    <p className="font-display font-black text-3xl text-white">
-                      {sortedGamesByPlays.filter((g) => g.plays > 0).length} / {games.length}
-                    </p>
-                    <p className="text-xs text-[#94a3b8] mt-1">
-                      {(
-                        (sortedGamesByPlays.filter((g) => g.plays > 0).length /
-                          Math.max(1, games.length)) *
-                        100
-                      ).toFixed(0)}
-                      % kho game đã được trải nghiệm
-                    </p>
-                  </div>
-                </Card>
-              )}
+                  <span className="text-xs font-bold text-amber-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                    Xem danh sách <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+                <div>
+                  <p className="font-display font-black text-3xl text-white">
+                    {sortedGamesByPlays.filter((g) => g.plays > 0).length} / {games.length}
+                  </p>
+                  <p className="text-xs text-[#94a3b8] mt-1 group-hover:text-[var(--text-secondary)] transition-colors">
+                    {(
+                      (sortedGamesByPlays.filter((g) => g.plays > 0).length /
+                        Math.max(1, games.length)) *
+                      100
+                    ).toFixed(0)}
+                    % kho game đã chơi · {sortedGamesByPlays.filter((g) => g.plays === 0).length} game chưa chơi
+                  </p>
+                </div>
+              </Card>
 
               {longestSession && (
-                <Card className="p-5 flex flex-col justify-between">
-                  <span className="text-xs font-semibold text-[#22d3ee] inline-flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    Ván Chơi Dài Nhất
-                  </span>
+                <Link
+                  to={`/sessions/${longestSession.id}`}
+                  className="p-5 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] hover:border-[#22d3ee]/60 hover:shadow-xl hover:shadow-[#22d3ee]/10 transition-all group cursor-pointer flex flex-col justify-between block select-none"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-[#22d3ee] inline-flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      Ván Chơi Dài Nhất
+                    </span>
+                    <span className="text-xs font-bold text-[#22d3ee] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                      Chi tiết ván <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
                   <div>
                     <p className="font-display font-black text-2xl text-white">
                       {formatDuration(longestSession.durationMinutes)}
                     </p>
-                    <p className="text-xs text-[#94a3b8] truncate mt-1">
+                    <p className="text-xs text-[#94a3b8] truncate mt-1 group-hover:text-white transition-colors">
                       {longestSession.gameName} · {formatDate(longestSession.datePlayed)}
+                      {longestSession.location ? ` · ${longestSession.location}` : ''}
                     </p>
                   </div>
-                </Card>
+                </Link>
               )}
 
               {shortestSession && (
-                <Card className="p-5 flex flex-col justify-between">
-                  <span className="text-xs font-semibold text-emerald-400 inline-flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    Ván Chơi Nhanh Nhất
-                  </span>
+                <Link
+                  to={`/sessions/${shortestSession.id}`}
+                  className="p-5 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] hover:border-emerald-400/60 hover:shadow-xl hover:shadow-emerald-500/10 transition-all group cursor-pointer flex flex-col justify-between block select-none"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-emerald-400 inline-flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" />
+                      Ván Chơi Nhanh Nhất
+                    </span>
+                    <span className="text-xs font-bold text-emerald-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                      Chi tiết ván <ArrowRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
                   <div>
                     <p className="font-display font-black text-2xl text-white">
                       {formatDuration(shortestSession.durationMinutes)}
                     </p>
-                    <p className="text-xs text-[#94a3b8] truncate mt-1">
+                    <p className="text-xs text-[#94a3b8] truncate mt-1 group-hover:text-white transition-colors">
                       {shortestSession.gameName} · {formatDate(shortestSession.datePlayed)}
+                      {shortestSession.location ? ` · ${shortestSession.location}` : ''}
                     </p>
                   </div>
-                </Card>
+                </Link>
               )}
             </div>
 
@@ -1091,6 +1140,121 @@ export const StatsPage: React.FC = () => {
             )}
           </Card>
         )}
+
+        {/* Played & Unplayed Games Drilldown Modal */}
+        <Modal
+          isOpen={showPlayedGamesModal}
+          onClose={() => setShowPlayedGamesModal(false)}
+          title="Kho Game Đã &amp; Chưa Trải Nghiệm"
+          maxWidthClass="max-w-2xl"
+        >
+          <div className="space-y-4">
+            {/* Modal Tabs */}
+            <div className="flex p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] gap-1">
+              <button
+                type="button"
+                onClick={() => setPlayedGamesTab('played')}
+                className={cn(
+                  'flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 select-none',
+                  playedGamesTab === 'played'
+                    ? 'bg-[var(--accent-primary)] text-white shadow-md'
+                    : 'text-[var(--text-secondary)] hover:text-white'
+                )}
+              >
+                <span>Đã Trải Nghiệm</span>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 tabular-nums">
+                  {playedGamesList.length}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlayedGamesTab('unplayed')}
+                className={cn(
+                  'flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 select-none',
+                  playedGamesTab === 'unplayed'
+                    ? 'bg-[var(--accent-primary)] text-white shadow-md'
+                    : 'text-[var(--text-secondary)] hover:text-white'
+                )}
+              >
+                <span>Chưa Chơi (Pile of Shame)</span>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 tabular-nums">
+                  {unplayedGamesList.length}
+                </span>
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <Input
+              placeholder="Tìm kiếm tựa game..."
+              value={playedGamesSearch}
+              onChange={(e) => setPlayedGamesSearch(e.target.value)}
+              leftIcon={<Search className="w-4 h-4 text-[var(--text-secondary)]" />}
+              className="text-xs"
+            />
+
+            {/* Games List */}
+            <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
+              {filteredModalGames.length === 0 ? (
+                <div className="text-center py-8 text-xs text-[var(--text-muted)]">
+                  Không tìm thấy tựa game phù hợp
+                </div>
+              ) : (
+                filteredModalGames.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--border-glow)] flex items-center justify-between gap-3 transition-colors group"
+                  >
+                    <Link
+                      to={`/collection/${item.id}`}
+                      onClick={() => setShowPlayedGamesModal(false)}
+                      className="flex items-center gap-3 min-w-0 flex-1"
+                    >
+                      {item.thumbnail ? (
+                        <img
+                          src={item.thumbnail}
+                          alt={item.name}
+                          className="w-12 h-14 rounded-lg object-cover border border-white/10 shrink-0 bg-[var(--bg-elevated)]"
+                        />
+                      ) : (
+                        <div className="w-12 h-14 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-xl shrink-0">
+                          🎲
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <h4 className="font-display font-bold text-sm text-white group-hover:text-[var(--accent-neon)] transition-colors truncate">
+                          {item.name}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-[var(--text-secondary)] tabular-nums">
+                          {item.plays > 0 ? (
+                            <span className="text-amber-400 font-bold font-mono">
+                              {item.plays} ván đã chơi
+                            </span>
+                          ) : (
+                            <span className="text-rose-400 font-medium">
+                              Chưa ghi nhận ván nào
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Link
+                        to={`/sessions/new?gameId=${item.id}`}
+                        onClick={() => setShowPlayedGamesModal(false)}
+                      >
+                        <Button size="sm" variant="secondary" className="text-xs px-2.5 py-1">
+                          <Play className="w-3.5 h-3.5 mr-1 fill-current" />
+                          Chơi ván mới
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </Modal>
       </div>
     </PageTransition>
   );

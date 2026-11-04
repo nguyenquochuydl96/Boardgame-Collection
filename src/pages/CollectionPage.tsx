@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
   Search,
@@ -38,7 +38,30 @@ export const CollectionPage: React.FC = () => {
   const games = useGameStore((s) => s.games);
   const sessions = useSessionStore((s) => s.sessions);
 
-  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlStatus = searchParams.get('status') as FilterTab | null;
+  const [activeFilter, setActiveFilter] = useState<FilterTab>(() => {
+    if (urlStatus && FILTER_TABS.some((t) => t.id === urlStatus)) {
+      return urlStatus;
+    }
+    return 'all';
+  });
+
+  useEffect(() => {
+    if (urlStatus && FILTER_TABS.some((t) => t.id === urlStatus)) {
+      setActiveFilter(urlStatus);
+    }
+  }, [urlStatus]);
+
+  const handleTabChange = (tabId: FilterTab) => {
+    setActiveFilter(tabId);
+    if (tabId === 'all') {
+      searchParams.delete('status');
+      setSearchParams(searchParams, { replace: true });
+    } else {
+      setSearchParams({ status: tabId }, { replace: true });
+    }
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('addedDate');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -136,7 +159,7 @@ export const CollectionPage: React.FC = () => {
                 role="tab"
                 aria-selected={isActive}
                 type="button"
-                onClick={() => setActiveFilter(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={cn(
                   'relative min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-2 border select-none',
                   isActive

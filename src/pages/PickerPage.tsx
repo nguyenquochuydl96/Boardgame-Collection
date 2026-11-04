@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { GameStatus } from '../types';
 import {
   Crown,
   Gamepad2,
@@ -47,7 +48,7 @@ export const PickerPage: React.FC = () => {
   const [guestPlayers, setGuestPlayers] = useState<PickerItem[]>([]);
 
   // --- WHAT TO PLAY STATE ---
-  const [onlyOwned, setOnlyOwned] = useState(true);
+  const [statusFilters, setStatusFilters] = useState<GameStatus[]>(['own']);
   const [playerCountFilter, setPlayerCountFilter] = useState<'all' | '2' | '3' | '4' | '5+'>('all');
   const [durationFilter, setDurationFilter] = useState<'all' | 'short' | 'medium' | 'long'>('all');
   const [gameSearch, setGameSearch] = useState('');
@@ -74,7 +75,14 @@ export const PickerPage: React.FC = () => {
   // Pool for What to Play
   const filteredAvailableGames = useMemo(() => {
     return allGames.filter((g) => {
-      if (onlyOwned && g.status !== 'own') return false;
+      // Status filter
+      if (statusFilters.length > 0) {
+        if (!statusFilters.includes(g.status)) return false;
+      } else {
+        // Exclude sold and wishlist from random game night selection by default
+        if (g.status === 'sold' || g.status === 'wishlist') return false;
+      }
+
       if (gameSearch.trim() && !g.name.toLowerCase().includes(gameSearch.toLowerCase())) {
         return false;
       }
@@ -93,7 +101,12 @@ export const PickerPage: React.FC = () => {
 
       return true;
     });
-  }, [allGames, onlyOwned, gameSearch, playerCountFilter, durationFilter]);
+  }, [allGames, statusFilters, gameSearch, playerCountFilter, durationFilter]);
+
+  // Auto-select filtered games when filter changes
+  useEffect(() => {
+    setSelectedGameIds(filteredAvailableGames.map((g) => g.id));
+  }, [statusFilters, playerCountFilter, durationFilter]);
 
   const gameItems = useMemo<PickerItem[]>(() => {
     return filteredAvailableGames
@@ -477,6 +490,48 @@ export const PickerPage: React.FC = () => {
                     onChange={(e) => setGameSearch(e.target.value)}
                     className="text-xs py-1.5"
                   />
+
+                  {/* Status Filter */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Kho:</span>
+                    {[
+                      { id: 'own', label: 'Sở hữu (Có sẵn)' },
+                      { id: 'borrowed', label: 'Đang mượn' },
+                      { id: 'lent_out', label: 'Cho mượn' },
+                      { id: 'all', label: 'Tất cả' },
+                    ].map((st) => {
+                      const isSelected =
+                        st.id === 'all'
+                          ? statusFilters.length === 0
+                          : statusFilters.includes(st.id as GameStatus);
+
+                      return (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() => {
+                            if (st.id === 'all') {
+                              setStatusFilters([]);
+                            } else {
+                              setStatusFilters((prev) =>
+                                prev.includes(st.id as GameStatus)
+                                  ? prev.filter((x) => x !== st.id)
+                                  : [...prev, st.id as GameStatus]
+                              );
+                            }
+                          }}
+                          className={cn(
+                            'px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer',
+                            isSelected
+                              ? 'bg-amber-500 text-slate-950 border-amber-500 font-extrabold shadow-sm'
+                              : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-white/20'
+                          )}
+                        >
+                          {st.label}
+                        </button>
+                      );
+                    })}
+                  </div>
 
                   {/* Player Count Filter */}
                   <div className="flex items-center gap-1.5">

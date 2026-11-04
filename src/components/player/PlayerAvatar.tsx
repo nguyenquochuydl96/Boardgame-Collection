@@ -1,6 +1,7 @@
 import React from 'react';
 import { Player } from '../../types';
 import { Avatar, AvatarProps } from '../ui/Avatar';
+import { getDeterministicAvatar } from '../../lib/boardgameAvatars';
 
 export interface PlayerAvatarProps extends Omit<AvatarProps, 'name' | 'avatar' | 'color'> {
   player?: Player;
@@ -18,8 +19,9 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
   className,
 }) => {
   const resolvedName = player?.name || name || 'Player';
-  const resolvedAvatar = player?.avatar || avatar;
-  const resolvedColor = player?.color || color || '#7c3aed';
+  const defaultBg = getDeterministicAvatar(resolvedName);
+  const resolvedAvatar = player?.avatar || avatar || defaultBg.emoji;
+  const resolvedColor = player?.color || color || defaultBg.color;
 
   return (
     <Avatar
