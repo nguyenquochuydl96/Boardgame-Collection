@@ -151,7 +151,7 @@ export const StatsPage: React.FC = () => {
         <div
           role="tablist"
           aria-label="Stats views"
-          className="inline-flex p-1.5 rounded-2xl bg-[#16162a] border border-white/10 max-w-full overflow-x-auto"
+          className="inline-flex p-1.5 rounded-2xl bg-[var(--bg-surface)] border border-white/10 max-w-full overflow-x-auto"
         >
           <button
             role="tab"
@@ -213,7 +213,7 @@ export const StatsPage: React.FC = () => {
                     className="w-16 h-20 rounded-xl object-cover shrink-0"
                   />
                   <div className="min-w-0">
-                    <span className="text-xs font-semibold text-[#a78bfa]">
+                    <span className="text-xs font-semibold text-[var(--accent-neon)]">
                       Most Played Game
                     </span>
                     <Link
@@ -237,7 +237,7 @@ export const StatsPage: React.FC = () => {
                   <div>
                     <Link
                       to={`/collection/${leastPlayedGame.id}`}
-                      className="font-display font-bold text-lg text-white truncate block hover:text-[#a78bfa]"
+                      className="font-display font-bold text-lg text-white truncate block hover:text-[var(--accent-neon)]"
                     >
                       {leastPlayedGame.name}
                     </Link>
@@ -308,7 +308,7 @@ export const StatsPage: React.FC = () => {
                         key={item.month}
                         className="flex-1 flex flex-col items-center gap-2 h-full justify-end"
                       >
-                        <span className="font-mono text-xs font-bold text-[#a78bfa] tabular-nums">
+                        <span className="font-mono text-xs font-bold text-[var(--accent-neon)] tabular-nums">
                           {item.count}
                         </span>
                         <div
@@ -342,7 +342,7 @@ export const StatsPage: React.FC = () => {
                   {playerStreaks.map(({ player, streak }) => (
                     <div
                       key={player.id}
-                      className="flex items-center justify-between p-3.5 rounded-xl bg-[#16162a] border border-white/[0.06]"
+                      className="flex items-center justify-between p-3.5 rounded-xl bg-[var(--bg-surface)] border border-white/[0.06]"
                     >
                       <span className="font-display font-bold text-sm text-white">
                         {player.avatar} {player.name}
@@ -383,7 +383,7 @@ export const StatsPage: React.FC = () => {
                 aria-label="Select boardgame for stats"
                 value={selectedGameId}
                 onChange={(e) => setSelectedGameId(e.target.value)}
-                className="min-h-[44px] px-4 py-2 rounded-xl bg-[#16162a] border border-white/15 text-sm font-semibold text-white focus:outline-none focus:border-[#7c3aed] cursor-pointer"
+                className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--bg-surface)] border border-white/15 text-sm font-semibold text-white focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer"
               >
                 {games.map((g) => (
                   <option key={g.id} value={g.id}>
@@ -394,19 +394,19 @@ export const StatsPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 tabular-nums">
-              <div className="p-4 rounded-2xl bg-[#16162a] border border-white/[0.06]">
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
                 <span className="text-xs text-[#94a3b8]">Total Plays</span>
-                <p className="font-display font-extrabold text-2xl text-[#a78bfa] mt-1">
+                <p className="font-display font-extrabold text-2xl text-[var(--accent-neon)] mt-1">
                   {activeGameStats.totalPlays}
                 </p>
               </div>
-              <div className="p-4 rounded-2xl bg-[#16162a] border border-white/[0.06]">
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
                 <span className="text-xs text-[#94a3b8]">Average Duration</span>
                 <p className="font-display font-extrabold text-2xl text-[#22d3ee] mt-1">
                   {formatDuration(activeGameStats.averageDuration)}
                 </p>
               </div>
-              <div className="p-4 rounded-2xl bg-[#16162a] border border-white/[0.06]">
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
                 <span className="text-xs text-[#94a3b8]">Top Player</span>
                 <p className="font-display font-extrabold text-lg text-amber-400 mt-1 truncate">
                   {activeGameStats.playerWinRates[0]?.playerName || '—'}
@@ -417,7 +417,7 @@ export const StatsPage: React.FC = () => {
                   </span>
                 )}
               </div>
-              <div className="p-4 rounded-2xl bg-[#16162a] border border-white/[0.06]">
+              <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
                 <span className="text-xs text-[#94a3b8]">Score Record</span>
                 <p className="font-mono font-extrabold text-2xl text-emerald-400 mt-1">
                   {activeGameStats.highestScore
@@ -457,14 +457,14 @@ export const StatsPage: React.FC = () => {
             </div>
 
             {activeComparisonPlayers.length < 2 ? (
-              <div className="p-8 rounded-2xl bg-[#16162a] border border-white/10 text-center">
+              <div className="p-8 rounded-2xl bg-[var(--bg-surface)] border border-white/10 text-center">
                 <p className="text-sm text-[#94a3b8]">
                   Please select at least 2 players above to view head-to-head comparison metrics.
                 </p>
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="p-4 rounded-2xl bg-[#16162a] border border-white/10 flex items-center justify-between">
+                <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/10 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <Swords className="w-5 h-5 text-[#22d3ee]" />
                     <span className="font-display font-bold text-sm sm:text-base text-white">
@@ -479,7 +479,7 @@ export const StatsPage: React.FC = () => {
                 {/* Head-to-Head Summary Table */}
                 <div className="overflow-x-auto rounded-2xl border border-white/10">
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-[#1e1e35] text-xs text-[#94a3b8]">
+                    <thead className="bg-[var(--bg-elevated)] text-xs text-[#94a3b8]">
                       <tr>
                         <th className="py-3.5 px-4 font-semibold">Player</th>
                         <th className="py-3.5 px-4 font-semibold text-right">
@@ -496,7 +496,7 @@ export const StatsPage: React.FC = () => {
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/[0.06] bg-[#16162a] tabular-nums">
+                    <tbody className="divide-y divide-white/[0.06] bg-[var(--bg-surface)] tabular-nums">
                       {headToHead.playerStats.map((st) => (
                         <tr key={st.player.id}>
                           <td className="py-3.5 px-4 font-display font-bold text-white">
@@ -528,7 +528,7 @@ export const StatsPage: React.FC = () => {
                     </h3>
                     <div className="overflow-x-auto rounded-2xl border border-white/10">
                       <table className="w-full text-left text-sm">
-                        <thead className="bg-[#1e1e35] text-xs text-[#94a3b8]">
+                        <thead className="bg-[var(--bg-elevated)] text-xs text-[#94a3b8]">
                           <tr>
                             <th className="py-3 px-4 font-semibold">Game</th>
                             <th className="py-3 px-3 font-semibold text-right">
@@ -544,7 +544,7 @@ export const StatsPage: React.FC = () => {
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/[0.06] bg-[#16162a] tabular-nums">
+                        <tbody className="divide-y divide-white/[0.06] bg-[var(--bg-surface)] tabular-nums">
                           {headToHead.perGameBreakdown.map((row) => (
                             <tr key={row.gameId}>
                               <td className="py-3 px-4 font-semibold text-white">

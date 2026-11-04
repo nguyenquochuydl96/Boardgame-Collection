@@ -1,14 +1,117 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root {
+/* =========================================================================
+   THEME PALETTES & DESIGN TOKENS
+   ========================================================================= */
+
+/* Default & Amber: Warm Amber & Coffee (Cozy Tabletop / Warm Sunset) */
+:root,
+[data-theme="amber"] {
+  --bg-base: #101216;
+  --bg-surface: #171a22;
+  --bg-elevated: #212530;
+  --bg-card: #1c202a;
+  --accent-primary: #f97316;     /* Sunset Orange */
+  --accent-secondary: #f59e0b;   /* Amber Gold */
+  --accent-neon: #fb923c;
+  --accent-glow: rgba(249, 115, 22, 0.28);
+  --accent-pink: #f43f5e;
+  --accent-cyan: #38bdf8;
+  --accent-green: #22c55e;
+  --accent-orange: #ea580c;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(249, 115, 22, 0.45);
+  --gradient-hero: linear-gradient(135deg, #f97316 0%, #ea580c 45%, #d97706 100%);
+  --gradient-card: linear-gradient(145deg, #212530, #171a22);
+  --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+
+/* Modern Slate Navy & Radiant Tangerine */
+[data-theme="navy"] {
+  --bg-base: #071526;
+  --bg-surface: #0b1e36;
+  --bg-elevated: #112c4e;
+  --bg-card: #0d2440;
+  --accent-primary: #ff6b00;     /* Radiant Tangerine */
+  --accent-secondary: #2563eb;   /* Royal Navy Blue */
+  --accent-neon: #ff8533;
+  --accent-glow: rgba(255, 107, 0, 0.3);
+  --accent-pink: #ec4899;
+  --accent-cyan: #06b6d4;
+  --accent-green: #10b981;
+  --accent-orange: #f97316;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(255, 107, 0, 0.45);
+  --gradient-hero: linear-gradient(135deg, #ff6b00 0%, #ea580c 45%, #2563eb 100%);
+  --gradient-card: linear-gradient(145deg, #112c4e, #0b1e36);
+  --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+
+/* Minimalist Apple/Linear Midnight & Emerald Mint */
+[data-theme="emerald"] {
+  --bg-base: #090d10;
+  --bg-surface: #10161c;
+  --bg-elevated: #172129;
+  --bg-card: #131b22;
+  --accent-primary: #10b981;     /* Fresh Mint */
+  --accent-secondary: #06b6d4;   /* Cyan Teal */
+  --accent-neon: #34d399;
+  --accent-glow: rgba(16, 185, 129, 0.28);
+  --accent-pink: #f43f5e;
+  --accent-cyan: #22d3ee;
+  --accent-green: #10b981;
+  --accent-orange: #f59e0b;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(16, 185, 129, 0.45);
+  --gradient-hero: linear-gradient(135deg, #10b981 0%, #059669 45%, #06b6d4 100%);
+  --gradient-card: linear-gradient(145deg, #172129, #10161c);
+  --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+
+/* Warm Canvas & Terracotta (Clean Cozy Light Mode) */
+[data-theme="light"] {
+  --bg-base: #f8f6f0;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1ede2;
+  --bg-card: #ffffff;
+  --accent-primary: #ea580c;     /* Terracotta */
+  --accent-secondary: #d97706;   /* Warm Honey */
+  --accent-neon: #f97316;
+  --accent-glow: rgba(234, 88, 12, 0.22);
+  --accent-pink: #e11d48;
+  --accent-cyan: #0284c7;
+  --accent-green: #16a34a;
+  --accent-orange: #ea580c;
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-glow: rgba(234, 88, 12, 0.35);
+  --gradient-hero: linear-gradient(135deg, #ea580c 0%, #f97316 45%, #d97706 100%);
+  --gradient-card: linear-gradient(145deg, #ffffff, #fbf9f4);
+  --shimmer: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.04), transparent);
+}
+
+/* Cyberpunk Violet (Original AI Studio Template) */
+[data-theme="purple"] {
   --bg-base: #0f0f1a;
   --bg-surface: #16162a;
   --bg-elevated: #1e1e35;
   --bg-card: #1a1a2e;
-  --accent-primary: #7c3aed;    /* violet */
-  --accent-secondary: #2563eb;  /* blue */
-  --accent-neon: #a78bfa;       /* neon purple */
+  --accent-primary: #7c3aed;     /* Violet */
+  --accent-secondary: #2563eb;   /* Blue */
+  --accent-neon: #a78bfa;
+  --accent-glow: rgba(124, 58, 237, 0.35);
   --accent-pink: #ec4899;
   --accent-cyan: #22d3ee;
   --accent-green: #10b981;
@@ -16,11 +119,11 @@
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #475569;
-  --border-subtle: rgba(255,255,255,0.08);
-  --border-glow: rgba(124,58,237,0.4);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(124, 58, 237, 0.45);
   --gradient-hero: linear-gradient(135deg, #7c3aed 0%, #2563eb 50%, #0ea5e9 100%);
   --gradient-card: linear-gradient(145deg, #1e1e35, #16162a);
-  --shimmer: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
 }
 
 @theme {
@@ -33,13 +136,14 @@
   body {
     background-color: var(--bg-base);
     background-image:
-      radial-gradient(circle at 15% 10%, rgba(124, 58, 237, 0.14), transparent 38%),
-      radial-gradient(circle at 85% 20%, rgba(37, 99, 235, 0.1), transparent 42%);
+      radial-gradient(circle at 12% 8%, var(--accent-glow), transparent 36%),
+      radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.025), transparent 42%);
     background-attachment: fixed;
     color: var(--text-primary);
     font-family: var(--font-sans);
     min-height: 100vh;
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1, h2, h3, h4, .font-display {

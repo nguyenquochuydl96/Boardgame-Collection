@@ -17,14 +17,14 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-xs font-semibold text-[#94a3b8] tracking-wide"
+            className="block text-xs font-semibold text-[var(--text-secondary)] tracking-wide"
           >
             {label}
           </label>
         )}
         <div className="relative">
           {leftIcon && (
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[#94a3b8]">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-[var(--text-secondary)]">
               {leftIcon}
             </div>
           )}
@@ -32,7 +32,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full min-h-[44px] rounded-xl bg-[#16162a] border border-white/10 px-3.5 py-2.5 text-sm text-[#f1f5f9] placeholder:text-[#475569] transition-all duration-300 ease-out focus:outline-none focus:border-[#7c3aed] focus:ring-2 focus:ring-[#7c3aed]/30',
+              'w-full min-h-[44px] rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all duration-300 ease-out focus:outline-none focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-glow)]',
               leftIcon && 'pl-10',
               error && 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/30',
               className
@@ -42,7 +42,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         </div>
         {error && <p className="text-xs text-rose-400">{error}</p>}
         {!error && helperText && (
-          <p className="text-xs text-[#94a3b8]">{helperText}</p>
+          <p className="text-xs text-[var(--text-secondary)]">{helperText}</p>
         )}
       </div>
     );

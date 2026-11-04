@@ -63,7 +63,7 @@ export const SessionsPage: React.FC = () => {
             {groupedByMonth.map((group) => (
               <section key={group.monthLabel} className="space-y-3">
                 <div className="sticky top-14 lg:top-0 z-20 py-2 px-3 rounded-xl bg-[#0f0f1a]/90 backdrop-blur-md border border-white/[0.06] inline-flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#a78bfa]" />
+                  <Calendar className="w-4 h-4 text-[var(--accent-neon)]" />
                   <h2 className="font-display font-bold text-sm text-[#f1f5f9]">
                     {group.monthLabel}
                   </h2>
@@ -85,7 +85,7 @@ export const SessionsPage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="py-16 px-4 text-center rounded-3xl bg-[#16162a]/70 border border-white/[0.08] max-w-lg mx-auto space-y-4">
+          <div className="py-16 px-4 text-center rounded-3xl bg-[var(--bg-surface)]/70 border border-white/[0.08] max-w-lg mx-auto space-y-4">
             <svg
               className="w-24 h-24 mx-auto"
               viewBox="0 0 120 120"

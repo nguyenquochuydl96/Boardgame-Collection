@@ -106,7 +106,7 @@ export const PlayersPage: React.FC = () => {
         </div>
 
         {compareMode && (
-          <div className="p-4 rounded-2xl bg-[#7c3aed]/15 border border-[#a78bfa]/40 flex flex-wrap items-center justify-between gap-3">
+          <div className="p-4 rounded-2xl bg-[var(--accent-primary)]/15 border border-[#a78bfa]/40 flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs sm:text-sm text-white">
               Select 2 or more players below to inspect head-to-head rivalries.
             </p>
@@ -174,7 +174,7 @@ export const PlayersPage: React.FC = () => {
                           'absolute top-4 right-4 w-7 h-7 rounded-lg border flex items-center justify-center cursor-pointer transition-colors',
                           isSelectedForCompare
                             ? 'bg-[#22d3ee] border-[#22d3ee] text-slate-950'
-                            : 'bg-[#16162a] border-white/20 text-transparent'
+                            : 'bg-[var(--bg-surface)] border-white/20 text-transparent'
                         )}
                       >
                         <Check className="w-4 h-4" />
@@ -187,7 +187,7 @@ export const PlayersPage: React.FC = () => {
                     >
                       <PlayerAvatar player={player} size="lg" />
                       <div className="min-w-0">
-                        <h2 className="font-display font-bold text-lg text-white truncate group-hover:text-[#a78bfa] transition-colors">
+                        <h2 className="font-display font-bold text-lg text-white truncate group-hover:text-[var(--accent-neon)] transition-colors">
                           {player.name}
                         </h2>
                         <span
@@ -200,9 +200,9 @@ export const PlayersPage: React.FC = () => {
                     </Link>
 
                     <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-white/[0.06] tabular-nums">
-                      <div className="p-2.5 rounded-xl bg-[#16162a]">
+                      <div className="p-2.5 rounded-xl bg-[var(--bg-surface)]">
                         <span className="text-[11px] text-[#94a3b8] inline-flex items-center gap-1">
-                          <Gamepad2 className="w-3 h-3 text-[#a78bfa]" />
+                          <Gamepad2 className="w-3 h-3 text-[var(--accent-neon)]" />
                           Played
                         </span>
                         <p className="font-display font-extrabold text-xl text-white mt-0.5">
@@ -210,7 +210,7 @@ export const PlayersPage: React.FC = () => {
                         </p>
                       </div>
 
-                      <div className="p-2.5 rounded-xl bg-[#16162a]">
+                      <div className="p-2.5 rounded-xl bg-[var(--bg-surface)]">
                         <span className="text-[11px] text-[#94a3b8] inline-flex items-center gap-1">
                           <Trophy className="w-3 h-3 text-amber-400" />
                           Win Rate
@@ -223,7 +223,7 @@ export const PlayersPage: React.FC = () => {
 
                     <Link
                       to={`/players/${player.id}`}
-                      className="text-xs font-semibold text-[#a78bfa] hover:text-white transition-colors"
+                      className="text-xs font-semibold text-[var(--accent-neon)] hover:text-white transition-colors"
                     >
                       View Full Player Profile →
                     </Link>
@@ -276,8 +276,8 @@ export const PlayersPage: React.FC = () => {
                     className={cn(
                       'w-11 h-11 rounded-xl text-xl flex items-center justify-center border transition-all cursor-pointer',
                       newAvatar === emoji
-                        ? 'bg-[#7c3aed]/30 border-[#a78bfa] scale-105'
-                        : 'bg-[#1e1e35] border-white/10 hover:border-white/30'
+                        ? 'bg-[var(--accent-primary)]/30 border-[#a78bfa] scale-105'
+                        : 'bg-[var(--bg-elevated)] border-white/10 hover:border-white/30'
                     )}
                   >
                     {emoji}

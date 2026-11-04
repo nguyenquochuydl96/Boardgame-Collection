@@ -90,21 +90,21 @@ export const CollectionPage: React.FC = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-white">
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)]">
               My Game Collection
             </h1>
-            <p className="text-sm text-[#94a3b8] tabular-nums">
+            <p className="text-sm text-[var(--text-secondary)] tabular-nums">
               Showing {filteredGames.length} of {games.length} boardgames
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <Button variant="ghost" size="sm" onClick={() => setIsConfigOpen(true)}>
-              <Settings className="w-4 h-4 mr-1 text-[#a78bfa]" />
+              <Settings className="w-4 h-4 mr-1 text-[var(--accent-neon)]" />
               BGG Sync
             </Button>
             <Button variant="secondary" size="sm" onClick={() => setIsImportOpen(true)}>
-              <Upload className="w-4 h-4 mr-1 text-[#22d3ee]" />
+              <Upload className="w-4 h-4 mr-1 text-[var(--accent-secondary)]" />
               Import
             </Button>
             <Link to="/collection/add">
@@ -139,15 +139,15 @@ export const CollectionPage: React.FC = () => {
                 className={cn(
                   'min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 border',
                   isActive
-                    ? 'bg-[#7c3aed] text-white border-[#7c3aed] shadow-lg shadow-[#7c3aed]/30'
-                    : 'bg-[#16162a] text-[#94a3b8] border-white/5 hover:border-white/10 hover:text-white'
+                    ? 'bg-[var(--accent-primary)] text-[var(--text-primary)] border-[var(--accent-primary)] shadow-lg shadow-[var(--accent-glow)]'
+                    : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[var(--border-glow)] hover:text-[var(--text-primary)]'
                 )}
               >
                 <span>{tab.label}</span>
                 <span
                   className={cn(
                     'px-1.5 py-0.5 rounded-md text-[10px] tabular-nums',
-                    isActive ? 'bg-white/20 text-white' : 'bg-white/5 text-[#94a3b8]'
+                    isActive ? 'bg-white/20 text-[var(--text-primary)]' : 'bg-white/5 text-[var(--text-secondary)]'
                   )}
                 >
                   {count}
@@ -164,19 +164,19 @@ export const CollectionPage: React.FC = () => {
               placeholder="Search by title or category..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              leftIcon={<Search className="w-4 h-4 text-[#94a3b8]" />}
+              leftIcon={<Search className="w-4 h-4 text-[var(--text-secondary)]" />}
             />
           </div>
 
           <div className="flex items-center gap-2.5 self-end sm:self-auto">
             {/* Sort Dropdown */}
             <div className="relative inline-flex items-center">
-              <ArrowUpDown className="w-4 h-4 text-[#94a3b8] absolute left-3 pointer-events-none" />
+              <ArrowUpDown className="w-4 h-4 text-[var(--text-secondary)] absolute left-3 pointer-events-none" />
               <select
                 aria-label="Sort collection by"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="min-h-[42px] pl-9 pr-8 py-2 rounded-xl bg-[#16162a] border border-white/10 text-xs font-semibold text-white focus:outline-none focus:border-[#7c3aed] cursor-pointer appearance-none"
+                className="min-h-[42px] pl-9 pr-8 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer appearance-none"
               >
                 <option value="addedDate">Date Added (Newest)</option>
                 <option value="name">Name (A-Z)</option>
@@ -186,15 +186,15 @@ export const CollectionPage: React.FC = () => {
             </div>
 
             {/* View Mode Switcher */}
-            <div className="p-1 rounded-xl bg-[#16162a] border border-white/10 flex items-center gap-1">
+            <div className="p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={cn(
                   'p-2 rounded-lg transition-colors cursor-pointer',
                   viewMode === 'grid'
-                    ? 'bg-[#7c3aed] text-white'
-                    : 'text-[#94a3b8] hover:text-white'
+                    ? 'bg-[var(--accent-primary)] text-[var(--text-primary)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
                 aria-label="Grid view"
               >
@@ -206,8 +206,8 @@ export const CollectionPage: React.FC = () => {
                 className={cn(
                   'p-2 rounded-lg transition-colors cursor-pointer',
                   viewMode === 'list'
-                    ? 'bg-[#7c3aed] text-white'
-                    : 'text-[#94a3b8] hover:text-white'
+                    ? 'bg-[var(--accent-primary)] text-[var(--text-primary)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
                 aria-label="List view"
               >
@@ -226,15 +226,15 @@ export const CollectionPage: React.FC = () => {
           />
         ) : (
           /* Empty State */
-          <div className="p-12 rounded-3xl bg-[#16162a] border border-white/10 text-center space-y-4 max-w-md mx-auto my-8">
-            <div className="w-16 h-16 rounded-3xl bg-[image:var(--gradient-hero)] flex items-center justify-center text-3xl mx-auto shadow-xl shadow-[#7c3aed]/30">
+          <div className="p-12 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center space-y-4 max-w-md mx-auto my-8">
+            <div className="w-16 h-16 rounded-3xl bg-[image:var(--gradient-hero)] flex items-center justify-center text-3xl mx-auto shadow-xl shadow-[var(--accent-glow)]">
               🎲
             </div>
             <div className="space-y-1">
-              <h3 className="font-display font-bold text-lg text-white">
+              <h3 className="font-display font-bold text-lg text-[var(--text-primary)]">
                 No boardgames found
               </h3>
-              <p className="text-sm text-[#94a3b8]">
+              <p className="text-sm text-[var(--text-secondary)]">
                 {searchQuery || activeFilter !== 'all'
                   ? 'No games match your current filter or search criteria.'
                   : 'Your collection is currently empty. Start adding games to your vault!'}
@@ -270,7 +270,7 @@ export const CollectionPage: React.FC = () => {
         <Link
           to="/collection/add"
           aria-label="Add new boardgame"
-          className="fixed right-5 bottom-20 lg:bottom-8 z-30 w-14 h-14 rounded-2xl bg-[image:var(--gradient-hero)] text-white shadow-xl shadow-[#7c3aed]/40 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+          className="fixed right-5 bottom-20 lg:bottom-8 z-30 w-14 h-14 rounded-2xl bg-[image:var(--gradient-hero)] text-[var(--text-primary)] shadow-xl shadow-[var(--accent-glow)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
         >
           <Plus className="w-6 h-6" />
         </Link>

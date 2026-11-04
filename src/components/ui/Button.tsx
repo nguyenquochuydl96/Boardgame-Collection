@@ -24,13 +24,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
       primary:
-        'bg-[image:var(--gradient-hero)] text-white shadow-lg shadow-[#7c3aed]/25 hover:shadow-[#7c3aed]/40 border border-white/15',
+        'bg-[image:var(--gradient-hero)] text-white shadow-lg shadow-[var(--accent-glow)] hover:shadow-[var(--accent-glow)] border border-white/15',
       secondary:
-        'bg-[#1e1e35] text-[#f1f5f9] hover:bg-[#272746] border border-white/10',
+        'bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:brightness-110 border border-[var(--border-subtle)]',
       outline:
-        'bg-transparent text-[#f1f5f9] border border-[#7c3aed]/50 hover:bg-[#7c3aed]/15 hover:border-[#a78bfa]',
+        'bg-transparent text-[var(--text-primary)] border border-[var(--border-glow)] hover:bg-[var(--accent-glow)] hover:border-[var(--accent-neon)]',
       ghost:
-        'bg-transparent text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-white/5 border border-transparent',
+        'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 border border-transparent',
       danger:
         'bg-rose-500/15 text-rose-300 border border-rose-500/35 hover:bg-rose-500/25',
     };
@@ -50,7 +50,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         transition={{ duration: 0.15 }}
         disabled={disabled || isLoading}
         className={cn(
-          'inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-all duration-300 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a78bfa] disabled:opacity-50 disabled:cursor-not-allowed',
+          'inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-all duration-300 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:opacity-50 disabled:cursor-not-allowed',
           variants[variant],
           sizes[size],
           className
@@ -58,10 +58,27 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...(props as React.ComponentPropsWithoutRef<typeof motion.button>)}
       >
         {isLoading && (
-          <span
-            className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin shrink-0"
+          <svg
+            className="animate-spin -ml-1 mr-2 h-4 w-4 text-current"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
             aria-hidden="true"
-          />
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
         )}
         {children}
       </motion.button>

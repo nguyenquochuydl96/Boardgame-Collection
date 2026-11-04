@@ -92,7 +92,7 @@ export const HomePage: React.FC = () => {
         {/* Full-Width Hero Banner */}
         <motion.section
           variants={fadeUpItem}
-          className="relative rounded-3xl overflow-hidden p-6 sm:p-8 lg:p-10 bg-[image:var(--gradient-hero)] shadow-2xl shadow-[#7c3aed]/25 border border-white/15"
+          className="relative rounded-3xl overflow-hidden p-6 sm:p-8 lg:p-10 bg-[image:var(--gradient-hero)] shadow-2xl shadow-[var(--accent-glow)] border border-white/15"
         >
           <div
             className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none"
@@ -101,7 +101,7 @@ export const HomePage: React.FC = () => {
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
               <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-sky-200">
-                Curated by Huy Nguyễn · Tabletop Archive
+                Curated by Heo & Gaming Group · Tabletop Archive
               </p>
               <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight">
                 My Boardgame Collection
@@ -145,14 +145,14 @@ export const HomePage: React.FC = () => {
             label="Total Games Owned"
             value={ownedGamesCount}
             icon={<Dices className="w-5 h-5" />}
-            accentColor="#7c3aed"
+            accentColor="var(--accent-primary)"
             subtitle={`${games.length} total in vault`}
           />
           <StatCard
             label="Sessions Played"
             value={totalSessionsCount}
             icon={<Gamepad2 className="w-5 h-5" />}
-            accentColor="#22d3ee"
+            accentColor="var(--accent-secondary)"
             subtitle="All-time tabletop logs"
           />
           <StatCard
@@ -160,7 +160,7 @@ export const HomePage: React.FC = () => {
             value={totalHoursPlayed}
             suffix="h"
             icon={<Clock className="w-5 h-5" />}
-            accentColor="#10b981"
+            accentColor="var(--accent-green)"
             subtitle={`${totalMinutesPlayed} minutes at the table`}
           />
           <StatCard
@@ -168,7 +168,7 @@ export const HomePage: React.FC = () => {
             value={totalCollectionValue}
             isCurrencyVND
             icon={<Wallet className="w-5 h-5" />}
-            accentColor="#ec4899"
+            accentColor="var(--accent-pink)"
             subtitle="Active shelf valuation"
           />
         </motion.section>
@@ -186,7 +186,7 @@ export const HomePage: React.FC = () => {
             </div>
             <Link
               to="/sessions"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#a78bfa] hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--accent-neon)] hover:text-white transition-colors"
             >
               View All
               <ArrowRight className="w-4 h-4" />
@@ -202,17 +202,17 @@ export const HomePage: React.FC = () => {
                 <Link
                   key={session.id}
                   to={`/sessions/${session.id}`}
-                  className="snap-start shrink-0 w-72 sm:w-80 rounded-2xl bg-[#1a1a2e]/90 border border-white/[0.08] hover:border-[#7c3aed]/50 p-4 transition-all duration-300 group flex gap-3.5"
+                  className="snap-start shrink-0 w-72 sm:w-80 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] hover:border-[var(--border-glow)] p-4 transition-all duration-300 group flex gap-3.5"
                 >
                   <img
                     src={session.gameThumbnail}
                     alt={session.gameName}
                     referrerPolicy="no-referrer"
-                    className="w-20 h-26 rounded-xl object-cover shrink-0 bg-[#1e1e35]"
+                    className="w-20 h-26 rounded-xl object-cover shrink-0 bg-[var(--bg-elevated)]"
                   />
                   <div className="flex-1 min-w-0 flex flex-col justify-between">
                     <div>
-                      <h3 className="font-display font-bold text-base text-white truncate group-hover:text-[#a78bfa] transition-colors">
+                      <h3 className="font-display font-bold text-base text-white truncate group-hover:text-[var(--accent-neon)] transition-colors">
                         {session.gameName}
                       </h3>
                       <p className="text-xs text-[#94a3b8] inline-flex items-center gap-1 mt-1 tabular-nums">
@@ -225,7 +225,7 @@ export const HomePage: React.FC = () => {
                     </div>
 
                     {winner && (
-                      <div className="mt-2 pt-2 border-t border-white/[0.06] flex items-center justify-between text-xs">
+                      <div className="mt-2 pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
                         <span className="inline-flex items-center gap-1 text-amber-300 font-semibold truncate">
                           <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
                           {winner.playerName}
@@ -261,7 +261,7 @@ export const HomePage: React.FC = () => {
               </div>
               <Link
                 to="/stats"
-                className="text-xs font-semibold text-[#a78bfa] hover:text-white transition-colors"
+                className="text-xs font-semibold text-[var(--accent-neon)] hover:text-white transition-colors"
               >
                 Full Analytics →
               </Link>
@@ -280,27 +280,27 @@ export const HomePage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 tabular-nums">
-              <div className="p-3.5 rounded-xl bg-[#16162a] border border-white/[0.06]">
+              <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
                 <span className="text-xs text-[#94a3b8]">In Vault (Own)</span>
                 <p className="font-display font-extrabold text-2xl text-emerald-400 mt-0.5">
                   {games.filter((g) => g.status === 'own').length}
                 </p>
               </div>
-              <div className="p-3.5 rounded-xl bg-[#16162a] border border-white/[0.06]">
+              <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
                 <span className="text-xs text-[#94a3b8]">Lent Out</span>
                 <p className="font-display font-extrabold text-2xl text-orange-400 mt-0.5">
                   {games.filter((g) => g.status === 'lent_out').length}
                 </p>
               </div>
-              <div className="p-3.5 rounded-xl bg-[#16162a] border border-white/[0.06]">
+              <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
                 <span className="text-xs text-[#94a3b8]">Sold Archive</span>
                 <p className="font-display font-extrabold text-2xl text-pink-400 mt-0.5">
                   {games.filter((g) => g.status === 'sold').length}
                 </p>
               </div>
-              <div className="p-3.5 rounded-xl bg-[#16162a] border border-white/[0.06]">
+              <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
                 <span className="text-xs text-[#94a3b8]">Wishlist</span>
-                <p className="font-display font-extrabold text-2xl text-[#a78bfa] mt-0.5">
+                <p className="font-display font-extrabold text-2xl text-[var(--accent-neon)] mt-0.5">
                   {games.filter((g) => g.status === 'wishlist').length}
                 </p>
               </div>
