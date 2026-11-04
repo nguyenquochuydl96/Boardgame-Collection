@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from './cn';
+import { resolveAvatarImage, getSafeDisplayAvatar } from '../../lib/utils';
 
 export interface AvatarProps {
   name: string;
@@ -12,10 +13,12 @@ export interface AvatarProps {
 export const Avatar: React.FC<AvatarProps> = ({
   name,
   avatar,
-  color = '#7c3aed',
+  color = 'var(--accent-primary)',
   size = 'md',
   className,
 }) => {
+  const [imageError, setImageError] = useState(false);
+
   const sizes: Record<NonNullable<AvatarProps['size']>, string> = {
     sm: 'w-7 h-7 text-xs',
     md: 'w-10 h-10 text-base',
@@ -31,7 +34,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     .join('')
     .toUpperCase();
 
-  const isUrl = avatar && (avatar.startsWith('http') || avatar.startsWith('data:'));
+  const imageSrc = resolveAvatarImage(avatar);
 
   return (
     <div
@@ -40,22 +43,23 @@ export const Avatar: React.FC<AvatarProps> = ({
         borderColor: `${color}80`,
       }}
       className={cn(
-        'inline-flex items-center justify-center rounded-full border-2 font-bold text-white shrink-0 select-none overflow-hidden',
+        'inline-flex items-center justify-center rounded-full border-2 font-bold text-white shrink-0 select-none overflow-hidden relative',
         sizes[size],
         className
       )}
       title={name}
     >
-      {isUrl ? (
+      {imageSrc && !imageError ? (
         <img
-          src={avatar}
+          src={imageSrc}
           alt={name}
           loading="lazy"
           referrerPolicy="no-referrer"
+          onError={() => setImageError(true)}
           className="w-full h-full object-cover"
         />
       ) : (
-        <span>{avatar || initials || '?'}</span>
+        <span className="truncate max-w-full px-0.5">{getSafeDisplayAvatar(avatar, initials || '?')}</span>
       )}
     </div>
   );

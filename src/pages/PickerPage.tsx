@@ -26,6 +26,7 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { useGameStore } from '../store/useGameStore';
 import { cn } from '../components/ui/cn';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
+import { resolveAvatarImage, getSafeDisplayAvatar } from '../lib/utils';
 
 type PickerMode = 'first_player' | 'what_to_play';
 type AnimationStyle = 'wheel' | 'card_shuffle';
@@ -287,7 +288,7 @@ export const PickerPage: React.FC = () => {
                   initial={{ opacity: 0, y: 20, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-2 border-amber-400/50 w-full max-w-md shadow-2xl flex items-center justify-between gap-3"
+                  className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-2 border-amber-400/50 w-full max-w-md shadow-2xl flex items-center justify-between gap-3 overflow-hidden"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {chosenResult.thumbnail ? (
@@ -296,9 +297,15 @@ export const PickerPage: React.FC = () => {
                         alt={chosenResult.name}
                         className="w-12 h-12 rounded-xl object-cover border border-amber-400/40 shrink-0"
                       />
+                    ) : resolveAvatarImage(chosenResult.avatar) ? (
+                      <img
+                        src={resolveAvatarImage(chosenResult.avatar)!}
+                        alt={chosenResult.name}
+                        className="w-12 h-12 rounded-xl object-cover border border-amber-400/40 shrink-0"
+                      />
                     ) : (
                       <div className="w-12 h-12 rounded-xl bg-amber-500/30 text-2xl flex items-center justify-center shrink-0 border border-amber-400/50">
-                        {chosenResult.avatar || '👑'}
+                        <span>{getSafeDisplayAvatar(chosenResult.avatar, '👑')}</span>
                       </div>
                     )}
                     <div className="min-w-0">
@@ -344,13 +351,23 @@ export const PickerPage: React.FC = () => {
                       Tích chọn những người có mặt tối nay
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setActivePlayerIds(allPlayers.map((p) => p.id))}
-                    className="text-[11px] text-[var(--accent-neon)] font-bold hover:underline cursor-pointer"
-                  >
-                    Chọn hết
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActivePlayerIds(allPlayers.map((p) => p.id))}
+                      className="text-[11px] text-[var(--accent-neon)] font-bold hover:underline cursor-pointer"
+                    >
+                      Chọn hết
+                    </button>
+                    <span className="text-xs text-[var(--text-muted)]">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setActivePlayerIds([])}
+                      className="text-[11px] text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
+                    >
+                      Bỏ chọn hết
+                    </button>
+                  </div>
                 </div>
 
                 {/* Player List */}
@@ -393,7 +410,7 @@ export const PickerPage: React.FC = () => {
                       className="flex items-center justify-between p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/15 text-[var(--text-primary)]"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-base">{g.avatar}</span>
+                        <span className="text-base">{getSafeDisplayAvatar(g.avatar, '🎲')}</span>
                         <span className="font-bold text-xs truncate">{g.name} (Khách)</span>
                       </div>
                       <button
@@ -444,9 +461,9 @@ export const PickerPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={deselectAllGames}
-                      className="text-[11px] text-[var(--text-secondary)] hover:underline cursor-pointer"
+                      className="text-[11px] text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
                     >
-                      Bỏ chọn
+                      Bỏ chọn hết
                     </button>
                   </div>
                 </div>

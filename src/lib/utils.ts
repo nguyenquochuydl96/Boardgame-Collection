@@ -438,3 +438,42 @@ export function getCollectionTotalValue(games: BoardGame[]): number {
     .filter((g) => g.status === 'own' || g.status === 'lent_out')
     .reduce((sum, g) => sum + (g.purchasePrice || 0), 0);
 }
+
+
+/**
+ * Resolves an avatar string to a valid image src URL or null if it's an emoji/short text.
+ * Robustly handles:
+ * - http(s) URLs
+ * - data: URLs (e.g. data:image/png;base64,...)
+ * - Raw base64 data strings without data: prefix (from iOS / Android catalog exports)
+ */
+export function resolveAvatarImage(avatar?: string | null): string | null {
+  if (!avatar || typeof avatar !== 'string') return null;
+  const trimmed = avatar.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
+  // Check if it's raw base64 data
+  if (trimmed.length > 25) {
+    if (trimmed.startsWith('/9j/')) {
+      return `data:image/jpeg;base64,${trimmed}`;
+    }
+    if (trimmed.startsWith('iVBORw0KGgo')) {
+      return `data:image/png;base64,${trimmed}`;
+    }
+    return `data:image/jpeg;base64,${trimmed}`;
+  }
+  return null;
+}
+
+/**
+ * Returns a clean emoji or short initials for display, never allowing a raw base64 string to leak as text.
+ */
+export function getSafeDisplayAvatar(avatar?: string | null, fallback = '👤'): string {
+  if (!avatar || typeof avatar !== 'string') return fallback;
+  const trimmed = avatar.trim();
+  if (trimmed.length > 10 || resolveAvatarImage(trimmed)) {
+    return fallback;
+  }
+  return trimmed;
+}

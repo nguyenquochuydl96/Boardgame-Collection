@@ -915,7 +915,10 @@ export const StatsPage: React.FC = () => {
                         {headToHead.playerStats.map((st) => (
                           <tr key={st.player.id}>
                             <td className="py-3 px-4 font-display font-bold text-white">
-                              {st.player.avatar} {st.player.name}
+                              <div className="flex items-center gap-2">
+                                <PlayerAvatar player={st.player} size="sm" />
+                                <span>{st.player.name}</span>
+                              </div>
                             </td>
                             <td className="py-3 px-4 text-right font-mono font-bold text-amber-300">
                               {st.winsInShared}
