@@ -530,15 +530,14 @@ export function resolveAvatarImage(avatar?: string | null): string | null {
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:image/')) {
     return trimmed;
   }
-  // Check if it's raw base64 data
-  if (trimmed.length > 25) {
+  // Check if it's raw base64 data without data:image prefix (must have sufficient length and valid base64 signature)
+  if (trimmed.length > 60 && !trimmed.endsWith('.jpg') && !trimmed.endsWith('.png') && !trimmed.endsWith('.jpeg')) {
     if (trimmed.startsWith('/9j/')) {
       return `data:image/jpeg;base64,${trimmed}`;
     }
     if (trimmed.startsWith('iVBORw0KGgo')) {
       return `data:image/png;base64,${trimmed}`;
     }
-    return `data:image/jpeg;base64,${trimmed}`;
   }
   return null;
 }

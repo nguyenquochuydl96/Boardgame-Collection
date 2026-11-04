@@ -1,8 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Shuffle, Crown, RotateCcw } from 'lucide-react';
+import { Sparkles, Shuffle, Crown, RotateCcw, Play, Trophy, Users } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { playTickSound, playFanfareSound, triggerConfetti } from '../../lib/soundEffects';
+import {
+  playTickSound,
+  playFanfareSound,
+  playCardSlideSound,
+  playCardSnapSound,
+  triggerConfetti,
+} from '../../lib/soundEffects';
 import { resolveAvatarImage, getSafeDisplayAvatar } from '../../lib/utils';
 import { cn } from '../ui/cn';
 
@@ -18,13 +24,65 @@ export interface PickerItem {
 export interface MysteryCardShuffleProps {
   items: PickerItem[];
   onSelect: (item: PickerItem) => void;
+  onEnterGame?: (gameId: string) => void;
+  mode?: 'first_player' | 'what_to_play';
 }
 
-type ShuffleStage = 'idle' | 'splitting' | 'riffling' | 'squaring' | 'drawing' | 'revealed';
+type ShuffleStage = 'idle' | 'splitting' | 'riffling' | 'bridging' | 'fanning' | 'drawing' | 'revealed';
+
+// Number of visual cards in the animated deck
+const DECK_CARD_COUNT = 8;
+
+/**
+ * Bulletproof portrait avatar / cover renderer
+ * Guaranteed zero text overflow, instant image error handling, and elegant fallback badge.
+ */
+const CardItemPortrait: React.FC<{ item: PickerItem; size?: number }> = ({ item, size = 84 }) => {
+  const [imgError, setImgError] = useState(false);
+  const imageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
+
+  if (imageSrc && !imgError) {
+    return (
+      <div
+        className="rounded-2xl border-2 border-amber-400/80 shadow-2xl bg-slate-950 overflow-hidden shrink-0 flex items-center justify-center"
+        style={{ width: size, height: size }}
+      >
+        <img
+          src={imageSrc}
+          alt={item.name}
+          onError={() => setImgError(true)}
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  // Safe fallback initials or emoji (never base64 string)
+  const safeEmoji = getSafeDisplayAvatar(item.avatar, '🎲');
+  const accentColor = item.color || '#f59e0b';
+
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: `${accentColor}25`,
+        borderColor: `${accentColor}80`,
+      }}
+      className="rounded-2xl border-2 flex items-center justify-center text-3xl shadow-inner shrink-0 overflow-hidden"
+    >
+      <span className="truncate max-w-full px-1 select-none font-bold text-white">
+        {safeEmoji}
+      </span>
+    </div>
+  );
+};
 
 export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
   items,
   onSelect,
+  onEnterGame,
+  mode = 'first_player',
 }) => {
   const [stage, setStage] = useState<ShuffleStage>('idle');
   const [revealedItem, setRevealedItem] = useState<PickerItem | null>(null);
@@ -48,50 +106,56 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
     clearTimers();
     setRevealedItem(null);
     setCascadedCount(0);
-    setStage('splitting');
-    playTickSound(0.9);
 
-    // Pick a winner upfront
+    // Pick winner upfront
     const chosen = items[Math.floor(Math.random() * items.length)];
 
-    // Step 1: Split into 2 piles (0.45s)
-    const t1 = setTimeout(() => {
-      setStage('riffling');
+    // 1. SPLIT DECK INTO 2 PILES (0.35s)
+    setStage('splitting');
+    playCardSlideSound();
 
-      // Step 2: Cascading interleave riffle (6 cards alternating left/right)
+    const t1 = setTimeout(() => {
+      // 2. RAPID RIFFLE CASCADE INTERLEAVE (0.8s)
+      setStage('riffling');
       let count = 0;
       const riffleInterval = setInterval(() => {
         count++;
         setCascadedCount(count);
-        playTickSound(1.0 + count * 0.12);
+        playTickSound(1.0 + count * 0.1);
 
-        if (count >= 6) {
+        if (count >= DECK_CARD_COUNT) {
           clearInterval(riffleInterval);
 
-          // Step 3: Square deck & Table Tap (0.4s)
-          setStage('squaring');
-          playTickSound(0.85);
+          // 3. CASINO ARCH BRIDGE & FLUSH SNAP (0.35s)
+          setStage('bridging');
+          playCardSnapSound();
 
           const t2 = setTimeout(() => {
-            playTickSound(0.95);
-
-            // Step 4: Draw top card & begin 3D Flip (0.4s)
-            setStage('drawing');
-            setRevealedItem(chosen);
+            // 4. MAGICIAN'S CARD FAN SPREAD (0.45s)
+            setStage('fanning');
+            playCardSlideSound();
 
             const t3 = setTimeout(() => {
-              // Step 5: Revealed & Confetti
-              setStage('revealed');
-              playFanfareSound();
-              triggerConfetti();
-              onSelect(chosen);
+              // 5. DRAW HERO CARD UPWARD (0.35s)
+              setStage('drawing');
+              setRevealedItem(chosen);
+              playCardSlideSound();
+
+              const t4 = setTimeout(() => {
+                // 6. 3D FLIP REVEAL & FANFARE
+                setStage('revealed');
+                playFanfareSound();
+                triggerConfetti();
+                onSelect(chosen);
+              }, 400);
+              timerRef.current.push(t4);
             }, 450);
             timerRef.current.push(t3);
-          }, 380);
+          }, 350);
           timerRef.current.push(t2);
         }
-      }, 120);
-    }, 450);
+      }, 100);
+    }, 380);
 
     timerRef.current.push(t1);
   };
@@ -103,73 +167,66 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
     setStage('idle');
   };
 
-  // Safe Avatar or Image Renderer
-  const renderCardAvatar = (item: PickerItem) => {
-    const imageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
-
-    if (imageSrc) {
-      return (
-        <img
-          src={imageSrc}
-          alt={item.name}
-          className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400/70 shadow-xl bg-slate-950"
-          onError={(e) => {
-            (e.currentTarget as HTMLElement).style.display = 'none';
-          }}
-        />
-      );
-    }
-
-    return (
-      <div className="w-18 h-18 rounded-2xl bg-amber-500/20 text-3xl flex items-center justify-center border-2 border-amber-400/50 shadow-inner">
-        <span>{getSafeDisplayAvatar(item.avatar, '🎲')}</span>
-      </div>
-    );
-  };
-
   return (
     <div className="flex flex-col items-center justify-center py-2 space-y-6 w-full max-w-lg mx-auto">
       {/* 3D Casino Tabletop Stage */}
       <div
         style={{ perspective: 1200 }}
-        className="relative w-full h-80 flex items-center justify-center select-none"
+        className="relative w-full h-84 flex items-center justify-center select-none"
       >
         {/* Physical Base Deck */}
-        <div className="relative w-48 h-64 flex items-center justify-center">
-          {/* Deck Cards (6 cards for realistic riffle interleave) */}
-          {[0, 1, 2, 3, 4, 5].map((i) => {
+        <div className="relative w-52 h-72 flex items-center justify-center">
+          {/* Deck Cards (8 physical cards for realistic riffle interleave & fan) */}
+          {Array.from({ length: DECK_CARD_COUNT }).map((_, i) => {
             const isLeftPile = i % 2 === 0;
             const hasInterleaved = cascadedCount > i;
 
             let x = 0;
-            let y = (5 - i) * 1.5;
-            let rot = (i - 2.5) * 1;
+            let y = (DECK_CARD_COUNT - 1 - i) * 1.5;
+            let rot = (i - DECK_CARD_COUNT / 2) * 0.8;
             let scale = 1;
             let zIndex = i + 1;
 
             if (stage === 'splitting') {
-              x = isLeftPile ? -70 : 70;
-              rot = isLeftPile ? -10 : 10;
-              y = (5 - i) * 2;
+              // Split into two neat piles angled inward like hands holding a deck
+              x = isLeftPile ? -85 : 85;
+              rot = isLeftPile ? -14 : 14;
+              y = (DECK_CARD_COUNT - 1 - i) * 2;
             } else if (stage === 'riffling') {
               if (hasInterleaved) {
-                // Card has dropped into the center stack
-                x = 0;
-                y = (5 - i) * 1.5;
-                rot = (Math.sin(i) * 1.5);
+                // Dropped into center stack with micro flutter
+                x = (Math.sin(i * 2) * 4);
+                y = (DECK_CARD_COUNT - 1 - i) * 1.5;
+                rot = (Math.cos(i * 1.5) * 2);
                 zIndex = 10 + i;
               } else {
-                // Card is still waiting in its side pile
-                x = isLeftPile ? -65 : 65;
-                rot = isLeftPile ? -9 : 9;
-                y = (5 - i) * 2;
+                // Still waiting on left/right side
+                x = isLeftPile ? -80 : 80;
+                rot = isLeftPile ? -12 : 12;
+                y = (DECK_CARD_COUNT - 1 - i) * 2;
                 zIndex = 5;
               }
-            } else if (stage === 'squaring') {
+            } else if (stage === 'bridging') {
+              // Arch up into a bridge
               x = 0;
-              y = (5 - i) * 1.5;
+              y = -18 + (DECK_CARD_COUNT - 1 - i) * 1.5;
               rot = 0;
               zIndex = i + 1;
+            } else if (stage === 'fanning') {
+              // Spread out into an elegant card fan
+              const offset = i - (DECK_CARD_COUNT - 1) / 2;
+              x = offset * 20;
+              rot = offset * 6.5;
+              y = Math.abs(offset) * 2.5;
+              zIndex = 10 + i;
+            } else if (stage === 'drawing' || stage === 'revealed') {
+              // Non-drawn cards fade slightly into the background table
+              const offset = i - (DECK_CARD_COUNT - 1) / 2;
+              x = offset * 18;
+              rot = offset * 5;
+              y = 35 + Math.abs(offset) * 2;
+              scale = 0.92;
+              zIndex = i;
             }
 
             return (
@@ -177,36 +234,36 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
                 key={i}
                 animate={{
                   x,
-                  y: stage === 'squaring' ? [y - 12, y, y - 6, y] : y,
+                  y,
                   rotate: rot,
                   scale,
+                  opacity: (stage === 'drawing' || stage === 'revealed') ? 0.35 : 1,
                 }}
                 transition={{
                   type: 'spring',
-                  stiffness: stage === 'riffling' ? 450 : 350,
-                  damping: 26,
-                  duration: stage === 'squaring' ? 0.35 : undefined,
+                  stiffness: stage === 'riffling' ? 480 : 360,
+                  damping: 24,
                 }}
                 style={{ zIndex }}
-                className="absolute inset-0 rounded-2xl border border-amber-400/40 bg-gradient-to-br from-[#1a2133] via-[#0f1422] to-[#07090f] p-2.5 shadow-2xl flex flex-col justify-between overflow-hidden"
+                className="absolute inset-0 rounded-2xl border-2 border-amber-400/40 bg-gradient-to-br from-[#161c2e] via-[#0d121f] to-[#06080e] p-2.5 shadow-2xl flex flex-col justify-between overflow-hidden"
               >
                 {/* Gold Filigree & Casino Card Back Pattern */}
-                <div className="w-full h-full rounded-xl border border-amber-400/30 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.15),transparent_70%)] flex flex-col items-center justify-between p-3 relative">
-                  <div className="flex justify-between w-full text-[10px] font-mono text-amber-400/70 font-bold">
+                <div className="w-full h-full rounded-xl border border-amber-400/30 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.18),transparent_72%)] flex flex-col items-center justify-between p-3 relative">
+                  <div className="flex justify-between w-full text-xs font-mono text-amber-400/80 font-bold">
                     <span>♠</span>
                     <span>♦</span>
                   </div>
 
-                  <div className="flex flex-col items-center space-y-1">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-400/50 flex items-center justify-center text-amber-300 text-lg shadow-inner">
+                  <div className="flex flex-col items-center space-y-1.5">
+                    <div className="w-11 h-11 rounded-2xl bg-amber-500/15 border border-amber-400/50 flex items-center justify-center text-amber-300 text-xl shadow-inner">
                       🎲
                     </div>
-                    <span className="text-[9px] font-mono tracking-widest text-amber-300/80 uppercase font-extrabold">
+                    <span className="text-[10px] font-mono tracking-widest text-amber-300/90 uppercase font-black">
                       VAULT
                     </span>
                   </div>
 
-                  <div className="flex justify-between w-full text-[10px] font-mono text-amber-400/70 font-bold">
+                  <div className="flex justify-between w-full text-xs font-mono text-amber-400/80 font-bold">
                     <span>♣</span>
                     <span>♥</span>
                   </div>
@@ -222,15 +279,15 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
                 key="drawn-winner-card"
                 initial={{
                   x: 0,
-                  y: 0,
-                  scale: 1,
+                  y: 10,
+                  scale: 0.9,
                   rotateY: 180,
-                  opacity: 0.9,
+                  opacity: 0,
                 }}
                 animate={{
                   x: 0,
-                  y: -10,
-                  scale: stage === 'revealed' ? 1.15 : 1.05,
+                  y: -18,
+                  scale: stage === 'revealed' ? 1.12 : 1.02,
                   rotateY: stage === 'revealed' ? 0 : 90,
                   opacity: 1,
                 }}
@@ -238,38 +295,54 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
                 transition={{
                   type: 'spring',
                   stiffness: 280,
-                  damping: 22,
+                  damping: 20,
                 }}
                 style={{
                   transformStyle: 'preserve-3d',
-                  zIndex: 40,
+                  zIndex: 50,
                 }}
-                className="absolute inset-0 rounded-2xl border-2 border-amber-400 bg-gradient-to-b from-[#1e2333] via-[#121622] to-[#090c12] p-3 shadow-2xl shadow-amber-500/30 flex flex-col items-center justify-between text-center overflow-hidden"
+                className="absolute inset-0 rounded-3xl border-2 border-amber-400 bg-gradient-to-b from-[#1b2236] via-[#101422] to-[#07090f] p-4 shadow-2xl shadow-amber-500/40 flex flex-col items-center justify-between text-center overflow-hidden"
               >
-                {/* Floating Crown Badge */}
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center shadow-lg shadow-amber-500/40 -mt-6 border-2 border-white/20 shrink-0">
-                  <Crown className="w-4 h-4 fill-current" />
+                {/* Floating Crown Gold Laurel Header */}
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-500/50 -mt-7 border-2 border-white/20 shrink-0">
+                  <Crown className="w-5 h-5 fill-current" />
                 </div>
 
                 {/* Card Face Body */}
-                <div className="flex-1 flex flex-col items-center justify-center my-1 space-y-2 w-full px-1 min-w-0">
-                  {renderCardAvatar(revealedItem)}
+                <div className="flex-1 flex flex-col items-center justify-center my-1 space-y-2.5 w-full px-2 min-w-0">
+                  <CardItemPortrait item={revealedItem} size={84} />
 
                   <div className="w-full min-w-0 px-1">
-                    <h3 className="font-display font-extrabold text-sm sm:text-base text-white truncate max-w-full">
+                    <div className="text-[10px] font-mono font-bold tracking-wider uppercase text-amber-300/80 mb-0.5">
+                      {mode === 'first_player' ? '👑 Người Đi Đầu' : '🎯 Game Tối Nay'}
+                    </div>
+                    <h3 className="font-display font-extrabold text-base sm:text-lg text-white truncate max-w-full">
                       {revealedItem.name}
                     </h3>
                     {revealedItem.subtitle && (
-                      <p className="text-[11px] text-amber-300/90 font-medium truncate mt-0.5">
+                      <p className="text-xs text-amber-300/90 font-medium truncate mt-0.5">
                         {revealedItem.subtitle}
                       </p>
                     )}
                   </div>
                 </div>
 
-                {/* Bottom Lucky Badge */}
-                <div className="text-[10px] font-mono text-emerald-300 font-bold bg-emerald-500/20 border border-emerald-500/40 px-3 py-0.5 rounded-full shadow-sm shrink-0">
-                  ✨ LỰA CHỌN MAY MẮN ✨
+                {/* Bottom Lucky Badge or Direct Action Button */}
+                <div className="w-full shrink-0 flex flex-col items-center gap-1.5 pt-1">
+                  {mode === 'what_to_play' && onEnterGame ? (
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => onEnterGame(revealedItem.id)}
+                      className="w-full text-xs shadow-lg py-1.5 font-bold"
+                    >
+                      <Play className="w-3.5 h-3.5 mr-1 fill-current" /> Vào Ván Chơi Ngay
+                    </Button>
+                  ) : (
+                    <div className="text-[10px] font-mono text-emerald-300 font-extrabold bg-emerald-500/20 border border-emerald-500/40 px-3.5 py-1 rounded-full shadow-sm">
+                      ✨ LỰA CHỌN MAY MẮN ✨
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -285,7 +358,7 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
             variant="primary"
             onClick={handleStartShuffle}
             disabled={isBusy || items.length === 0}
-            className="min-w-[200px] shadow-xl shadow-[var(--accent-glow)] text-xs sm:text-sm font-extrabold tracking-wide"
+            className="min-w-[210px] shadow-xl shadow-[var(--accent-glow)] text-xs sm:text-sm font-extrabold tracking-wide"
           >
             <Shuffle className={cn('w-4 h-4 mr-2', isBusy && 'animate-spin')} />
             {isBusy

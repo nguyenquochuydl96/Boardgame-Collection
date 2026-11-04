@@ -291,12 +291,17 @@ export const PickerPage: React.FC = () => {
             ) : animStyle === 'wheel' ? (
               <LuckyWheel items={currentPool} onSelect={setChosenResult} />
             ) : (
-              <MysteryCardShuffle items={currentPool} onSelect={setChosenResult} />
+              <MysteryCardShuffle
+                items={currentPool}
+                onSelect={setChosenResult}
+                onEnterGame={(gameId) => navigate(`/sessions/new?gameId=${gameId}`)}
+                mode={mode}
+              />
             )}
 
-            {/* Chosen Result Modal Card (Floats over stage when chosen) */}
+            {/* Chosen Result Spotlight Card (Floats over stage when chosen via Wheel) */}
             <AnimatePresence>
-              {chosenResult && (
+              {animStyle === 'wheel' && chosenResult && (
                 <motion.div
                   initial={{ opacity: 0, y: 20, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -310,16 +315,14 @@ export const PickerPage: React.FC = () => {
                         alt={chosenResult.name}
                         className="w-12 h-12 rounded-xl object-cover border border-amber-400/40 shrink-0"
                       />
-                    ) : resolveAvatarImage(chosenResult.avatar) ? (
-                      <img
-                        src={resolveAvatarImage(chosenResult.avatar)!}
-                        alt={chosenResult.name}
-                        className="w-12 h-12 rounded-xl object-cover border border-amber-400/40 shrink-0"
-                      />
                     ) : (
-                      <div className="w-12 h-12 rounded-xl bg-amber-500/30 text-2xl flex items-center justify-center shrink-0 border border-amber-400/50">
-                        <span>{getSafeDisplayAvatar(chosenResult.avatar, '👑')}</span>
-                      </div>
+                      <PlayerAvatar
+                        avatar={chosenResult.avatar}
+                        name={chosenResult.name}
+                        color={chosenResult.color}
+                        size="md"
+                        className="border-amber-400/50 shrink-0"
+                      />
                     )}
                     <div className="min-w-0">
                       <div className="text-[10px] font-mono text-amber-300 font-bold uppercase tracking-wider">
