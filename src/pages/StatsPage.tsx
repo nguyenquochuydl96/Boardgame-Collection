@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 import {
   Trophy,
   Clock,
@@ -319,80 +320,44 @@ export const StatsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Navigation Tabs (5 Tabs) */}
+        {/* Navigation Tabs (5 Tabs with sliding spring pill) */}
         <div
           role="tablist"
           className="flex p-1.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] max-w-full overflow-x-auto gap-1"
         >
-          <button
-            type="button"
-            onClick={() => setActiveTab('overview')}
-            className={cn(
-              'min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0',
-              activeTab === 'overview'
-                ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            )}
-          >
-            <BarChart3 className="w-4 h-4 shrink-0" />
-            <span>Tổng Quan &amp; H-Index</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('years')}
-            className={cn(
-              'min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0',
-              activeTab === 'years'
-                ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            )}
-          >
-            <Calendar className="w-4 h-4 shrink-0 text-amber-400" />
-            <span>Theo Năm &amp; Xu Hướng</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('locations')}
-            className={cn(
-              'min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0',
-              activeTab === 'locations'
-                ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            )}
-          >
-            <MapPin className="w-4 h-4 shrink-0 text-rose-400" />
-            <span>Địa Điểm &amp; Quán Quen</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('by_player')}
-            className={cn(
-              'min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0',
-              activeTab === 'by_player'
-                ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            )}
-          >
-            <Users className="w-4 h-4 shrink-0 text-cyan-400" />
-            <span>Bảng Xếp Hạng &amp; Đối Đầu</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('by_game')}
-            className={cn(
-              'min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0',
-              activeTab === 'by_game'
-                ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-            )}
-          >
-            <Dices className="w-4 h-4 shrink-0 text-emerald-400" />
-            <span>Chi Tiết Từng Game</span>
-          </button>
+          {[
+            { id: 'overview', label: 'Tổng Quan & H-Index', icon: BarChart3, iconColor: '' },
+            { id: 'years', label: 'Theo Năm & Xu Hướng', icon: Calendar, iconColor: 'text-amber-400' },
+            { id: 'locations', label: 'Địa Điểm & Quán Quen', icon: MapPin, iconColor: 'text-rose-400' },
+            { id: 'by_player', label: 'Bảng Xếp Hạng & Đối Đầu', icon: Users, iconColor: 'text-cyan-400' },
+            { id: 'by_game', label: 'Chi Tiết Từng Game', icon: Dices, iconColor: 'text-emerald-400' },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as StatsTab)}
+                className={cn(
+                  'relative min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap shrink-0 select-none',
+                  isActive
+                    ? 'text-white'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                )}
+              >
+                {isActive && (
+                  <motion.span
+                    layoutId="stats-nav-pill"
+                    className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] shadow-lg shadow-[var(--accent-glow)] -z-10"
+                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  />
+                )}
+                <Icon className={cn('w-4 h-4 shrink-0 relative z-10', isActive ? 'text-white' : tab.iconColor)} />
+                <span className="relative z-10">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* ========================================================= */}
@@ -639,20 +604,27 @@ export const StatsPage: React.FC = () => {
         {/* ========================================================= */}
         {activeTab === 'years' && (
           <div className="space-y-6">
-            {/* Year Selector Tabs */}
-            <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] w-fit">
+            {/* Year Selector Tabs with sliding spring pill */}
+            <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] w-fit flex-wrap">
               <span className="text-xs font-bold text-[var(--text-secondary)] px-2">Chọn năm:</span>
               <button
                 type="button"
                 onClick={() => setSelectedYear('all')}
                 className={cn(
-                  'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer',
+                  'relative px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none',
                   selectedYear === 'all'
-                    ? 'bg-[var(--accent-primary)] text-white shadow-md'
+                    ? 'text-white'
                     : 'text-[var(--text-secondary)] hover:text-white'
                 )}
               >
-                Tất Cả Các Năm
+                {selectedYear === 'all' && (
+                  <motion.span
+                    layoutId="stats-year-pill"
+                    className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] shadow-md -z-10"
+                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  />
+                )}
+                <span className="relative z-10">Tất Cả Các Năm</span>
               </button>
               {availableYears.map((yr) => (
                 <button
@@ -660,13 +632,20 @@ export const StatsPage: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedYear(yr)}
                   className={cn(
-                    'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer',
+                    'relative px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none',
                     selectedYear === yr
-                      ? 'bg-[var(--accent-primary)] text-white shadow-md'
+                      ? 'text-white'
                       : 'text-[var(--text-secondary)] hover:text-white'
                   )}
                 >
-                  Năm {yr}
+                  {selectedYear === yr && (
+                    <motion.span
+                      layoutId="stats-year-pill"
+                      className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] shadow-md -z-10"
+                      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                    />
+                  )}
+                  <span className="relative z-10">Năm {yr}</span>
                 </button>
               ))}
             </div>

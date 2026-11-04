@@ -23,14 +23,16 @@ export const SessionCard: React.FC<SessionCardProps> = ({
 
   return (
     <motion.div
-      whileHover={{ scale: 1.008, y: -2 }}
-      transition={{ duration: 0.15 }}
+      whileHover={{ scale: 1.012, x: 4 }}
+      whileTap={{ scale: 0.985 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 26 }}
     >
       <Link
         to={`/sessions/${session.id}`}
-        className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] hover:border-[var(--border-glow)] hover:shadow-lg hover:shadow-[var(--accent-glow)] transition-all duration-300 group"
+        className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] hover:border-[var(--border-glow)] hover:shadow-xl hover:shadow-[var(--accent-glow)] transition-all duration-300 group"
       >
-        <div className="w-16 h-20 rounded-xl overflow-hidden shrink-0 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] relative">
+        <div className="w-16 h-20 rounded-xl overflow-hidden shrink-0 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] relative shadow-md">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/40 to-transparent z-10" />
           {!imageError && session.gameThumbnail ? (
             <img
               src={session.gameThumbnail}
@@ -38,7 +40,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({
               loading="lazy"
               referrerPolicy="no-referrer"
               onError={() => setImageError(true)}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-300"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-[image:var(--gradient-card)]">
@@ -61,14 +63,14 @@ export const SessionCard: React.FC<SessionCardProps> = ({
             )}
           </div>
 
-          <div className="mt-1 flex items-center gap-3 text-xs text-[var(--text-secondary)] flex-wrap tabular-nums">
+          <div className="mt-1 flex items-center gap-3 text-xs text-[var(--text-secondary)] flex-wrap tabular-nums font-medium">
             <span className="inline-flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-[var(--accent-neon)]" />
               {formatDate(session.datePlayed)}
             </span>
             {session.durationMinutes ? (
               <>
-                <span aria-hidden="true">·</span>
+                <span aria-hidden="true" className="opacity-40">·</span>
                 <span className="inline-flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-[var(--accent-secondary)]" />
                   {formatDuration(session.durationMinutes)}
@@ -77,7 +79,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({
             ) : null}
             {session.location ? (
               <>
-                <span aria-hidden="true">·</span>
+                <span aria-hidden="true" className="opacity-40">·</span>
                 <span className="inline-flex items-center gap-1 truncate max-w-[200px]">
                   <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                   <span className="truncate">{session.location}</span>
@@ -115,7 +117,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({
           </div>
         </div>
 
-        <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--accent-neon)] group-hover:translate-x-0.5 transition-all shrink-0 hidden sm:block" />
+        <ChevronRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-[var(--accent-neon)] group-hover:translate-x-1 transition-all shrink-0 hidden sm:block" />
       </Link>
     </motion.div>
   );

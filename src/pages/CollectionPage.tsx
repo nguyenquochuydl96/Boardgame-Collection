@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'motion/react';
 import {
   Search,
   LayoutGrid,
@@ -116,7 +117,7 @@ export const CollectionPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Status Filter Bar */}
+        {/* Status Filter Bar with sliding spring pill */}
         <div
           role="tablist"
           aria-label="Filter collection by status"
@@ -137,17 +138,24 @@ export const CollectionPage: React.FC = () => {
                 type="button"
                 onClick={() => setActiveFilter(tab.id)}
                 className={cn(
-                  'min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 border',
+                  'relative min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-2 border select-none',
                   isActive
-                    ? 'bg-[var(--accent-primary)] text-[var(--text-primary)] border-[var(--accent-primary)] shadow-lg shadow-[var(--accent-glow)]'
+                    ? 'text-white border-transparent'
                     : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[var(--border-glow)] hover:text-[var(--text-primary)]'
                 )}
               >
-                <span>{tab.label}</span>
+                {isActive && (
+                  <motion.span
+                    layoutId="collection-filter-pill"
+                    className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] shadow-lg shadow-[var(--accent-glow)] -z-10"
+                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  />
+                )}
+                <span className="relative z-10">{tab.label}</span>
                 <span
                   className={cn(
-                    'px-1.5 py-0.5 rounded-md text-[10px] tabular-nums',
-                    isActive ? 'bg-white/20 text-[var(--text-primary)]' : 'bg-white/5 text-[var(--text-secondary)]'
+                    'relative z-10 px-1.5 py-0.5 rounded-md text-[10px] tabular-nums font-semibold',
+                    isActive ? 'bg-white/25 text-white' : 'bg-white/5 text-[var(--text-secondary)]'
                   )}
                 >
                   {count}
@@ -185,33 +193,47 @@ export const CollectionPage: React.FC = () => {
               </select>
             </div>
 
-            {/* View Mode Switcher */}
+            {/* View Mode Switcher with sliding spring pill */}
             <div className="p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={cn(
-                  'p-2 rounded-lg transition-colors cursor-pointer',
+                  'relative p-2 rounded-lg transition-colors cursor-pointer',
                   viewMode === 'grid'
-                    ? 'bg-[var(--accent-primary)] text-[var(--text-primary)]'
+                    ? 'text-white'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
                 aria-label="Grid view"
               >
-                <LayoutGrid className="w-4 h-4" />
+                {viewMode === 'grid' && (
+                  <motion.span
+                    layoutId="collection-view-pill"
+                    className="absolute inset-0 rounded-lg bg-[image:var(--gradient-hero)] shadow-md -z-10"
+                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  />
+                )}
+                <LayoutGrid className="w-4 h-4 relative z-10" />
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
                 className={cn(
-                  'p-2 rounded-lg transition-colors cursor-pointer',
+                  'relative p-2 rounded-lg transition-colors cursor-pointer',
                   viewMode === 'list'
-                    ? 'bg-[var(--accent-primary)] text-[var(--text-primary)]'
+                    ? 'text-white'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
                 aria-label="List view"
               >
-                <List className="w-4 h-4" />
+                {viewMode === 'list' && (
+                  <motion.span
+                    layoutId="collection-view-pill"
+                    className="absolute inset-0 rounded-lg bg-[image:var(--gradient-hero)] shadow-md -z-10"
+                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  />
+                )}
+                <List className="w-4 h-4 relative z-10" />
               </button>
             </div>
           </div>

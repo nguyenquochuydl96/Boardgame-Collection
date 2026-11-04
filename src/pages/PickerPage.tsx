@@ -158,7 +158,7 @@ export const PickerPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Mode Switcher */}
+          {/* Mode Switcher with sliding spring pill */}
           <div className="flex p-1.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-fit">
             <button
               type="button"
@@ -167,14 +167,21 @@ export const PickerPage: React.FC = () => {
                 setChosenResult(null);
               }}
               className={cn(
-                'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2',
+                'relative px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 select-none',
                 mode === 'first_player'
-                  ? 'bg-[var(--accent-primary)] text-white shadow-md'
+                  ? 'text-white'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
-              <Crown className="w-4 h-4 text-amber-400" />
-              <span>Chọn Người Đi Đầu</span>
+              {mode === 'first_player' && (
+                <motion.span
+                  layoutId="picker-mode-pill"
+                  className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] shadow-md -z-10"
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                />
+              )}
+              <Crown className="w-4 h-4 text-amber-400 relative z-10" />
+              <span className="relative z-10">Chọn Người Đi Đầu</span>
             </button>
             <button
               type="button"
@@ -183,49 +190,70 @@ export const PickerPage: React.FC = () => {
                 setChosenResult(null);
               }}
               className={cn(
-                'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2',
+                'relative px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 select-none',
                 mode === 'what_to_play'
-                  ? 'bg-[var(--accent-primary)] text-white shadow-md'
+                  ? 'text-white'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
-              <Dices className="w-4 h-4 text-[var(--accent-neon)]" />
-              <span>Hôm Nay Chơi Gì?</span>
+              {mode === 'what_to_play' && (
+                <motion.span
+                  layoutId="picker-mode-pill"
+                  className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] shadow-md -z-10"
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                />
+              )}
+              <Dices className="w-4 h-4 text-[var(--accent-neon)] relative z-10" />
+              <span className="relative z-10">Hôm Nay Chơi Gì?</span>
             </button>
           </div>
         </div>
 
-        {/* Animation Switcher Banner */}
+        {/* Animation Switcher Banner with sliding spring pill */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
           <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
             <Sparkles className="w-4 h-4 text-[var(--accent-neon)]" />
             <span>Hiệu Ứng Trải Nghiệm:</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={() => setAnimStyle('wheel')}
               className={cn(
-                'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
+                'relative px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 select-none',
                 animStyle === 'wheel'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
+                  ? 'text-amber-300'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
-              <span>🎡 Vòng Quay May Mắn</span>
+              {animStyle === 'wheel' && (
+                <motion.span
+                  layoutId="picker-anim-pill"
+                  className="absolute inset-0 rounded-lg bg-amber-500/25 border border-amber-500/50 -z-10 shadow-sm"
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                />
+              )}
+              <span className="relative z-10">🎡 Vòng Quay May Mắn</span>
             </button>
             <button
               type="button"
               onClick={() => setAnimStyle('card_shuffle')}
               className={cn(
-                'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
+                'relative px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 select-none',
                 animStyle === 'card_shuffle'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-transparent'
+                  ? 'text-amber-300'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
-              <span>🎴 Xáo &amp; Rút Thẻ Bí Ẩn</span>
+              {animStyle === 'card_shuffle' && (
+                <motion.span
+                  layoutId="picker-anim-pill"
+                  className="absolute inset-0 rounded-lg bg-amber-500/25 border border-amber-500/50 -z-10 shadow-sm"
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                />
+              )}
+              <span className="relative z-10">🎴 Xáo &amp; Rút Thẻ Bí Ẩn</span>
             </button>
           </div>
         </div>

@@ -1,7 +1,6 @@
 import React from 'react';
-import { useAnimatedCounter } from '../../hooks/useAnimatedCounter';
-import { formatVND } from '../../lib/utils';
-import { Card } from '../ui/Card';
+import { TiltCard } from '../ui/TiltCard';
+import { AnimatedNumber } from '../ui/AnimatedNumber';
 import { cn } from '../ui/cn';
 
 export interface StatCardProps {
@@ -21,25 +20,21 @@ export const StatCard: React.FC<StatCardProps> = ({
   suffix = '',
   isCurrencyVND = false,
   icon,
-  accentColor = '#7c3aed',
+  accentColor = 'var(--accent-primary)',
   subtitle,
   className,
 }) => {
-  const animatedValue = useAnimatedCounter(value, 650);
-
-  const formatted = isCurrencyVND
-    ? formatVND(animatedValue)
-    : `${animatedValue.toLocaleString('en-US')}${suffix}`;
-
   return (
-    <Card
+    <TiltCard
+      maxTilt={5}
+      glare={true}
       className={cn(
-        'p-5 relative overflow-hidden flex flex-col justify-between gap-3',
+        'p-5 relative overflow-hidden flex flex-col justify-between gap-3 bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] hover:border-[var(--border-glow)]',
         className
       )}
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs font-semibold text-[#94a3b8] tracking-wide">
+        <span className="text-xs font-semibold text-[var(--text-secondary)] tracking-wide">
           {label}
         </span>
         <div
@@ -48,21 +43,25 @@ export const StatCard: React.FC<StatCardProps> = ({
             color: accentColor,
             borderColor: `${accentColor}40`,
           }}
-          className="w-10 h-10 rounded-xl border flex items-center justify-center shrink-0"
+          className="w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 shadow-sm"
         >
           {icon}
         </div>
       </div>
 
       <div>
-        <p className="font-display font-extrabold text-2xl sm:text-3xl text-[#f1f5f9] tabular-nums tracking-tight">
-          {formatted}
-        </p>
+        <div className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] tabular-nums tracking-tight">
+          {isCurrencyVND ? (
+            <AnimatedNumber value={value} suffix=" ₫" thousandSeparator="." />
+          ) : (
+            <AnimatedNumber value={value} suffix={suffix} thousandSeparator="," />
+          )}
+        </div>
         {subtitle && (
-          <p className="text-xs text-[#94a3b8] mt-1 truncate">{subtitle}</p>
+          <p className="text-xs text-[var(--text-secondary)] mt-1 truncate">{subtitle}</p>
         )}
       </div>
-    </Card>
+    </TiltCard>
   );
 };
 

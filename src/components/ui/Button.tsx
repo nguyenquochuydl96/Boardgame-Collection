@@ -24,9 +24,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
       primary:
-        'bg-[image:var(--gradient-hero)] text-white shadow-lg shadow-[var(--accent-glow)] hover:shadow-[var(--accent-glow)] border border-white/15',
+        'bg-[image:var(--gradient-hero)] text-white shadow-lg shadow-[var(--accent-glow)] hover:shadow-xl hover:shadow-[var(--accent-glow)] border border-white/20',
       secondary:
-        'bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:brightness-110 border border-[var(--border-subtle)]',
+        'bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:brightness-110 border border-[var(--border-subtle)] hover:border-[var(--border-glow)]',
       outline:
         'bg-transparent text-[var(--text-primary)] border border-[var(--border-glow)] hover:bg-[var(--accent-glow)] hover:border-[var(--accent-neon)]',
       ghost:
@@ -46,11 +46,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <motion.button
         ref={ref}
         type={type}
-        whileTap={{ scale: disabled || isLoading ? 1 : 0.95 }}
-        transition={{ duration: 0.15 }}
+        whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
+        whileTap={{ scale: disabled || isLoading ? 1 : 0.96 }}
+        transition={{ type: 'spring', stiffness: 450, damping: 25 }}
         disabled={disabled || isLoading}
         className={cn(
-          'inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-all duration-300 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:opacity-50 disabled:cursor-not-allowed',
+          'inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-all duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:opacity-50 disabled:cursor-not-allowed select-none',
           variants[variant],
           sizes[size],
           className

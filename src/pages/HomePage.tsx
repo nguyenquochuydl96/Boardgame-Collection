@@ -20,6 +20,8 @@ import { Button } from '../components/ui/Button';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { formatDate, formatDuration, getCollectionTotalValue } from '../lib/utils';
+import { AnimatedNumber } from '../components/ui/AnimatedNumber';
+import { TiltCard } from '../components/ui/TiltCard';
 
 const staggerContainer = {
   hidden: { opacity: 0 },
@@ -228,46 +230,56 @@ export const HomePage: React.FC = () => {
                 (p) => p.isWinner || p.playerId === session.winnerId
               );
               return (
-                <Link
+                <motion.div
                   key={session.id}
-                  to={`/sessions/${session.id}`}
-                  className="snap-start shrink-0 w-72 sm:w-80 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] hover:border-[var(--border-glow)] p-4 transition-all duration-300 group flex gap-3.5"
+                  whileHover={{ scale: 1.025, y: -3 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  className="snap-start shrink-0"
                 >
-                  <img
-                    src={session.gameThumbnail}
-                    alt={session.gameName}
-                    referrerPolicy="no-referrer"
-                    className="w-20 h-26 rounded-xl object-cover shrink-0 bg-[var(--bg-elevated)]"
-                  />
-                  <div className="flex-1 min-w-0 flex flex-col justify-between">
-                    <div>
-                      <h3 className="font-display font-bold text-base text-white truncate group-hover:text-[var(--accent-neon)] transition-colors">
-                        {session.gameName}
-                      </h3>
-                      <p className="text-xs text-[#94a3b8] inline-flex items-center gap-1 mt-1 tabular-nums">
-                        <Calendar className="w-3 h-3 text-[#22d3ee]" />
-                        {formatDate(session.datePlayed)}
-                        {session.durationMinutes
-                          ? ` · ${formatDuration(session.durationMinutes)}`
-                          : ''}
-                      </p>
+                  <Link
+                    to={`/sessions/${session.id}`}
+                    className="block w-72 sm:w-80 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] hover:border-[var(--border-glow)] hover:shadow-xl hover:shadow-[var(--accent-glow)] p-4 transition-all duration-300 group flex gap-3.5"
+                  >
+                    <div className="relative w-20 h-26 rounded-xl overflow-hidden bg-[var(--bg-elevated)] shrink-0 shadow-md">
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/40 to-transparent z-10" />
+                      <img
+                        src={session.gameThumbnail}
+                        alt={session.gameName}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-300"
+                      />
                     </div>
-
-                    {winner && (
-                      <div className="mt-2 pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
-                        <span className="inline-flex items-center gap-1 text-amber-300 font-semibold truncate">
-                          <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
-                          {winner.playerName}
-                        </span>
-                        {typeof winner.score === 'number' && (
-                          <span className="font-mono font-bold text-white tabular-nums">
-                            {winner.score} pts
-                          </span>
-                        )}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <h3 className="font-display font-bold text-base text-[var(--text-primary)] truncate group-hover:text-[var(--accent-neon)] transition-colors">
+                          {session.gameName}
+                        </h3>
+                        <p className="text-xs text-[var(--text-secondary)] inline-flex items-center gap-1 mt-1 tabular-nums">
+                          <Calendar className="w-3 h-3 text-[#22d3ee]" />
+                          {formatDate(session.datePlayed)}
+                          {session.durationMinutes
+                            ? ` · ${formatDuration(session.durationMinutes)}`
+                            : ''}
+                        </p>
                       </div>
-                    )}
-                  </div>
-                </Link>
+
+                      {winner && (
+                        <div className="mt-2 pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
+                          <span className="inline-flex items-center gap-1 text-amber-300 font-semibold truncate">
+                            <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                            {winner.playerName}
+                          </span>
+                          {typeof winner.score === 'number' && (
+                            <span className="font-mono font-bold text-[var(--text-primary)] tabular-nums">
+                              {winner.score} pts
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                </motion.div>
               );
             })}
           </div>
@@ -310,28 +322,28 @@ export const HomePage: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3 tabular-nums">
               <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                <span className="text-xs text-[#94a3b8]">In Vault (Own)</span>
-                <p className="font-display font-extrabold text-2xl text-emerald-400 mt-0.5">
-                  {games.filter((g) => g.status === 'own').length}
-                </p>
+                <span className="text-xs text-[var(--text-secondary)]">In Vault (Own)</span>
+                <div className="font-display font-extrabold text-2xl text-emerald-400 mt-0.5">
+                  <AnimatedNumber value={games.filter((g) => g.status === 'own').length} />
+                </div>
               </div>
               <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                <span className="text-xs text-[#94a3b8]">Lent Out</span>
-                <p className="font-display font-extrabold text-2xl text-orange-400 mt-0.5">
-                  {games.filter((g) => g.status === 'lent_out').length}
-                </p>
+                <span className="text-xs text-[var(--text-secondary)]">Lent Out</span>
+                <div className="font-display font-extrabold text-2xl text-orange-400 mt-0.5">
+                  <AnimatedNumber value={games.filter((g) => g.status === 'lent_out').length} />
+                </div>
               </div>
               <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                <span className="text-xs text-[#94a3b8]">Sold Archive</span>
-                <p className="font-display font-extrabold text-2xl text-pink-400 mt-0.5">
-                  {games.filter((g) => g.status === 'sold').length}
-                </p>
+                <span className="text-xs text-[var(--text-secondary)]">Sold Archive</span>
+                <div className="font-display font-extrabold text-2xl text-pink-400 mt-0.5">
+                  <AnimatedNumber value={games.filter((g) => g.status === 'sold').length} />
+                </div>
               </div>
               <div className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                <span className="text-xs text-[#94a3b8]">Wishlist</span>
-                <p className="font-display font-extrabold text-2xl text-[var(--accent-neon)] mt-0.5">
-                  {games.filter((g) => g.status === 'wishlist').length}
-                </p>
+                <span className="text-xs text-[var(--text-secondary)]">Wishlist</span>
+                <div className="font-display font-extrabold text-2xl text-[var(--accent-neon)] mt-0.5">
+                  <AnimatedNumber value={games.filter((g) => g.status === 'wishlist').length} />
+                </div>
               </div>
             </div>
 

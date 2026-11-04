@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { Check, Crown } from 'lucide-react';
 import { Player } from '../../types';
 import { PlayerAvatar } from './PlayerAvatar';
@@ -30,42 +31,26 @@ export const PlayerChip: React.FC<PlayerChipProps> = ({
   className,
 }) => {
   const resolvedName = player?.name || name || 'Player';
-  const resolvedColor = player?.color || color || '#7c3aed';
+  const resolvedColor = player?.color || color || 'var(--accent-primary)';
   const resolvedAvatar = player?.avatar || avatar;
 
-  const Component = onClick ? 'button' : 'div';
-
-  return (
-    <Component
-      type={onClick ? 'button' : undefined}
-      onClick={onClick}
-      style={{
-        borderColor: selected ? resolvedColor : 'rgba(255,255,255,0.1)',
-        backgroundColor: selected ? `${resolvedColor}22` : 'rgba(30,30,53,0.75)',
-      }}
-      className={cn(
-        'inline-flex items-center gap-2 rounded-xl border transition-all duration-200 whitespace-nowrap shrink-0',
-        size === 'sm' ? 'px-2.5 py-1 text-xs' : 'min-h-[42px] px-3.5 py-1.5 text-sm',
-        onClick && 'cursor-pointer hover:border-white/30 active:scale-95',
-        selected && 'shadow-md',
-        className
-      )}
-    >
+  const content = (
+    <>
       <PlayerAvatar
         name={resolvedName}
         avatar={resolvedAvatar}
         color={resolvedColor}
         size="sm"
       />
-      <span className="font-semibold text-[#f1f5f9]">{resolvedName}</span>
+      <span className="font-semibold text-[var(--text-primary)]">{resolvedName}</span>
       {typeof score === 'number' && (
-        <span className="font-mono text-xs text-[#94a3b8] tabular-nums">
+        <span className="font-mono text-xs text-[var(--text-secondary)] tabular-nums">
           ({score})
         </span>
       )}
       {isWinner && (
         <Crown
-          className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0"
+          className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0 animate-bounce"
           aria-label="Winner"
         />
       )}
@@ -75,7 +60,41 @@ export const PlayerChip: React.FC<PlayerChipProps> = ({
           style={{ color: resolvedColor }}
         />
       )}
-    </Component>
+    </>
+  );
+
+  const sharedStyle = {
+    borderColor: selected ? resolvedColor : 'var(--border-subtle)',
+    backgroundColor: selected ? `${resolvedColor}26` : 'var(--bg-surface)',
+  };
+
+  const sharedClasses = cn(
+    'inline-flex items-center gap-2 rounded-xl border transition-all duration-200 whitespace-nowrap shrink-0 select-none',
+    size === 'sm' ? 'px-2.5 py-1 text-xs' : 'min-h-[42px] px-3.5 py-1.5 text-sm',
+    selected && 'shadow-md shadow-[var(--accent-glow)] font-bold',
+    className
+  );
+
+  if (onClick) {
+    return (
+      <motion.button
+        type="button"
+        onClick={onClick}
+        whileHover={{ scale: 1.04, y: -1 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 25 }}
+        style={sharedStyle}
+        className={cn(sharedClasses, 'cursor-pointer hover:border-[var(--border-glow)]')}
+      >
+        {content}
+      </motion.button>
+    );
+  }
+
+  return (
+    <div style={sharedStyle} className={sharedClasses}>
+      {content}
+    </div>
   );
 };
 
