@@ -228,6 +228,7 @@ export const INITIAL_SESSIONS: PlaySession[] = [
 export interface SessionStore {
   sessions: PlaySession[];
   addSession: (session: Omit<PlaySession, 'id' | 'createdAt'>) => PlaySession;
+  bulkAddSessions: (sessions: PlaySession[], replaceExisting?: boolean) => void;
   updateSession: (id: string, updates: Partial<PlaySession>) => void;
   deleteSession: (id: string) => void;
   getSessionById: (id: string) => PlaySession | undefined;
@@ -249,6 +250,16 @@ export const useSessionStore = create<SessionStore>()(
           sessions: [newSession, ...state.sessions],
         }));
         return newSession;
+      },
+      bulkAddSessions: (newSessions, replaceExisting = false) => {
+        set((state) => {
+          if (replaceExisting) {
+            return { sessions: newSessions };
+          }
+          const existingIds = new Set(state.sessions.map((s) => s.id));
+          const toAdd = newSessions.filter((s) => !existingIds.has(s.id));
+          return { sessions: [...toAdd, ...state.sessions] };
+        });
       },
       updateSession: (id, updates) => {
         set((state) => ({

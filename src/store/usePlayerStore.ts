@@ -37,6 +37,7 @@ export const INITIAL_PLAYERS: Player[] = [
 export interface PlayerStore {
   players: Player[];
   addPlayer: (player: Omit<Player, 'id' | 'createdAt'>) => Player;
+  bulkAddPlayers: (players: Player[], replaceExisting?: boolean) => void;
   updatePlayer: (id: string, updates: Partial<Player>) => void;
   deletePlayer: (id: string) => void;
   getPlayerById: (id: string) => Player | undefined;
@@ -56,6 +57,19 @@ export const usePlayerStore = create<PlayerStore>()(
           players: [...state.players, newPlayer],
         }));
         return newPlayer;
+      },
+      bulkAddPlayers: (newPlayers, replaceExisting = false) => {
+        set((state) => {
+          if (replaceExisting) {
+            return { players: newPlayers };
+          }
+          const existingNames = new Set(state.players.map((p) => p.name.toLowerCase()));
+          const existingIds = new Set(state.players.map((p) => p.id));
+          const toAdd = newPlayers.filter(
+            (p) => !existingNames.has(p.name.toLowerCase()) && !existingIds.has(p.id)
+          );
+          return { players: [...state.players, ...toAdd] };
+        });
       },
       updatePlayer: (id, updates) => {
         set((state) => ({

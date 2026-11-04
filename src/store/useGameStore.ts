@@ -126,6 +126,7 @@ export const INITIAL_GAMES: BoardGame[] = [
 export interface GameStore {
   games: BoardGame[];
   addGame: (game: Omit<BoardGame, 'id' | 'addedDate'>) => BoardGame;
+  bulkAddGames: (games: BoardGame[], replaceExisting?: boolean) => void;
   updateGame: (id: string, updates: Partial<BoardGame>) => void;
   deleteGame: (id: string) => void;
   getGameById: (id: string) => BoardGame | undefined;
@@ -145,6 +146,19 @@ export const useGameStore = create<GameStore>()(
           games: [newGame, ...state.games],
         }));
         return newGame;
+      },
+      bulkAddGames: (newGames, replaceExisting = false) => {
+        set((state) => {
+          if (replaceExisting) {
+            return { games: newGames };
+          }
+          const existingNames = new Set(state.games.map((g) => g.name.toLowerCase()));
+          const existingIds = new Set(state.games.map((g) => g.id));
+          const toAdd = newGames.filter(
+            (g) => !existingNames.has(g.name.toLowerCase()) && !existingIds.has(g.id)
+          );
+          return { games: [...toAdd, ...state.games] };
+        });
       },
       updateGame: (id, updates) => {
         set((state) => ({

@@ -1,11 +1,31 @@
 import React, { useState } from 'react';
-import { Upload, FileText, Check, AlertCircle, Sparkles, User, Database } from 'lucide-react';
+import {
+  Upload,
+  FileText,
+  Check,
+  AlertCircle,
+  Sparkles,
+  User,
+  Database,
+  Gamepad2,
+  Users,
+  Trophy,
+  Archive,
+} from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { parseImportFile, ImportPreviewItem } from '../../lib/importer';
+import {
+  parseImportFile,
+  parseBGCatalogZip,
+  parseBGCatalogJsonObject,
+  ImportPreviewItem,
+  FullBGCatalogImportResult,
+} from '../../lib/importer';
 import { importBGGCollection } from '../../lib/bgg';
 import { useGameStore } from '../../store/useGameStore';
+import { usePlayerStore } from '../../store/usePlayerStore';
+import { useSessionStore } from '../../store/useSessionStore';
 import { createGameCoverDataUri } from '../../lib/utils';
 import { GameStatus } from '../../types';
 
@@ -14,42 +34,120 @@ export interface CollectionImportModalProps {
   onClose: () => void;
 }
 
-export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ isOpen, onClose }) => {
+export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
   const addGame = useGameStore((s) => s.addGame);
+  const bulkAddGames = useGameStore((s) => s.bulkAddGames);
+  const bulkAddPlayers = usePlayerStore((s) => s.bulkAddPlayers);
+  const bulkAddSessions = useSessionStore((s) => s.bulkAddSessions);
 
   const [activeTab, setActiveTab] = useState<'file' | 'bgg'>('file');
   const [bggUsername, setBggUsername] = useState('');
   const [loading, setLoading] = useState(false);
-  const [previewItems, setPreviewItems] = useState<ImportPreviewItem[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [successCount, setSuccessCount] = useState<number | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Simple game preview list (from CSV or basic JSON)
+  const [previewItems, setPreviewItems] = useState<ImportPreviewItem[]>([]);
+
+  // Full backup result (from BG Catalog ZIP or complete JSON)
+  const [fullBackup, setFullBackup] =
+    useState<FullBGCatalogImportResult | null>(null);
+  const [importOptions, setImportOptions] = useState({
+    games: true,
+    players: true,
+    sessions: true,
+    replaceExisting: true,
+  });
 
   // Handle File Upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setError(null);
-    setSuccessCount(null);
-    const reader = new FileReader();
+    setSuccessMessage(null);
+    setPreviewItems([]);
+    setFullBackup(null);
+    setLoading(true);
 
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      if (!content) return;
+    try {
+      const fileName = file.name.toLowerCase();
 
-      const parsed = parseImportFile(content);
-      if (parsed.length === 0) {
-        setError('Could not find any boardgames in this file. Please ensure it is a valid CSV or JSON export from BG Catalog or BGG.');
-      } else {
-        setPreviewItems(parsed);
+      // Case 1: ZIP file (e.g. BGGCatalogExport_*.zip)
+      if (fileName.endsWith('.zip')) {
+        const result = await parseBGCatalogZip(file);
+        setFullBackup(result);
+        setLoading(false);
+        return;
       }
-    };
 
-    reader.onerror = () => {
-      setError('Error reading file. Please try again.');
-    };
+      // Case 2: JSON file
+      if (fileName.endsWith('.json')) {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
 
-    reader.readAsText(file);
+        // Check if it's a full BG Catalog export object
+        if (parsed.games && (parsed.plays || parsed.players)) {
+          const result = parseBGCatalogJsonObject(parsed);
+          setFullBackup(result);
+          setLoading(false);
+          return;
+        }
+
+        // Otherwise treat as simple games list
+        const items = parseImportFile(text);
+        if (items.length > 0) {
+          setPreviewItems(items);
+        } else {
+          setError('Could not find games in this JSON file.');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Case 3: CSV file
+      const text = await file.text();
+      const items = parseImportFile(text);
+      if (items.length > 0) {
+        setPreviewItems(items);
+      } else {
+        setError(
+          'Could not find boardgames in this CSV file. Please verify the column headers.'
+        );
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error parsing file. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle Full BG Catalog Import (1-Click Restore)
+  const handleExecuteFullRestore = () => {
+    if (!fullBackup) return;
+
+    const { games, players, sessions, summary } = fullBackup;
+    const replace = importOptions.replaceExisting;
+
+    if (importOptions.games && games.length > 0) {
+      bulkAddGames(games, replace);
+    }
+
+    if (importOptions.players && players.length > 0) {
+      bulkAddPlayers(players, replace);
+    }
+
+    if (importOptions.sessions && sessions.length > 0) {
+      bulkAddSessions(sessions, replace);
+    }
+
+    setSuccessMessage(
+      `Đã nạp thành công ${importOptions.games ? `${summary.gameCount} boardgame, ` : ''}${importOptions.players ? `${summary.playerCount} người chơi, ` : ''}${importOptions.sessions ? `${summary.playCount} ván chơi` : ''} vào Vault!`
+    );
+    setFullBackup(null);
   };
 
   // Handle BGG Username Sync
@@ -61,7 +159,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ is
 
     setLoading(true);
     setError(null);
-    setSuccessCount(null);
+    setSuccessMessage(null);
 
     try {
       const items = await importBGGCollection(bggUsername.trim());
@@ -89,20 +187,24 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ is
     }
   };
 
-  // Toggle selection
+  // Toggle selection for simple list
   const toggleItem = (index: number) => {
     setPreviewItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, selected: !item.selected } : item))
+      prev.map((item, i) =>
+        i === index ? { ...item, selected: !item.selected } : item
+      )
     );
   };
 
   const toggleAll = () => {
     const allSelected = previewItems.every((i) => i.selected);
-    setPreviewItems((prev) => prev.map((item) => ({ ...item, selected: !allSelected })));
+    setPreviewItems((prev) =>
+      prev.map((item) => ({ ...item, selected: !allSelected }))
+    );
   };
 
-  // Execute Import
-  const handleExecuteImport = () => {
+  // Execute Simple Import
+  const handleExecuteSimpleImport = () => {
     const selected = previewItems.filter((i) => i.selected);
     if (selected.length === 0) return;
 
@@ -130,16 +232,21 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ is
         notes: item.notes,
         thumbnail: cover,
         image: cover,
-        description: `${item.name} imported from external collection.`,
+        description: `${item.name} imported into collection.`,
       });
     }
 
-    setSuccessCount(selected.length);
+    setSuccessMessage(`Đã thêm thành công ${selected.length} boardgame vào bộ sưu tập!`);
     setPreviewItems([]);
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Import Collection" maxWidthClass="max-w-2xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Import Dữ Liệu Bộ Sưu Tập"
+      maxWidthClass="max-w-2xl"
+    >
       <div className="space-y-5 text-sm">
         {/* Tabs */}
         <div className="flex p-1 rounded-xl bg-[#16162a] border border-white/10">
@@ -153,7 +260,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ is
             }`}
           >
             <Upload className="w-3.5 h-3.5" />
-            From File (BG Catalog / CSV / JSON)
+            File BG Catalog (.ZIP / .JSON / .CSV)
           </button>
           <button
             type="button"
@@ -165,28 +272,155 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ is
             }`}
           >
             <User className="w-3.5 h-3.5" />
-            From BGG Username
+            Đồng bộ BGG Username
           </button>
         </div>
 
-        {/* Tab 1: File Upload */}
-        {activeTab === 'file' && (
+        {/* Tab 1: File Upload Box */}
+        {activeTab === 'file' && !fullBackup && previewItems.length === 0 && (
           <div className="p-6 rounded-2xl border-2 border-dashed border-white/15 hover:border-[#7c3aed]/50 bg-[#1e1e35]/40 text-center space-y-3 transition-colors">
             <div className="w-12 h-12 rounded-2xl bg-[#7c3aed]/20 text-[#a78bfa] mx-auto flex items-center justify-center">
-              <FileText className="w-6 h-6" />
+              <Archive className="w-6 h-6" />
             </div>
             <div>
-              <p className="font-bold text-white">Upload BG Catalog CSV or JSON Export</p>
-              <p className="text-xs text-[#94a3b8] mt-0.5">
-                Compatible with BG Catalog iOS exports, BGG collection CSVs, or generic game lists.
+              <p className="font-bold text-white text-base">
+                Kéo thả file Export từ BG Catalog vào đây
+              </p>
+              <p className="text-xs text-[#94a3b8] mt-1 max-w-md mx-auto">
+                Hỗ trợ trực tiếp file sao lưu <strong className="text-white">.ZIP</strong> hoặc{' '}
+                <strong className="text-white">.JSON</strong> xuất từ BG Catalog (iOS). Tự động nạp
+                toàn bộ Game, Bạn bè &amp; 1.000+ Ván chơi lịch sử!
               </p>
             </div>
             <label className="inline-block cursor-pointer">
-              <span className="px-4 py-2 rounded-xl bg-[image:var(--gradient-hero)] text-white text-xs font-bold shadow hover:opacity-95 transition-opacity inline-flex items-center gap-1.5">
-                <Upload className="w-3.5 h-3.5" /> Choose File
+              <span className="px-5 py-2.5 rounded-xl bg-[image:var(--gradient-hero)] text-white text-xs font-bold shadow hover:opacity-95 transition-opacity inline-flex items-center gap-2 cursor-pointer">
+                <Upload className="w-4 h-4" /> Chọn File (.zip / .json / .csv)
               </span>
-              <input type="file" accept=".csv,.json,.txt" onChange={handleFileUpload} className="hidden" />
+              <input
+                type="file"
+                accept=".zip,.json,.csv,.txt"
+                onChange={handleFileUpload}
+                className="hidden"
+                disabled={loading}
+              />
             </label>
+            {loading && (
+              <p className="text-xs text-[#a78bfa] animate-pulse">
+                Đang đọc và phân tích dữ liệu...
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* FULL BG CATALOG BACKUP PREVIEW CARD */}
+        {fullBackup && (
+          <div className="p-5 rounded-2xl bg-[#16162a] border border-[#7c3aed]/40 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-[image:var(--gradient-hero)] flex items-center justify-center text-xl shadow-lg shadow-[#7c3aed]/30">
+                  🎉
+                </div>
+                <div>
+                  <h4 className="font-bold text-white text-sm">
+                    Đã nhận diện bản sao lưu BG Catalog hoàn chỉnh!
+                  </h4>
+                  <p className="text-xs text-[#94a3b8]">
+                    Bản xuất này chứa đầy đủ kho game, người chơi và lịch sử các ván đấu.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 rounded-xl bg-[#1e1e35] border border-white/5 space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-[#22d3ee]">
+                  <Gamepad2 className="w-4 h-4" />
+                  <span className="font-bold">Board Games</span>
+                </div>
+                <p className="text-2xl font-black text-white tabular-nums">
+                  {fullBackup.summary.gameCount}
+                </p>
+                <p className="text-[10px] text-[#94a3b8]">
+                  {fullBackup.summary.ownCount} sở hữu · {fullBackup.summary.soldCount} đã bán
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[#1e1e35] border border-white/5 space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-[#a78bfa]">
+                  <Users className="w-4 h-4" />
+                  <span className="font-bold">Người chơi</span>
+                </div>
+                <p className="text-2xl font-black text-white tabular-nums">
+                  {fullBackup.summary.playerCount}
+                </p>
+                <p className="text-[10px] text-[#94a3b8] truncate">
+                  {fullBackup.players.map((p) => p.name).slice(0, 3).join(', ')}...
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[#1e1e35] border border-white/5 space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-[#ec4899]">
+                  <Trophy className="w-4 h-4" />
+                  <span className="font-bold">Ván đấu đã chơi</span>
+                </div>
+                <p className="text-2xl font-black text-white tabular-nums">
+                  {fullBackup.summary.playCount}
+                </p>
+                <p className="text-[10px] text-[#94a3b8]">Kèm điểm &amp; người thắng</p>
+              </div>
+            </div>
+
+            {/* Options */}
+            <div className="pt-2 border-t border-white/10 space-y-2 text-xs">
+              <p className="font-bold text-white">Tùy chọn nạp:</p>
+              <div className="flex flex-wrap gap-4 text-[#94a3b8]">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={importOptions.games}
+                    onChange={(e) =>
+                      setImportOptions((o) => ({ ...o, games: e.target.checked }))
+                    }
+                    className="rounded text-[#7c3aed]"
+                  />
+                  <span>Nạp {fullBackup.summary.gameCount} Games</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={importOptions.players}
+                    onChange={(e) =>
+                      setImportOptions((o) => ({ ...o, players: e.target.checked }))
+                    }
+                    className="rounded text-[#7c3aed]"
+                  />
+                  <span>Nạp {fullBackup.summary.playerCount} Người chơi</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={importOptions.sessions}
+                    onChange={(e) =>
+                      setImportOptions((o) => ({ ...o, sessions: e.target.checked }))
+                    }
+                    className="rounded text-[#7c3aed]"
+                  />
+                  <span>Nạp {fullBackup.summary.playCount} Ván chơi</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+              <Button variant="ghost" size="sm" onClick={() => setFullBackup(null)}>
+                Hủy bỏ
+              </Button>
+              <Button variant="primary" onClick={handleExecuteFullRestore}>
+                <Sparkles className="w-4 h-4 mr-1.5" />
+                Khôi Phục Toàn Bộ Dữ Liệu
+              </Button>
+            </div>
           </div>
         )}
 
@@ -194,19 +428,23 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ is
         {activeTab === 'bgg' && (
           <div className="space-y-3">
             <p className="text-xs text-[#94a3b8]">
-              Enter your public BoardGameGeek username to retrieve all games marked as "Owned".
+              Nhập BoardGameGeek username công khai để kéo toàn bộ game đánh dấu "Owned".
             </p>
             <div className="flex gap-2">
               <div className="flex-1">
                 <Input
-                  placeholder="e.g. your_bgg_username"
+                  placeholder="ví dụ: your_bgg_username"
                   value={bggUsername}
                   onChange={(e) => setBggUsername(e.target.value)}
                   leftIcon={<Database className="w-4 h-4 text-[#22d3ee]" />}
                 />
               </div>
-              <Button variant="primary" onClick={handleFetchBGG} disabled={loading || !bggUsername.trim()}>
-                {loading ? 'Fetching...' : 'Sync Games'}
+              <Button
+                variant="primary"
+                onClick={handleFetchBGG}
+                disabled={loading || !bggUsername.trim()}
+              >
+                {loading ? 'Đang tải...' : 'Kéo Games'}
               </Button>
             </div>
           </div>
@@ -221,27 +459,32 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ is
         )}
 
         {/* Success message */}
-        {successCount !== null && (
+        {successMessage && (
           <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4" />
-              <span>Successfully imported {successCount} boardgames into your vault!</span>
+              <span>{successMessage}</span>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
-              Done
+              Đóng
             </Button>
           </div>
         )}
 
-        {/* Preview List */}
+        {/* Simple Game Preview List */}
         {previewItems.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs text-[#94a3b8]">
               <span>
-                Found <strong className="text-white">{previewItems.length}</strong> games ({previewItems.filter((i) => i.selected).length} selected)
+                Tìm thấy <strong className="text-white">{previewItems.length}</strong> games (
+                {previewItems.filter((i) => i.selected).length} đã chọn)
               </span>
-              <button type="button" onClick={toggleAll} className="text-[#a78bfa] hover:underline cursor-pointer">
-                {previewItems.every((i) => i.selected) ? 'Deselect All' : 'Select All'}
+              <button
+                type="button"
+                onClick={toggleAll}
+                className="text-[#a78bfa] hover:underline cursor-pointer"
+              >
+                {previewItems.every((i) => i.selected) ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
               </button>
             </div>
 
@@ -251,7 +494,9 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ is
                   key={idx}
                   onClick={() => toggleItem(idx)}
                   className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
-                    item.selected ? 'bg-[#7c3aed]/15 border border-[#7c3aed]/30' : 'opacity-60 hover:opacity-100'
+                    item.selected
+                      ? 'bg-[#7c3aed]/15 border border-[#7c3aed]/30'
+                      : 'opacity-60 hover:opacity-100'
                   }`}
                 >
                   <input
@@ -261,7 +506,11 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ is
                     className="rounded border-white/20 text-[#7c3aed] focus:ring-[#7c3aed]"
                   />
                   {item.thumbnail ? (
-                    <img src={item.thumbnail} alt={item.name} className="w-9 h-11 object-cover rounded bg-[#1e1e35]" />
+                    <img
+                      src={item.thumbnail}
+                      alt={item.name}
+                      className="w-9 h-11 object-cover rounded bg-[#1e1e35]"
+                    />
                   ) : (
                     <div className="w-9 h-11 rounded bg-[#1e1e35] flex items-center justify-center text-xs text-[#94a3b8]">
                       🎲
@@ -270,7 +519,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ is
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-white text-xs truncate">{item.name}</p>
                     <p className="text-[11px] text-[#94a3b8]">
-                      {item.yearPublished || 'Year N/A'} · {item.minPlayers}-{item.maxPlayers} players · Status: {item.status}
+                      {item.yearPublished || 'N/A'} · {item.minPlayers}-{item.maxPlayers} người · Trạng thái: {item.status}
                     </p>
                   </div>
                 </div>
@@ -279,11 +528,16 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({ is
 
             <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
               <Button variant="ghost" size="sm" onClick={() => setPreviewItems([])}>
-                Clear
+                Xóa
               </Button>
-              <Button variant="primary" size="sm" onClick={handleExecuteImport} disabled={!previewItems.some((i) => i.selected)}>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleExecuteSimpleImport}
+                disabled={!previewItems.some((i) => i.selected)}
+              >
                 <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                Import {previewItems.filter((i) => i.selected).length} Games
+                Nạp {previewItems.filter((i) => i.selected).length} Games
               </Button>
             </div>
           </div>
