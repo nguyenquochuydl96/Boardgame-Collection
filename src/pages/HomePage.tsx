@@ -173,6 +173,35 @@ export const HomePage: React.FC = () => {
           />
         </motion.section>
 
+        {/* Game Night Picker Quick Access Banner */}
+        <motion.section variants={fadeUpItem}>
+          <Link
+            to="/picker"
+            className="block p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-600/15 border border-amber-500/30 hover:border-amber-400 transition-all group shadow-xl relative overflow-hidden"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl group-hover:scale-110 group-hover:rotate-12 transition-transform shadow-inner">
+                  🎲
+                </div>
+                <div>
+                  <h3 className="font-display font-extrabold text-lg sm:text-xl text-[var(--text-primary)] group-hover:text-amber-300 transition-colors">
+                    Hôm Nay Chơi Gì? &amp; Vòng Quay Người Đi Đầu
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-0.5">
+                    Quay may mắn hoặc xáo rút thẻ bài bí ẩn để chọn game hoặc chọn người đi đầu ngay tức thì!
+                  </p>
+                </div>
+              </div>
+
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/30 group-hover:brightness-110 shrink-0 w-fit">
+                <span>Quay Ngay</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </Link>
+        </motion.section>
+
         {/* Recently Played Horizontal Scroll List */}
         <motion.section variants={fadeUpItem} className="space-y-4">
           <div className="flex items-center justify-between">

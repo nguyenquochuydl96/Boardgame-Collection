@@ -17,6 +17,7 @@ import { SessionDetailPage } from './pages/SessionDetailPage';
 import { PlayersPage } from './pages/PlayersPage';
 import { PlayerDetailPage } from './pages/PlayerDetailPage';
 import { StatsPage } from './pages/StatsPage';
+import { PickerPage } from './pages/PickerPage';
 
 const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
@@ -34,6 +35,8 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/players" element={<PlayersPage />} />
         <Route path="/players/:id" element={<PlayerDetailPage />} />
         <Route path="/stats" element={<StatsPage />} />
+        <Route path="/picker" element={<PickerPage />} />
+        <Route path="/tools" element={<PickerPage />} />
       </Routes>
     </AnimatePresence>
   );

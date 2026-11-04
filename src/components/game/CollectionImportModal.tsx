@@ -27,6 +27,8 @@ import { useGameStore } from '../../store/useGameStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { useSessionStore } from '../../store/useSessionStore';
 import { createGameCoverDataUri } from '../../lib/utils';
+import { exportVaultJSON, exportGamesCSV, exportSessionsCSV } from '../../lib/exportVault';
+import { Download, HardDriveDownload } from 'lucide-react';
 import { GameStatus } from '../../types';
 
 export interface CollectionImportModalProps {
@@ -42,8 +44,11 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
   const bulkAddGames = useGameStore((s) => s.bulkAddGames);
   const bulkAddPlayers = usePlayerStore((s) => s.bulkAddPlayers);
   const bulkAddSessions = useSessionStore((s) => s.bulkAddSessions);
+  const games = useGameStore((s) => s.games);
+  const players = usePlayerStore((s) => s.players);
+  const sessions = useSessionStore((s) => s.sessions);
 
-  const [activeTab, setActiveTab] = useState<'file' | 'bgg'>('file');
+  const [activeTab, setActiveTab] = useState<'file' | 'export' | 'bgg'>('file');
   const [bggUsername, setBggUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +93,27 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
       if (fileName.endsWith('.json')) {
         const text = await file.text();
         const parsed = JSON.parse(text);
+
+        // Check if it's our own BoardGameVault full backup
+        if (parsed.vaultBackup === true || (parsed.games && parsed.sessions && parsed.players)) {
+          const result: FullBGCatalogImportResult = {
+            games: parsed.games || [],
+            players: parsed.players || [],
+            sessions: parsed.sessions || [],
+            summary: {
+              gameCount: parsed.games?.length || 0,
+              playCount: parsed.sessions?.length || 0,
+              playerCount: parsed.players?.length || 0,
+              ownCount: (parsed.games || []).filter((g: any) => g.status === 'own').length,
+              soldCount: (parsed.games || []).filter((g: any) => g.status === 'sold').length,
+              prevOwnedCount: (parsed.games || []).filter((g: any) => g.status === 'prev_owned').length,
+              wishlistCount: (parsed.games || []).filter((g: any) => g.status === 'wishlist').length,
+            },
+          };
+          setFullBackup(result);
+          setLoading(false);
+          return;
+        }
 
         // Check if it's a full BG Catalog export object
         if (parsed.games && (parsed.plays || parsed.players)) {
@@ -253,26 +279,38 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('file')}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
               activeTab === 'file'
                 ? 'bg-[image:var(--gradient-hero)] text-white shadow'
                 : 'text-[#94a3b8] hover:text-white'
             }`}
           >
             <Upload className="w-3.5 h-3.5" />
-            File BG Catalog (.ZIP / .JSON / .CSV)
+            Nhập File (.ZIP / .JSON)
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('export')}
+            className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+              activeTab === 'export'
+                ? 'bg-[image:var(--gradient-hero)] text-white shadow'
+                : 'text-[#94a3b8] hover:text-white'
+            }`}
+          >
+            <Download className="w-3.5 h-3.5" />
+            Sao Lưu &amp; Xuất Dữ Liệu
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('bgg')}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+            className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
               activeTab === 'bgg'
                 ? 'bg-[image:var(--gradient-hero)] text-white shadow'
                 : 'text-[#94a3b8] hover:text-white'
             }`}
           >
             <User className="w-3.5 h-3.5" />
-            Đồng bộ BGG Username
+            BGG Sync
           </button>
         </div>
 
