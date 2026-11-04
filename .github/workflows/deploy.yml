@@ -31,8 +31,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
-          npm install --no-save lightningcss-linux-x64-gnu@1.32.0 @rolldown/binding-linux-x64-gnu@1.2.15
+          rm -f package-lock.json
+          npm install
 
       - name: Build
         run: npx vite build
