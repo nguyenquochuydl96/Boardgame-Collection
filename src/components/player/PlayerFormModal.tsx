@@ -462,7 +462,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
               onChange={(e) => setSpecialtyGameId(e.target.value)}
               className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-white focus:outline-none focus:border-emerald-400 cursor-pointer"
             >
-              <option value="">🏆 Tự động (Win Rate cao nhất)</option>
+              <option value="">🏆 Tự động (Win Rate cao nhất ≥ 5 ván)</option>
               {games.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -470,7 +470,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
               ))}
             </select>
             <p className="text-[10px] text-[var(--text-muted)]">
-              Tựa game bạn tự tin thắng nhất
+              Tự tính game từ 5 ván trở lên (loại trừ playtest) hoặc tự ghim
             </p>
           </div>
 
@@ -485,7 +485,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
               onChange={(e) => setWeaknessGameId(e.target.value)}
               className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-white focus:outline-none focus:border-rose-400 cursor-pointer"
             >
-              <option value="">💀 Tự động (Thua nhiều nhất)</option>
+              <option value="">💀 Tự động (Thua nhiều nhất ≥ 5 ván)</option>
               {games.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -493,7 +493,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
               ))}
             </select>
             <p className="text-[10px] text-[var(--text-muted)]">
-              Game kỵ rơ, chơi nhiều mà khó thắng
+              Tự tính game kỵ rơ từ 5 ván trở lên hoặc tự ghim
             </p>
           </div>
         </div>

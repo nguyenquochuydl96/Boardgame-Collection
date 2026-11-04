@@ -148,7 +148,7 @@ export const PlayerDetailPage: React.FC = () => {
     return sorted[0] ? { ...sorted[0], isPinned: false } : null;
   }, [player.favoriteGameId, perGameStats, gamesById]);
 
-  // Signature Game: Pinned or Highest Win Rate (min 2 plays)
+  // Signature Game: Pinned or Highest Win Rate (minimum 5 plays to eliminate playtest noise)
   const signatureGame = useMemo(() => {
     if (player.specialtyGameId) {
       const stat = perGameStats.find((g) => g.gameId === player.specialtyGameId);
@@ -166,18 +166,16 @@ export const PlayerDetailPage: React.FC = () => {
         };
       }
     }
-    // Candidate with highest win rate with at least 2 plays
-    const eligible = perGameStats.filter((g) => g.plays >= 2);
+    // Candidate with highest win rate with at least 5 plays
+    const eligible = perGameStats.filter((g) => g.plays >= 5);
     if (eligible.length > 0) {
       const sorted = [...eligible].sort((a, b) => b.winRate - a.winRate || b.plays - a.plays);
       return { ...sorted[0], isPinned: false };
     }
-    // Fallback to highest wins
-    const sortedByWins = [...perGameStats].sort((a, b) => b.wins - a.wins);
-    return sortedByWins[0] && sortedByWins[0].wins > 0 ? { ...sortedByWins[0], isPinned: false } : null;
+    return null;
   }, [player.specialtyGameId, perGameStats, gamesById]);
 
-  // Nemesis Game: Pinned or Lowest Win Rate (min 2 plays)
+  // Nemesis Game: Pinned or Lowest Win Rate (minimum 5 plays, winRate <= 40%)
   const nemesisGame = useMemo(() => {
     if (player.weaknessGameId) {
       const stat = perGameStats.find((g) => g.gameId === player.weaknessGameId);
@@ -195,8 +193,8 @@ export const PlayerDetailPage: React.FC = () => {
         };
       }
     }
-    // Candidate with lowest win rate with at least 2 plays
-    const eligible = perGameStats.filter((g) => g.plays >= 2 && g.winRate <= 40);
+    // Candidate with lowest win rate with at least 5 plays
+    const eligible = perGameStats.filter((g) => g.plays >= 5 && g.winRate <= 40);
     if (eligible.length > 0) {
       const sorted = [...eligible].sort((a, b) => a.winRate - b.winRate || b.plays - a.plays);
       return { ...sorted[0], isPinned: false };
@@ -545,14 +543,19 @@ export const PlayerDetailPage: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-[var(--text-muted)] py-4">
-                  Chưa đủ dữ liệu để tính game sở trường (cần tối thiểu 2 ván).
-                </p>
+                <div className="py-4 px-3 text-center rounded-xl bg-[var(--bg-elevated)]/40 border border-white/5 space-y-1">
+                  <p className="text-xs text-[var(--text-secondary)] font-medium">
+                    Chưa đủ dữ liệu (cần tối thiểu trên 5 ván)
+                  </p>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    Cần chơi từ 5 ván trở lên để tránh sai lệch từ playtest / thử game, hoặc bạn có thể tự ghim game sở trường.
+                  </p>
+                </div>
               )}
             </div>
 
             <div className="text-[11px] text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-2.5 flex items-center justify-between">
-              <span>{signatureGame?.isPinned ? 'Tự chọn sở trường' : 'Tỉ lệ thắng cao nhất'}</span>
+              <span>{signatureGame?.isPinned ? 'Tự chọn sở trường' : 'Tỉ lệ thắng cao nhất (≥ 5 ván)'}</span>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
@@ -604,14 +607,19 @@ export const PlayerDetailPage: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-[var(--text-muted)] py-4">
-                  Chưa phát hiện tựa game nào bị lép vế rõ rệt.
-                </p>
+                <div className="py-4 px-3 text-center rounded-xl bg-[var(--bg-elevated)]/40 border border-white/5 space-y-1">
+                  <p className="text-xs text-[var(--text-secondary)] font-medium">
+                    Chưa phát hiện game kỵ rơ (≥ 5 ván)
+                  </p>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    Chưa có tựa game nào chơi từ 5 ván trở lên có tỉ lệ thắng thấp (≤ 40%), hoặc bạn có thể tự ghim game sợ nhất.
+                  </p>
+                </div>
               )}
             </div>
 
             <div className="text-[11px] text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-2.5 flex items-center justify-between">
-              <span>{nemesisGame?.isPinned ? 'Tự chọn sở đoản' : 'Tỉ lệ thắng thấp nhất'}</span>
+              <span>{nemesisGame?.isPinned ? 'Tự chọn sở đoản' : 'Tỉ lệ thắng thấp nhất (≥ 5 ván)'}</span>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
