@@ -6,6 +6,8 @@ import {
   List,
   Plus,
   ArrowUpDown,
+  Upload,
+  Settings,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { GameGrid } from '../components/game/GameGrid';
@@ -15,6 +17,8 @@ import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { GameStatus } from '../types';
+import { CollectionImportModal } from '../components/game/CollectionImportModal';
+import { BGGConfigModal } from '../components/game/BGGConfigModal';
 
 type FilterTab = 'all' | GameStatus;
 type SortOption = 'name' | 'addedDate' | 'bggRating' | 'purchasePrice';
@@ -37,6 +41,8 @@ export const CollectionPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('addedDate');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   const playCountsByGameId = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -92,12 +98,22 @@ export const CollectionPage: React.FC = () => {
             </p>
           </div>
 
-          <Link to="/collection/add">
-            <Button variant="primary">
-              <Plus className="w-4 h-4" />
-              Add Game
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="ghost" size="sm" onClick={() => setIsConfigOpen(true)}>
+              <Settings className="w-4 h-4 mr-1 text-[#a78bfa]" />
+              BGG Sync
             </Button>
-          </Link>
+            <Button variant="secondary" size="sm" onClick={() => setIsImportOpen(true)}>
+              <Upload className="w-4 h-4 mr-1 text-[#22d3ee]" />
+              Import
+            </Button>
+            <Link to="/collection/add">
+              <Button variant="primary">
+                <Plus className="w-4 h-4 mr-1" />
+                Add Game
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Status Filter Bar */}
@@ -121,17 +137,17 @@ export const CollectionPage: React.FC = () => {
                 type="button"
                 onClick={() => setActiveFilter(tab.id)}
                 className={cn(
-                  'min-h-[40px] px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-2 border',
+                  'min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-2 border',
                   isActive
-                    ? 'bg-[image:var(--gradient-hero)] text-white border-white/20 shadow-md shadow-[#7c3aed]/25'
-                    : 'bg-[#16162a] text-[#94a3b8] border-white/[0.08] hover:text-white hover:border-white/20'
+                    ? 'bg-[#7c3aed] text-white border-[#7c3aed] shadow-lg shadow-[#7c3aed]/30'
+                    : 'bg-[#16162a] text-[#94a3b8] border-white/5 hover:border-white/10 hover:text-white'
                 )}
               >
                 <span>{tab.label}</span>
                 <span
                   className={cn(
-                    'font-mono text-[11px] tabular-nums',
-                    isActive ? 'text-white/90' : 'text-[#475569]'
+                    'px-1.5 py-0.5 rounded-md text-[10px] tabular-nums',
+                    isActive ? 'bg-white/20 text-white' : 'bg-white/5 text-[#94a3b8]'
                   )}
                 >
                   {count}
@@ -141,58 +157,59 @@ export const CollectionPage: React.FC = () => {
           })}
         </div>
 
-        {/* Search + Sort + View Mode Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Search, Sort, and View Controls */}
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
           <div className="flex-1 max-w-md">
             <Input
-              placeholder="Search games by title or tag..."
+              placeholder="Search by title or category..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              leftIcon={<Search className="w-4 h-4" />}
-              aria-label="Search games by name"
+              leftIcon={<Search className="w-4 h-4 text-[#94a3b8]" />}
             />
           </div>
 
-          <div className="flex items-center gap-3 self-end sm:self-auto">
-            <div className="relative flex items-center">
+          <div className="flex items-center gap-2.5 self-end sm:self-auto">
+            {/* Sort Dropdown */}
+            <div className="relative inline-flex items-center">
               <ArrowUpDown className="w-4 h-4 text-[#94a3b8] absolute left-3 pointer-events-none" />
               <select
-                aria-label="Sort games by"
+                aria-label="Sort collection by"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="min-h-[44px] pl-9 pr-8 py-2 rounded-xl bg-[#16162a] border border-white/10 text-xs sm:text-sm font-semibold text-[#f1f5f9] focus:outline-none focus:border-[#7c3aed] cursor-pointer"
+                className="min-h-[42px] pl-9 pr-8 py-2 rounded-xl bg-[#16162a] border border-white/10 text-xs font-semibold text-white focus:outline-none focus:border-[#7c3aed] cursor-pointer appearance-none"
               >
-                <option value="addedDate">Sort: Date Added</option>
-                <option value="name">Sort: Name A–Z</option>
-                <option value="bggRating">Sort: BGG Rating</option>
-                <option value="purchasePrice">Sort: Purchase Price</option>
+                <option value="addedDate">Date Added (Newest)</option>
+                <option value="name">Name (A-Z)</option>
+                <option value="bggRating">BGG Rating (Highest)</option>
+                <option value="purchasePrice">Price (Highest)</option>
               </select>
             </div>
 
-            <div className="inline-flex rounded-xl bg-[#16162a] p-1 border border-white/10">
+            {/* View Mode Switcher */}
+            <div className="p-1 rounded-xl bg-[#16162a] border border-white/10 flex items-center gap-1">
               <button
                 type="button"
-                aria-label="Grid view"
                 onClick={() => setViewMode('grid')}
                 className={cn(
-                  'min-h-[36px] min-w-[36px] rounded-lg flex items-center justify-center transition-colors cursor-pointer',
+                  'p-2 rounded-lg transition-colors cursor-pointer',
                   viewMode === 'grid'
                     ? 'bg-[#7c3aed] text-white'
                     : 'text-[#94a3b8] hover:text-white'
                 )}
+                aria-label="Grid view"
               >
                 <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 type="button"
-                aria-label="List view"
                 onClick={() => setViewMode('list')}
                 className={cn(
-                  'min-h-[36px] min-w-[36px] rounded-lg flex items-center justify-center transition-colors cursor-pointer',
+                  'p-2 rounded-lg transition-colors cursor-pointer',
                   viewMode === 'list'
                     ? 'bg-[#7c3aed] text-white'
                     : 'text-[#94a3b8] hover:text-white'
                 )}
+                aria-label="List view"
               >
                 <List className="w-4 h-4" />
               </button>
@@ -200,43 +217,27 @@ export const CollectionPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Game Grid or Empty State */}
+        {/* Game List / Grid */}
         {filteredGames.length > 0 ? (
           <GameGrid
             games={filteredGames}
-            playCountsByGameId={playCountsByGameId}
             viewMode={viewMode}
+            playCountsByGameId={playCountsByGameId}
           />
         ) : (
-          <div className="py-16 px-4 text-center rounded-3xl bg-[#16162a]/70 border border-white/[0.08] max-w-lg mx-auto space-y-4">
-            <svg
-              className="w-24 h-24 mx-auto"
-              viewBox="0 0 120 120"
-              fill="none"
-              aria-hidden="true"
-            >
-              <rect
-                x="18"
-                y="24"
-                width="84"
-                height="72"
-                rx="16"
-                fill="#1e1e35"
-                stroke="#7c3aed"
-                strokeWidth="3"
-              />
-              <circle cx="44" cy="48" r="5" fill="#a78bfa" />
-              <circle cx="60" cy="60" r="5" fill="#22d3ee" />
-              <circle cx="76" cy="72" r="5" fill="#ec4899" />
-            </svg>
+          /* Empty State */
+          <div className="p-12 rounded-3xl bg-[#16162a] border border-white/10 text-center space-y-4 max-w-md mx-auto my-8">
+            <div className="w-16 h-16 rounded-3xl bg-[image:var(--gradient-hero)] flex items-center justify-center text-3xl mx-auto shadow-xl shadow-[#7c3aed]/30">
+              🎲
+            </div>
             <div className="space-y-1">
-              <h2 className="font-display font-bold text-xl text-white">
-                No Boardgames Found
-              </h2>
+              <h3 className="font-display font-bold text-lg text-white">
+                No boardgames found
+              </h3>
               <p className="text-sm text-[#94a3b8]">
                 {searchQuery || activeFilter !== 'all'
-                  ? 'Try clearing your active filter or searching for another title.'
-                  : 'Your shelf is empty! Add your first boardgame from BoardGameGeek or manually.'}
+                  ? 'No games match your current filter or search criteria.'
+                  : 'Your collection is currently empty. Start adding games to your vault!'}
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">
@@ -251,6 +252,10 @@ export const CollectionPage: React.FC = () => {
                   Reset Filters
                 </Button>
               )}
+              <Button variant="secondary" onClick={() => setIsImportOpen(true)}>
+                <Upload className="w-4 h-4 mr-1" />
+                Import File
+              </Button>
               <Link to="/collection/add">
                 <Button variant="primary">
                   <Plus className="w-4 h-4" />
@@ -269,6 +274,10 @@ export const CollectionPage: React.FC = () => {
         >
           <Plus className="w-6 h-6" />
         </Link>
+
+        {/* Modals */}
+        <CollectionImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
+        <BGGConfigModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
       </div>
     </PageTransition>
   );
