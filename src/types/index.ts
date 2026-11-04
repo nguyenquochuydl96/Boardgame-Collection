@@ -31,9 +31,18 @@ export interface BoardGame {
 export interface Player {
   id: string;
   name: string;
-  avatar?: string;               // emoji or image URL
+  nickname?: string;             // Biệt danh (e.g. "Vua Đỏ Đen", "Chúa Tể Euro")
+  avatar?: string;               // emoji, image URL, or base64 data
   color: string;                 // hex color for charts/badges
   createdAt: string;
+  bio?: string;                  // Châm ngôn / Ghi chú cá nhân
+  playStyle?: string;            // Phong cách chơi ('strategist', 'aggressive', 'coop', etc.)
+  specialtyGameId?: string;      // Game sở trường (tự ghim)
+  specialtyGameName?: string;    // Tên game sở trường
+  weaknessGameId?: string;       // Game sở đoản (tự ghim)
+  weaknessGameName?: string;     // Tên game sở đoản
+  favoriteGameId?: string;       // Game yêu thích tự ghim
+  favoriteGameName?: string;     // Tên game yêu thích tự ghim
 }
 
 export interface PlayerScore {

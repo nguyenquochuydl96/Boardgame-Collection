@@ -48,3 +48,76 @@ export function getDeterministicAvatar(seed: string): BoardgameThemedAvatar {
   const index = Math.abs(hash) % BOARDGAME_THEMED_AVATARS.length;
   return BOARDGAME_THEMED_AVATARS[index];
 }
+
+
+export interface PlayStyleOption {
+  id: string;
+  label: string;
+  emoji: string;
+  tagline: string;
+  description: string;
+}
+
+export const PLAY_STYLES: PlayStyleOption[] = [
+  {
+    id: 'strategist',
+    label: 'Chiến thuật sâu / Euro Builder',
+    emoji: '🧠',
+    tagline: 'Bộ óc chiến thuật',
+    description: 'Tối ưu hóa tài nguyên, tính toán trước nhiều nước, điềm đạm xây dựng cơ đồ.',
+  },
+  {
+    id: 'aggressive',
+    label: 'Tương tác cao / Cà khịa',
+    emoji: '⚔️',
+    tagline: 'Chuyên gia cà khịa',
+    description: 'Thích chặt chém, chặn đường, đối đầu trực tiếp và tạo drama bàn chơi.',
+  },
+  {
+    id: 'social_deduction',
+    label: 'Ẩn vai / Suy luận',
+    emoji: '🎭',
+    tagline: 'Bậc thầy tâm lý',
+    description: 'Đọc vị đối thủ, bluff đỉnh cao, thao túng tâm lý và lật kèo ngoạn mục.',
+  },
+  {
+    id: 'coop_master',
+    label: 'Đồng đội / Co-op Master',
+    emoji: '🤝',
+    tagline: 'Trụ cột gánh team',
+    description: 'Thích gánh team, phối hợp ăn ý để cả bàn cùng vượt qua thử thách.',
+  },
+  {
+    id: 'gambler',
+    label: 'Thánh đỏ đen / Push Your Luck',
+    emoji: '🎲',
+    tagline: 'Thánh nhân phẩm',
+    description: 'Tất tay, tin vào linh tính xúc xắc và nhân phẩm vô cực.',
+  },
+  {
+    id: 'party_animal',
+    label: 'Chúa hề / Party Animal',
+    emoji: '🎉',
+    tagline: 'Cây hài bàn chơi',
+    description: 'Chơi vì tiếng cười và sự náo nhiệt, thắng thua không bằng tấu hài.',
+  },
+  {
+    id: 'wargamer',
+    label: 'Thống trị / Wargamer',
+    emoji: '👑',
+    tagline: 'Bá chủ lãnh thổ',
+    description: 'Điều binh khiển tướng, chiếm đất mở rộng lãnh thổ và áp đảo thế trận.',
+  },
+  {
+    id: 'speedster',
+    label: 'Phản xạ nhanh / Quick Thinker',
+    emoji: '⚡',
+    tagline: 'Tốc chiến tốc thắng',
+    description: 'Ra quyết định chớp nhoáng, ghét AP (Analysis Paralysis), tốc chiến tốc thắng.',
+  },
+];
+
+export function getPlayStyleInfo(styleId?: string): PlayStyleOption | undefined {
+  if (!styleId) return undefined;
+  return PLAY_STYLES.find((s) => s.id === styleId);
+}
