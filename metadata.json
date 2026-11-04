@@ -1,0 +1,6 @@
+{
+  "name": "BoardGame Vault",
+  "description": "Your personal boardgame collection manager, play session tracker, and tabletop analytics vault.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

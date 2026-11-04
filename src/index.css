@@ -1,0 +1,94 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg-base: #0f0f1a;
+  --bg-surface: #16162a;
+  --bg-elevated: #1e1e35;
+  --bg-card: #1a1a2e;
+  --accent-primary: #7c3aed;    /* violet */
+  --accent-secondary: #2563eb;  /* blue */
+  --accent-neon: #a78bfa;       /* neon purple */
+  --accent-pink: #ec4899;
+  --accent-cyan: #22d3ee;
+  --accent-green: #10b981;
+  --accent-orange: #f97316;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+  --border-subtle: rgba(255,255,255,0.08);
+  --border-glow: rgba(124,58,237,0.4);
+  --gradient-hero: linear-gradient(135deg, #7c3aed 0%, #2563eb 50%, #0ea5e9 100%);
+  --gradient-card: linear-gradient(145deg, #1e1e35, #16162a);
+  --shimmer: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+}
+
+@theme {
+  --font-display: "Outfit", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-base);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(124, 58, 237, 0.14), transparent 38%),
+      radial-gradient(circle at 85% 20%, rgba(37, 99, 235, 0.1), transparent 42%);
+    background-attachment: fixed;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+}
+
+@keyframes shimmerSweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--shimmer);
+  animation: shimmerSweep 1.8s infinite ease-in-out;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom sleek scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-elevated);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+}
