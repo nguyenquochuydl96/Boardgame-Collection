@@ -7,6 +7,7 @@ import {
   PenLine,
   CheckCircle2,
   Settings,
+  Loader2,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
@@ -208,28 +209,52 @@ export const AddGamePage: React.FC = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               leftIcon={<Search className="w-4 h-4" />}
+              rightIcon={
+                isLoading ? (
+                  <div className="flex items-center gap-1.5 text-xs text-[#a78bfa]">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="hidden sm:inline text-[11px] font-mono">BGG...</span>
+                  </div>
+                ) : query ? (
+                  <button
+                    type="button"
+                    onClick={() => setQuery('')}
+                    className="w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 text-[#94a3b8] hover:text-white flex items-center justify-center transition-colors cursor-pointer text-xs"
+                    title="Clear search"
+                  >
+                    ✕
+                  </button>
+                ) : null
+              }
             />
 
-            {isLoading || isFetchingDetail ? (
+            {isLoading && results.length === 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {[1, 2, 3].map((i) => (
                   <Skeleton key={i} className="h-24 w-full" />
                 ))}
               </div>
+            ) : results.length === 0 ? (
+              <div className="p-6 text-center text-sm text-[#94a3b8] bg-[#16162a]/40 rounded-2xl border border-white/5">
+                No matching boardgames found for &quot;{query}&quot;. You can switch to the &quot;Add Manually&quot; tab to enter your custom details.
+              </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-1">
                 {results.map((item) => {
                   const isPicked = selectedBggId === item.bggId;
+                  const isFetchingThis = isFetchingDetail && isPicked;
                   return (
                     <button
                       key={item.bggId}
                       type="button"
+                      disabled={isFetchingDetail}
                       onClick={() => void handleSelectBGGCard(item.bggId)}
                       className={cn(
                         'flex items-center gap-3 p-3 rounded-2xl border text-left transition-all cursor-pointer group',
                         isPicked
                           ? 'bg-[#7c3aed]/25 border-[#7c3aed] ring-2 ring-[#7c3aed]/40'
-                          : 'bg-[#1e1e35]/60 border-white/10 hover:border-[#7c3aed]/40 hover:bg-[#1e1e35]'
+                          : 'bg-[#1e1e35]/60 border-white/10 hover:border-[#7c3aed]/40 hover:bg-[#1e1e35]',
+                        isFetchingDetail && !isPicked && 'opacity-60 cursor-not-allowed'
                       )}
                     >
                       <BGGCardThumbnail
@@ -242,8 +267,11 @@ export const AddGamePage: React.FC = () => {
                           <p className="font-display font-bold text-sm text-white truncate group-hover:text-[#a78bfa]">
                             {item.name}
                           </p>
-                          {isPicked && (
+                          {isPicked && !isFetchingThis && (
                             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                          )}
+                          {isFetchingThis && (
+                            <Loader2 className="w-3.5 h-3.5 text-[#22d3ee] animate-spin shrink-0" />
                           )}
                         </div>
                         {item.yearPublished && (
@@ -252,7 +280,7 @@ export const AddGamePage: React.FC = () => {
                           </p>
                         )}
                         <span className="text-[11px] text-[#22d3ee] font-semibold block mt-1">
-                          {isPicked ? '✓ Selected' : 'Select Game'}
+                          {isFetchingThis ? 'Importing...' : isPicked ? '✓ Selected' : 'Select Game'}
                         </span>
                       </div>
                     </button>

@@ -43,7 +43,10 @@ const thumbnailCache = new Map<string, { thumbnail?: string; image?: string }>()
  * Batch fetch thumbnails & images from BGG XMLAPI2 /thing?id=... endpoint
  * BGG natively supports comma-separated IDs in a single HTTP request!
  */
-async function fetchBatchThumbnails(bggIds: string[]): Promise<Map<string, { thumbnail?: string; image?: string }>> {
+async function fetchBatchThumbnails(
+  bggIds: string[],
+  signal?: AbortSignal
+): Promise<Map<string, { thumbnail?: string; image?: string }>> {
   const results = new Map<string, { thumbnail?: string; image?: string }>();
   if (!bggIds.length) return results;
 
@@ -71,6 +74,7 @@ async function fetchBatchThumbnails(bggIds: string[]): Promise<Map<string, { thu
 
     const response = await fetch(thingUrl, {
       headers: getRequestHeaders(),
+      signal,
     });
 
     if (response.ok) {
@@ -94,8 +98,10 @@ async function fetchBatchThumbnails(bggIds: string[]): Promise<Map<string, { thu
         });
       }
     }
-  } catch (err) {
-    console.warn('Batch fetch thumbnails failed:', err);
+  } catch (err: any) {
+    if (err?.name !== 'AbortError') {
+      console.warn('Batch fetch thumbnails failed:', err);
+    }
   }
 
   return results;
@@ -272,7 +278,36 @@ function parseBGGDetailResponse(text: string, bggId: string): BGGGameDetail | nu
   return null;
 }
 
-export async function searchBGGGames(query: string): Promise<BGGSearchResult[]> {
+/**
+ * Fast synchronous search in local 118+ classic game catalog (0ms delay)
+ */
+export function searchLocalBGG(query: string): BGGSearchResult[] {
+  const cleanQ = query.trim();
+  const q = cleanQ.toLowerCase();
+  if (!q) {
+    return EXPANDED_BGG_CATALOG.slice(0, 15).map(({ bggId, name, yearPublished, thumbnail, image }) => ({
+      bggId,
+      name,
+      yearPublished,
+      thumbnail,
+      image,
+    }));
+  }
+
+  const matches = EXPANDED_BGG_CATALOG.filter((game) =>
+    game.name.toLowerCase().includes(q)
+  ).map(({ bggId, name, yearPublished, thumbnail, image }) => ({
+    bggId,
+    name,
+    yearPublished,
+    thumbnail,
+    image,
+  }));
+
+  return rankAndSortBGGResults(matches, cleanQ).slice(0, 15);
+}
+
+export async function searchBGGGames(query: string, signal?: AbortSignal): Promise<BGGSearchResult[]> {
   const cleanQ = query.trim();
   const q = cleanQ.toLowerCase();
   const proxyBase = getBGGProxyUrl();
@@ -287,6 +322,7 @@ export async function searchBGGGames(query: string): Promise<BGGSearchResult[]> 
 
       const response = await fetch(searchUrl, {
         headers: getRequestHeaders(),
+        signal,
       });
 
       if (response.ok) {
@@ -328,7 +364,7 @@ export async function searchBGGGames(query: string): Promise<BGGSearchResult[]> 
             .map((item) => item.bggId);
 
           if (missingThumbnailIds.length > 0) {
-            const fetchedThumbs = await fetchBatchThumbnails(missingThumbnailIds);
+            const fetchedThumbs = await fetchBatchThumbnails(missingThumbnailIds, signal);
             ranked.forEach((item) => {
               const thumbData = fetchedThumbs.get(item.bggId);
               if (thumbData?.thumbnail) {
@@ -341,7 +377,10 @@ export async function searchBGGGames(query: string): Promise<BGGSearchResult[]> 
           return ranked;
         }
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        throw err;
+      }
       console.warn('Live BGG search error, falling back to offline catalog:', err);
     }
   }
