@@ -2,6 +2,210 @@ import { BGGGameDetail } from '../types';
 
 export const EXPANDED_BGG_CATALOG: BGGGameDetail[] = [
   {
+    "bggId": "13",
+    "name": "Catan",
+    "yearPublished": 1995,
+    "minPlayers": 3,
+    "maxPlayers": 4,
+    "playingTime": 90,
+    "bggRating": 7.1,
+    "description": "In Catan (formerly The Settlers of Catan), players try to be the dominant force on the island of Catan by building settlements, cities, and roads.",
+    "thumbnail": "https://cf.geekdo-images.com/W_fliWeqlflbtfi9OZKiQw__thumb/img/h4Vq73_zYg5bZ_D_nN3T-1oYq00=/fit-in/200x150/filters:strip_icc()/pic2419375.jpg",
+    "image": "https://cf.geekdo-images.com/W_fliWeqlflbtfi9OZKiQw__original/img/jD9S_wH0zV93tSdf4n8gR7m9g24=/0x0/filters:format(jpeg)/pic2419375.jpg",
+    "tags": [
+      "Strategy",
+      "Trading",
+      "Resource Management"
+    ]
+  },
+  {
+    "bggId": "1797",
+    "name": "Catan: Seafarers",
+    "yearPublished": 1997,
+    "minPlayers": 3,
+    "maxPlayers": 4,
+    "playingTime": 90,
+    "bggRating": 7.2,
+    "description": "Expand your Catan island adventures across uncharted waters with ships and islands.",
+    "thumbnail": "https://cf.geekdo-images.com/b28JomwG1zVb3s0E4N3Yqg__thumb/img/pic2419382.jpg",
+    "image": "https://cf.geekdo-images.com/b28JomwG1zVb3s0E4N3Yqg__original/img/pic2419382.jpg",
+    "tags": [
+      "Expansion",
+      "Seafaring",
+      "Strategy"
+    ]
+  },
+  {
+    "bggId": "926",
+    "name": "Catan: Cities & Knights",
+    "yearPublished": 1998,
+    "minPlayers": 3,
+    "maxPlayers": 4,
+    "playingTime": 120,
+    "bggRating": 7.5,
+    "description": "Defend Catan from barbarian invaders while upgrading cities into metropolises.",
+    "thumbnail": "https://cf.geekdo-images.com/tFvFvO73Hh2o4T9Q5l1W7Q__thumb/img/pic2419380.jpg",
+    "image": "https://cf.geekdo-images.com/tFvFvO73Hh2o4T9Q5l1W7Q__original/img/pic2419380.jpg",
+    "tags": [
+      "Expansion",
+      "Economy",
+      "Strategy"
+    ]
+  },
+  {
+    "bggId": "266192",
+    "name": "Wingspan",
+    "yearPublished": 2019,
+    "minPlayers": 1,
+    "maxPlayers": 5,
+    "playingTime": 70,
+    "bggRating": 8,
+    "description": "Wingspan is a competitive, medium-weight, card-driven, engine-building board game from Stonemaier Games.",
+    "thumbnail": "https://cf.geekdo-images.com/yLZJ0aIIT3AZgqjwTBScYw__thumb/img/yFlD_a_Nn-k3mR8V8WzD_7VvVpU=/fit-in/200x150/filters:strip_icc()/pic4458123.jpg",
+    "image": "https://cf.geekdo-images.com/yLZJ0aIIT3AZgqjwTBScYw__original/img/pic4458123.jpg",
+    "tags": [
+      "Animals",
+      "Card Game",
+      "Engine Building"
+    ]
+  },
+  {
+    "bggId": "9209",
+    "name": "Ticket to Ride",
+    "yearPublished": 2004,
+    "minPlayers": 2,
+    "maxPlayers": 5,
+    "playingTime": 60,
+    "bggRating": 7.4,
+    "description": "A cross-country train adventure in which players collect and play matching train cards to claim railway routes.",
+    "thumbnail": "https://cf.geekdo-images.com/ZWJg0dCgahB3KnMV1KV11w__thumb/img/pic38668.jpg",
+    "image": "https://cf.geekdo-images.com/ZWJg0dCgahB3KnMV1KV11w__original/img/pic38668.jpg",
+    "tags": [
+      "Trains",
+      "Network Building",
+      "Family"
+    ]
+  },
+  {
+    "bggId": "230802",
+    "name": "Azul",
+    "yearPublished": 2017,
+    "minPlayers": 2,
+    "maxPlayers": 4,
+    "playingTime": 45,
+    "bggRating": 7.7,
+    "description": "In Azul, players take turns drafting colored tiles from suppliers to their player board.",
+    "thumbnail": "https://cf.geekdo-images.com/tz19Pf9whmQVbyqi6zhA8g__thumb/img/pic3718275.jpg",
+    "image": "https://cf.geekdo-images.com/tz19Pf9whmQVbyqi6zhA8g__original/img/pic3718275.jpg",
+    "tags": [
+      "Abstract",
+      "Tile Placement",
+      "Pattern Building"
+    ]
+  },
+  {
+    "bggId": "316554",
+    "name": "Dune: Imperium",
+    "yearPublished": 2020,
+    "minPlayers": 1,
+    "maxPlayers": 4,
+    "playingTime": 120,
+    "bggRating": 8.4,
+    "description": "Dune: Imperium uses deck-building to add a hidden-information angle to traditional worker placement.",
+    "thumbnail": "https://cf.geekdo-images.com/PhjygpTFaaJ_umiva09CnQ__thumb/img/pic5666597.jpg",
+    "image": "https://cf.geekdo-images.com/PhjygpTFaaJ_umiva09CnQ__original/img/pic5666597.jpg",
+    "tags": [
+      "Sci-Fi",
+      "Deck Building",
+      "Worker Placement"
+    ]
+  },
+  {
+    "bggId": "148228",
+    "name": "Splendor",
+    "yearPublished": 2014,
+    "minPlayers": 2,
+    "maxPlayers": 4,
+    "playingTime": 30,
+    "bggRating": 7.4,
+    "description": "Splendor is a fast-paced game of chip-collecting and card development.",
+    "thumbnail": "https://cf.geekdo-images.com/rwOMxx4qVuEGwwx6pnQEYg__thumb/img/pic1904079.jpg",
+    "image": "https://cf.geekdo-images.com/rwOMxx4qVuEGwwx6pnQEYg__original/img/pic1904079.jpg",
+    "tags": [
+      "Card Game",
+      "Economic",
+      "Renaissance"
+    ]
+  },
+  {
+    "bggId": "30549",
+    "name": "Pandemic",
+    "yearPublished": 2008,
+    "minPlayers": 2,
+    "maxPlayers": 4,
+    "playingTime": 45,
+    "bggRating": 7.5,
+    "description": "Players are disease-fighting specialists whose mission is to treat disease hotspots while researching cures.",
+    "thumbnail": "https://cf.geekdo-images.com/S-K-W7fW0fLp_9m6l8W6aQ__thumb/img/pic1534148.jpg",
+    "image": "https://cf.geekdo-images.com/S-K-W7fW0fLp_9m6l8W6aQ__original/img/pic1534148.jpg",
+    "tags": [
+      "Cooperative",
+      "Medical",
+      "Travel"
+    ]
+  },
+  {
+    "bggId": "169786",
+    "name": "Scythe",
+    "yearPublished": 2016,
+    "minPlayers": 1,
+    "maxPlayers": 5,
+    "playingTime": 115,
+    "bggRating": 8.1,
+    "description": "An engine-building, asymmetric, competitive board game set in an alternate-history 1920s period.",
+    "thumbnail": "https://cf.geekdo-images.com/7k_nOxpO9OGIjhLq2BUZdA__thumb/img/pic3163924.jpg",
+    "image": "https://cf.geekdo-images.com/7k_nOxpO9OGIjhLq2BUZdA__original/img/pic3163924.jpg",
+    "tags": [
+      "Strategy",
+      "Mechs",
+      "Economic"
+    ]
+  },
+  {
+    "bggId": "199792",
+    "name": "Everdell",
+    "yearPublished": 2018,
+    "minPlayers": 1,
+    "maxPlayers": 4,
+    "playingTime": 80,
+    "bggRating": 8,
+    "description": "A civilization of forest critters is thriving and expanding under the Ever Tree.",
+    "thumbnail": "https://cf.geekdo-images.com/fjE6V5AFJRjh-mOBra38BA__thumb/img/pic3918905.jpg",
+    "image": "https://cf.geekdo-images.com/fjE6V5AFJRjh-mOBra38BA__original/img/pic3918905.jpg",
+    "tags": [
+      "Animals",
+      "Card Drafting",
+      "Worker Placement"
+    ]
+  },
+  {
+    "bggId": "295947",
+    "name": "Cascadia",
+    "yearPublished": 2021,
+    "minPlayers": 1,
+    "maxPlayers": 4,
+    "playingTime": 45,
+    "bggRating": 8,
+    "description": "A puzzly tile-laying and token-drafting game featuring the habitats and wildlife of the Pacific Northwest.",
+    "thumbnail": "https://cf.geekdo-images.com/M5ggjA7lxZzO-wGshzH2fA__thumb/img/pic5100691.jpg",
+    "image": "https://cf.geekdo-images.com/M5ggjA7lxZzO-wGshzH2fA__original/img/pic5100691.jpg",
+    "tags": [
+      "Animals",
+      "Tile Placement",
+      "Drafting"
+    ]
+  },
+  {
     "bggId": "316377",
     "name": "7 Wonders (Second Edition)",
     "yearPublished": 2020,

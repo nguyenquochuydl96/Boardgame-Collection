@@ -19,6 +19,7 @@ import { useGameStore } from '../store/useGameStore';
 import { createGameCoverDataUri, STATUS_CONFIG } from '../lib/utils';
 import { BGGGameDetail, GameStatus } from '../types';
 import { BGGConfigModal } from '../components/game/BGGConfigModal';
+import { BGGCardThumbnail } from '../components/game/BGGCardThumbnail';
 import { PoweredByBGG } from '../components/ui/PoweredByBGG';
 
 export const AddGamePage: React.FC = () => {
@@ -231,11 +232,10 @@ export const AddGamePage: React.FC = () => {
                           : 'bg-[#1e1e35]/60 border-white/10 hover:border-[#7c3aed]/40 hover:bg-[#1e1e35]'
                       )}
                     >
-                      <img
+                      <BGGCardThumbnail
                         src={item.thumbnail || item.image}
-                        alt={item.name}
-                        referrerPolicy="no-referrer"
-                        className="w-12 h-14 object-cover rounded-xl shrink-0 bg-[#16162a]"
+                        name={item.name}
+                        className="w-12 h-14"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">

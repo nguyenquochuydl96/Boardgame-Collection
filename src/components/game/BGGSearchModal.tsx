@@ -5,6 +5,7 @@ import { Input } from '../ui/Input';
 import { Skeleton } from '../ui/Skeleton';
 import { BGGGameDetail } from '../../types';
 import { useBGGSearch } from '../../hooks/useBGGSearch';
+import { BGGCardThumbnail } from './BGGCardThumbnail';
 
 export interface BGGSearchModalProps {
   isOpen: boolean;
@@ -59,11 +60,10 @@ export const BGGSearchModal: React.FC<BGGSearchModalProps> = ({
                 onClick={() => void handlePick(item.bggId)}
                 className="flex items-center gap-3 p-2.5 rounded-xl bg-[#1e1e35]/80 hover:bg-[#7c3aed]/20 border border-white/10 hover:border-[#7c3aed]/50 text-left transition-all cursor-pointer group"
               >
-                <img
+                <BGGCardThumbnail
                   src={item.thumbnail || item.image}
-                  alt={item.name}
-                  referrerPolicy="no-referrer"
-                  className="w-12 h-16 rounded-lg object-cover shrink-0 bg-[#16162a]"
+                  name={item.name}
+                  className="w-12 h-16"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="font-display font-bold text-sm text-[#f1f5f9] truncate group-hover:text-[#a78bfa]">

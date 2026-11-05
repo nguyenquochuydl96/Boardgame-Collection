@@ -25,15 +25,20 @@ export default {
       let bggPath = url.pathname;
       let queryString = url.search;
 
-      if (bggPath.startsWith('/api/search')) {
-        const q = url.searchParams.get('q') || url.searchParams.get('query') || '';
+      if (bggPath.startsWith('/api/search') || bggPath === '/search') {
+        const q = url.searchParams.get('query') || url.searchParams.get('q') || '';
+        const exact = url.searchParams.get('exact');
+        const type = url.searchParams.get('type') || 'boardgame,boardgameexpansion';
         bggPath = '/search';
-        queryString = `?query=${encodeURIComponent(q)}&type=boardgame,boardgameexpansion`;
-      } else if (bggPath.startsWith('/api/game')) {
+        queryString = `?query=${encodeURIComponent(q)}&type=${type}${exact ? '&exact=' + exact : ''}`;
+      } else if (bggPath.startsWith('/api/game') || bggPath === '/thing') {
         const id = url.searchParams.get('id') || '';
+        const stats = url.searchParams.get('stats') || '1';
         bggPath = '/thing';
-        queryString = `?id=${encodeURIComponent(id)}&stats=1`;
-      } else if (bggPath.startsWith('/api/collection')) {
+        // Keep commas unencoded for BGG multi-id batch support (e.g. 13,1797)
+        const cleanIds = id.split(',').map((s) => s.trim()).filter(Boolean).join(',');
+        queryString = `?id=${cleanIds}&stats=${stats}`;
+      } else if (bggPath.startsWith('/api/collection') || bggPath === '/collection') {
         const username = url.searchParams.get('username') || '';
         bggPath = '/collection';
         queryString = `?username=${encodeURIComponent(username)}&stats=1`;

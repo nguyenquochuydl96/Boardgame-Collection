@@ -37,6 +37,119 @@ function getRequestHeaders(): Record<string, string> {
   return headers;
 }
 
+const thumbnailCache = new Map<string, { thumbnail?: string; image?: string }>();
+
+/**
+ * Batch fetch thumbnails & images from BGG XMLAPI2 /thing?id=... endpoint
+ * BGG natively supports comma-separated IDs in a single HTTP request!
+ */
+async function fetchBatchThumbnails(bggIds: string[]): Promise<Map<string, { thumbnail?: string; image?: string }>> {
+  const results = new Map<string, { thumbnail?: string; image?: string }>();
+  if (!bggIds.length) return results;
+
+  const missingIds: string[] = [];
+  bggIds.forEach((id) => {
+    if (thumbnailCache.has(id)) {
+      results.set(id, thumbnailCache.get(id)!);
+    } else if (/^\d+$/.test(id)) {
+      missingIds.push(id);
+    }
+  });
+
+  if (!missingIds.length) return results;
+
+  const proxyBase = getBGGProxyUrl();
+  if (!proxyBase) return results;
+
+  try {
+    const isXmlApi = proxyBase.includes('xmlapi2') || !proxyBase.includes('/api');
+    // Multi-IDs for BGG should have unencoded commas
+    const idsParam = missingIds.slice(0, 20).join(',');
+    const thingUrl = isXmlApi
+      ? `${proxyBase}/thing?id=${idsParam}`
+      : `${proxyBase}/api/game?id=${idsParam}`;
+
+    const response = await fetch(thingUrl, {
+      headers: getRequestHeaders(),
+    });
+
+    if (response.ok) {
+      const text = await response.text();
+      if (typeof window !== 'undefined' && window.DOMParser) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/xml');
+        const items = doc.querySelectorAll('item');
+
+        items.forEach((item) => {
+          const id = item.getAttribute('id');
+          if (!id) return;
+          const thumbEl = item.querySelector('thumbnail');
+          const imageEl = item.querySelector('image');
+          const thumbnail = thumbEl?.textContent?.trim() || imageEl?.textContent?.trim() || '';
+          const image = imageEl?.textContent?.trim() || thumbEl?.textContent?.trim() || '';
+
+          const data = { thumbnail, image };
+          thumbnailCache.set(id, data);
+          results.set(id, data);
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Batch fetch thumbnails failed:', err);
+  }
+
+  return results;
+}
+
+/**
+ * Intelligent ranking: sorts exact title matches to the top,
+ * followed by prefix matches, and eliminates completely unrelated matches.
+ */
+export function rankAndSortBGGResults(results: BGGSearchResult[], query: string): BGGSearchResult[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return results;
+
+  const escapeRegex = (s: string) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+  const wordRegex = new RegExp(`\\b${escapeRegex(q)}\\b`, 'i');
+
+  const scored = results.map((item) => {
+    const title = item.name.toLowerCase();
+    let score = 0;
+
+    if (title === q) {
+      // 1. Exact match on full title
+      score = 1000;
+    } else if (title.startsWith(q + ':') || title.startsWith(q + ' -') || title.startsWith(q + ' ')) {
+      // 2. Starts with query as a prefix
+      score = 800 - Math.min(title.length, 100);
+    } else if (title.startsWith(q)) {
+      // 3. Starts with query letters
+      score = 700 - Math.min(title.length, 100);
+    } else if (wordRegex.test(title)) {
+      // 4. Query is a whole word inside title
+      score = 500 - Math.min(title.length, 100);
+    } else if (title.includes(q)) {
+      // 5. Query is a substring of title
+      score = 300 - Math.min(title.length, 100);
+    } else {
+      // 6. Matched by BGG alternate names or foreign versions
+      score = 50;
+    }
+
+    return { item, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  // If we have high quality title matches (score >= 300), filter out random alternate-name matches
+  const goodMatches = scored.filter((s) => s.score >= 300);
+  if (goodMatches.length >= 2) {
+    return goodMatches.map((s) => s.item);
+  }
+
+  return scored.map((s) => s.item);
+}
+
 /**
  * Parses raw XML returned by BGG XMLAPI2 /search endpoint
  */
@@ -55,15 +168,16 @@ function parseBGGSearchXml(xmlText: string): BGGSearchResult[] {
       const yearEl = item.querySelector('yearpublished');
       const yearPublished = yearEl ? Number(yearEl.getAttribute('value')) || 2024 : 2024;
 
-      // Check if we have cover in local catalog
+      // Check if we have cover in local catalog or memory cache
+      const cached = thumbnailCache.get(bggId);
       const localMatch = EXPANDED_BGG_CATALOG.find((g) => g.bggId === bggId);
 
       results.push({
         bggId,
         name,
         yearPublished,
-        thumbnail: localMatch?.thumbnail,
-        image: localMatch?.image,
+        thumbnail: cached?.thumbnail || localMatch?.thumbnail,
+        image: cached?.image || localMatch?.image,
       });
     });
 
@@ -96,8 +210,8 @@ function parseBGGThingXml(xmlText: string, bggId: string): BGGGameDetail | null 
     const playTimeEl = item.querySelector('playingtime');
     const ratingEl = item.querySelector('ratings > average');
 
-    const thumbnail = thumbEl?.textContent || imageEl?.textContent || '';
-    const image = imageEl?.textContent || thumbEl?.textContent || '';
+    const thumbnail = thumbEl?.textContent?.trim() || imageEl?.textContent?.trim() || '';
+    const image = imageEl?.textContent?.trim() || thumbEl?.textContent?.trim() || '';
     const description = (descEl?.textContent || '')
       .replace(/&#10;/g, '\n')
       .replace(/&quot;/g, '"')
@@ -106,6 +220,10 @@ function parseBGGThingXml(xmlText: string, bggId: string): BGGGameDetail | null 
     const maxPlayers = maxPlayersEl ? Number(maxPlayersEl.getAttribute('value')) || 4 : 4;
     const playingTime = playTimeEl ? Number(playTimeEl.getAttribute('value')) || 60 : 60;
     const bggRating = ratingEl ? Math.round(Number(ratingEl.getAttribute('value')) * 10) / 10 : 7.5;
+
+    if (thumbnail || image) {
+      thumbnailCache.set(bggId, { thumbnail, image });
+    }
 
     return {
       bggId,
@@ -155,7 +273,8 @@ function parseBGGDetailResponse(text: string, bggId: string): BGGGameDetail | nu
 }
 
 export async function searchBGGGames(query: string): Promise<BGGSearchResult[]> {
-  const q = query.trim().toLowerCase();
+  const cleanQ = query.trim();
+  const q = cleanQ.toLowerCase();
   const proxyBase = getBGGProxyUrl();
 
   // 1. Try Live Serverless / Cloudflare Worker Proxy if configured
@@ -163,25 +282,71 @@ export async function searchBGGGames(query: string): Promise<BGGSearchResult[]> 
     try {
       const isXmlApi = proxyBase.includes('xmlapi2') || !proxyBase.includes('/api');
       const searchUrl = isXmlApi
-        ? `${proxyBase}/search?query=${encodeURIComponent(query)}&type=boardgame,boardgameexpansion`
-        : `${proxyBase}/api/search?q=${encodeURIComponent(query)}`;
+        ? `${proxyBase}/search?query=${encodeURIComponent(cleanQ)}&type=boardgame,boardgameexpansion`
+        : `${proxyBase}/api/search?q=${encodeURIComponent(cleanQ)}`;
 
       const response = await fetch(searchUrl, {
         headers: getRequestHeaders(),
       });
+
       if (response.ok) {
         const text = await response.text();
-        const results = parseBGGSearchResponse(text);
-        if (results.length > 0) {
-          return results;
+        const rawResults = parseBGGSearchResponse(text);
+
+        // Also merge in local catalog games matching query
+        const localMatches = EXPANDED_BGG_CATALOG.filter((g) =>
+          g.name.toLowerCase().includes(q)
+        ).map(({ bggId, name, yearPublished, thumbnail, image }) => ({
+          bggId,
+          name,
+          yearPublished,
+          thumbnail,
+          image,
+        }));
+
+        // Combine unique by bggId
+        const combinedMap = new Map<string, BGGSearchResult>();
+        rawResults.forEach((r) => combinedMap.set(r.bggId, r));
+        localMatches.forEach((m) => {
+          if (!combinedMap.has(m.bggId)) {
+            combinedMap.set(m.bggId, m);
+          } else if (m.thumbnail && !combinedMap.get(m.bggId)!.thumbnail) {
+            // Enrich with local thumbnail if missing
+            combinedMap.get(m.bggId)!.thumbnail = m.thumbnail;
+            combinedMap.get(m.bggId)!.image = m.image;
+          }
+        });
+
+        const combinedList = Array.from(combinedMap.values());
+        if (combinedList.length > 0) {
+          // Rank so exact title matches (e.g. Catan) appear first
+          const ranked = rankAndSortBGGResults(combinedList, cleanQ).slice(0, 15);
+
+          // Find items still missing thumbnail and batch fetch from BGG /thing endpoint
+          const missingThumbnailIds = ranked
+            .filter((item) => !item.thumbnail && /^\d+$/.test(item.bggId))
+            .map((item) => item.bggId);
+
+          if (missingThumbnailIds.length > 0) {
+            const fetchedThumbs = await fetchBatchThumbnails(missingThumbnailIds);
+            ranked.forEach((item) => {
+              const thumbData = fetchedThumbs.get(item.bggId);
+              if (thumbData?.thumbnail) {
+                item.thumbnail = thumbData.thumbnail;
+                item.image = thumbData.image || thumbData.thumbnail;
+              }
+            });
+          }
+
+          return ranked;
         }
       }
-    } catch {
-      // Fallback to offline catalog below
+    } catch (err) {
+      console.warn('Live BGG search error, falling back to offline catalog:', err);
     }
   }
 
-  // 2. Search local expanded BGG catalog (106+ games)
+  // 2. Search local expanded BGG catalog (118+ classic games)
   if (!q) {
     return MOCK_BGG_CATALOG.slice(0, 15).map(({ bggId, name, yearPublished, thumbnail, image }) => ({
       bggId,
@@ -192,25 +357,25 @@ export async function searchBGGGames(query: string): Promise<BGGSearchResult[]> 
     }));
   }
 
-  // Search in expanded local catalog
+  // Search in expanded local catalog with ranking
   const matches = MOCK_BGG_CATALOG.filter((game) =>
     game.name.toLowerCase().includes(q)
   );
 
   if (matches.length > 0) {
-    return matches.map(({ bggId, name, yearPublished, thumbnail, image }) => ({
+    const mapped = matches.map(({ bggId, name, yearPublished, thumbnail, image }) => ({
       bggId,
       name,
       yearPublished,
       thumbnail,
       image,
     }));
+    return rankAndSortBGGResults(mapped, cleanQ);
   }
 
   // 3. Dynamic synthesized BGG entry when searching for custom title
-  const cleanTitle = query.trim();
   const cover = createGameCoverDataUri(
-    cleanTitle,
+    cleanQ,
     'BoardGameGeek Entry · 2024',
     ['#4c1d95', '#1e3a8a', '#a78bfa'],
     'hex'
@@ -218,8 +383,8 @@ export async function searchBGGGames(query: string): Promise<BGGSearchResult[]> 
 
   return [
     {
-      bggId: `bgg-${cleanTitle.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-      name: cleanTitle,
+      bggId: `bgg-${cleanQ.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+      name: cleanQ,
       yearPublished: 2024,
       thumbnail: cover,
       image: cover,
