@@ -12,6 +12,7 @@ import {
   Trash2,
   Trophy,
   Save,
+  Coffee,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { GameStatusBadge } from '../components/game/GameStatusBadge';
@@ -256,6 +257,20 @@ export const GameDetailPage: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {game.status === 'rented' && (
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/35 flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
+                    <Coffee className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-amber-300 font-bold">Game Thuê / Chơi Quán</p>
+                    <p className="text-xs text-white/80 mt-0.5">
+                      Tựa game trải nghiệm tại tiệm cafe boardgame, không tính vào giá trị tổng tài sản kho sở hữu cá nhân.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {game.status === 'lent_out' && (
                 <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/35 flex items-center justify-between gap-3">

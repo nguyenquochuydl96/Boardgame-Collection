@@ -368,10 +368,11 @@ export const AddGamePage: React.FC = () => {
                 <label className="block text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
                   Ownership Status
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                   {(
                     [
                       'own',
+                      'rented',
                       'lent_out',
                       'borrowed',
                       'sold',
@@ -401,6 +402,18 @@ export const AddGamePage: React.FC = () => {
                   })}
                 </div>
               </div>
+
+              {status === 'rented' && (
+                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3 text-xs text-amber-200">
+                    <span className="text-base">☕</span>
+                    <div>
+                      <p className="font-bold text-amber-300">Game Thuê / Chơi Quán</p>
+                      <p className="text-amber-200/80 mt-0.5">
+                        Trải nghiệm tại tiệm cafe boardgame — không tính vào tổng giá trị tài sản kho sở hữu cá nhân.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
               {/* Price Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

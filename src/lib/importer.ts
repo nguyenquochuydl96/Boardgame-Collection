@@ -29,6 +29,7 @@ export interface FullBGCatalogImportResult {
     playerCount: number;
     locationCount?: number;
     ownCount: number;
+    rentedCount?: number;
     soldCount: number;
     prevOwnedCount: number;
     wishlistCount: number;
@@ -457,6 +458,7 @@ export function parseImportFile(content: string): ImportPreviewItem[] {
 function normalizeStatus(val: string): GameStatus {
   if (!val) return 'own';
   const v = val.toLowerCase().trim();
+  if (v.includes('rent') || v.includes('thuê') || v.includes('thue') || v.includes('quán') || v.includes('quan')) return 'rented';
   if (v.includes('lent') || v.includes('cho mượn') || v.includes('loaned'))
     return 'lent_out';
   if (v.includes('borrow') || v.includes('mượn')) return 'borrowed';

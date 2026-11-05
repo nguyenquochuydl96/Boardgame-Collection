@@ -355,7 +355,7 @@ export const HomePage: React.FC = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 tabular-nums">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 tabular-nums">
               <Link
                 to="/collection?status=own"
                 className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-emerald-400/60 hover:shadow-lg transition-all group cursor-pointer block"
@@ -370,6 +370,19 @@ export const HomePage: React.FC = () => {
               </Link>
 
               <Link
+                to="/collection?status=rented"
+                className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-amber-400/60 hover:shadow-lg transition-all group cursor-pointer block"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-amber-400 font-semibold transition-colors">Thuê / Quán</span>
+                  <span className="text-xs text-[var(--text-muted)] group-hover:text-amber-400">→</span>
+                </div>
+                <div className="font-display font-extrabold text-2xl text-amber-400 mt-1">
+                  <AnimatedNumber value={games.filter((g) => g.status === 'rented').length} />
+                </div>
+              </Link>
+
+              <Link
                 to="/collection?status=lent_out"
                 className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-orange-400/60 hover:shadow-lg transition-all group cursor-pointer block"
               >
@@ -379,6 +392,19 @@ export const HomePage: React.FC = () => {
                 </div>
                 <div className="font-display font-extrabold text-2xl text-orange-400 mt-1">
                   <AnimatedNumber value={games.filter((g) => g.status === 'lent_out').length} />
+                </div>
+              </Link>
+
+              <Link
+                to="/collection?status=borrowed"
+                className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-cyan-400/60 hover:shadow-lg transition-all group cursor-pointer block"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-cyan-400 font-semibold transition-colors">Đang Mượn</span>
+                  <span className="text-xs text-[var(--text-muted)] group-hover:text-cyan-400">→</span>
+                </div>
+                <div className="font-display font-extrabold text-2xl text-cyan-400 mt-1">
+                  <AnimatedNumber value={games.filter((g) => g.status === 'borrowed').length} />
                 </div>
               </Link>
 

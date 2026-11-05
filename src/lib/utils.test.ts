@@ -190,6 +190,20 @@ test('getCollectionTotalValue sums purchase prices of owned and lent_out games o
       purchasePrice: 800000,
       addedDate: '2026-01-01',
     },
+    {
+      id: '4',
+      name: 'G4',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 1,
+      maxPlayers: 4,
+      playingTime: 60,
+      yearPublished: 2020,
+      status: 'rented',
+      purchasePrice: 350000,
+      addedDate: '2026-01-01',
+    },
   ];
 
   assert.equal(getCollectionTotalValue(games), 1500000);

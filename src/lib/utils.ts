@@ -63,6 +63,13 @@ export const STATUS_CONFIG: Record<
     border: 'rgba(16, 185, 129, 0.35)',
     dot: '#10b981',
   },
+  rented: {
+    label: 'Thuê',
+    color: '#eab308',
+    bg: 'rgba(234, 179, 8, 0.14)',
+    border: 'rgba(234, 179, 8, 0.35)',
+    dot: '#eab308',
+  },
   lent_out: {
     label: 'Lent Out',
     color: '#f97316',

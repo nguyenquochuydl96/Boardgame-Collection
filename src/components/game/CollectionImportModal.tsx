@@ -122,6 +122,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
               playerCount: parsed.players?.length || 0,
               locationCount: parsed.locations?.length || 0,
               ownCount: (parsed.games || []).filter((g: any) => g.status === 'own').length,
+              rentedCount: (parsed.games || []).filter((g: any) => g.status === 'rented').length,
               soldCount: (parsed.games || []).filter((g: any) => g.status === 'sold').length,
               prevOwnedCount: (parsed.games || []).filter((g: any) => g.status === 'prev_owned').length,
               wishlistCount: (parsed.games || []).filter((g: any) => g.status === 'wishlist').length,
@@ -401,7 +402,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                   {fullBackup.summary.gameCount}
                 </p>
                 <p className="text-[10px] text-[#94a3b8]">
-                  {fullBackup.summary.ownCount} sở hữu · {fullBackup.summary.soldCount} đã bán
+                  {fullBackup.summary.ownCount} sở hữu{Boolean(fullBackup.summary.rentedCount) ? ' · ' + fullBackup.summary.rentedCount + ' thuê' : ''} · {fullBackup.summary.soldCount} đã bán
                 </p>
               </div>
 

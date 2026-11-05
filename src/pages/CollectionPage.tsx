@@ -30,6 +30,7 @@ type SortOption = 'name' | 'addedDate' | 'bggRating' | 'purchasePrice';
 const FILTER_TABS: Array<{ id: FilterTab; label: string }> = [
   { id: 'all', label: 'Tất Cả' },
   { id: 'own', label: 'Đang Sở Hữu' },
+  { id: 'rented', label: 'Thuê / Chơi Quán' },
   { id: 'lent_out', label: 'Cho Mượn' },
   { id: 'borrowed', label: 'Mượn' },
   { id: 'sold', label: 'Đã Bán' },

@@ -2,6 +2,7 @@ export type GameStatus =
   | 'own'
   | 'lent_out'
   | 'borrowed'
+  | 'rented'
   | 'sold'
   | 'wishlist'
   | 'previously_owned';

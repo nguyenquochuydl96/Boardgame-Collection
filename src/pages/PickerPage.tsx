@@ -499,6 +499,7 @@ export const PickerPage: React.FC = () => {
                     <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Kho:</span>
                     {[
                       { id: 'own', label: 'Sở hữu (Có sẵn)' },
+                      { id: 'rented', label: 'Thuê/Quán' },
                       { id: 'borrowed', label: 'Đang mượn' },
                       { id: 'lent_out', label: 'Cho mượn' },
                       { id: 'all', label: 'Tất cả' },
