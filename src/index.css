@@ -2,13 +2,134 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* =========================================================================
-   RAYÉ DESIGN SYSTEM — Striped Summer Editorial Tabletop Vault
-   Inspired by Rayé (codeandchill.store/raye)
+   THEME DESIGN SYSTEMS
+   - Fitlo Nordic (Primary default, Scandinavian porcelain & spruce teal, codeandchill.store/templates/fitlo)
+   - Fitlo Dark Pine (Deep obsidian pine & electric mint cyan)
+   - Rayé Signature (Warm summer cream & bold editorial coral)
+   - Rayé Noir (Midnight charcoal lounge & warm butter)
    ========================================================================= */
 
+/* Fitlo Nordic (Modern Scandinavian Athletic & Porcelain Spruce Teal) */
 :root,
+[data-theme="fitlo"] {
+  --coral: #e2603a;
+  --coral-deep: #cc4f2b;
+  --teal: #0b7a73;
+  --teal-2: #08665f;
+  --butter: #f08a5d;
+  --butter-soft: rgba(240, 138, 93, 0.18);
+  --cream: #f7f6f2;
+  --paper: #f0efea;
+  --card-bg: #fdfdfb;
+  --ink: #161a19;
+  --ink-2: #353b3a;
+  --line: rgba(22, 26, 25, 0.08);
+  --line-2: rgba(22, 26, 25, 0.15);
+  --radius: 20px;
+  --radius-sm: 10px;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+
+  /* Semantic UI Tokens */
+  --bg-base: #f7f6f2;
+  --bg-surface: #f0efea;
+  --bg-elevated: #e5e4de;
+  --bg-card: #fdfdfb;
+  --accent-primary: #0b7a73;      /* Nordic Spruce Teal */
+  --accent-secondary: #e2603a;    /* Warm Terracotta */
+  --accent-neon: #0b7a73;
+  --accent-glow: rgba(11, 122, 115, 0.18);
+  --accent-pink: #e2603a;
+  --accent-cyan: #0b7a73;
+  --accent-green: #1e7548;
+  --accent-orange: #e2603a;
+  --accent-butter: #f08a5d;
+  --accent-ink: #ffffff;
+  --text-primary: #161a19;
+  --text-secondary: #353b3a;
+  --text-muted: #5f6665;
+  --border-subtle: rgba(22, 26, 25, 0.12);
+  --border-glow: #0b7a73;
+  --border-divider: rgba(22, 26, 25, 0.08);
+  --gradient-hero: linear-gradient(135deg, #0b7a73 0%, #08665f 100%);
+  --gradient-card: linear-gradient(145deg, #fdfdfb, #f7f6f2);
+  --shimmer: linear-gradient(90deg, transparent, rgba(11, 122, 115, 0.08), transparent);
+
+  /* Fitlo Card Shadows (Refined ambient glow + subtle inset line) */
+  --shadow-brutal-xs: 0 1px 2px rgba(22, 26, 25, 0.04), inset 0 0 0 1px rgba(22, 26, 25, 0.1);
+  --shadow-brutal-sm: 0 2px 5px rgba(22, 26, 25, 0.06), inset 0 0 0 1px rgba(22, 26, 25, 0.12);
+  --shadow-brutal: 0 1px 2px rgba(22, 26, 25, 0.04), 0 10px 26px -18px rgba(22, 26, 25, 0.22), inset 0 0 0 1px rgba(22, 26, 25, 0.08);
+  --shadow-brutal-hover: 0 4px 12px rgba(22, 26, 25, 0.08), 0 22px 44px -18px rgba(22, 26, 25, 0.28), inset 0 0 0 1px rgba(22, 26, 25, 0.14);
+  --shadow-brutal-lg: 0 2px 6px rgba(22, 26, 25, 0.07), 0 28px 60px -24px rgba(22, 26, 25, 0.32), inset 0 0 0 1px rgba(22, 26, 25, 0.1);
+  --shadow-brutal-teal: 0 8px 24px -10px rgba(11, 122, 115, 0.42), inset 0 0 0 1px rgba(11, 122, 115, 0.25);
+  --shadow: 0 1px 2px rgba(22, 26, 25, 0.04), 0 10px 26px -18px rgba(22, 26, 25, 0.22);
+  --shadow-lg: 0 2px 6px rgba(22, 26, 25, 0.07), 0 28px 60px -24px rgba(22, 26, 25, 0.32);
+
+  --font-display: "Urbanist", system-ui, -apple-system, sans-serif;
+  --font-body: "Urbanist", system-ui, -apple-system, sans-serif;
+  --font-sans: "Urbanist", system-ui, -apple-system, sans-serif;
+}
+
+/* Fitlo Dark Pine (Deep Obsidian Pine & Electric Mint Cyan) */
+[data-theme="fitlo-dark"] {
+  --coral: #f08a5d;
+  --coral-deep: #e2603a;
+  --teal: #3cc2b5;
+  --teal-2: #5fd3c7;
+  --butter: #f4a07a;
+  --butter-soft: rgba(244, 160, 122, 0.16);
+  --cream: #191e1d;
+  --paper: #151a19;
+  --card-bg: #191e1d;
+  --ink: #eef1f0;
+  --ink-2: #d1d6d5;
+  --line: rgba(238, 241, 240, 0.08);
+  --line-2: rgba(238, 241, 240, 0.16);
+  --radius: 20px;
+  --radius-sm: 10px;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+
+  /* Semantic UI Tokens */
+  --bg-base: #111514;
+  --bg-surface: #151a19;
+  --bg-elevated: #262c2b;
+  --bg-card: #191e1d;
+  --accent-primary: #3cc2b5;      /* Electric Mint Cyan */
+  --accent-secondary: #f08a5d;    /* Warm Terracotta */
+  --accent-neon: #3cc2b5;
+  --accent-glow: rgba(60, 194, 181, 0.25);
+  --accent-pink: #f08a5d;
+  --accent-cyan: #3cc2b5;
+  --accent-green: #6fcb95;
+  --accent-orange: #f08a5d;
+  --accent-butter: #f4a07a;
+  --accent-ink: #05201d;
+  --text-primary: #eef1f0;
+  --text-secondary: #d1d6d5;
+  --text-muted: #9fa8a6;
+  --border-subtle: rgba(238, 241, 240, 0.14);
+  --border-glow: #3cc2b5;
+  --border-divider: rgba(238, 241, 240, 0.08);
+  --gradient-hero: linear-gradient(135deg, #18423e 0%, #0e2725 100%);
+  --gradient-card: linear-gradient(145deg, #1d2423, #151b1a);
+  --shimmer: linear-gradient(90deg, transparent, rgba(60, 194, 181, 0.08), transparent);
+
+  /* Fitlo Dark Ambient Shadows */
+  --shadow-brutal-xs: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(238, 241, 240, 0.1);
+  --shadow-brutal-sm: 0 2px 6px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(238, 241, 240, 0.12);
+  --shadow-brutal: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -16px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(238, 241, 240, 0.1);
+  --shadow-brutal-hover: 0 4px 16px rgba(0, 0, 0, 0.55), 0 24px 50px -18px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(238, 241, 240, 0.18);
+  --shadow-brutal-lg: 0 2px 6px rgba(0, 0, 0, 0.5), 0 30px 70px -24px rgba(0, 0, 0, 0.85), inset 0 0 0 1px rgba(238, 241, 240, 0.12);
+  --shadow-brutal-teal: 0 8px 26px -10px rgba(60, 194, 181, 0.4), inset 0 0 0 1px rgba(60, 194, 181, 0.25);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -16px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.5), 0 30px 70px -24px rgba(0, 0, 0, 0.85);
+
+  --font-display: "Urbanist", system-ui, -apple-system, sans-serif;
+  --font-body: "Urbanist", system-ui, -apple-system, sans-serif;
+  --font-sans: "Urbanist", system-ui, -apple-system, sans-serif;
+}
+
+/* Rayé Signature (Warm Summer Cream & Editorial Coral) */
 [data-theme="raye"] {
-  /* Primitive Rayé Palette */
   --coral: #ff6b4a;
   --coral-deep: #e5512f;
   --teal: #0e4f4b;
@@ -39,6 +160,7 @@
   --accent-green: #0e4f4b;
   --accent-orange: #ff6b4a;
   --accent-butter: #ffd66b;
+  --accent-ink: #17130f;
   --text-primary: #17130f;
   --text-secondary: #4a423a;
   --text-muted: #78716c;
@@ -56,11 +178,17 @@
   --shadow-brutal-hover: 6px 6px 0px #17130f;
   --shadow-brutal-lg: 8px 8px 0px #17130f;
   --shadow-brutal-teal: 8px 8px 0px #0e4f4b;
+  --shadow: 4px 4px 0px #17130f;
+  --shadow-lg: 8px 8px 0px #17130f;
+
+  --font-display: "Archivo", "Arial Narrow", sans-serif;
+  --font-body: "Instrument Sans", system-ui, sans-serif;
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
 }
 
 /* Rayé Noir (Midnight Lounge Edition) */
 [data-theme="noir"],
-.dark {
+:root.dark:not([data-theme="fitlo-dark"]) {
   --coral: #ff7a5c;
   --coral-deep: #ff6b4a;
   --teal: #166e67;
@@ -91,6 +219,7 @@
   --accent-green: #34d399;
   --accent-orange: #fb923c;
   --accent-butter: #ffd66b;
+  --accent-ink: #14110e;
   --text-primary: #fbf6ee;
   --text-secondary: #d6cbbe;
   --text-muted: #9e9386;
@@ -108,13 +237,19 @@
   --shadow-brutal-hover: 6px 6px 0px #000000;
   --shadow-brutal-lg: 8px 8px 0px #000000;
   --shadow-brutal-teal: 8px 8px 0px #0e4f4b;
+  --shadow: 4px 4px 0px #000000;
+  --shadow-lg: 8px 8px 0px #000000;
+
+  --font-display: "Archivo", "Arial Narrow", sans-serif;
+  --font-body: "Instrument Sans", system-ui, sans-serif;
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
 }
 
 @theme {
-  --font-display: "Archivo", "Arial Narrow", sans-serif;
+  --font-display: "Urbanist", "Archivo", "Arial Narrow", sans-serif;
   --font-serif: "Instrument Serif", Georgia, serif;
-  --font-sans: "Instrument Sans", system-ui, sans-serif;
-  --font-body: "Instrument Sans", system-ui, sans-serif;
+  --font-sans: "Urbanist", "Instrument Sans", system-ui, sans-serif;
+  --font-body: "Urbanist", "Instrument Sans", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
 
@@ -389,4 +524,246 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--coral);
+}
+
+/* =========================================================================
+   FITLO DESIGN SYSTEM — Signature Animations & Component Overrides
+   Upstream reference: https://codeandchill.store/templates/fitlo
+   ========================================================================= */
+
+@keyframes breathe-ring {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes fitlo-pulse-soft {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.025);
+    opacity: 0.9;
+  }
+}
+
+@keyframes flash {
+  0% {
+    color: var(--accent-primary);
+  }
+  100% {
+    color: inherit;
+  }
+}
+
+.fitlo-breathe {
+  animation: 2.2s ease-in-out infinite breathe-ring;
+}
+
+.fitlo-pulse {
+  animation: 3s cubic-bezier(.22, 1, .36, 1) infinite fitlo-pulse-soft;
+}
+
+.is-flash {
+  animation: flash 1s cubic-bezier(.22, 1, .36, 1);
+}
+
+/* Adapt Cards, Buttons, and Layout when in Fitlo or Fitlo Dark */
+[data-theme="fitlo"] .raye-card,
+[data-theme="fitlo-dark"] .raye-card {
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  box-shadow: inset 0 0 0 1px var(--line), var(--shadow);
+  transition: transform 0.28s var(--ease-out), box-shadow 0.28s var(--ease-out);
+}
+
+[data-theme="fitlo"] .raye-card:hover,
+[data-theme="fitlo-dark"] .raye-card:hover {
+  transform: translateY(-2px);
+  box-shadow: inset 0 0 0 1px var(--line-2), var(--shadow-lg);
+}
+
+[data-theme="fitlo"] .raye-card-featured,
+[data-theme="fitlo-dark"] .raye-card-featured {
+  border: 1px solid var(--line-2);
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
+}
+
+[data-theme="fitlo"] .raye-btn,
+[data-theme="fitlo-dark"] .raye-btn {
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  box-shadow: var(--shadow-brutal-sm);
+  transition: all 0.24s var(--ease-out);
+}
+
+[data-theme="fitlo"] .raye-btn:hover,
+[data-theme="fitlo-dark"] .raye-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-brutal-hover);
+}
+
+[data-theme="fitlo"] .raye-btn-primary,
+[data-theme="fitlo-dark"] .raye-btn-primary {
+  background: var(--accent-primary);
+  color: var(--accent-ink);
+  border-color: transparent;
+  box-shadow: 0 6px 18px -6px var(--accent-primary);
+}
+
+[data-theme="fitlo"] .raye-btn-primary:hover,
+[data-theme="fitlo-dark"] .raye-btn-primary:hover {
+  background: var(--teal-2);
+  box-shadow: 0 8px 22px -6px var(--accent-primary);
+}
+
+[data-theme="fitlo"] .raye-pill,
+[data-theme="fitlo-dark"] .raye-pill {
+  border: 1px solid var(--line);
+  box-shadow: none;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+[data-theme="fitlo"] .raye-grain,
+[data-theme="fitlo-dark"] .raye-grain {
+  opacity: 0.012;
+}
+
+[data-theme="fitlo"] .raye-modal-box,
+[data-theme="fitlo-dark"] .raye-modal-box {
+  border: 1px solid var(--line-2);
+  border-radius: 24px;
+  box-shadow: var(--shadow-lg);
+}
+
+/* Harmonize Hard Neobrutalist Elements into Fitlo's Clean Porcelain Theme */
+[data-theme="fitlo"] aside,
+[data-theme="fitlo-dark"] aside {
+  border-right: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="fitlo"] aside > div:first-child,
+[data-theme="fitlo-dark"] aside > div:first-child {
+  background: var(--bg-card) !important;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+
+[data-theme="fitlo"] aside > div:first-child .rounded-xl,
+[data-theme="fitlo-dark"] aside > div:first-child .rounded-xl {
+  background: var(--accent-primary) !important;
+  color: var(--accent-ink) !important;
+  border: none !important;
+  box-shadow: 0 6px 14px -4px var(--accent-primary) !important;
+}
+
+[data-theme="fitlo"] aside > div:first-child svg,
+[data-theme="fitlo-dark"] aside > div:first-child svg {
+  color: var(--accent-ink) !important;
+}
+
+[data-theme="fitlo"] aside nav a,
+[data-theme="fitlo-dark"] aside nav a {
+  border-radius: 14px !important;
+  transition: all 0.2s var(--ease-out) !important;
+}
+
+[data-theme="fitlo"] aside nav a:hover,
+[data-theme="fitlo-dark"] aside nav a:hover {
+  background: var(--bg-surface) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+[data-theme="fitlo"] aside nav a[class*="bg-[var(--ink)]"],
+[data-theme="fitlo-dark"] aside nav a[class*="bg-[var(--ink)]"] {
+  background: var(--accent-primary) !important;
+  color: var(--accent-ink) !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 16px -4px var(--accent-primary) !important;
+  transform: none !important;
+}
+
+[data-theme="fitlo"] aside nav a[class*="bg-[var(--ink)]"] svg,
+[data-theme="fitlo-dark"] aside nav a[class*="bg-[var(--ink)]"] svg {
+  color: var(--accent-ink) !important;
+}
+
+[data-theme="fitlo"] .raye-marquee,
+[data-theme="fitlo-dark"] .raye-marquee {
+  background: var(--bg-surface) !important;
+  color: var(--text-secondary) !important;
+  border-bottom: 1px solid var(--line) !important;
+  font-weight: 600;
+}
+
+[data-theme="fitlo"] .lg\:hidden.sticky,
+[data-theme="fitlo-dark"] .lg\:hidden.sticky {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+[data-theme="fitlo"] nav[aria-label="Mobile navigation"],
+[data-theme="fitlo-dark"] nav[aria-label="Mobile navigation"] {
+  border-top: 1px solid var(--line) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+[data-theme="fitlo"] nav[aria-label="Mobile navigation"] [class*="bg-[var(--coral)]"],
+[data-theme="fitlo-dark"] nav[aria-label="Mobile navigation"] [class*="bg-[var(--coral)]"] {
+  background: var(--accent-primary) !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px -2px var(--accent-primary) !important;
+}
+
+[data-theme="fitlo"] nav[aria-label="Mobile navigation"] a span,
+[data-theme="fitlo-dark"] nav[aria-label="Mobile navigation"] a span {
+  color: inherit;
+}
+
+[data-theme="fitlo"] [class*="border-[var(--ink)]"],
+[data-theme="fitlo-dark"] [class*="border-[var(--ink)]"] {
+  border-color: var(--line-2);
+}
+
+[data-theme="fitlo"] [class*="shadow-[4px_0_0_var(--ink)]"],
+[data-theme="fitlo-dark"] [class*="shadow-[4px_0_0_var(--ink)]"] {
+  box-shadow: none;
+}
+
+[data-theme="fitlo"] [class*="shadow-[2px_2px_0_var(--ink)]"],
+[data-theme="fitlo-dark"] [class*="shadow-[2px_2px_0_var(--ink)]"] {
+  box-shadow: var(--shadow);
+}
+
+[data-theme="fitlo"] [class*="shadow-[3px_3px_0_var(--coral)]"],
+[data-theme="fitlo-dark"] [class*="shadow-[3px_3px_0_var(--coral)]"] {
+  box-shadow: 0 4px 14px -3px var(--accent-glow);
+}
+
+[data-theme="fitlo"] [class*="shadow-[1.5px_1.5px_0_var(--ink)]"],
+[data-theme="fitlo-dark"] [class*="shadow-[1.5px_1.5px_0_var(--ink)]"] {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="fitlo"] [class*="shadow-[0_2px_0_var(--ink)]"],
+[data-theme="fitlo-dark"] [class*="shadow-[0_2px_0_var(--ink)]"] {
+  box-shadow: var(--shadow);
+}
+
+[data-theme="fitlo"] [class*="shadow-[0_-2px_0_var(--ink)]"],
+[data-theme="fitlo-dark"] [class*="shadow-[0_-2px_0_var(--ink)]"] {
+  box-shadow: var(--shadow-lg);
 }

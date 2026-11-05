@@ -23,6 +23,7 @@ import { useSyncStore } from '../../store/useSyncStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useSessionStore } from '../../store/useSessionStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
+import { useThemeStore } from '../../store/useThemeStore';
 import {
   pullVaultFromCloud,
   pushVaultToCloud,
@@ -40,6 +41,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showBGGModal, setShowBGGModal] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
+
+  const currentTheme = useThemeStore((s) => s.theme);
+  const isFitlo = currentTheme === 'fitlo' || currentTheme === 'fitlo-dark';
 
   const isSyncEnabled = useSyncStore((s) => s.isEnabled);
   const autoSync = useSyncStore((s) => s.autoSync);
@@ -107,7 +111,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <div className="raye-marquee-track flex items-center gap-8 px-4">
           <span className="flex items-center gap-3">
             <span className="w-2 h-2 rounded-full bg-[var(--coral)] animate-ping" />
-            <span>RAYÉ × TABLETOP ARCHIVE</span>
+            <span>{isFitlo ? 'FITLO × TABLETOP ARCHIVE' : 'RAYÉ × TABLETOP ARCHIVE'}</span>
           </span>
           <span className="text-[var(--coral)]">•</span>
           <span>{gamesCount} BOARD GAMES CURATED</span>
@@ -115,7 +119,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <span>{sessionsCount} PLAY SESSIONS LOGGED</span>
           <span className="text-[var(--coral)]">•</span>
           <span className="text-[var(--butter)] font-serif italic lowercase tracking-normal text-sm">
-            slow, sunny afternoons & tabletop battles
+            {isFitlo ? 'sleek scandinavian precision & game night victories' : 'slow, sunny afternoons & tabletop battles'}
           </span>
           <span className="text-[var(--coral)]">•</span>
           <span>REALTIME SUPABASE CLOUD SYNCED</span>
@@ -126,7 +130,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           {/* Repeat set for seamless infinite loop */}
           <span className="flex items-center gap-3">
             <span className="w-2 h-2 rounded-full bg-[var(--coral)] animate-ping" />
-            <span>RAYÉ × TABLETOP ARCHIVE</span>
+            <span>{isFitlo ? 'FITLO × TABLETOP ARCHIVE' : 'RAYÉ × TABLETOP ARCHIVE'}</span>
           </span>
           <span className="text-[var(--coral)]">•</span>
           <span>{gamesCount} BOARD GAMES CURATED</span>
@@ -160,9 +164,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 <Dices className="w-5 h-5 text-[var(--ink)]" />
               </div>
               <div className="flex flex-col">
-                <span className="font-display font-black text-xl tracking-tighter uppercase leading-none">
-                  Rayé <span className="font-serif italic lowercase font-normal text-2xl">vault</span>
-                </span>
+                {isFitlo ? (
+                  <span className="font-display font-black text-xl tracking-tight uppercase leading-none">
+                    Fitlo <span className="font-sans font-medium text-lg lowercase opacity-90">vault</span>
+                  </span>
+                ) : (
+                  <span className="font-display font-black text-xl tracking-tighter uppercase leading-none">
+                    Rayé <span className="font-serif italic lowercase font-normal text-2xl">vault</span>
+                  </span>
+                )}
                 <span className="text-[10px] font-bold tracking-widest uppercase opacity-80 mt-0.5">
                   Curated Tabletop
                 </span>
@@ -266,9 +276,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <div className="w-8 h-8 rounded-lg bg-[var(--butter)] border border-[var(--ink)] flex items-center justify-center shadow-[1.5px_1.5px_0_var(--ink)]">
               <Dices className="w-4 h-4 text-[var(--ink)]" />
             </div>
-            <span className="font-display font-black text-lg tracking-tight uppercase">
-              Rayé <span className="font-serif italic lowercase font-normal text-xl">vault</span>
-            </span>
+            {isFitlo ? (
+              <span className="font-display font-black text-lg tracking-tight uppercase leading-none">
+                Fitlo <span className="font-sans font-medium text-base lowercase opacity-90">vault</span>
+              </span>
+            ) : (
+              <span className="font-display font-black text-lg tracking-tight uppercase">
+                Rayé <span className="font-serif italic lowercase font-normal text-xl">vault</span>
+              </span>
+            )}
           </Link>
 
           <div className="flex items-center gap-2">
