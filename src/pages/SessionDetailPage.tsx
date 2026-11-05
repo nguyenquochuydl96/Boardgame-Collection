@@ -72,38 +72,6 @@ export const SessionDetailPage: React.FC = () => {
   const [editBreakdowns, setEditBreakdowns] = useState<Record<string, Record<string, number>>>({});
   const [editScoreMode, setEditScoreMode] = useState<'quick' | 'detailed'>('quick');
 
-  if (!session) {
-    return (
-      <PageTransition>
-        <Card className="p-8 text-center space-y-4">
-          <h1 className="font-display font-bold text-2xl text-[var(--text-primary)]">
-            Không tìm thấy ván chơi
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)]">
-            Ván chơi này có thể đã bị xóa hoặc đường dẫn không đúng.
-          </p>
-          <Link to="/sessions">
-            <Button variant="primary">Quay lại danh sách</Button>
-          </Link>
-        </Card>
-      </PageTransition>
-    );
-  }
-
-  const playersById = Object.fromEntries(savedPlayers.map((p) => [p.id, p]));
-  const firstPlayer = session.players?.find(
-    (p) => p.playerId === session.firstPlayerId
-  );
-
-  const sortedResults = [...(session.players || [])].sort((a, b) => {
-    if (a.isWinner && !b.isWinner) return -1;
-    if (!a.isWinner && b.isWinner) return 1;
-    if (typeof a.score === 'number' && typeof b.score === 'number') {
-      return b.score - a.score;
-    }
-    return (a.rank || 99) - (b.rank || 99);
-  });
-
   const scoringTemplate = React.useMemo(
     () => getScoringTemplateForGame(session?.gameName),
     [session?.gameName]
@@ -141,11 +109,47 @@ export const SessionDetailPage: React.FC = () => {
     });
 
     return Array.from(catMap.values()).filter((cat) => {
-      return session.players.some(
-        (p) => typeof p.scoreBreakdown?.[cat.id] === 'number' && p.scoreBreakdown?.[cat.id] !== 0
-      ) || scoringTemplate.categories.some((tc) => tc.id === cat.id);
+      return (
+        session.players.some(
+          (p) =>
+            typeof p.scoreBreakdown?.[cat.id] === 'number' &&
+            p.scoreBreakdown?.[cat.id] !== 0
+        ) || scoringTemplate.categories.some((tc) => tc.id === cat.id)
+      );
     });
   }, [session, hasBreakdown, scoringTemplate]);
+
+  if (!session) {
+    return (
+      <PageTransition>
+        <Card className="p-8 text-center space-y-4 max-w-md mx-auto">
+          <h1 className="font-display font-bold text-2xl text-[var(--text-primary)]">
+            Không Tìm Thấy Ván Chơi
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Ván chơi này đã được xóa khỏi lịch sử hoặc không tồn tại.
+          </p>
+          <Link to="/sessions">
+            <Button variant="primary">Về Danh Sách Ván Chơi</Button>
+          </Link>
+        </Card>
+      </PageTransition>
+    );
+  }
+
+  const playersById = Object.fromEntries(savedPlayers.map((p) => [p.id, p]));
+  const firstPlayer = session.players?.find(
+    (p) => p.playerId === session.firstPlayerId
+  );
+
+  const sortedResults = [...(session.players || [])].sort((a, b) => {
+    if (a.isWinner && !b.isWinner) return -1;
+    if (!a.isWinner && b.isWinner) return 1;
+    if (typeof a.score === 'number' && typeof b.score === 'number') {
+      return b.score - a.score;
+    }
+    return (a.rank || 99) - (b.rank || 99);
+  });
 
   // Open Edit Modal with full state initialized
   const handleOpenEdit = () => {
@@ -300,9 +304,13 @@ export const SessionDetailPage: React.FC = () => {
   };
 
   const handleDelete = () => {
+    if (!session) return;
     if (window.confirm('Bạn có chắc chắn muốn xóa ván chơi này khỏi lịch sử?')) {
-      deleteSession(session.id);
-      navigate('/sessions');
+      const sessionId = session.id;
+      navigate('/sessions', { replace: true });
+      setTimeout(() => {
+        deleteSession(sessionId);
+      }, 50);
     }
   };
 

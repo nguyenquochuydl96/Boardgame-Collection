@@ -263,9 +263,13 @@ export const PlayerDetailPage: React.FC = () => {
   }, [perGameStats, breakdownSearch, breakdownSort]);
 
   const handleDelete = () => {
+    if (!player) return;
     if (window.confirm(`Bạn có chắc muốn xóa hồ sơ người chơi "${player.name}"?`)) {
-      deletePlayer(player.id);
-      navigate('/players');
+      const playerId = player.id;
+      navigate('/players', { replace: true });
+      setTimeout(() => {
+        deletePlayer(playerId);
+      }, 50);
     }
   };
 

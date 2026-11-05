@@ -106,8 +106,12 @@ export const GameDetailPage: React.FC = () => {
   };
 
   const handleDelete = () => {
-    deleteGame(game.id);
-    navigate('/collection');
+    if (!game) return;
+    const gameId = game.id;
+    navigate('/collection', { replace: true });
+    setTimeout(() => {
+      deleteGame(gameId);
+    }, 50);
   };
 
   return (
