@@ -15,6 +15,7 @@ import {
   Check,
   X,
   Trophy,
+  RotateCcw,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
@@ -315,6 +316,16 @@ export const SessionDetailPage: React.FC = () => {
     }
   };
 
+  const handleRematch = () => {
+    if (!session) return;
+    const playerIds = (session.players || []).map((p) => p.playerId).join(',');
+    const encodedLocation = encodeURIComponent(session.location || '');
+    // Navigate straight to Step 4 (Who Goes First) in rematch mode
+    navigate(
+      `/sessions/new?gameId=${session.gameId}&playerIds=${playerIds}&location=${encodedLocation}&step=4&mode=rematch`
+    );
+  };
+
   const availablePlayersToAdd = savedPlayers.filter(
     (p) => !editPlayers.some((ep) => ep.playerId === p.id)
   );
@@ -333,6 +344,16 @@ export const SessionDetailPage: React.FC = () => {
           </Link>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleRematch}
+              className="bg-[image:var(--gradient-hero)] text-white shadow-md shadow-[var(--accent-glow)] font-bold"
+              title="Tạo trận mới giữ nguyên game này, cùng người chơi và địa điểm, vào thẳng bước chọn người đi đầu"
+            >
+              <RotateCcw className="w-4 h-4 mr-1.5" />
+              Tái Đấu / Trận Mới
+            </Button>
             <Button variant="secondary" size="sm" onClick={handleOpenEdit}>
               <Edit3 className="w-4 h-4 mr-1.5 text-[var(--accent-neon)]" />
               Chỉnh Sửa
@@ -641,6 +662,30 @@ export const SessionDetailPage: React.FC = () => {
             </div>
           </Card>
         )}
+
+        {/* Quick Rematch Callout */}
+        <Card className="p-6 bg-gradient-to-r from-[var(--bg-surface)] via-[var(--bg-elevated)] to-[var(--bg-surface)] border-[var(--border-glow)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🎲</span>
+              <h3 className="font-display font-bold text-base text-[var(--text-primary)]">
+                Chơi tiếp ván nữa cùng hội bạn?
+              </h3>
+            </div>
+            <p className="text-xs text-[var(--text-secondary)]">
+              Tạo ngay ván đấu mới giữ nguyên <strong>{session.gameName}</strong>, <strong>{session.players.length} người chơi</strong> và địa điểm <strong>{session.location || 'hiện tại'}</strong>, vào thẳng bước chọn người đi đầu!
+            </p>
+          </div>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={handleRematch}
+            className="shrink-0 bg-[image:var(--gradient-hero)] text-white shadow-lg shadow-[var(--accent-glow)] font-bold"
+          >
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Tái Đấu Ngay
+          </Button>
+        </Card>
 
         {/* Fullscreen Photo Modal */}
         <Modal

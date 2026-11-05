@@ -89,6 +89,7 @@ export interface LocationStore {
   deleteLocation: (id: string) => void;
   setDefaultLocation: (id: string) => void;
   syncHistoricalLocations: (sessions: PlaySession[], force?: boolean) => void;
+  bulkAddLocations: (newLocs: GameLocation[], replaceExisting?: boolean) => void;
 }
 
 export const useLocationStore = create<LocationStore>()(
@@ -96,6 +97,16 @@ export const useLocationStore = create<LocationStore>()(
     (set, get) => ({
       locations: INITIAL_LOCATIONS,
       hasSyncedHistory: false,
+      bulkAddLocations: (newLocs, replaceExisting = false) => {
+        set((state) => {
+          if (replaceExisting) {
+            return { locations: newLocs, hasSyncedHistory: true };
+          }
+          const existingNames = new Set(state.locations.map((l) => l.name.trim().toLowerCase()));
+          const toAdd = newLocs.filter((l) => !existingNames.has(l.name.trim().toLowerCase()));
+          return { locations: [...state.locations, ...toAdd], hasSyncedHistory: true };
+        });
+      },
       addLocation: (name, address, notes, isDefault) => {
         const trimmed = name.trim();
         const currentLocs = get().locations;

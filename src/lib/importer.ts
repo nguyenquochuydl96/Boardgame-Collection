@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { BoardGame, GameStatus, Player, PlaySession } from '../types';
+import { BoardGame, GameStatus, Player, PlaySession, GameLocation } from '../types';
 import { generateId } from './utils';
 
 export interface ImportPreviewItem {
@@ -22,10 +22,12 @@ export interface FullBGCatalogImportResult {
   games: BoardGame[];
   players: Player[];
   sessions: PlaySession[];
+  locations?: GameLocation[];
   summary: {
     gameCount: number;
     playCount: number;
     playerCount: number;
+    locationCount?: number;
     ownCount: number;
     soldCount: number;
     prevOwnedCount: number;

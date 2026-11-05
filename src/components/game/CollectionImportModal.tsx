@@ -26,6 +26,7 @@ import { importBGGCollection } from '../../lib/bgg';
 import { useGameStore } from '../../store/useGameStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { useSessionStore } from '../../store/useSessionStore';
+import { useLocationStore } from '../../store/useLocationStore';
 import { createGameCoverDataUri } from '../../lib/utils';
 import { exportVaultJSON, exportGamesCSV, exportSessionsCSV } from '../../lib/exportVault';
 import { Download, HardDriveDownload } from 'lucide-react';
@@ -35,21 +36,33 @@ import { PoweredByBGG } from '../ui/PoweredByBGG';
 export interface CollectionImportModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: 'file' | 'export' | 'bgg';
 }
 
 export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
   isOpen,
   onClose,
+  initialTab,
 }) => {
   const addGame = useGameStore((s) => s.addGame);
   const bulkAddGames = useGameStore((s) => s.bulkAddGames);
   const bulkAddPlayers = usePlayerStore((s) => s.bulkAddPlayers);
   const bulkAddSessions = useSessionStore((s) => s.bulkAddSessions);
+  const bulkAddLocations = useLocationStore((s) => s.bulkAddLocations);
   const games = useGameStore((s) => s.games);
   const players = usePlayerStore((s) => s.players);
   const sessions = useSessionStore((s) => s.sessions);
+  const locations = useLocationStore((s) => s.locations);
 
-  const [activeTab, setActiveTab] = useState<'file' | 'export' | 'bgg'>('file');
+  const [activeTab, setActiveTab] = useState<'file' | 'export' | 'bgg'>(
+    initialTab || 'file'
+  );
+
+  React.useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [isOpen, initialTab]);
   const [bggUsername, setBggUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +78,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
     games: true,
     players: true,
     sessions: true,
+    locations: true,
     replaceExisting: true,
   });
 
@@ -101,10 +115,12 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
             games: parsed.games || [],
             players: parsed.players || [],
             sessions: parsed.sessions || [],
+            locations: parsed.locations || [],
             summary: {
               gameCount: parsed.games?.length || 0,
               playCount: parsed.sessions?.length || 0,
               playerCount: parsed.players?.length || 0,
+              locationCount: parsed.locations?.length || 0,
               ownCount: (parsed.games || []).filter((g: any) => g.status === 'own').length,
               soldCount: (parsed.games || []).filter((g: any) => g.status === 'sold').length,
               prevOwnedCount: (parsed.games || []).filter((g: any) => g.status === 'prev_owned').length,
@@ -171,8 +187,12 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
       bulkAddSessions(sessions, replace);
     }
 
+    if (importOptions.locations && fullBackup.locations && fullBackup.locations.length > 0) {
+      bulkAddLocations(fullBackup.locations, replace);
+    }
+
     setSuccessMessage(
-      `Đã nạp thành công ${importOptions.games ? `${summary.gameCount} boardgame, ` : ''}${importOptions.players ? `${summary.playerCount} người chơi, ` : ''}${importOptions.sessions ? `${summary.playCount} ván chơi` : ''} vào Vault!`
+      `Đã nạp thành công ${importOptions.games ? `${summary.gameCount} boardgame, ` : ''}${importOptions.players ? `${summary.playerCount} người chơi, ` : ''}${importOptions.sessions ? `${summary.playCount} ván chơi, ` : ''}${importOptions.locations && summary.locationCount ? `${summary.locationCount} địa điểm` : ''} vào Vault!`
     );
     setFullBackup(null);
   };
@@ -447,6 +467,19 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                   />
                   <span>Nạp {fullBackup.summary.playCount} Ván chơi</span>
                 </label>
+                {fullBackup.locations && fullBackup.locations.length > 0 && (
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={importOptions.locations}
+                      onChange={(e) =>
+                        setImportOptions((o) => ({ ...o, locations: e.target.checked }))
+                      }
+                      className="rounded text-[#7c3aed]"
+                    />
+                    <span>Nạp {fullBackup.locations.length} Địa điểm</span>
+                  </label>
+                )}
               </div>
             </div>
 
@@ -459,6 +492,102 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                 <Sparkles className="w-4 h-4 mr-1.5" />
                 Khôi Phục Toàn Bộ Dữ Liệu
               </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Export & Backup */}
+        {activeTab === 'export' && (
+          <div className="space-y-4">
+            {/* Full Backup Box */}
+            <div className="p-5 rounded-2xl bg-[#1e1e35]/60 border border-[var(--border-glow)] space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[image:var(--gradient-hero)] flex items-center justify-center text-white shadow-lg shadow-[var(--accent-glow)] shrink-0">
+                    <HardDriveDownload className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-bold text-base text-[var(--text-primary)]">
+                      Sao Lưu Toàn Bộ Dữ Liệu (.JSON)
+                    </h3>
+                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                      Xuất 1 file đầy đủ Kho Game, Người Chơi, Địa Điểm &amp; Lịch Sử Ván Đấu. Dùng để backup an toàn hoặc chuyển sang máy khác.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Kho Game</span>
+                  <span className="font-display font-black text-lg text-[var(--text-primary)]">{games.length}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Người Chơi</span>
+                  <span className="font-display font-black text-lg text-[var(--accent-neon)]">{players.length}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Ván Chơi</span>
+                  <span className="font-display font-black text-lg text-amber-400">{sessions.length}</span>
+                </div>
+                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Địa Điểm</span>
+                  <span className="font-display font-black text-lg text-emerald-400">{locations.length}</span>
+                </div>
+              </div>
+
+              <Button
+                variant="primary"
+                className="w-full justify-center py-3 text-sm font-bold shadow-lg shadow-[var(--accent-glow)]"
+                onClick={() => {
+                  exportVaultJSON();
+                  setSuccessMessage('Đã tải xuống file sao lưu BoardGameVault JSON thành công!');
+                }}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Tải Bản Sao Lưu Toàn Bộ (.JSON)
+              </Button>
+            </div>
+
+            {/* Export CSV for Excel / Sheets */}
+            <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-emerald-400" />
+                <h4 className="font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)]">
+                  Xuất Bảng Tính CSV (Xem trên Excel / Google Sheets)
+                </h4>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportGamesCSV();
+                    setSuccessMessage('Đã xuất danh sách Game ra file CSV thành công!');
+                  }}
+                  className="p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-white/[0.08] border border-[var(--border-subtle)] text-left flex items-center justify-between group transition-all cursor-pointer"
+                >
+                  <div>
+                    <span className="text-xs font-bold text-[var(--text-primary)] block">Xuất Danh Sách Game</span>
+                    <span className="text-[11px] text-[var(--text-secondary)]">{games.length} tựa game</span>
+                  </div>
+                  <Download className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-neon)] transition-colors" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportSessionsCSV();
+                    setSuccessMessage('Đã xuất lịch sử Ván Chơi ra file CSV thành công!');
+                  }}
+                  className="p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-white/[0.08] border border-[var(--border-subtle)] text-left flex items-center justify-between group transition-all cursor-pointer"
+                >
+                  <div>
+                    <span className="text-xs font-bold text-[var(--text-primary)] block">Xuất Lịch Sử Ván Chơi</span>
+                    <span className="text-[11px] text-[var(--text-secondary)]">{sessions.length} ván đấu</span>
+                  </div>
+                  <Download className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-neon)] transition-colors" />
+                </button>
+              </div>
             </div>
           </div>
         )}

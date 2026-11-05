@@ -1,7 +1,8 @@
 import { useGameStore } from '../store/useGameStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
-import { BoardGame, Player, PlaySession } from '../types';
+import { useLocationStore } from '../store/useLocationStore';
+import { BoardGame, Player, PlaySession, GameLocation } from '../types';
 
 export interface VaultBackupData {
   app: 'BoardGameVault';
@@ -12,10 +13,12 @@ export interface VaultBackupData {
     games: number;
     players: number;
     sessions: number;
+    locations: number;
   };
   games: BoardGame[];
   players: Player[];
   sessions: PlaySession[];
+  locations: GameLocation[];
 }
 
 /**
@@ -40,6 +43,7 @@ export function exportVaultJSON(): VaultBackupData {
   const games = useGameStore.getState().games;
   const players = usePlayerStore.getState().players;
   const sessions = useSessionStore.getState().sessions;
+  const locations = useLocationStore.getState().locations;
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const payload: VaultBackupData = {
@@ -51,10 +55,12 @@ export function exportVaultJSON(): VaultBackupData {
       games: games.length,
       players: players.length,
       sessions: sessions.length,
+      locations: locations.length,
     },
     games,
     players,
     sessions,
+    locations,
   };
 
   const jsonStr = JSON.stringify(payload, null, 2);

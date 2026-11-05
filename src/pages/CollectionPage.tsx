@@ -8,6 +8,7 @@ import {
   Plus,
   ArrowUpDown,
   Upload,
+  Download,
   Settings,
   Sparkles,
 } from 'lucide-react';
@@ -68,6 +69,7 @@ export const CollectionPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<SortOption>('addedDate');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importModalTab, setImportModalTab] = useState<'file' | 'export' | 'bgg'>('file');
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isWhatToPlayOpen, setIsWhatToPlayOpen] = useState(false);
 
@@ -139,9 +141,30 @@ export const CollectionPage: React.FC = () => {
               <Settings className="w-4 h-4 mr-1 text-[var(--accent-neon)]" />
               BGG Sync
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => setIsImportOpen(true)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setImportModalTab('file');
+                setIsImportOpen(true);
+              }}
+              title="Nhập dữ liệu từ file sao lưu ZIP/JSON hoặc BGG"
+            >
               <Upload className="w-4 h-4 mr-1 text-[var(--accent-secondary)]" />
               Import
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                setImportModalTab('export');
+                setIsImportOpen(true);
+              }}
+              title="Sao lưu toàn bộ dữ liệu ra file JSON hoặc CSV"
+              className="border-emerald-500/30 text-emerald-300 hover:border-emerald-400"
+            >
+              <Download className="w-4 h-4 mr-1 text-emerald-400" />
+              Sao Lưu &amp; Export
             </Button>
             <Link to="/collection/add">
               <Button variant="primary">
@@ -333,7 +356,11 @@ export const CollectionPage: React.FC = () => {
         </Link>
 
         {/* Modals */}
-        <CollectionImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
+        <CollectionImportModal
+          isOpen={isImportOpen}
+          onClose={() => setIsImportOpen(false)}
+          initialTab={importModalTab}
+        />
         <BGGConfigModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
         <WhatToPlayModal isOpen={isWhatToPlayOpen} onClose={() => setIsWhatToPlayOpen(false)} />
       </div>

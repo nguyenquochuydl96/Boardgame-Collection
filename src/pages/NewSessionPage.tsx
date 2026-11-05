@@ -64,6 +64,8 @@ export const NewSessionPage: React.FC = () => {
   const initialStepParam = Number(searchParams.get('step'));
   const preselectedFirstPlayerId = searchParams.get('firstPlayerId');
   const preselectedPlayerIds = searchParams.get('playerIds')?.split(',').filter(Boolean);
+  const preselectedLocation = searchParams.get('location');
+  const isRematchMode = searchParams.get('mode') === 'rematch';
 
   const games = useGameStore((s) => s.games);
   const savedPlayers = usePlayerStore((s) => s.players);
@@ -87,7 +89,10 @@ export const NewSessionPage: React.FC = () => {
   const [datePlayed, setDatePlayed] = useState<string>(
     new Date().toISOString().slice(0, 10)
   );
-  const [location, setLocation] = useState<string>(defaultLocation);
+  const [location, setLocation] = useState<string>(() => {
+    if (preselectedLocation) return decodeURIComponent(preselectedLocation);
+    return defaultLocation;
+  });
   const [durationMinutes, setDurationMinutes] = useState<string>('60');
 
   // Auto-Timer & Session Draft state
@@ -111,7 +116,7 @@ export const NewSessionPage: React.FC = () => {
 
   // Step 4: First Player
   const [firstPlayerId, setFirstPlayerId] = useState<string | undefined>(
-    preselectedFirstPlayerId || savedPlayers[0]?.id
+    isRematchMode ? undefined : (preselectedFirstPlayerId || savedPlayers[0]?.id)
   );
   const [firstPlayerMethod, setFirstPlayerMethod] =
     useState<FirstPlayerMethod>('random_wheel');
@@ -135,8 +140,9 @@ export const NewSessionPage: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Detect and offer restoring previous draft on mount
+  // Detect and offer restoring previous draft on mount (skip in rematch mode)
   useEffect(() => {
+    if (isRematchMode) return;
     try {
       const raw = localStorage.getItem('boardgame_session_draft');
       if (raw) {
@@ -149,7 +155,7 @@ export const NewSessionPage: React.FC = () => {
     } catch {
       // Ignore parse errors
     }
-  }, []);
+  }, [isRematchMode]);
 
   const handleRestoreDraft = () => {
     if (!existingDraft) return;
@@ -885,6 +891,20 @@ export const NewSessionPage: React.FC = () => {
             {/* STEP 4: WHO GOES FIRST? */}
             {currentStep === 4 && (
               <Card className="p-6 sm:p-8 space-y-6">
+                {isRematchMode && (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-transparent border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xl">🔄</span>
+                      <span>
+                        <strong className="text-amber-300">Trận Tái Đấu:</strong> Đã giữ nguyên <strong>{selectedGame?.name}</strong>, <strong>{activeSessionPlayers.length} người chơi</strong> và địa điểm <strong>{location}</strong>. Hãy quay để tìm người đi đầu mới cho trận này!
+                      </span>
+                    </div>
+                    <span className="font-mono text-emerald-400 font-bold shrink-0 flex items-center gap-1">
+                      <span>⏱️</span> Giờ ván mới đang tính
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] flex items-center gap-2.5">
