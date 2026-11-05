@@ -32,6 +32,7 @@ export interface GameLocation {
   id: string;
   name: string;
   address?: string;
+  notes?: string;
   isDefault?: boolean;
   createdAt: string;
 }
@@ -92,6 +93,7 @@ export type FirstPlayerMethod = 'random_wheel' | 'manual' | 'previous_loser' | '
 
 export interface PlaySession {
   id: string;
+  status?: 'completed' | 'in_progress' | 'draft';
   gameId: string;
   gameName: string;
   gameThumbnail: string;

@@ -347,12 +347,18 @@ export const SessionDetailPage: React.FC = () => {
           </Link>
 
           <div className="space-y-3 flex-1 min-w-0">
-            <Link
-              to={`/collection/${session.gameId}`}
-              className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] hover:text-[var(--accent-neon)] transition-colors block truncate"
-            >
-              {session.gameName}
-            </Link>
+            <div className="flex items-center gap-3 flex-wrap">
+              <Link
+                to={`/collection/${session.gameId}`}
+                className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] hover:text-[var(--accent-neon)] transition-colors block truncate"
+              >
+                {session.gameName}
+              </Link>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                Hoàn Thành
+              </span>
+            </div>
 
             <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-[var(--text-secondary)] tabular-nums">
               <span className="inline-flex items-center gap-1.5">

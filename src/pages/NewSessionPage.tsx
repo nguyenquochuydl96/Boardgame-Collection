@@ -452,6 +452,7 @@ export const NewSessionPage: React.FC = () => {
 
     setTimeout(() => {
       const created = addSession({
+        status: 'completed',
         gameId: selectedGame.id,
         gameName: selectedGame.name,
         gameThumbnail: selectedGame.thumbnail || selectedGame.image,

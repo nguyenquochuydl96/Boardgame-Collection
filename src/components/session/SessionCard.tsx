@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Calendar, Clock, MapPin, Crown, ChevronRight, Dices } from 'lucide-react';
+import { Calendar, Clock, MapPin, Crown, ChevronRight, Dices, Check } from 'lucide-react';
 import { PlaySession, Player } from '../../types';
 import { formatDate, formatDuration } from '../../lib/utils';
 import { PlayerAvatar } from '../player/PlayerAvatar';
@@ -50,10 +50,23 @@ export const SessionCard: React.FC<SessionCardProps> = ({
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="font-display font-bold text-base sm:text-lg text-[var(--text-primary)] truncate group-hover:text-[var(--accent-neon)] transition-colors">
-              {session.gameName}
-            </h3>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="font-display font-bold text-base sm:text-lg text-[var(--text-primary)] truncate group-hover:text-[var(--accent-neon)] transition-colors">
+                {session.gameName}
+              </h3>
+              {session.status === 'draft' || session.status === 'in_progress' ? (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-bold shrink-0 animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  Đang Chơi
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
+                  <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  Hoàn Thành
+                </span>
+              )}
+            </div>
             {winner && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-300 text-xs font-semibold shrink-0">
                 <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
