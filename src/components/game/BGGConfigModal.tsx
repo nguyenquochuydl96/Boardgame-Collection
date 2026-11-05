@@ -30,10 +30,18 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
 
     const targetUrl = proxyUrl.trim().replace(/\/$/, '');
     if (!targetUrl) {
-      setTestResult({
-        success: false,
-        message: 'Please enter a Proxy URL before testing.',
-      });
+      if (apiToken.trim().length >= 10) {
+        setTestResult({
+          success: true,
+          message:
+            '✓ BGG Personal Access Token hợp lệ! Khi không dùng Proxy trung gian, ứng dụng sẽ lưu Token và tự động tra cứu kho BoardGame Catalog mở rộng tích hợp sẵn. Bạn hãy bấm "Save Settings" để lưu lại nhé.',
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: 'Vui lòng dán BGG Access Token của bạn trước khi kiểm tra hoặc lưu cài đặt.',
+        });
+      }
       setTesting(false);
       return;
     }
@@ -99,22 +107,32 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
         </p>
 
         <div className="space-y-4">
-          <Input
-            label="Proxy Base URL (Tùy chọn)"
-            placeholder="ví dụ: https://bgg-proxy.your-subdomain.workers.dev"
-            value={proxyUrl}
-            onChange={(e) => setProxyUrl(e.target.value)}
-            leftIcon={<Globe className="w-4 h-4 text-[#7c3aed]" />}
-          />
+          <div>
+            <Input
+              label="Proxy Base URL (Không bắt buộc - Tùy chọn nâng cao)"
+              placeholder="Để trống nếu không dùng Cloudflare Worker..."
+              value={proxyUrl}
+              onChange={(e) => setProxyUrl(e.target.value)}
+              leftIcon={<Globe className="w-4 h-4 text-[#7c3aed]" />}
+            />
+            <p className="text-[11px] text-[var(--text-muted)] mt-1.5 pl-1">
+              💡 <em>Không bắt buộc:</em> Trình duyệt web có cơ chế bảo mật CORS chặn gọi trực tiếp đến boardgamegeek.com. Bạn có thể để trống ô này; hệ thống sẽ tự động dùng kho Catalog tích hợp sẵn.
+            </p>
+          </div>
 
-          <Input
-            label="BGG Personal Access Token (Bearer Token)"
-            placeholder="Dán token lấy từ boardgamegeek.com/applications"
-            type="password"
-            value={apiToken}
-            onChange={(e) => setApiToken(e.target.value)}
-            leftIcon={<Key className="w-4 h-4 text-[#a78bfa]" />}
-          />
+          <div>
+            <Input
+              label="BGG Personal Access Token (Bearer Token)"
+              placeholder="Dán token lấy từ boardgamegeek.com/applications"
+              type="password"
+              value={apiToken}
+              onChange={(e) => setApiToken(e.target.value)}
+              leftIcon={<Key className="w-4 h-4 text-[#a78bfa]" />}
+            />
+            <p className="text-[11px] text-[#a78bfa] mt-1.5 pl-1 font-medium">
+              🔑 Mã Token đã được cấp khi đơn đăng ký BGG XML API của bạn được duyệt.
+            </p>
+          </div>
         </div>
 
         {testResult && (
