@@ -107,6 +107,40 @@ async function fetchBatchThumbnails(
   return results;
 }
 
+function levenshteinDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const d: number[][] = [];
+  for (let i = 0; i <= b.length; i++) d[i] = [i];
+  for (let j = 0; j <= a.length; j++) d[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      d[i][j] = b.charAt(i - 1) === a.charAt(j - 1)
+        ? d[i - 1][j - 1]
+        : Math.min(d[i - 1][j - 1] + 1, d[i][j - 1] + 1, d[i - 1][j] + 1);
+    }
+  }
+  return d[b.length][a.length];
+}
+
+/**
+ * Checks if query words fuzzily match target words (allowing typos like earthbone -> earthborne)
+ */
+export function isFuzzyMatch(query: string, target: string): boolean {
+  const qWords = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const tWords = target.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!qWords.length) return false;
+
+  return qWords.every((qw) =>
+    tWords.some((tw) => {
+      if (tw.includes(qw) || qw.includes(tw)) return true;
+      const maxDist = qw.length >= 6 ? 2 : 1;
+      return levenshteinDistance(qw, tw) <= maxDist;
+    })
+  );
+}
+
 /**
  * Intelligent ranking: sorts exact title matches to the top,
  * followed by prefix matches, and eliminates completely unrelated matches.
@@ -134,11 +168,14 @@ export function rankAndSortBGGResults(results: BGGSearchResult[], query: string)
     } else if (wordRegex.test(title)) {
       // 4. Query is a whole word inside title
       score = 500 - Math.min(title.length, 100);
+    } else if (isFuzzyMatch(q, title)) {
+      // 5. Typo-tolerant fuzzy match (e.g. earthbone ranger -> Earthborne Rangers)
+      score = 450 - Math.min(title.length, 100);
     } else if (title.includes(q)) {
-      // 5. Query is a substring of title
+      // 6. Query is a substring of title
       score = 300 - Math.min(title.length, 100);
     } else {
-      // 6. Matched by BGG alternate names or foreign versions
+      // 7. Matched by BGG alternate names or foreign versions
       score = 50;
     }
 
@@ -147,10 +184,15 @@ export function rankAndSortBGGResults(results: BGGSearchResult[], query: string)
 
   scored.sort((a, b) => b.score - a.score);
 
-  // If we have high quality title matches (score >= 300), filter out random alternate-name matches
+  // If we have title matches (score >= 300), filter out random alternate-name matches
   const goodMatches = scored.filter((s) => s.score >= 300);
-  if (goodMatches.length >= 2) {
+  if (goodMatches.length > 0) {
     return goodMatches.map((s) => s.item);
+  }
+
+  // If query is a multi-word phrase and nothing matched the title, do not show unrelated single-word hits
+  if (q.includes(' ')) {
+    return [];
   }
 
   return scored.map((s) => s.item);
@@ -294,9 +336,17 @@ export function searchLocalBGG(query: string): BGGSearchResult[] {
     }));
   }
 
-  const matches = EXPANDED_BGG_CATALOG.filter((game) =>
+  // 1. Direct substring match
+  const direct = EXPANDED_BGG_CATALOG.filter((game) =>
     game.name.toLowerCase().includes(q)
-  ).map(({ bggId, name, yearPublished, thumbnail, image }) => ({
+  );
+
+  // 2. Fuzzy match if direct is empty (handles typos like "earthbone ranger" -> "Earthborne Rangers")
+  const pool = direct.length > 0
+    ? direct
+    : EXPANDED_BGG_CATALOG.filter((game) => isFuzzyMatch(cleanQ, game.name));
+
+  const matches = pool.map(({ bggId, name, yearPublished, thumbnail, image }) => ({
     bggId,
     name,
     yearPublished,
@@ -329,10 +379,15 @@ export async function searchBGGGames(query: string, signal?: AbortSignal): Promi
         const text = await response.text();
         const rawResults = parseBGGSearchResponse(text);
 
-        // Also merge in local catalog games matching query
-        const localMatches = EXPANDED_BGG_CATALOG.filter((g) =>
+        // Also merge in local catalog games matching query (direct or fuzzy)
+        const localDirect = EXPANDED_BGG_CATALOG.filter((g) =>
           g.name.toLowerCase().includes(q)
-        ).map(({ bggId, name, yearPublished, thumbnail, image }) => ({
+        );
+        const localPool = localDirect.length > 0
+          ? localDirect
+          : EXPANDED_BGG_CATALOG.filter((g) => isFuzzyMatch(cleanQ, g.name));
+
+        const localMatches = localPool.map(({ bggId, name, yearPublished, thumbnail, image }) => ({
           bggId,
           name,
           yearPublished,
@@ -355,7 +410,7 @@ export async function searchBGGGames(query: string, signal?: AbortSignal): Promi
 
         const combinedList = Array.from(combinedMap.values());
         if (combinedList.length > 0) {
-          // Rank so exact title matches (e.g. Catan) appear first
+          // Rank so exact title matches appear first
           const ranked = rankAndSortBGGResults(combinedList, cleanQ).slice(0, 15);
 
           // Find items still missing thumbnail and batch fetch from BGG /thing endpoint
@@ -374,7 +429,9 @@ export async function searchBGGGames(query: string, signal?: AbortSignal): Promi
             });
           }
 
-          return ranked;
+          if (ranked.length > 0) {
+            return ranked;
+          }
         }
       }
     } catch (err: any) {
@@ -396,13 +453,16 @@ export async function searchBGGGames(query: string, signal?: AbortSignal): Promi
     }));
   }
 
-  // Search in expanded local catalog with ranking
-  const matches = MOCK_BGG_CATALOG.filter((game) =>
+  // Search in expanded local catalog with ranking (direct or fuzzy)
+  const localDirect = MOCK_BGG_CATALOG.filter((game) =>
     game.name.toLowerCase().includes(q)
   );
+  const localPool = localDirect.length > 0
+    ? localDirect
+    : MOCK_BGG_CATALOG.filter((game) => isFuzzyMatch(cleanQ, game.name));
 
-  if (matches.length > 0) {
-    const mapped = matches.map(({ bggId, name, yearPublished, thumbnail, image }) => ({
+  if (localPool.length > 0) {
+    const mapped = localPool.map(({ bggId, name, yearPublished, thumbnail, image }) => ({
       bggId,
       name,
       yearPublished,

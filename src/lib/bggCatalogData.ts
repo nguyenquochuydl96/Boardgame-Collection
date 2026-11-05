@@ -2,6 +2,24 @@ import { BGGGameDetail } from '../types';
 
 export const EXPANDED_BGG_CATALOG: BGGGameDetail[] = [
   {
+    "bggId": "342900",
+    "name": "Earthborne Rangers",
+    "yearPublished": 2023,
+    "minPlayers": 1,
+    "maxPlayers": 4,
+    "playingTime": 120,
+    "bggRating": 8.2,
+    "description": "Earthborne Rangers is a customizable, cooperative card game of adventure in the wilderness of the far future. You play as a Ranger, exploring and protecting the valley.",
+    "thumbnail": "https://cf.geekdo-images.com/T0aXpLhRjXo1lM4fUf2b1w__thumb/img/pic6300481.jpg",
+    "image": "https://cf.geekdo-images.com/T0aXpLhRjXo1lM4fUf2b1w__original/img/pic6300481.jpg",
+    "tags": [
+      "Adventure",
+      "Card Game",
+      "Exploration",
+      "Cooperative"
+    ]
+  },
+  {
     "bggId": "13",
     "name": "Catan",
     "yearPublished": 1995,
