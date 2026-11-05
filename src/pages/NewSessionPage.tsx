@@ -23,7 +23,9 @@ import { PlayerChip } from '../components/player/PlayerChip';
 import { PlayerScoreRow } from '../components/session/PlayerScoreRow';
 import { ScoringSheetMatrix } from '../components/session/ScoringSheetMatrix';
 import { getScoringTemplateForGame } from '../lib/scoringPresets';
-import { RandomPlayerWheel } from '../components/session/RandomPlayerWheel';
+import { LuckyWheel } from '../components/picker/LuckyWheel';
+import { MysteryCardShuffle, PickerItem } from '../components/picker/MysteryCardShuffle';
+import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { usePlayerStore } from '../store/usePlayerStore';
@@ -56,6 +58,8 @@ export const NewSessionPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const preselectedGameId = searchParams.get('gameId');
   const initialStepParam = Number(searchParams.get('step'));
+  const preselectedFirstPlayerId = searchParams.get('firstPlayerId');
+  const preselectedPlayerIds = searchParams.get('playerIds')?.split(',').filter(Boolean);
 
   const games = useGameStore((s) => s.games);
   const savedPlayers = usePlayerStore((s) => s.players);
@@ -82,19 +86,25 @@ export const NewSessionPage: React.FC = () => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // Step 3: Players
-  const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>(() =>
-    savedPlayers.slice(0, 3).map((p) => p.id)
-  );
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>(() => {
+    if (preselectedPlayerIds && preselectedPlayerIds.length > 0) {
+      return preselectedPlayerIds;
+    }
+    return savedPlayers.slice(0, 3).map((p) => p.id);
+  });
   const [oneOffPlayers, setOneOffPlayers] = useState<Player[]>([]);
   const [newGuestName, setNewGuestName] = useState('');
   const [saveGuestToVault, setSaveGuestToVault] = useState(true);
 
   // Step 4: First Player
   const [firstPlayerId, setFirstPlayerId] = useState<string | undefined>(
-    savedPlayers[0]?.id
+    preselectedFirstPlayerId || savedPlayers[0]?.id
   );
   const [firstPlayerMethod, setFirstPlayerMethod] =
     useState<FirstPlayerMethod>('random_wheel');
+  const [firstPlayerAnimStyle, setFirstPlayerAnimStyle] = useState<
+    'wheel' | 'card_shuffle' | 'manual'
+  >('wheel');
 
   // Step 5: Scores
   const [lowScoreWins, setLowScoreWins] = useState(false);
@@ -153,6 +163,19 @@ export const NewSessionPage: React.FC = () => {
         .filter((p): p is Player => Boolean(p)),
     [selectedPlayerIds, allAvailablePlayers]
   );
+
+  const playerPickerItems: PickerItem[] = useMemo(() => {
+    return activeSessionPlayers.map((p) => ({
+      id: p.id,
+      name: p.name,
+      avatar: p.avatar,
+      color: p.color,
+    }));
+  }, [activeSessionPlayers]);
+
+  const firstPlayerObj = useMemo(() => {
+    return allAvailablePlayers.find((p) => p.id === firstPlayerId);
+  }, [allAvailablePlayers, firstPlayerId]);
 
   // Compute ranked PlayerScore list
   const computedPlayerScores: PlayerScore[] = useMemo(() => {
@@ -612,76 +635,257 @@ export const NewSessionPage: React.FC = () => {
               </Card>
             )}
 
-            {/* STEP 4: WHO GOES FIRST? SPIN WHEEL */}
+            {/* STEP 4: WHO GOES FIRST? */}
             {currentStep === 4 && (
               <Card className="p-6 sm:p-8 space-y-6">
-                <div className="text-center space-y-1">
-                  <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-white">
-                    🎡 Step 4 — Who Goes First?
-                  </h1>
-                  <p className="text-sm text-[#94a3b8]">
-                    Spin the wheel of destiny or pick a starting player method
-                  </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] flex items-center gap-2.5">
+                      <span>👑</span>
+                      Bước 4 — Ai Đi Đầu Ván Này?
+                    </h1>
+                    <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
+                      Quay vòng may mắn, xáo bài bí ẩn hoặc chọn theo quy tắc bàn chơi cho {activeSessionPlayers.length} người chơi
+                    </p>
+                  </div>
+
+                  {/* Mode Selector Tabs */}
+                  <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setFirstPlayerAnimStyle('wheel')}
+                      className={cn(
+                        'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                        firstPlayerAnimStyle === 'wheel'
+                          ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300 shadow-sm'
+                          : 'text-[var(--text-secondary)] hover:text-white'
+                      )}
+                    >
+                      <span>🎡 Vòng Quay</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFirstPlayerAnimStyle('card_shuffle')}
+                      className={cn(
+                        'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                        firstPlayerAnimStyle === 'card_shuffle'
+                          ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300 shadow-sm'
+                          : 'text-[var(--text-secondary)] hover:text-white'
+                      )}
+                    >
+                      <span>🎴 Xáo Bài</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFirstPlayerAnimStyle('manual')}
+                      className={cn(
+                        'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                        firstPlayerAnimStyle === 'manual'
+                          ? 'bg-[var(--accent-glow)] border border-[var(--border-glow)] text-[var(--accent-neon)] shadow-sm'
+                          : 'text-[var(--text-secondary)] hover:text-white'
+                      )}
+                    >
+                      <span>✋ Thủ Công</span>
+                    </button>
+                  </div>
                 </div>
 
-                <RandomPlayerWheel
-                  players={activeSessionPlayers}
-                  selectedPlayerId={firstPlayerId}
-                  onSelectFirstPlayer={(id, method) => {
-                    setFirstPlayerId(id);
-                    setFirstPlayerMethod(method);
-                  }}
-                />
+                {/* Main Interactive Stage */}
+                {activeSessionPlayers.length === 0 ? (
+                  <div className="p-8 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center space-y-3">
+                    <span className="text-3xl">⚠️</span>
+                    <h3 className="font-bold text-base text-white">Chưa có người chơi nào tại bàn</h3>
+                    <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
+                      Vui lòng quay lại Bước 3 để tích chọn ít nhất 1 người chơi tham gia ván đấu.
+                    </p>
+                    <Button variant="secondary" size="sm" onClick={() => setCurrentStep(3)}>
+                      <ArrowLeft className="w-4 h-4 mr-1" /> Quay lại Bước 3
+                    </Button>
+                  </div>
+                ) : activeSessionPlayers.length === 1 ? (
+                  <div className="p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center space-y-4">
+                    <div className="inline-flex items-center gap-3 p-3 rounded-2xl bg-amber-500/15 border border-amber-500/40">
+                      <PlayerAvatar
+                        avatar={activeSessionPlayers[0].avatar}
+                        name={activeSessionPlayers[0].name}
+                        color={activeSessionPlayers[0].color}
+                        size="md"
+                      />
+                      <div className="text-left">
+                        <span className="text-[10px] uppercase font-bold text-amber-400">Chế độ Solo</span>
+                        <p className="font-bold text-white text-sm">{activeSessionPlayers[0].name} là người đi đầu</p>
+                      </div>
+                    </div>
+                    <div>
+                      <Button variant="primary" onClick={() => setCurrentStep(5)}>
+                        Tiếp Tục Đến Nhập Điểm (Bước 5) 👉
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 sm:p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex flex-col items-center justify-center min-h-[380px] relative overflow-hidden">
+                    {firstPlayerAnimStyle === 'wheel' ? (
+                      <LuckyWheel
+                        items={playerPickerItems}
+                        onSelect={(winner) => {
+                          setFirstPlayerId(winner.id);
+                          setFirstPlayerMethod('random_wheel');
+                        }}
+                      />
+                    ) : firstPlayerAnimStyle === 'card_shuffle' ? (
+                      <MysteryCardShuffle
+                        items={playerPickerItems}
+                        onSelect={(winner) => {
+                          setFirstPlayerId(winner.id);
+                          setFirstPlayerMethod('random_wheel');
+                        }}
+                        mode="first_player"
+                      />
+                    ) : (
+                      <div className="w-full max-w-md py-6 space-y-6 text-center">
+                        <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-2xl mx-auto shadow-inner">
+                          👑
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-base text-white">Chỉ định người đi đầu bằng tay</h3>
+                          <p className="text-xs text-[var(--text-secondary)] mt-1">
+                            Chọn trực tiếp người chơi bên dưới hoặc áp dụng quy tắc bàn chơi phổ biến
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-2.5">
+                          {activeSessionPlayers.map((p) => {
+                            const isChosen = firstPlayerId === p.id;
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => {
+                                  setFirstPlayerId(p.id);
+                                  setFirstPlayerMethod('manual');
+                                }}
+                                className={cn(
+                                  'flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer',
+                                  isChosen
+                                    ? 'bg-amber-500/25 border-amber-400 text-white shadow-lg ring-2 ring-amber-400/30'
+                                    : 'bg-[var(--bg-surface)] border-white/10 text-[var(--text-secondary)] hover:text-white hover:border-white/20'
+                                )}
+                              >
+                                <PlayerAvatar
+                                  avatar={p.avatar}
+                                  name={p.name}
+                                  color={p.color}
+                                  size="sm"
+                                />
+                                <span>{p.name}</span>
+                                {isChosen && <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
-                {/* Alternative manual selection chips */}
-                <div className="pt-4 border-t border-white/[0.08] space-y-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-[#94a3b8]">
-                      Or select starting player manually:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {(
-                        [
-                          'random_wheel',
-                          'manual',
-                          'previous_loser',
-                          'previous_winner',
-                        ] as FirstPlayerMethod[]
-                      ).map((m) => (
-                        <button
-                          key={m}
-                          type="button"
-                          onClick={() => setFirstPlayerMethod(m)}
-                          className={cn(
-                            'px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors cursor-pointer',
-                            firstPlayerMethod === m
-                              ? 'bg-[#7c3aed]/25 border-[#a78bfa] text-white'
-                              : 'bg-[#16162a] border-white/10 text-[#94a3b8]'
-                          )}
+                    {/* Spotlight Celebration Card when First Player is Picked */}
+                    <AnimatePresence>
+                      {firstPlayerObj && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 16, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/25 to-amber-600/20 border-2 border-amber-400 shadow-2xl w-full max-w-lg flex flex-col sm:flex-row items-center justify-between gap-4"
                         >
-                          {FIRST_PLAYER_METHOD_LABELS[m]}
-                        </button>
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="relative">
+                              <PlayerAvatar
+                                avatar={firstPlayerObj.avatar}
+                                name={firstPlayerObj.name}
+                                color={firstPlayerObj.color}
+                                size="lg"
+                              />
+                              <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-lg font-bold">
+                                👑
+                              </div>
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300">
+                                  Người Đi Đầu Ván Này!
+                                </span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 font-medium">
+                                  {FIRST_PLAYER_METHOD_LABELS[firstPlayerMethod]}
+                                </span>
+                              </div>
+                              <h4 className="font-display font-extrabold text-base sm:text-lg text-white truncate">
+                                {firstPlayerObj.name}
+                              </h4>
+                            </div>
+                          </div>
+
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => setCurrentStep(5)}
+                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg shrink-0 w-full sm:w-auto"
+                          >
+                            Vào Bàn Chơi &amp; Ghi Điểm 👉
+                          </Button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
+
+                {/* Alternative Quick Manual Rule Selector */}
+                {activeSessionPlayers.length > 1 && (
+                  <div className="pt-4 border-t border-white/[0.08] space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                        Quy tắc bàn chơi khác:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(
+                          [
+                            'random_wheel',
+                            'manual',
+                            'previous_loser',
+                            'previous_winner',
+                          ] as FirstPlayerMethod[]
+                        ).map((m) => (
+                          <button
+                            key={m}
+                            type="button"
+                            onClick={() => setFirstPlayerMethod(m)}
+                            className={cn(
+                              'px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors cursor-pointer',
+                              firstPlayerMethod === m
+                                ? 'bg-amber-500/25 border-amber-400 text-amber-300'
+                                : 'bg-[var(--bg-surface)] border-white/10 text-[var(--text-secondary)] hover:text-white'
+                            )}
+                          >
+                            {FIRST_PLAYER_METHOD_LABELS[m]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {activeSessionPlayers.map((p) => (
+                        <PlayerChip
+                          key={p.id}
+                          player={p}
+                          size="sm"
+                          selected={firstPlayerId === p.id}
+                          onClick={() => {
+                            setFirstPlayerId(p.id);
+                            if (firstPlayerMethod === 'random_wheel') {
+                              setFirstPlayerMethod('manual');
+                            }
+                          }}
+                        />
                       ))}
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {activeSessionPlayers.map((p) => (
-                      <PlayerChip
-                        key={p.id}
-                        player={p}
-                        size="sm"
-                        selected={firstPlayerId === p.id}
-                        onClick={() => {
-                          setFirstPlayerId(p.id);
-                          if (firstPlayerMethod === 'random_wheel') {
-                            setFirstPlayerMethod('manual');
-                          }
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
+                )}
               </Card>
             )}
 

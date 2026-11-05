@@ -9,6 +9,7 @@ import {
   ArrowUpDown,
   Upload,
   Settings,
+  Sparkles,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { GameGrid } from '../components/game/GameGrid';
@@ -20,6 +21,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import { GameStatus } from '../types';
 import { CollectionImportModal } from '../components/game/CollectionImportModal';
 import { BGGConfigModal } from '../components/game/BGGConfigModal';
+import { WhatToPlayModal } from '../components/game/WhatToPlayModal';
 
 type FilterTab = 'all' | GameStatus;
 type SortOption = 'name' | 'addedDate' | 'bggRating' | 'purchasePrice';
@@ -67,6 +69,7 @@ export const CollectionPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isWhatToPlayOpen, setIsWhatToPlayOpen] = useState(false);
 
   const playCountsByGameId = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -123,6 +126,15 @@ export const CollectionPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsWhatToPlayOpen(true)}
+              className="border-amber-500/30 text-amber-300 hover:border-amber-400"
+            >
+              <Sparkles className="w-4 h-4 mr-1 text-amber-400" />
+              Hôm Nay Chơi Gì?
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => setIsConfigOpen(true)}>
               <Settings className="w-4 h-4 mr-1 text-[var(--accent-neon)]" />
               BGG Sync
@@ -323,6 +335,7 @@ export const CollectionPage: React.FC = () => {
         {/* Modals */}
         <CollectionImportModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} />
         <BGGConfigModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
+        <WhatToPlayModal isOpen={isWhatToPlayOpen} onClose={() => setIsWhatToPlayOpen(false)} />
       </div>
     </PageTransition>
   );

@@ -179,10 +179,10 @@ export const HomePage: React.FC = () => {
           />
         </motion.section>
 
-        {/* Game Night Picker Quick Access Banner */}
+        {/* New Session Quick Launch Banner */}
         <motion.section variants={fadeUpItem}>
           <Link
-            to="/picker"
+            to="/sessions/new"
             className="block p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-600/15 border border-amber-500/30 hover:border-amber-400 transition-all group shadow-xl relative overflow-hidden"
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -192,16 +192,16 @@ export const HomePage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-display font-extrabold text-lg sm:text-xl text-[var(--text-primary)] group-hover:text-amber-300 transition-colors">
-                    Hôm Nay Chơi Gì? &amp; Vòng Quay Người Đi Đầu
+                    Bắt Đầu Ván Game Mới
                   </h3>
                   <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-0.5">
-                    Quay may mắn hoặc xáo rút thẻ bài bí ẩn để chọn game hoặc chọn người đi đầu ngay tức thì!
+                    Chọn game từ kho, quay may mắn tìm người đi đầu và ghi nhận điểm số chi tiết từng người chơi!
                   </p>
                 </div>
               </div>
 
               <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/30 group-hover:brightness-110 shrink-0 w-fit">
-                <span>Quay Ngay</span>
+                <span>Vào Bàn Chơi</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </div>

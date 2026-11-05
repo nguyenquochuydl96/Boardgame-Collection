@@ -14,9 +14,11 @@ import {
   Check,
   RotateCcw,
   Sparkles,
+  Crown,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { SessionCard } from '../components/session/SessionCard';
+import { QuickFirstPlayerModal } from '../components/session/QuickFirstPlayerModal';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
@@ -64,6 +66,7 @@ export const SessionsPage: React.FC = () => {
   const [playerFilterSearch, setPlayerFilterSearch] = useState('');
   const [gameFilterSearch, setGameFilterSearch] = useState('');
   const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+  const [isQuickFirstPlayerOpen, setIsQuickFirstPlayerOpen] = useState(false);
 
   // Sync from URL params on load (e.g. ?gameId=... or ?playerId=...)
   useEffect(() => {
@@ -300,12 +303,22 @@ export const SessionsPage: React.FC = () => {
             </p>
           </div>
 
-          <Link to="/sessions/new">
-            <Button variant="primary">
-              <Plus className="w-4 h-4 mr-1.5" />
-              Tạo Ván Mới
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="secondary"
+              onClick={() => setIsQuickFirstPlayerOpen(true)}
+              className="border-amber-500/30 text-amber-300 hover:border-amber-400"
+            >
+              <Crown className="w-4 h-4 mr-1.5 text-amber-400" />
+              Chọn Người Đi Đầu
             </Button>
-          </Link>
+            <Link to="/sessions/new">
+              <Button variant="primary">
+                <Plus className="w-4 h-4 mr-1.5" />
+                Tạo Ván Mới
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Filter & Search Bar */}
@@ -960,6 +973,12 @@ export const SessionsPage: React.FC = () => {
           <Plus className="w-5 h-5" />
           <span>Tạo Ván Mới</span>
         </Link>
+
+        {/* Quick First Player Picker Modal */}
+        <QuickFirstPlayerModal
+          isOpen={isQuickFirstPlayerOpen}
+          onClose={() => setIsQuickFirstPlayerOpen(false)}
+        />
       </div>
     </PageTransition>
   );
