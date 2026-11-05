@@ -6,9 +6,9 @@ import {
   Plus,
   Play,
   Settings,
-  Smartphone,
   Cloud,
   CloudCheck,
+  Sparkles,
 } from 'lucide-react';
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
@@ -44,6 +44,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const isSyncEnabled = useSyncStore((s) => s.isEnabled);
   const autoSync = useSyncStore((s) => s.autoSync);
   const syncStatus = useSyncStore((s) => s.syncStatus);
+  const gamesCount = useGameStore((s) => s.games.length);
+  const sessionsCount = useSessionStore((s) => s.sessions.length);
 
   // Check 1-click mobile import parameters and setup sync listeners
   useEffect(() => {
@@ -51,11 +53,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     if (importedFromUrl) {
       setShowSyncModal(true);
     } else if (isSyncEnabled && autoSync) {
-      // Pull latest cloud updates on app launch
       pullVaultFromCloud('replace');
     }
 
-    // Subscribe to multi-device Realtime events
     const unsubscribeRealtime = startVaultRealtimeSubscription();
     return () => {
       unsubscribeRealtime();
@@ -98,235 +98,227 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--bg-base)] text-[var(--text-primary)] transition-colors duration-300">
-      {/* Desktop Sidebar Navigation */}
-      <aside
-        aria-label="Sidebar navigation"
-        className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30 bg-[var(--bg-surface)]/95 backdrop-blur-xl border-r border-[var(--border-subtle)]"
-      >
-        <div className="flex items-center gap-3 px-6 h-20 border-b border-[var(--border-subtle)]">
-          <Link
-            to="/"
-            className="flex items-center gap-3 group focus:outline-none"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[image:var(--gradient-hero)] flex items-center justify-center shadow-lg shadow-[var(--accent-glow)] group-hover:scale-105 transition-transform">
-              <Dices className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-display font-extrabold text-xl tracking-tight text-[var(--text-primary)] whitespace-nowrap">
-              BoardGame Vault
-            </span>
-          </Link>
-        </div>
+    <div className="min-h-screen flex flex-col bg-[var(--bg-base)] text-[var(--text-primary)] transition-colors duration-300 relative selection:bg-[var(--coral)] selection:text-[var(--ink)]">
+      {/* Film Grain Texture Overlay for authentic printed editorial feel */}
+      <div className="raye-grain" aria-hidden="true" />
 
-        <nav className="flex-1 px-4 py-6 space-y-1.5">
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const active = isTabActive(item.to);
-
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  'relative flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 whitespace-nowrap',
-                  active
-                    ? 'text-[var(--text-primary)]'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04]'
-                )}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="sidebar-nav-indicator"
-                    className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] opacity-20 border border-[var(--border-glow)]"
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  />
-                )}
-                <Icon
-                  className={cn(
-                    'relative z-10 w-5 h-5 shrink-0',
-                    active ? 'text-[var(--accent-neon)]' : 'text-[var(--text-secondary)]'
-                  )}
-                />
-                <span className="relative z-10">{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </nav>
-
-        {/* Sidebar Footer Controls */}
-        <div className="p-4 border-t border-[var(--border-subtle)] space-y-2.5">
-          {/* Theme Selector */}
-          <div className="mb-2">
-            <ThemeSelector />
-          </div>
-
-          <Link to="/sessions/new" className="block">
-            <Button variant="primary" className="w-full justify-center">
-              <Play className="w-4 h-4 fill-current" />
-              New Session
-            </Button>
-          </Link>
-          <Link to="/collection/add" className="block">
-            <Button variant="secondary" className="w-full justify-center">
-              <Plus className="w-4 h-4" />
-              Add Game
-            </Button>
-          </Link>
-
-          {/* Cloud Sync Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'w-full justify-center text-xs transition-colors',
-              isSyncEnabled
-                ? syncStatus === 'error'
-                  ? 'text-rose-300 bg-rose-500/10 border border-rose-500/30'
-                  : 'text-emerald-300 hover:text-emerald-200 bg-emerald-500/10 border border-emerald-500/25'
-                : 'text-[var(--text-secondary)] hover:text-white'
-            )}
-            onClick={() => setShowSyncModal(true)}
-          >
-            {isSyncEnabled ? (
-              <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
-            ) : (
-              <Cloud className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
-            )}
-            <span>{isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}</span>
-            {isSyncEnabled && syncStatus === 'syncing' && (
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping ml-1" />
-            )}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-center text-xs text-[var(--text-secondary)] hover:text-white"
-            onClick={() => setShowBGGModal(true)}
-          >
-            <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722]" />
-            BGG Settings
-          </Button>
-
-          {/* Official Powered by BGG Badge in Sidebar */}
-          <div className="pt-1">
-            <PoweredByBGG variant="sidebar" />
-          </div>
-
-          {!isInstalled && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-center bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-400 font-bold transition-all shadow-xs"
-              onClick={() => setShowInstallModal(true)}
-            >
-              <Smartphone className="w-4 h-4 mr-1.5 text-emerald-400" />
-              Install Mobile App
-            </Button>
-          )}
-        </div>
-      </aside>
-
-      {/* Mobile Top Header */}
-      <header className="lg:hidden sticky top-0 z-30 h-14 pt-[env(safe-area-inset-top)] px-3 sm:px-4 flex items-center justify-between gap-2 bg-[var(--bg-surface)]/90 backdrop-blur-xl border-b border-[var(--border-subtle)]">
-        <Link
-          to="/"
-          className="font-display font-bold text-sm sm:text-base tracking-tight text-[var(--text-primary)] whitespace-nowrap shrink-0 flex items-center gap-2"
-        >
-          <span className="w-7 h-7 rounded-lg bg-[image:var(--gradient-hero)] inline-flex items-center justify-center shrink-0 shadow-sm shadow-purple-500/30">
-            <Dices className="w-4 h-4 text-white" />
+      {/* Signature Rayé Running Marquee Ticker */}
+      <header className="z-40 bg-[var(--ink)] text-[var(--cream)] border-b-[1.5px] border-[var(--ink)] raye-marquee overflow-hidden py-1.5 text-xs font-bold tracking-wider uppercase select-none">
+        <div className="raye-marquee-track flex items-center gap-8 px-4">
+          <span className="flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-[var(--coral)] animate-ping" />
+            <span>RAYÉ × TABLETOP ARCHIVE</span>
           </span>
-          <span className="hidden xs:inline">BoardGame Vault</span>
-          <span className="xs:hidden">Vault</span>
-        </Link>
+          <span className="text-[var(--coral)]">•</span>
+          <span>{gamesCount} BOARD GAMES CURATED</span>
+          <span className="text-[var(--coral)]">•</span>
+          <span>{sessionsCount} PLAY SESSIONS LOGGED</span>
+          <span className="text-[var(--coral)]">•</span>
+          <span className="text-[var(--butter)] font-serif italic lowercase tracking-normal text-sm">
+            slow, sunny afternoons & tabletop battles
+          </span>
+          <span className="text-[var(--coral)]">•</span>
+          <span>REALTIME SUPABASE CLOUD SYNCED</span>
+          <span className="text-[var(--coral)]">•</span>
+          <span>ROLL FOR INITIATIVE</span>
+          <span className="text-[var(--coral)]">•</span>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {!isInstalled && (
-            <button
-              type="button"
-              onClick={() => setShowInstallModal(true)}
-              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 text-xs font-bold inline-flex items-center gap-1 transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
-              title="Install BoardGame Vault on your mobile home screen"
-            >
-              <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Install</span>
-            </button>
-          )}
-
-          {/* Mobile Cloud Sync Icon */}
-          <button
-            type="button"
-            onClick={() => setShowSyncModal(true)}
-            className={cn(
-              'p-1.5 sm:p-2 rounded-xl transition-colors cursor-pointer relative',
-              isSyncEnabled
-                ? syncStatus === 'error'
-                  ? 'text-rose-400 bg-rose-500/10 border border-rose-500/30'
-                  : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30'
-                : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.05]'
-            )}
-            title={isSyncEnabled ? 'Cloud Synced' : 'Connect Cloud Sync'}
-          >
-            {isSyncEnabled ? (
-              <CloudCheck className="w-4 h-4 text-emerald-400" />
-            ) : (
-              <Cloud className="w-4 h-4" />
-            )}
-            {isSyncEnabled && syncStatus === 'syncing' && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            )}
-          </button>
-
-          <ThemeSelector compact />
-          <button
-            type="button"
-            onClick={() => setShowBGGModal(true)}
-            className="p-1.5 sm:p-2 rounded-xl text-[var(--text-secondary)] hover:text-[#ff7722] hover:bg-white/[0.05] transition-colors cursor-pointer"
-            title="BGG API Settings"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-          <Link
-            to="/sessions/new"
-            className="min-h-[34px] sm:min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-[image:var(--gradient-hero)] text-xs font-semibold text-white inline-flex items-center gap-1 shadow-md shadow-[var(--accent-glow)] whitespace-nowrap shrink-0 active:scale-95 transition-transform"
-          >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            <span className="hidden xs:inline">New Session</span>
-            <span className="xs:hidden">Play</span>
-          </Link>
+          {/* Repeat set for seamless infinite loop */}
+          <span className="flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-[var(--coral)] animate-ping" />
+            <span>RAYÉ × TABLETOP ARCHIVE</span>
+          </span>
+          <span className="text-[var(--coral)]">•</span>
+          <span>{gamesCount} BOARD GAMES CURATED</span>
+          <span className="text-[var(--coral)]">•</span>
+          <span>{sessionsCount} PLAY SESSIONS LOGGED</span>
+          <span className="text-[var(--coral)]">•</span>
+          <span className="text-[var(--butter)] font-serif italic lowercase tracking-normal text-sm">
+            slow, sunny afternoons & tabletop battles
+          </span>
+          <span className="text-[var(--coral)]">•</span>
+          <span>REALTIME SUPABASE CLOUD SYNCED</span>
+          <span className="text-[var(--coral)]">•</span>
+          <span>ROLL FOR INITIATIVE</span>
+          <span className="text-[var(--coral)]">•</span>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 lg:pl-64 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-          {children}
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* Desktop Sidebar Navigation */}
+        <aside
+          aria-label="Sidebar navigation"
+          className="hidden lg:flex lg:w-72 lg:flex-col lg:fixed lg:top-8 lg:bottom-0 z-30 bg-[var(--bg-card)] border-r-[1.5px] border-[var(--ink)] shadow-[4px_0_0_var(--ink)]"
+        >
+          {/* Logo Header */}
+          <div className="flex items-center justify-between px-6 h-20 border-b-[1.5px] border-[var(--ink)] bg-[var(--coral)] text-[var(--ink)]">
+            <Link
+              to="/"
+              className="flex items-center gap-3 group focus:outline-none"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[var(--butter)] border-[1.5px] border-[var(--ink)] shadow-[2px_2px_0_var(--ink)] flex items-center justify-center group-hover:rotate-6 transition-transform">
+                <Dices className="w-5 h-5 text-[var(--ink)]" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-display font-black text-xl tracking-tighter uppercase leading-none">
+                  Rayé <span className="font-serif italic lowercase font-normal text-2xl">vault</span>
+                </span>
+                <span className="text-[10px] font-bold tracking-widest uppercase opacity-80 mt-0.5">
+                  Curated Tabletop
+                </span>
+              </div>
+            </Link>
+          </div>
 
-          {/* Persistent Compliance Footer */}
-          <PoweredByBGG variant="footer" />
-        </div>
-      </main>
+          {/* Navigation Links with Rayé wipe effect */}
+          <nav className="flex-1 px-4 py-6 space-y-2">
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const active = isTabActive(item.to);
 
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={cn(
+                    'group relative flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-bold font-display uppercase tracking-wide transition-all duration-200 border-[1.5px]',
+                    active
+                      ? 'bg-[var(--ink)] text-[var(--cream)] border-[var(--ink)] shadow-[3px_3px_0_var(--coral)] translate-x-1'
+                      : 'bg-transparent text-[var(--text-secondary)] border-transparent hover:border-[var(--ink)] hover:bg-[var(--paper)] hover:text-[var(--text-primary)] hover:shadow-[2px_2px_0_var(--ink)]'
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      'w-5 h-5 shrink-0 transition-transform group-hover:scale-110',
+                      active ? 'text-[var(--coral)]' : 'text-[var(--text-secondary)]'
+                    )}
+                  />
+                  <span className="flex-1">{item.label}</span>
+                  {active && (
+                    <span className="w-2 h-2 rounded-full bg-[var(--butter)] border border-[var(--ink)]" />
+                  )}
+                </NavLink>
+              );
+            })}
+          </nav>
+
+          {/* Sidebar Footer Controls */}
+          <div className="p-4 border-t-[1.5px] border-[var(--ink)] bg-[var(--bg-surface)] space-y-2.5">
+            <ThemeSelector />
+
+            <Link to="/sessions/new" className="block">
+              <Button variant="primary" size="md" className="w-full justify-center" withArrowDot>
+                <Play className="w-4 h-4 fill-current mr-1" />
+                New Session
+              </Button>
+            </Link>
+            <Link to="/collection/add" className="block">
+              <Button variant="secondary" size="md" className="w-full justify-center">
+                <Plus className="w-4 h-4 mr-1" />
+                Add Game
+              </Button>
+            </Link>
+
+            {/* Cloud Sync Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                'w-full justify-center text-xs transition-colors',
+                isSyncEnabled
+                  ? syncStatus === 'error'
+                    ? 'bg-rose-100 text-rose-800'
+                    : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                  : ''
+              )}
+              onClick={() => setShowSyncModal(true)}
+            >
+              {isSyncEnabled ? (
+                <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <Cloud className="w-3.5 h-3.5 mr-1.5 text-[var(--coral)]" />
+              )}
+              <span>{isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}</span>
+              {isSyncEnabled && syncStatus === 'syncing' && (
+                <span className="w-2 h-2 rounded-full bg-[var(--coral)] animate-ping ml-1" />
+              )}
+            </Button>
+
+            {/* BGG Config Button */}
+            <div className="flex items-center justify-between pt-1">
+              <button
+                type="button"
+                onClick={() => setShowBGGModal(true)}
+                className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                aria-label="Configure BoardGameGeek account sync"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>BGG Sync</span>
+              </button>
+              <PoweredByBGG />
+            </div>
+          </div>
+        </aside>
+
+        {/* Mobile Top Header */}
+        <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[var(--coral)] text-[var(--ink)] border-b-[1.5px] border-[var(--ink)] shadow-[0_2px_0_var(--ink)]">
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[var(--butter)] border border-[var(--ink)] flex items-center justify-center shadow-[1.5px_1.5px_0_var(--ink)]">
+              <Dices className="w-4 h-4 text-[var(--ink)]" />
+            </div>
+            <span className="font-display font-black text-lg tracking-tight uppercase">
+              Rayé <span className="font-serif italic lowercase font-normal text-xl">vault</span>
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowSyncModal(true)}
+              className="p-1.5 rounded-full bg-[var(--cream)] border border-[var(--ink)] text-[var(--ink)] shadow-[1.5px_1.5px_0_var(--ink)] cursor-pointer"
+              title="Cloud Sync"
+            >
+              {isSyncEnabled ? (
+                <CloudCheck className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <Cloud className="w-4 h-4 text-[var(--coral-deep)]" />
+              )}
+            </button>
+
+            <Link
+              to="/sessions/new"
+              className="w-8 h-8 rounded-full bg-[var(--teal)] text-[var(--cream)] border border-[var(--ink)] flex items-center justify-center shadow-[1.5px_1.5px_0_var(--ink)]"
+              title="New Session"
+            >
+              <Plus className="w-4 h-4" />
+            </Link>
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 lg:pl-72 pb-24 lg:pb-12 focus:outline-none"
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {children}
+          </div>
+        </main>
+      </div>
+
+      {/* Mobile Bottom Navigation Bar */}
       <BottomNavBar />
 
-      <BGGConfigModal
-        isOpen={showBGGModal}
-        onClose={() => setShowBGGModal(false)}
-      />
-
-      <CloudSyncModal
-        isOpen={showSyncModal}
-        onClose={() => setShowSyncModal(false)}
-      />
-
+      {/* Modals */}
+      <CloudSyncModal isOpen={showSyncModal} onClose={() => setShowSyncModal(false)} />
+      <BGGConfigModal isOpen={showBGGModal} onClose={() => setShowBGGModal(false)} />
       <PwaInstallModal
         isOpen={showInstallModal}
         onClose={() => setShowInstallModal(false)}
         deferredPrompt={deferredPrompt}
-        onInstallSuccess={() => void install()}
+        onInstallSuccess={() => install()}
       />
     </div>
   );
 };
-
-export default AppShell;

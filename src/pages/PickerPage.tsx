@@ -332,7 +332,7 @@ export const PickerPage: React.FC = () => {
                         {chosenResult.name}
                       </h4>
                       {chosenResult.subtitle && (
-                        <p className="text-[11px] text-[#cbd5e1] truncate">{chosenResult.subtitle}</p>
+                        <p className="text-[11px] text-[var(--text-secondary)] truncate">{chosenResult.subtitle}</p>
                       )}
                     </div>
                   </div>

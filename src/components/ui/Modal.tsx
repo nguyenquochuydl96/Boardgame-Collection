@@ -36,30 +36,30 @@ export const Modal: React.FC<ModalProps> = ({
           aria-modal="true"
           aria-label={title || 'Modal dialog'}
         >
-          {/* Glassmorphic backdrop with blur */}
+          {/* Backdrop with dark tint */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md"
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 bg-[#17130f]/60 backdrop-blur-sm"
             onClick={onClose}
           />
 
-          {/* Modal container with spring scale-up */}
+          {/* Modal container with Rayé brutalist styling & spring zoom */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 16 }}
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 12, transition: { duration: 0.15 } }}
-            transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+            exit={{ opacity: 0, scale: 0.96, y: 8, transition: { duration: 0.15 } }}
+            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
             className={cn(
-              'relative z-10 w-full rounded-3xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-2xl shadow-black/80 overflow-hidden my-auto max-h-[90vh] flex flex-col',
+              'relative z-10 w-full rounded-2xl bg-[var(--bg-card)] border-2 border-[var(--ink)] shadow-[8px_8px_0_var(--teal)] sm:shadow-[10px_10px_0_var(--teal)] overflow-hidden my-auto max-h-[90vh] flex flex-col',
               maxWidthClass
             )}
           >
             {title && (
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/60 shrink-0">
-                <h2 className="text-lg font-bold font-display text-[var(--text-primary)]">
+              <div className="flex items-center justify-between px-6 py-4 border-b-2 border-[var(--ink)] bg-[var(--paper)] shrink-0">
+                <h2 className="text-xl font-extrabold font-display tracking-tight text-[var(--text-primary)]">
                   {title}
                 </h2>
                 <motion.button
@@ -68,9 +68,9 @@ export const Modal: React.FC<ModalProps> = ({
                   type="button"
                   onClick={onClose}
                   aria-label="Close modal"
-                  className="min-h-[38px] min-w-[38px] inline-flex items-center justify-center rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/10 transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-full bg-[var(--butter)] border border-[var(--ink)] flex items-center justify-center text-[var(--ink)] hover:bg-[var(--coral)] transition-colors cursor-pointer"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </motion.button>
               </div>
             )}

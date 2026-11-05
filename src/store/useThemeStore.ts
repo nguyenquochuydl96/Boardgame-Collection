@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type AppTheme = 'amber' | 'navy' | 'emerald' | 'light' | 'purple';
+export type AppTheme = 'raye' | 'noir';
 
 export interface ThemeConfig {
   id: AppTheme;
@@ -18,99 +18,71 @@ export interface ThemeConfig {
 
 export const AVAILABLE_THEMES: ThemeConfig[] = [
   {
-    id: 'amber',
-    name: 'Warm Amber & Coffee',
-    tagline: 'Warm timber, cozy coffee & tabletop vibe (Recommended)',
+    id: 'raye',
+    name: 'Rayé Signature',
+    tagline: 'Warm cream, bold coral & vintage pine teal editorial (Default)',
     colors: {
-      bg: '#101216',
-      surface: '#171920',
-      accent: '#f97316',
-      secondary: '#f59e0b',
-    },
-    icon: '🪵',
-  },
-  {
-    id: 'navy',
-    name: 'Slate Navy & Tangerine',
-    tagline: 'Deep slate navy & vibrant tangerine punch',
-    colors: {
-      bg: '#071526',
-      surface: '#0b1e36',
-      accent: '#ff6b00',
-      secondary: '#2563eb',
-    },
-    icon: '⚡',
-  },
-  {
-    id: 'emerald',
-    name: 'Midnight & Mint',
-    tagline: 'Minimalist Apple / Linear inspired elegance',
-    colors: {
-      bg: '#090d10',
-      surface: '#10161c',
-      accent: '#10b981',
-      secondary: '#06b6d4',
-    },
-    icon: '✨',
-  },
-  {
-    id: 'light',
-    name: 'Warm Canvas & Terracotta',
-    tagline: 'Cozy, warm daylight paper & terracotta',
-    colors: {
-      bg: '#f8f6f0',
-      surface: '#ffffff',
-      accent: '#ea580c',
-      secondary: '#d97706',
+      bg: '#fbf6ee',
+      surface: '#fffdf8',
+      accent: '#ff6b4a',
+      secondary: '#0e4f4b',
     },
     icon: '☀️',
   },
   {
-    id: 'purple',
-    name: 'Cyberpunk Violet',
-    tagline: 'Neon violet & electric cyan glow',
+    id: 'noir',
+    name: 'Rayé Noir',
+    tagline: 'Deep charcoal velvet, sunset coral & warm butter',
     colors: {
-      bg: '#0f0f1a',
-      surface: '#16162a',
-      accent: '#7c3aed',
-      secondary: '#2563eb',
+      bg: '#14110e',
+      surface: '#1f1a16',
+      accent: '#ff6b4a',
+      secondary: '#ffd66b',
     },
-    icon: '🌌',
+    icon: '🌙',
   },
 ];
 
 interface ThemeStore {
   theme: AppTheme;
   setTheme: (theme: AppTheme) => void;
+  toggleTheme: () => void;
 }
 
 function applyThemeToDOM(theme: AppTheme) {
   if (typeof document !== 'undefined') {
     document.documentElement.setAttribute('data-theme', theme);
-    if (theme === 'light') {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.classList.add('light');
-    } else {
+    if (theme === 'noir') {
       document.documentElement.classList.add('dark');
       document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
     }
   }
 }
 
 export const useThemeStore = create<ThemeStore>()(
   persist(
-    (set) => ({
-      theme: 'amber', // Default to the cozy Warm Amber theme!
+    (set, get) => ({
+      theme: 'raye', // Default to Rayé Signature!
       setTheme: (newTheme) => {
         applyThemeToDOM(newTheme);
         set({ theme: newTheme });
       },
+      toggleTheme: () => {
+        const next = get().theme === 'raye' ? 'noir' : 'raye';
+        applyThemeToDOM(next);
+        set({ theme: next });
+      },
     }),
     {
-      name: 'bg-vault-theme-pref',
+      name: 'bg-vault-theme-pref-v2',
       onRehydrateStorage: () => (state) => {
         if (state) {
           applyThemeToDOM(state.theme);
+        } else {
+          applyThemeToDOM('raye');
         }
       },
     }
@@ -120,18 +92,18 @@ export const useThemeStore = create<ThemeStore>()(
 // Apply on initial script evaluation
 if (typeof window !== 'undefined') {
   try {
-    const saved = localStorage.getItem('bg-vault-theme-pref');
+    const saved = localStorage.getItem('bg-vault-theme-pref-v2');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed?.state?.theme) {
+      if (parsed?.state?.theme === 'noir' || parsed?.state?.theme === 'raye') {
         applyThemeToDOM(parsed.state.theme);
       } else {
-        applyThemeToDOM('amber');
+        applyThemeToDOM('raye');
       }
     } else {
-      applyThemeToDOM('amber');
+      applyThemeToDOM('raye');
     }
   } catch {
-    applyThemeToDOM('amber');
+    applyThemeToDOM('raye');
   }
 }

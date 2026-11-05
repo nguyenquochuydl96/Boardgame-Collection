@@ -465,7 +465,7 @@ export const StatsPage: React.FC = () => {
                 className={cn(
                   'relative min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap shrink-0 select-none',
                   isActive
-                    ? 'text-white'
+                    ? 'text-[var(--text-primary)]'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
               >
@@ -476,7 +476,7 @@ export const StatsPage: React.FC = () => {
                     transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                   />
                 )}
-                <Icon className={cn('w-4 h-4 shrink-0 relative z-10', isActive ? 'text-white' : tab.iconColor)} />
+                <Icon className={cn('w-4 h-4 shrink-0 relative z-10', isActive ? 'text-[var(--text-primary)]' : tab.iconColor)} />
                 <span className="relative z-10">{tab.label}</span>
               </button>
             );
@@ -508,7 +508,7 @@ export const StatsPage: React.FC = () => {
                       'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border select-none',
                       selectedYears.length === 0
                         ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
-                        : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
+                        : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-white/20'
                     )}
                   >
                     All Time ({sessions.length})
@@ -530,7 +530,7 @@ export const StatsPage: React.FC = () => {
                           'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border select-none',
                           isSelected
                             ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
-                            : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
+                            : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-white/20'
                         )}
                       >
                         Year {yr} ({count})
@@ -552,7 +552,7 @@ export const StatsPage: React.FC = () => {
                           selectedYears.includes(availableYears[0]) &&
                           selectedYears.includes(availableYears[1])
                           ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
-                          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
+                          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-white/20'
                       )}
                     >
                       {availableYears[1]} - {availableYears[0]} (Last 2 Years)
@@ -568,7 +568,7 @@ export const StatsPage: React.FC = () => {
                         'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border select-none flex items-center gap-1.5',
                         isCustomMultiYearOpen || selectedYears.length > 2
                           ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-                          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
+                          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       )}
                     >
                       <Filter className="w-3.5 h-3.5" />
@@ -580,7 +580,7 @@ export const StatsPage: React.FC = () => {
                 {/* Current Filter Status */}
                 <div className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5">
                   <span>Viewing:</span>
-                  <span className="font-bold text-white px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+                  <span className="font-bold text-[var(--text-primary)] px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
                     {timeFilterLabel}
                   </span>
                   <span className="font-mono text-amber-400 font-bold">
@@ -613,7 +613,7 @@ export const StatsPage: React.FC = () => {
                           'px-2.5 py-1 rounded-lg text-xs font-semibold border flex items-center gap-1.5 cursor-pointer transition-colors',
                           isChecked
                             ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-                            : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
+                            : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                         )}
                       >
                         <div
@@ -657,7 +657,7 @@ export const StatsPage: React.FC = () => {
                     <Award className="w-3.5 h-3.5 fill-current" />
                     BoardGame Geek Standard Metric · {timeFilterLabel}
                   </div>
-                  <h2 className="font-display font-black text-3xl sm:text-4xl text-white">
+                  <h2 className="font-display font-black text-3xl sm:text-4xl text-[var(--text-primary)]">
                     H-Index Rating:{' '}
                     <span className="text-amber-400 underline decoration-amber-400/50">
                       H-{hIndex}
@@ -671,7 +671,7 @@ export const StatsPage: React.FC = () => {
                   {/* Progress towards next H-Index */}
                   {nextHIndexGame && (
                     <div className="pt-2">
-                      <div className="flex justify-between text-xs font-bold text-white mb-1.5">
+                      <div className="flex justify-between text-xs font-bold text-[var(--text-primary)] mb-1.5">
                         <span>Progress towards H-{hIndex + 1}:</span>
                         <span className="text-amber-300 font-mono">
                           {nextHIndexGame.name} ({nextHIndexGame.plays}/{hIndex + 1} plays)
@@ -728,7 +728,7 @@ export const StatsPage: React.FC = () => {
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-2xl mx-auto">
                   📅
                 </div>
-                <h3 className="font-display font-bold text-lg text-white">
+                <h3 className="font-display font-bold text-lg text-[var(--text-primary)]">
                   No Sessions Found
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
@@ -768,7 +768,7 @@ export const StatsPage: React.FC = () => {
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
                       </div>
-                      <h3 className="font-display font-bold text-base text-white truncate block mt-0.5 group-hover:text-amber-300 transition-colors">
+                      <h3 className="font-display font-bold text-base text-[var(--text-primary)] truncate block mt-0.5 group-hover:text-amber-300 transition-colors">
                         {mostPlayedGame.name}
                       </h3>
                       <p className="text-xs text-amber-300 font-mono font-bold mt-0.5">
@@ -792,17 +792,17 @@ export const StatsPage: React.FC = () => {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-[#94a3b8] group-hover:text-amber-300 transition-colors">
+                      <span className="text-xs font-semibold text-[var(--text-secondary)] group-hover:text-amber-300 transition-colors">
                         Played Games in Vault
                       </span>
                       <span className="text-xs font-bold text-amber-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
                         View <ArrowRight className="w-3 h-3" />
                       </span>
                     </div>
-                    <p className="font-display font-black text-2xl text-white mt-0.5">
+                    <p className="font-display font-black text-2xl text-[var(--text-primary)] mt-0.5">
                       {sortedGamesByPlays.filter((g) => g.plays > 0).length} / {games.length}
                     </p>
-                    <p className="text-[11px] text-[#94a3b8] mt-0.5 group-hover:text-[var(--text-secondary)] transition-colors truncate">
+                    <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 group-hover:text-[var(--text-secondary)] transition-colors truncate">
                       {(
                         (sortedGamesByPlays.filter((g) => g.plays > 0).length /
                           Math.max(1, games.length)) *
@@ -833,13 +833,13 @@ export const StatsPage: React.FC = () => {
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-[#22d3ee] group-hover:translate-x-0.5 transition-transform shrink-0" />
                       </div>
-                      <p className="font-display font-black text-2xl text-white mt-0.5">
+                      <p className="font-display font-black text-2xl text-[var(--text-primary)] mt-0.5">
                         {formatDuration(longestSession.durationMinutes)}
                       </p>
-                      <h4 className="font-display font-bold text-sm text-white truncate group-hover:text-[#22d3ee] transition-colors">
+                      <h4 className="font-display font-bold text-sm text-[var(--text-primary)] truncate group-hover:text-[#22d3ee] transition-colors">
                         {longestSession.gameName}
                       </h4>
-                      <p className="text-[11px] text-[#94a3b8] truncate mt-0.5">
+                      <p className="text-[11px] text-[var(--text-secondary)] truncate mt-0.5">
                         {formatDate(longestSession.datePlayed)}
                         {longestSession.location ? ` · ${longestSession.location}` : ''}
                       </p>
@@ -871,13 +871,13 @@ export const StatsPage: React.FC = () => {
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-emerald-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
                       </div>
-                      <p className="font-display font-black text-2xl text-white mt-0.5">
+                      <p className="font-display font-black text-2xl text-[var(--text-primary)] mt-0.5">
                         {formatDuration(shortestSession.durationMinutes)}
                       </p>
-                      <h4 className="font-display font-bold text-sm text-white truncate group-hover:text-emerald-300 transition-colors">
+                      <h4 className="font-display font-bold text-sm text-[var(--text-primary)] truncate group-hover:text-emerald-300 transition-colors">
                         {shortestSession.gameName}
                       </h4>
-                      <p className="text-[11px] text-[#94a3b8] truncate mt-0.5">
+                      <p className="text-[11px] text-[var(--text-secondary)] truncate mt-0.5">
                         {formatDate(shortestSession.datePlayed)}
                         {shortestSession.location ? ` · ${shortestSession.location}` : ''}
                       </p>
@@ -897,10 +897,10 @@ export const StatsPage: React.FC = () => {
               <Card className="lg:col-span-8 p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="font-display font-bold text-xl text-white">
+                    <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
                       Play Frequency by Month
                     </h2>
-                    <p className="text-xs text-[#94a3b8]">
+                    <p className="text-xs text-[var(--text-secondary)]">
                       Session history by month (scroll horizontally to explore)
                     </p>
                   </div>
@@ -928,7 +928,7 @@ export const StatsPage: React.FC = () => {
                             style={{ height: `${heightPct}%` }}
                             className="w-full min-w-[16px] max-w-[32px] rounded-t-lg bg-[image:var(--gradient-hero)] shadow-md group-hover:brightness-125 transition-all duration-300"
                           />
-                          <span className="text-[10px] text-[#94a3b8] font-medium whitespace-nowrap">
+                          <span className="text-[10px] text-[var(--text-secondary)] font-medium whitespace-nowrap">
                             {item.month}
                           </span>
                         </div>
@@ -943,10 +943,10 @@ export const StatsPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Flame className="w-5 h-5 text-orange-400" />
                   <div>
-                    <h2 className="font-display font-bold text-lg text-white">
+                    <h2 className="font-display font-bold text-lg text-[var(--text-primary)]">
                       Longest Win Streak
                     </h2>
-                    <p className="text-xs text-[#94a3b8]">Consecutive wins across all games</p>
+                    <p className="text-xs text-[var(--text-secondary)]">Consecutive wins across all games</p>
                   </div>
                 </div>
 
@@ -964,7 +964,7 @@ export const StatsPage: React.FC = () => {
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <PlayerAvatar player={player} size="sm" />
-                        <span className="font-display font-bold text-xs text-white truncate group-hover:text-amber-300 transition-colors">
+                        <span className="font-display font-bold text-xs text-[var(--text-primary)] truncate group-hover:text-amber-300 transition-colors">
                           {player.name}
                         </span>
                       </div>
@@ -993,8 +993,8 @@ export const StatsPage: React.FC = () => {
                 className={cn(
                   'relative px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none',
                   selectedYear === 'all'
-                    ? 'text-white'
-                    : 'text-[var(--text-secondary)] hover:text-white'
+                    ? 'text-[var(--text-primary)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
               >
                 {selectedYear === 'all' && (
@@ -1014,8 +1014,8 @@ export const StatsPage: React.FC = () => {
                   className={cn(
                     'relative px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none',
                     selectedYear === yr
-                      ? 'text-white'
-                      : 'text-[var(--text-secondary)] hover:text-white'
+                      ? 'text-[var(--text-primary)]'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   )}
                 >
                   {selectedYear === yr && (
@@ -1038,7 +1038,7 @@ export const StatsPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-xs text-[var(--text-secondary)]">Total Sessions ({selectedYear === 'all' ? 'All-Time' : selectedYear})</span>
-                  <p className="font-display font-black text-2xl text-white mt-0.5">
+                  <p className="font-display font-black text-2xl text-[var(--text-primary)] mt-0.5">
                     {yearStats.totalSessions} plays
                   </p>
                 </div>
@@ -1050,7 +1050,7 @@ export const StatsPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-xs text-[var(--text-secondary)]">Tabletop Playtime</span>
-                  <p className="font-display font-black text-2xl text-white mt-0.5">
+                  <p className="font-display font-black text-2xl text-[var(--text-primary)] mt-0.5">
                     ~{yearStats.hours} hrs
                   </p>
                 </div>
@@ -1062,7 +1062,7 @@ export const StatsPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-xs text-[var(--text-secondary)]">Most Wins</span>
-                  <p className="font-display font-black text-xl text-white mt-0.5 truncate">
+                  <p className="font-display font-black text-xl text-[var(--text-primary)] mt-0.5 truncate">
                     {yearStats.topWinners[0]?.playerName || '—'}
                   </p>
                   {yearStats.topWinners[0] && (
@@ -1076,7 +1076,7 @@ export const StatsPage: React.FC = () => {
 
             {/* Top Games of the Year */}
             <Card className="p-6 space-y-4">
-              <h2 className="font-display font-bold text-xl text-white flex items-center gap-2">
+              <h2 className="font-display font-bold text-xl text-[var(--text-primary)] flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-amber-400" />
                 <span>Top Played Board Games ({selectedYear === 'all' ? 'All-Time' : selectedYear})</span>
               </h2>
@@ -1102,7 +1102,7 @@ export const StatsPage: React.FC = () => {
                       </div>
                     )}
                     <div>
-                      <h4 className="font-display font-bold text-xs text-white truncate">{g.name}</h4>
+                      <h4 className="font-display font-bold text-xs text-[var(--text-primary)] truncate">{g.name}</h4>
                       <p className="font-mono text-xs font-bold text-amber-400 mt-1">
                         {g.count} plays
                       </p>
@@ -1121,7 +1121,7 @@ export const StatsPage: React.FC = () => {
           <div className="space-y-6">
             <Card className="p-6 space-y-6">
               <div>
-                <h2 className="font-display font-bold text-xl text-white flex items-center gap-2">
+                <h2 className="font-display font-bold text-xl text-[var(--text-primary)] flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-rose-400" />
                   <span>Favorite Venues &amp; Locations</span>
                 </h2>
@@ -1141,7 +1141,7 @@ export const StatsPage: React.FC = () => {
                         <span className="w-7 h-7 rounded-xl bg-[var(--bg-elevated)] text-[var(--accent-neon)] font-mono font-bold text-xs flex items-center justify-center shrink-0">
                           #{idx + 1}
                         </span>
-                        <span className="font-display font-extrabold text-sm sm:text-base text-white">
+                        <span className="font-display font-extrabold text-sm sm:text-base text-[var(--text-primary)]">
                           {loc.location}
                         </span>
                       </div>
@@ -1181,11 +1181,11 @@ export const StatsPage: React.FC = () => {
             <Card className="p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-display font-bold text-xl text-white flex items-center gap-2">
+                  <h2 className="font-display font-bold text-xl text-[var(--text-primary)] flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-amber-400" />
                     <span>All-Time Player Leaderboard</span>
                   </h2>
-                  <p className="text-xs text-[#94a3b8]">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     Rankings by total sessions logged and win rates across all tabletop games
                   </p>
                 </div>
@@ -1193,7 +1193,7 @@ export const StatsPage: React.FC = () => {
 
               <div className="overflow-x-auto rounded-2xl border border-[var(--border-subtle)]">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)] text-[#94a3b8]">
+                  <thead className="bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)] text-[var(--text-secondary)]">
                     <tr>
                       <th className="py-3 px-4 font-bold">Rank</th>
                       <th className="py-3 px-4 font-bold">Player</th>
@@ -1205,10 +1205,10 @@ export const StatsPage: React.FC = () => {
                   <tbody className="divide-y divide-[var(--border-subtle)] tabular-nums bg-[var(--bg-surface)]">
                     {playerLeaderboard.map((item, idx) => (
                       <tr key={item.player.id} className="hover:bg-white/[0.02]">
-                        <td className="py-3 px-4 font-mono font-bold text-[#94a3b8]">
+                        <td className="py-3 px-4 font-mono font-bold text-[var(--text-secondary)]">
                           {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
                         </td>
-                        <td className="py-3 px-4 font-display font-bold text-white">
+                        <td className="py-3 px-4 font-display font-bold text-[var(--text-primary)]">
                           <div className="flex items-center gap-2.5">
                             <PlayerAvatar player={item.player} size="sm" />
                             <span>{item.player.name}</span>
@@ -1219,7 +1219,7 @@ export const StatsPage: React.FC = () => {
                             )}
                           </div>
                         </td>
-                        <td className="py-3 px-3 text-right font-mono font-bold text-white">
+                        <td className="py-3 px-3 text-right font-mono font-bold text-[var(--text-primary)]">
                           {item.plays} plays
                         </td>
                         <td className="py-3 px-3 text-right font-mono font-bold text-amber-400">
@@ -1240,11 +1240,11 @@ export const StatsPage: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Swords className="w-5 h-5 text-cyan-400" />
-                  <h2 className="font-display font-bold text-xl text-white">
+                  <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
                     Head-to-Head Comparison
                   </h2>
                 </div>
-                <p className="text-xs text-[#94a3b8]">
+                <p className="text-xs text-[var(--text-secondary)]">
                   Select 2 or more players to compare head-to-head records at the same table
                 </p>
                 <div className="flex flex-wrap gap-2 pt-2">
@@ -1261,7 +1261,7 @@ export const StatsPage: React.FC = () => {
 
               {activeComparisonPlayers.length < 2 ? (
                 <div className="p-8 rounded-2xl bg-[var(--bg-surface)] border border-white/10 text-center">
-                  <p className="text-sm text-[#94a3b8]">
+                  <p className="text-sm text-[var(--text-secondary)]">
                     Please select at least 2 players above to compare head-to-head records.
                   </p>
                 </div>
@@ -1270,7 +1270,7 @@ export const StatsPage: React.FC = () => {
                   <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <Swords className="w-5 h-5 text-cyan-400" />
-                      <span className="font-display font-bold text-sm text-white">
+                      <span className="font-display font-bold text-sm text-[var(--text-primary)]">
                         Shared Sessions Played
                       </span>
                     </div>
@@ -1282,7 +1282,7 @@ export const StatsPage: React.FC = () => {
                   {/* Head-to-Head Summary Table */}
                   <div className="overflow-x-auto rounded-2xl border border-white/10">
                     <table className="w-full text-left text-sm">
-                      <thead className="bg-[var(--bg-elevated)] text-xs text-[#94a3b8]">
+                      <thead className="bg-[var(--bg-elevated)] text-xs text-[var(--text-secondary)]">
                         <tr>
                           <th className="py-3 px-4 font-semibold">Player</th>
                           <th className="py-3 px-4 font-semibold text-right">Shared Wins</th>
@@ -1294,7 +1294,7 @@ export const StatsPage: React.FC = () => {
                       <tbody className="divide-y divide-white/[0.06] bg-[var(--bg-surface)] tabular-nums">
                         {headToHead.playerStats.map((st) => (
                           <tr key={st.player.id}>
-                            <td className="py-3 px-4 font-display font-bold text-white">
+                            <td className="py-3 px-4 font-display font-bold text-[var(--text-primary)]">
                               <div className="flex items-center gap-2">
                                 <PlayerAvatar player={st.player} size="sm" />
                                 <span>{st.player.name}</span>
@@ -1306,10 +1306,10 @@ export const StatsPage: React.FC = () => {
                             <td className="py-3 px-4 text-right font-mono font-bold text-emerald-400">
                               {st.winRateInShared}%
                             </td>
-                            <td className="py-3 px-4 text-right font-mono text-white">
+                            <td className="py-3 px-4 text-right font-mono text-[var(--text-primary)]">
                               {st.highestScore !== null ? st.highestScore : '—'}
                             </td>
-                            <td className="py-3 px-4 text-right font-mono text-[#94a3b8]">
+                            <td className="py-3 px-4 text-right font-mono text-[var(--text-secondary)]">
                               {st.lowestScore !== null ? st.lowestScore : '—'}
                             </td>
                           </tr>
@@ -1321,12 +1321,12 @@ export const StatsPage: React.FC = () => {
                   {/* Per-Game Win Breakdown */}
                   {headToHead.perGameBreakdown.length > 0 && (
                     <div className="space-y-2.5 pt-2">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
                         Per-Game Shared Record
                       </h3>
                       <div className="overflow-x-auto rounded-2xl border border-white/10 max-h-64 overflow-y-auto">
                         <table className="w-full text-left text-xs">
-                          <thead className="bg-[var(--bg-elevated)] text-[#94a3b8] sticky top-0">
+                          <thead className="bg-[var(--bg-elevated)] text-[var(--text-secondary)] sticky top-0">
                             <tr>
                               <th className="py-2.5 px-4 font-semibold">Board Game</th>
                               <th className="py-2.5 px-3 font-semibold text-right">Shared Plays</th>
@@ -1340,14 +1340,14 @@ export const StatsPage: React.FC = () => {
                           <tbody className="divide-y divide-white/[0.06] bg-[var(--bg-surface)] tabular-nums">
                             {headToHead.perGameBreakdown.map((row) => (
                               <tr key={row.gameId}>
-                                <td className="py-2.5 px-4 font-bold text-white">{row.gameName}</td>
-                                <td className="py-2.5 px-3 text-right font-mono text-[#94a3b8]">
+                                <td className="py-2.5 px-4 font-bold text-[var(--text-primary)]">{row.gameName}</td>
+                                <td className="py-2.5 px-3 text-right font-mono text-[var(--text-secondary)]">
                                   {row.plays}
                                 </td>
                                 {activeComparisonPlayers.map((p) => {
                                   const w = row.winsByPlayerId[p.id] || 0;
                                   return (
-                                    <td key={p.id} className="py-2.5 px-3 text-right font-mono text-white">
+                                    <td key={p.id} className="py-2.5 px-3 text-right font-mono text-[var(--text-primary)]">
                                       {w > 0 ? (
                                         <span className="inline-flex items-center gap-1 text-amber-300 font-bold">
                                           <Trophy className="w-3 h-3" />
@@ -1386,10 +1386,10 @@ export const StatsPage: React.FC = () => {
                   className="w-16 h-20 rounded-xl object-cover border border-white/10"
                 />
                 <div>
-                  <h2 className="font-display font-extrabold text-2xl text-white">
+                  <h2 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
                     {activeGame.name}
                   </h2>
-                  <p className="text-xs text-[#94a3b8]">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     Select any board game to inspect high score records, average playtime, and top winners
                   </p>
                 </div>
@@ -1399,7 +1399,7 @@ export const StatsPage: React.FC = () => {
                 aria-label="Select board game to view analytics"
                 value={selectedGameId}
                 onChange={(e) => setSelectedGameId(e.target.value)}
-                className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--bg-surface)] border border-white/15 text-sm font-semibold text-white focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer"
+                className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--bg-surface)] border border-white/15 text-sm font-semibold text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer"
               >
                 {games.map((g) => (
                   <option key={g.id} value={g.id}>
@@ -1411,38 +1411,38 @@ export const StatsPage: React.FC = () => {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 tabular-nums">
               <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
-                <span className="text-xs text-[#94a3b8]">Total Plays Logged</span>
+                <span className="text-xs text-[var(--text-secondary)]">Total Plays Logged</span>
                 <p className="font-display font-black text-2xl text-[var(--accent-neon)] mt-1">
                   {activeGameStats.totalPlays}
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
-                <span className="text-xs text-[#94a3b8]">Average Duration</span>
+                <span className="text-xs text-[var(--text-secondary)]">Average Duration</span>
                 <p className="font-display font-black text-2xl text-[#22d3ee] mt-1">
                   {formatDuration(activeGameStats.averageDuration)}
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
-                <span className="text-xs text-[#94a3b8]">High Score Record</span>
+                <span className="text-xs text-[var(--text-secondary)]">High Score Record</span>
                 <p className="font-mono font-black text-2xl text-emerald-400 mt-1">
                   {activeGameStats.highestScore ? activeGameStats.highestScore.score : '—'}
                 </p>
                 {activeGameStats.highestScore && (
-                  <span className="text-xs text-[#94a3b8]">
+                  <span className="text-xs text-[var(--text-secondary)]">
                     by {activeGameStats.highestScore.playerName}
                   </span>
                 )}
               </div>
 
               <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
-                <span className="text-xs text-[#94a3b8]">Champion (Most Wins)</span>
+                <span className="text-xs text-[var(--text-secondary)]">Champion (Most Wins)</span>
                 <p className="font-display font-bold text-base text-amber-400 mt-1 truncate">
                   {activeGameStats.playerWinRates[0]?.playerName || '—'}
                 </p>
                 {activeGameStats.playerWinRates[0] && (
-                  <span className="text-xs text-[#94a3b8]">
+                  <span className="text-xs text-[var(--text-secondary)]">
                     {activeGameStats.playerWinRates[0].winRate}% win rate
                   </span>
                 )}
@@ -1452,17 +1452,17 @@ export const StatsPage: React.FC = () => {
             {/* Win rates for this game */}
             {activeGameStats.playerWinRates.length > 0 && (
               <div className="space-y-3 pt-3 border-t border-white/[0.08]">
-                <h3 className="font-bold text-sm text-white">Player Performance in this Game</h3>
+                <h3 className="font-bold text-sm text-[var(--text-primary)]">Player Performance in this Game</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {activeGameStats.playerWinRates.map((pw) => (
                     <div
                       key={pw.playerName}
                       className="p-3 rounded-xl bg-[var(--bg-surface)] border border-white/5 flex items-center justify-between"
                     >
-                      <span className="font-bold text-xs text-white">{pw.playerName}</span>
+                      <span className="font-bold text-xs text-[var(--text-primary)]">{pw.playerName}</span>
                       <div className="text-xs font-mono">
                         <span className="text-amber-400 font-bold">{pw.wins} wins</span>
-                        <span className="text-[#94a3b8] ml-2">({pw.winRate}%)</span>
+                        <span className="text-[var(--text-secondary)] ml-2">({pw.winRate}%)</span>
                       </div>
                     </div>
                   ))}
@@ -1488,8 +1488,8 @@ export const StatsPage: React.FC = () => {
                 className={cn(
                   'flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 select-none',
                   playedGamesTab === 'played'
-                    ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                    : 'text-[var(--text-secondary)] hover:text-white'
+                    ? 'bg-[var(--accent-primary)] text-[var(--text-primary)] shadow-md'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
               >
                 <span>Played Games</span>
@@ -1503,8 +1503,8 @@ export const StatsPage: React.FC = () => {
                 className={cn(
                   'flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 select-none',
                   playedGamesTab === 'unplayed'
-                    ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                    : 'text-[var(--text-secondary)] hover:text-white'
+                    ? 'bg-[var(--accent-primary)] text-[var(--text-primary)] shadow-md'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
               >
                 <span>Unplayed (Pile of Shame)</span>
@@ -1552,7 +1552,7 @@ export const StatsPage: React.FC = () => {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <h4 className="font-display font-bold text-sm text-white group-hover:text-[var(--accent-neon)] transition-colors truncate">
+                        <h4 className="font-display font-bold text-sm text-[var(--text-primary)] group-hover:text-[var(--accent-neon)] transition-colors truncate">
                           {item.name}
                         </h4>
                         <div className="flex items-center gap-2 mt-0.5 text-xs text-[var(--text-secondary)] tabular-nums">

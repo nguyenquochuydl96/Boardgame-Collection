@@ -136,30 +136,29 @@ export const CollectionPage: React.FC = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)]">
-              Boardgame Vault
+            <h1 className="font-display font-black text-2xl sm:text-4xl text-[var(--text-primary)] uppercase tracking-tight">
+              Tabletop <span className="font-serif italic lowercase font-normal text-3xl sm:text-5xl">vault</span>
             </h1>
-            <p className="text-sm text-[var(--text-secondary)] tabular-nums">
-              Showing {visibleGames.length < filteredGames.length ? `${visibleGames.length} of ` : ''}{filteredGames.length} tabletop games in your vault
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium tabular-nums mt-0.5">
+              Showing {visibleGames.length < filteredGames.length ? `${visibleGames.length} of ` : ''}{filteredGames.length} curated games in your archive
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <Button
-              variant="secondary"
+              variant="butter"
               size="sm"
               onClick={() => setIsWhatToPlayOpen(true)}
-              className="border-amber-500/30 text-amber-300 hover:border-amber-400"
             >
-              <Sparkles className="w-4 h-4 mr-1 text-amber-400" />
+              <Sparkles className="w-3.5 h-3.5 mr-1 text-[var(--ink)]" />
               What to Play?
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setIsConfigOpen(true)}>
-              <Settings className="w-4 h-4 mr-1 text-[var(--accent-neon)]" />
+              <Settings className="w-3.5 h-3.5 mr-1 text-[var(--coral)]" />
               BGG Sync
             </Button>
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={() => {
                 setImportModalTab('file');
@@ -167,36 +166,35 @@ export const CollectionPage: React.FC = () => {
               }}
               title="Import collection from ZIP/JSON backup or BGG"
             >
-              <Upload className="w-4 h-4 mr-1 text-[var(--accent-secondary)]" />
+              <Upload className="w-3.5 h-3.5 mr-1 text-[var(--teal)]" />
               Import
             </Button>
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={() => {
                 setImportModalTab('export');
                 setIsImportOpen(true);
               }}
               title="Backup all collection data to JSON or CSV"
-              className="border-emerald-500/30 text-emerald-300 hover:border-emerald-400"
             >
-              <Download className="w-4 h-4 mr-1 text-emerald-400" />
-              Backup &amp; Export
+              <Download className="w-3.5 h-3.5 mr-1 text-[var(--coral)]" />
+              Backup
             </Button>
             <Link to="/collection/add">
-              <Button variant="primary">
-                <Plus className="w-4 h-4 mr-1" />
+              <Button variant="primary" size="sm" withArrowDot>
+                <Plus className="w-3.5 h-3.5 mr-1" />
                 Add Game
               </Button>
             </Link>
           </div>
         </div>
 
-        {/* Status Filter Bar with sliding spring pill */}
+        {/* Status Filter Bar with Rayé Pill Tabs */}
         <div
           role="tablist"
           aria-label="Filter collection by status"
-          className="flex items-center gap-2 overflow-x-auto pb-1.5"
+          className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none"
         >
           {FILTER_TABS.map((tab) => {
             const count =
@@ -213,24 +211,17 @@ export const CollectionPage: React.FC = () => {
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
                 className={cn(
-                  'relative min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-2 border select-none',
+                  'relative min-h-[36px] px-3.5 py-1.5 rounded-full text-xs font-bold font-display uppercase tracking-wider shrink-0 transition-all duration-200 cursor-pointer flex items-center gap-2 border-[1.5px] select-none',
                   isActive
-                    ? 'text-white border-transparent'
-                    : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[var(--border-glow)] hover:text-[var(--text-primary)]'
+                    ? 'bg-[var(--ink)] text-[var(--cream)] border-[var(--ink)] shadow-[2px_2px_0_var(--coral)] -translate-y-0.5'
+                    : 'bg-[var(--bg-card)] text-[var(--text-secondary)] border-[var(--ink)] shadow-[2px_2px_0_var(--ink)] hover:bg-[var(--butter-soft)] hover:text-[var(--text-primary)] hover:-translate-y-0.5'
                 )}
               >
-                {isActive && (
-                  <motion.span
-                    layoutId="collection-filter-pill"
-                    className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] shadow-lg shadow-[var(--accent-glow)] -z-10"
-                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                  />
-                )}
                 <span className="relative z-10">{tab.label}</span>
                 <span
                   className={cn(
-                    'relative z-10 px-1.5 py-0.5 rounded-md text-[10px] tabular-nums font-semibold',
-                    isActive ? 'bg-white/25 text-white' : 'bg-white/5 text-[var(--text-secondary)]'
+                    'relative z-10 px-1.5 py-0.2 rounded-full text-[10px] tabular-nums font-bold border border-[var(--ink)]',
+                    isActive ? 'bg-[var(--coral)] text-[var(--ink)]' : 'bg-[var(--paper)] text-[var(--text-secondary)]'
                   )}
                 >
                   {count}
@@ -259,7 +250,7 @@ export const CollectionPage: React.FC = () => {
                 aria-label="Sort collection by"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="min-h-[42px] pl-9 pr-8 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer appearance-none"
+                className="min-h-[42px] pl-9 pr-8 py-2 rounded-xl bg-[var(--bg-card)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-xs)] text-xs font-bold font-display uppercase tracking-wider text-[var(--text-primary)] focus:outline-none focus:shadow-[var(--shadow-brutal-sm)] cursor-pointer appearance-none"
               >
                 <option value="addedDate">Date Added (Newest)</option>
                 <option value="name">Name (A-Z)</option>
@@ -268,47 +259,33 @@ export const CollectionPage: React.FC = () => {
               </select>
             </div>
 
-            {/* View Mode Switcher with sliding spring pill */}
-            <div className="p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center gap-1">
+            {/* View Mode Switcher with Rayé styling */}
+            <div className="p-1 rounded-xl bg-[var(--bg-card)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-xs)] flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={cn(
-                  'relative p-2 rounded-lg transition-colors cursor-pointer',
+                  'relative p-2 rounded-lg transition-all duration-200 cursor-pointer',
                   viewMode === 'grid'
-                    ? 'text-white'
+                    ? 'bg-[var(--coral)] text-[var(--ink)] border border-[var(--ink)]'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
                 aria-label="Grid view"
               >
-                {viewMode === 'grid' && (
-                  <motion.span
-                    layoutId="collection-view-pill"
-                    className="absolute inset-0 rounded-lg bg-[image:var(--gradient-hero)] shadow-md -z-10"
-                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                  />
-                )}
-                <LayoutGrid className="w-4 h-4 relative z-10" />
+                <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
                 className={cn(
-                  'relative p-2 rounded-lg transition-colors cursor-pointer',
+                  'relative p-2 rounded-lg transition-all duration-200 cursor-pointer',
                   viewMode === 'list'
-                    ? 'text-white'
+                    ? 'bg-[var(--coral)] text-[var(--ink)] border border-[var(--ink)]'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
                 aria-label="List view"
               >
-                {viewMode === 'list' && (
-                  <motion.span
-                    layoutId="collection-view-pill"
-                    className="absolute inset-0 rounded-lg bg-[image:var(--gradient-hero)] shadow-md -z-10"
-                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                  />
-                )}
-                <List className="w-4 h-4 relative z-10" />
+                <List className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -328,9 +305,9 @@ export const CollectionPage: React.FC = () => {
             {visibleCount < filteredGames.length && (
               <div className="flex justify-center pt-4 pb-4">
                 <Button
-                  variant="secondary"
+                  variant="butter"
                   onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
-                  className="px-6 py-2.5 rounded-xl border-[var(--border-subtle)] hover:border-[var(--border-glow)] text-xs font-bold"
+                  className="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider"
                 >
                   Load More Games ({filteredGames.length - visibleCount} remaining)
                 </Button>
@@ -339,15 +316,15 @@ export const CollectionPage: React.FC = () => {
           </>
         ) : (
           /* Empty State */
-          <div className="p-12 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center space-y-4 max-w-md mx-auto my-8">
-            <div className="w-16 h-16 rounded-3xl bg-[image:var(--gradient-hero)] flex items-center justify-center text-3xl mx-auto shadow-xl shadow-[var(--accent-glow)]">
+          <div className="p-12 rounded-2xl bg-[var(--bg-card)] border-2 border-[var(--ink)] shadow-[var(--shadow-brutal)] text-center space-y-4 max-w-md mx-auto my-8">
+            <div className="w-16 h-16 rounded-2xl bg-[var(--coral)] border-2 border-[var(--ink)] shadow-[2px_2px_0_var(--ink)] flex items-center justify-center text-3xl mx-auto">
               🎲
             </div>
             <div className="space-y-1">
-              <h3 className="font-display font-bold text-lg text-[var(--text-primary)]">
+              <h3 className="font-display font-black text-xl text-[var(--text-primary)] uppercase">
                 No boardgames found
               </h3>
-              <p className="text-sm text-[var(--text-secondary)]">
+              <p className="text-sm text-[var(--text-secondary)] font-medium">
                 {searchQuery || activeFilter !== 'all'
                   ? 'No games match your current filter or search criteria.'
                   : 'Your collection is currently empty. Start adding games to your vault!'}
@@ -356,7 +333,8 @@ export const CollectionPage: React.FC = () => {
             <div className="flex items-center justify-center gap-3 pt-2">
               {(searchQuery || activeFilter !== 'all') && (
                 <Button
-                  variant="secondary"
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     setActiveFilter('all');
                     setSearchQuery('');
@@ -365,12 +343,12 @@ export const CollectionPage: React.FC = () => {
                   Reset Filters
                 </Button>
               )}
-              <Button variant="secondary" onClick={() => setIsImportOpen(true)}>
+              <Button variant="secondary" size="sm" onClick={() => setIsImportOpen(true)}>
                 <Upload className="w-4 h-4 mr-1" />
                 Import File
               </Button>
               <Link to="/collection/add">
-                <Button variant="primary">
+                <Button variant="primary" size="sm" withArrowDot>
                   <Plus className="w-4 h-4" />
                   Add New Game
                 </Button>
@@ -379,11 +357,11 @@ export const CollectionPage: React.FC = () => {
           </div>
         )}
 
-        {/* Floating Action Button (FAB) */}
+        {/* Floating Action Button (FAB) with Rayé styling */}
         <Link
           to="/collection/add"
           aria-label="Add new boardgame"
-          className="fixed right-5 bottom-20 lg:bottom-8 z-30 w-14 h-14 rounded-2xl bg-[image:var(--gradient-hero)] text-[var(--text-primary)] shadow-xl shadow-[var(--accent-glow)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+          className="fixed right-5 bottom-20 lg:bottom-8 z-30 w-14 h-14 rounded-full bg-[var(--coral)] text-[var(--ink)] border-2 border-[var(--ink)] shadow-[var(--shadow-brutal)] flex items-center justify-center hover:bg-[var(--butter)] hover:scale-105 active:scale-95 transition-all cursor-pointer"
         >
           <Plus className="w-6 h-6" />
         </Link>

@@ -70,10 +70,10 @@ export const LocationCard: React.FC<LocationCardProps> = ({
     >
       <Card
         className={cn(
-          'p-5 flex flex-col justify-between gap-4 h-full relative transition-all border-2 group',
+          'p-5 flex flex-col justify-between gap-4 h-full relative transition-all border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)] group',
           location.isDefault
-            ? 'border-amber-400/50 bg-gradient-to-b from-amber-500/5 via-[var(--bg-card)] to-transparent ring-1 ring-amber-400/30'
-            : 'hover:border-[var(--border-glow)]'
+            ? 'bg-[var(--butter-soft)] shadow-[var(--shadow-brutal)]'
+            : 'bg-[var(--bg-card)] hover:shadow-[var(--shadow-brutal)]'
         )}
       >
         <div>
@@ -81,18 +81,18 @@ export const LocationCard: React.FC<LocationCardProps> = ({
           <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 flex-wrap">
               {location.isDefault ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold shadow-sm">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--butter)] border border-[var(--ink)] text-[var(--ink)] text-[10px] font-black uppercase tracking-wider shadow-[1px_1px_0_var(--ink)]">
+                  <Star className="w-3.5 h-3.5 fill-[var(--ink)] text-[var(--ink)]" />
                   Default Venue
                 </span>
               ) : (
                 <button
                   type="button"
                   onClick={() => onSetDefault(location.id)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--bg-surface)] hover:bg-amber-500/15 border border-[var(--border-subtle)] text-[11px] font-semibold text-[var(--text-secondary)] hover:text-amber-300 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--paper)] hover:bg-[var(--butter)] border border-[var(--ink)] text-[10px] font-bold uppercase tracking-wider text-[var(--ink)] transition-colors cursor-pointer"
                   title="Set as default venue"
                 >
-                  <Star className="w-3 h-3 text-[var(--text-muted)] group-hover:text-amber-400" />
+                  <Star className="w-3 h-3 text-[var(--ink)]" />
                   Set Default
                 </button>
               )}
@@ -103,7 +103,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({
               <button
                 type="button"
                 onClick={() => onEdit(location)}
-                className="w-7 h-7 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--accent-glow)] text-[var(--text-secondary)] hover:text-[var(--accent-neon)] border border-[var(--border-subtle)] flex items-center justify-center transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-lg bg-[var(--paper)] hover:bg-[var(--butter)] text-[var(--ink)] border border-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
                 title="Edit venue"
               >
                 <Edit3 className="w-3.5 h-3.5" />
@@ -112,7 +112,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({
               <button
                 type="button"
                 onClick={() => setIsConfirmingDelete(true)}
-                className="w-7 h-7 rounded-lg bg-[var(--bg-surface)] hover:bg-rose-500/20 text-[var(--text-secondary)] hover:text-rose-400 border border-[var(--border-subtle)] flex items-center justify-center transition-colors cursor-pointer"
+                className="w-7 h-7 rounded-lg bg-[var(--paper)] hover:bg-rose-400 text-[var(--ink)] border border-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
                 title="Delete venue"
               >
                 <Trash2 className="w-3.5 h-3.5" />

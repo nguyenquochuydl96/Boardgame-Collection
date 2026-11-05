@@ -12,10 +12,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'rounded-2xl bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] transition-all duration-300 ease-out',
-          glow && 'border-[var(--border-glow)] shadow-lg shadow-[var(--accent-glow)]',
+          'rounded-xl bg-[var(--bg-card)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal)] transition-all duration-300 ease-out',
+          glow && 'border-2 border-[var(--ink)] shadow-[var(--shadow-brutal-lg)]',
           interactive &&
-            'hover:border-[var(--border-glow)] hover:shadow-xl hover:shadow-[var(--accent-glow)] cursor-pointer',
+            'hover:shadow-[var(--shadow-brutal-hover)] hover:-translate-y-1 cursor-pointer active:translate-y-0 active:shadow-[var(--shadow-brutal-sm)]',
           className
         )}
         {...props}

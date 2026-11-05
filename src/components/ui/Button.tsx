@@ -1,11 +1,13 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { ArrowUpRight } from 'lucide-react';
 import { cn } from './cn';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline' | 'butter';
   size?: 'sm' | 'md' | 'lg' | 'icon';
   isLoading?: boolean;
+  withArrowDot?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -15,6 +17,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variant = 'primary',
       size = 'md',
       isLoading = false,
+      withArrowDot = false,
       disabled,
       children,
       type = 'button',
@@ -24,34 +27,36 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
       primary:
-        'bg-[image:var(--gradient-hero)] text-white shadow-lg shadow-[var(--accent-glow)] hover:shadow-xl hover:shadow-[var(--accent-glow)] border border-white/20',
+        'bg-[var(--coral)] text-[var(--ink)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)] hover:bg-[var(--butter)] hover:shadow-[var(--shadow-brutal)] active:shadow-[var(--shadow-brutal-xs)]',
       secondary:
-        'bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:brightness-110 border border-[var(--border-subtle)] hover:border-[var(--border-glow)]',
+        'bg-[var(--teal)] text-[var(--cream)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)] hover:bg-[var(--ink)] hover:text-[var(--cream)] hover:shadow-[var(--shadow-brutal)] active:shadow-[var(--shadow-brutal-xs)]',
+      butter:
+        'bg-[var(--butter)] text-[var(--ink)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)] hover:bg-[var(--coral)] hover:shadow-[var(--shadow-brutal)] active:shadow-[var(--shadow-brutal-xs)]',
       outline:
-        'bg-transparent text-[var(--text-primary)] border border-[var(--border-glow)] hover:bg-[var(--accent-glow)] hover:border-[var(--accent-neon)]',
+        'bg-[var(--bg-card)] text-[var(--text-primary)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)] hover:bg-[var(--ink)] hover:text-[var(--cream)] hover:shadow-[var(--shadow-brutal)]',
       ghost:
-        'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 border border-transparent',
+        'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 border border-transparent',
       danger:
-        'bg-rose-500/15 text-rose-300 border border-rose-500/35 hover:bg-rose-500/25',
+        'bg-rose-500/20 text-rose-700 dark:text-rose-300 border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)] hover:bg-rose-500/30',
     };
 
     const sizes: Record<NonNullable<ButtonProps['size']>, string> = {
-      sm: 'min-h-[38px] px-3.5 py-1.5 text-xs font-semibold rounded-xl gap-1.5',
-      md: 'min-h-[44px] px-4 py-2.5 text-sm font-semibold rounded-xl gap-2',
-      lg: 'min-h-[50px] px-6 py-3 text-base font-bold rounded-2xl gap-2.5',
-      icon: 'min-h-[44px] min-w-[44px] p-2.5 rounded-xl justify-center',
+      sm: 'min-h-[36px] px-3.5 py-1 text-xs font-bold rounded-full gap-1.5',
+      md: 'min-h-[42px] px-4 py-2 text-sm font-bold rounded-full gap-2',
+      lg: 'min-h-[48px] px-6 py-2.5 text-base font-extrabold rounded-full gap-2.5',
+      icon: 'min-h-[40px] min-w-[40px] p-2 rounded-full justify-center',
     };
 
     return (
       <motion.button
         ref={ref}
         type={type}
-        whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
-        whileTap={{ scale: disabled || isLoading ? 1 : 0.96 }}
-        transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+        whileHover={{ translateY: disabled || isLoading ? 0 : -2 }}
+        whileTap={{ translateY: disabled || isLoading ? 0 : 1 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         disabled={disabled || isLoading}
         className={cn(
-          'inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-all duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:opacity-50 disabled:cursor-not-allowed select-none',
+          'inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-all font-display duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--coral)] disabled:opacity-50 disabled:cursor-not-allowed select-none group',
           variants[variant],
           sizes[size],
           className
@@ -82,6 +87,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </svg>
         )}
         {children}
+        {withArrowDot && (
+          <span className="w-5 h-5 rounded-full bg-[var(--coral)] text-[var(--ink)] flex items-center justify-center ml-1 border border-[var(--ink)] group-hover:rotate-45 transition-transform duration-300">
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </span>
+        )}
       </motion.button>
     );
   }

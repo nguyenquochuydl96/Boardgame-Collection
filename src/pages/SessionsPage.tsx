@@ -323,17 +323,17 @@ export const SessionsPage: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)]">
-              Play Sessions History
+            <h1 className="font-display font-black text-2xl sm:text-4xl text-[var(--text-primary)] uppercase tracking-tight">
+              Play Sessions <span className="font-serif italic lowercase font-normal text-3xl sm:text-5xl">history</span>
             </h1>
-            <p className="text-sm text-[var(--text-secondary)] tabular-nums">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium tabular-nums mt-0.5">
               {sessions.length.toLocaleString()} tabletop sessions logged with friends
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <Link to="/sessions/new">
-              <Button variant="primary">
+              <Button variant="primary" withArrowDot>
                 <Plus className="w-4 h-4 mr-1.5" />
                 New Session
               </Button>
@@ -349,8 +349,8 @@ export const SessionsPage: React.FC = () => {
           />
         )}
 
-        {/* Filter & Search Bar */}
-        <div className="p-4 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] space-y-3">
+        {/* Filter & Search Bar with Rayé brutalist styling */}
+        <div className="p-4 rounded-xl bg-[var(--bg-card)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)] space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Search Input */}
             <div className="flex-1">
@@ -939,15 +939,15 @@ export const SessionsPage: React.FC = () => {
 
             {/* Progressive Loading Controls */}
             {hasMore ? (
-              <div className="p-6 rounded-2xl bg-[var(--bg-card)]/80 border border-[var(--border-subtle)] text-center space-y-3">
-                <p className="text-xs text-[var(--text-secondary)] tabular-nums">
+              <div className="p-6 rounded-xl bg-[var(--bg-card)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)] text-center space-y-3">
+                <p className="text-xs text-[var(--text-secondary)] font-medium tabular-nums">
                   Showing {visibleSessions.length} of {filteredSessions.length} sessions
                 </p>
                 <Button
-                  variant="secondary"
+                  variant="butter"
                   size="md"
                   onClick={handleLoadMore}
-                  className="mx-auto"
+                  className="mx-auto uppercase font-black tracking-wider"
                 >
                   <ChevronDown className="w-4 h-4 mr-1.5" />
                   Load 30 More Sessions

@@ -127,39 +127,33 @@ export const PlayersPage: React.FC = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)]">
-              Players &amp; Venues
+            <h1 className="font-display font-black text-2xl sm:text-4xl text-[var(--text-primary)] uppercase tracking-tight">
+              Players &amp; <span className="font-serif italic lowercase font-normal text-3xl sm:text-5xl">venues</span>
             </h1>
-            <p className="text-sm text-[var(--text-secondary)]">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium mt-0.5">
               Manage your tabletop crew, head-to-head records, and favorite game night venues
             </p>
           </div>
 
-          {/* Subtab Navigation Pills */}
-          <div className="flex items-center p-1 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-sm">
+          {/* Subtab Navigation Pills with Rayé styling */}
+          <div className="flex items-center p-1 rounded-full bg-[var(--bg-card)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-xs)]">
             <button
               type="button"
               onClick={() => handleTabChange('players')}
               className={cn(
-                'relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none',
+                'relative flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold font-display uppercase tracking-wider transition-all duration-200 cursor-pointer select-none',
                 activeTab === 'players'
-                  ? 'text-white'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'bg-[var(--ink)] text-[var(--cream)] shadow-[2px_2px_0_var(--coral)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--paper)]'
               )}
             >
-              {activeTab === 'players' && (
-                <motion.div
-                  layoutId="activeSubtabPill"
-                  className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-md"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-1.5">
-                <Users className="w-4 h-4" />
-                <span>Players</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold">
-                  {players.length}
-                </span>
+              <Users className="w-3.5 h-3.5" />
+              <span>Players</span>
+              <span className={cn(
+                'px-1.5 py-0.2 rounded-full text-[10px] font-black tabular-nums border border-[var(--ink)]',
+                activeTab === 'players' ? 'bg-[var(--coral)] text-[var(--ink)]' : 'bg-[var(--paper)] text-[var(--text-secondary)]'
+              )}>
+                {players.length}
               </span>
             </button>
 
@@ -167,25 +161,19 @@ export const PlayersPage: React.FC = () => {
               type="button"
               onClick={() => handleTabChange('locations')}
               className={cn(
-                'relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none',
+                'relative flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold font-display uppercase tracking-wider transition-all duration-200 cursor-pointer select-none',
                 activeTab === 'locations'
-                  ? 'text-white'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'bg-[var(--ink)] text-[var(--cream)] shadow-[2px_2px_0_var(--coral)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--paper)]'
               )}
             >
-              {activeTab === 'locations' && (
-                <motion.div
-                  layoutId="activeSubtabPill"
-                  className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-md"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-1.5">
-                <MapPin className="w-4 h-4" />
-                <span>Venues</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold">
-                  {locations.length}
-                </span>
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Venues</span>
+              <span className={cn(
+                'px-1.5 py-0.2 rounded-full text-[10px] font-black tabular-nums border border-[var(--ink)]',
+                activeTab === 'locations' ? 'bg-[var(--coral)] text-[var(--ink)]' : 'bg-[var(--paper)] text-[var(--text-secondary)]'
+              )}>
+                {locations.length}
               </span>
             </button>
           </div>
@@ -195,9 +183,9 @@ export const PlayersPage: React.FC = () => {
         {/* SUBTAB 1: PLAYERS TAB                                   */}
         {/* ======================================================== */}
         {activeTab === 'players' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="space-y-6">
             {/* Top Action Bar for Players */}
-            <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)]">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-[var(--bg-card)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)]">
               <div className="text-xs text-[var(--text-secondary)]">
                 Total of <strong className="text-[var(--text-primary)]">{players.length}</strong> players in your tabletop crew.
               </div>
@@ -287,10 +275,10 @@ export const PlayersPage: React.FC = () => {
                     >
                       <Card
                         className={cn(
-                          'p-5 flex flex-col justify-between gap-4 relative h-full transition-all group border-2',
+                          'p-5 flex flex-col justify-between gap-4 relative h-full transition-all group border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)] hover:shadow-[var(--shadow-brutal)]',
                           isSelectedForCompare
-                            ? 'border-[#22d3ee] ring-2 ring-[#22d3ee]/30'
-                            : 'hover:border-amber-400/40'
+                            ? 'border-[var(--coral)] ring-2 ring-[var(--coral)]/40 bg-[var(--butter-soft)]'
+                            : 'bg-[var(--bg-card)]'
                         )}
                       >
                         {/* Top Right Actions */}
