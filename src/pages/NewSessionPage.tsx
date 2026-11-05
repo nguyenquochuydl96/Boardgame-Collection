@@ -72,7 +72,7 @@ export const NewSessionPage: React.FC = () => {
   const addPlayerToStore = usePlayerStore((s) => s.addPlayer);
   const addSession = useSessionStore((s) => s.addSession);
   const defaultLocation = useLocationStore(
-    (s) => s.locations.find((l) => l.isDefault)?.name || s.locations[0]?.name || 'Huy’s Game Room, District 3'
+    (s) => s.locations.find((l) => l.isDefault)?.name || s.locations[0]?.name || ''
   );
 
   const [currentStep, setCurrentStep] = useState<number>(

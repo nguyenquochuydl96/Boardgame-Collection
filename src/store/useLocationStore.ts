@@ -3,80 +3,23 @@ import { persist } from 'zustand/middleware';
 import { GameLocation, PlaySession } from '../types';
 import { generateId } from '../lib/utils';
 
-export const INITIAL_LOCATIONS: GameLocation[] = [
-  {
-    id: 'loc-huy-room',
-    name: 'Huy’s Game Room, District 3',
-    address: 'District 3, Ho Chi Minh City',
-    notes: 'Main gaming room with 8-player table and AC',
-    isDefault: true,
-    createdAt: '2026-01-01T00:00:00.000Z',
-  },
-  {
-    id: 'loc-boardgame-loft',
-    name: 'The Boardgame Loft Cafe',
-    address: 'District 1, Ho Chi Minh City',
-    notes: 'Cozy boardgame cafe with extensive drink menu',
-    isDefault: false,
-    createdAt: '2026-01-02T00:00:00.000Z',
-  },
-  {
-    id: 'loc-quan-apt',
-    name: 'Minh Quân’s Apartment',
-    address: 'Binh Thanh District, Ho Chi Minh City',
-    notes: 'High-floor apartment with city view, 6-player table',
-    isDefault: false,
-    createdAt: '2026-01-03T00:00:00.000Z',
-  },
-  {
-    id: 'loc-linh-studio',
-    name: 'Linh’s Studio',
-    address: 'District 7, Ho Chi Minh City',
-    notes: 'Quiet creative studio, great for long strategy games',
-    isDefault: false,
-    createdAt: '2026-01-04T00:00:00.000Z',
-  },
-  {
-    id: 'loc-huy-vn',
-    name: 'Huy’s House (District 3)',
-    address: 'District 3, Ho Chi Minh City',
-    notes: 'Favorite weekend tabletop spot',
-    isDefault: false,
-    createdAt: '2026-01-05T00:00:00.000Z',
-  },
-  {
-    id: 'loc-boardgame-cafe',
-    name: 'The Boardgame Cafe',
-    address: 'Ho Chi Minh City',
-    notes: 'Public boardgame cafe',
-    isDefault: false,
-    createdAt: '2026-01-06T00:00:00.000Z',
-  },
-  {
-    id: 'loc-loc',
-    name: 'Loc’s House',
-    address: 'Ho Chi Minh City',
-    notes: 'Private home with ample parking',
-    isDefault: false,
-    createdAt: '2026-01-07T00:00:00.000Z',
-  },
-  {
-    id: 'loc-cafe',
-    name: 'Board Game Cafe / Tea Lounge',
-    address: 'Ho Chi Minh City',
-    notes: 'Casual cafe meetup',
-    isDefault: false,
-    createdAt: '2026-01-08T00:00:00.000Z',
-  },
-  {
-    id: 'loc-office',
-    name: 'Company Office',
-    address: 'Ho Chi Minh City',
-    notes: 'Office game room for after-work sessions',
-    isDefault: false,
-    createdAt: '2026-01-09T00:00:00.000Z',
-  },
-];
+export const FAKE_LOCATION_NAMES = new Set([
+  'huy’s game room, district 3',
+  'the boardgame loft cafe',
+  'minh quân’s apartment',
+  'linh’s studio',
+  'nhà huy (quận 3)',
+  'the boardgame cafe',
+  'nhà lộc',
+  'quán cafe / trà sữa',
+  'văn phòng công ty',
+  'huy’s house (district 3)',
+  'loc’s house',
+  'board game cafe / tea lounge',
+  'company office',
+]);
+
+export const INITIAL_LOCATIONS: GameLocation[] = [];
 
 export interface LocationStore {
   locations: GameLocation[];
@@ -99,11 +42,22 @@ export const useLocationStore = create<LocationStore>()(
       hasSyncedHistory: false,
       bulkAddLocations: (newLocs, replaceExisting = false) => {
         set((state) => {
+          const filtered = newLocs.filter(
+            (l) =>
+              !FAKE_LOCATION_NAMES.has(l.name.trim().toLowerCase()) &&
+              !l.id.startsWith('loc-huy') &&
+              !l.id.startsWith('loc-boardgame') &&
+              !l.id.startsWith('loc-quan') &&
+              !l.id.startsWith('loc-linh') &&
+              !l.id.startsWith('loc-loc') &&
+              !l.id.startsWith('loc-cafe') &&
+              !l.id.startsWith('loc-office')
+          );
           if (replaceExisting) {
-            return { locations: newLocs, hasSyncedHistory: true };
+            return { locations: filtered, hasSyncedHistory: true };
           }
           const existingNames = new Set(state.locations.map((l) => l.name.trim().toLowerCase()));
-          const toAdd = newLocs.filter((l) => !existingNames.has(l.name.trim().toLowerCase()));
+          const toAdd = filtered.filter((l) => !existingNames.has(l.name.trim().toLowerCase()));
           return { locations: [...state.locations, ...toAdd], hasSyncedHistory: true };
         });
       },
@@ -191,33 +145,20 @@ export const useLocationStore = create<LocationStore>()(
         );
         const newLocs: GameLocation[] = [];
 
-        // First, also ensure all INITIAL_LOCATIONS exist on initial seed
-        if (!get().hasSyncedHistory || force) {
-          for (const initLoc of INITIAL_LOCATIONS) {
-            const key = initLoc.name.trim().toLowerCase();
-            if (!existingNames.has(key)) {
-              existingNames.add(key);
-              newLocs.push({ ...initLoc });
-            }
-          }
-        }
-
-        // Then check all sessions in history
+        // Check real sessions in history (ignore any fake location names)
         for (const s of sessions) {
           if (!s.location || !s.location.trim()) continue;
           const trimmed = s.location.trim();
           const key = trimmed.toLowerCase();
+          if (FAKE_LOCATION_NAMES.has(key)) continue;
+
           if (!existingNames.has(key)) {
             existingNames.add(key);
             newLocs.push({
               id: `loc-${generateId()}`,
               name: trimmed,
-              address:
-                trimmed.includes('District 3') || trimmed.includes('Quận 3')
-                  ? 'District 3, Ho Chi Minh City'
-                  : undefined,
-              notes: 'Automatically extracted from session history',
-              isDefault: false,
+              address: undefined,
+              isDefault: current.length === 0 && newLocs.length === 0,
               createdAt: s.datePlayed || new Date().toISOString(),
             });
           }
@@ -232,17 +173,19 @@ export const useLocationStore = create<LocationStore>()(
     {
       name: 'boardgame_locations_v2',
       onRehydrateStorage: () => (state) => {
-        // Automatically make sure initial seeds exist when rehydrated
         if (state) {
-          const existingNames = new Set(
-            state.locations.map((l) => l.name.trim().toLowerCase())
+          // Permanently purge any fake locations that might have been saved in browser cache
+          state.locations = state.locations.filter(
+            (l) =>
+              !FAKE_LOCATION_NAMES.has(l.name.trim().toLowerCase()) &&
+              !l.id.startsWith('loc-huy') &&
+              !l.id.startsWith('loc-boardgame') &&
+              !l.id.startsWith('loc-quan') &&
+              !l.id.startsWith('loc-linh') &&
+              !l.id.startsWith('loc-loc') &&
+              !l.id.startsWith('loc-cafe') &&
+              !l.id.startsWith('loc-office')
           );
-          const missing = INITIAL_LOCATIONS.filter(
-            (l) => !existingNames.has(l.name.trim().toLowerCase())
-          );
-          if (missing.length > 0) {
-            state.locations = [...state.locations, ...missing];
-          }
           // Ensure at least one default exists
           if (!state.locations.some((l) => l.isDefault) && state.locations.length > 0) {
             state.locations[0].isDefault = true;
