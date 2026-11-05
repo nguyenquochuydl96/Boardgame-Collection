@@ -58,7 +58,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({
 
   const topGame = Object.values(gameCounts).sort((a, b) => b.count - a.count)[0];
 
-  const lastSession = matchedSessions.sort(
+  const lastSession = [...matchedSessions].sort(
     (a, b) => new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime()
   )[0];
 

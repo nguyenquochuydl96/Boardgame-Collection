@@ -17,6 +17,7 @@ import {
   Building2,
   Star,
   Dices,
+  RotateCcw,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
@@ -502,16 +503,30 @@ export const PlayersPage: React.FC = () => {
                 )}
               </div>
 
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setEditingLocation(null);
-                  setIsLocationModalOpen(true);
-                }}
-              >
-                <Plus className="w-4 h-4 mr-1.5" />
-                Thêm Địa Điểm Mới
-              </Button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    syncHistoricalLocations(sessions, true);
+                  }}
+                  title="Đồng bộ tất cả địa điểm đã từng chơi trong lịch sử ván đấu"
+                  className="text-xs"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[var(--accent-neon)]" />
+                  Đồng Bộ Lịch Sử
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setEditingLocation(null);
+                    setIsLocationModalOpen(true);
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-1.5" />
+                  Thêm Địa Điểm Mới
+                </Button>
+              </div>
             </div>
 
             {/* Locations Grid */}

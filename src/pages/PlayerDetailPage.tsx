@@ -51,52 +51,44 @@ export const PlayerDetailPage: React.FC = () => {
   const gamesById = useMemo(() => new Map(games.map((g) => [g.id, g])), [games]);
   const playersById = useMemo(() => Object.fromEntries(allPlayers.map((p) => [p.id, p])), [allPlayers]);
 
-  if (!player) {
-    return (
-      <PageTransition>
-        <Card className="p-8 text-center space-y-4 max-w-md mx-auto my-12">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-400 mx-auto flex items-center justify-center text-3xl">
-            👤
-          </div>
-          <h1 className="font-display font-bold text-2xl text-white">
-            Không Tìm Thấy Người Chơi
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)]">
-            Người chơi này không tồn tại hoặc đã được xóa khỏi hệ thống.
-          </p>
-          <Link to="/players">
-            <Button variant="primary">Quay Lại Danh Sách</Button>
-          </Link>
-        </Card>
-      </PageTransition>
-    );
-  }
-
-  // All sessions this player participated in
+  // All sessions this player participated in (Safe calculation before early return)
   const playerSessions = useMemo(() => {
+    if (!player) return [];
     return allSessions
       .filter((s) => s.players?.some((p) => p.playerId === player.id))
       .sort(
         (a, b) =>
           new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime()
       );
-  }, [allSessions, player.id]);
+  }, [allSessions, player?.id]);
 
   const totalPlays = playerSessions.length;
-  const totalWins = playerSessions.filter((s) => {
-    const entry = s.players?.find((p) => p.playerId === player.id);
-    return Boolean(entry?.isWinner || s.winnerId === player.id);
-  }).length;
+  const totalWins = useMemo(() => {
+    if (!player) return 0;
+    return playerSessions.filter((s) => {
+      const entry = s.players?.find((p) => p.playerId === player.id);
+      return Boolean(entry?.isWinner || s.winnerId === player.id);
+    }).length;
+  }, [playerSessions, player?.id]);
+
   const overallWinRate =
     totalPlays > 0 ? Math.round((totalWins / totalPlays) * 100) : 0;
 
   // Complete streaks details (win streak & loss streak with full session list)
   const streaks = useMemo(() => {
+    if (!player) {
+      return {
+        longestWinStreak: { count: 0, sessions: [] },
+        longestLossStreak: { count: 0, sessions: [] },
+        currentStreak: { type: 'none' as const, count: 0, sessions: [] },
+      };
+    }
     return calculatePlayerStreaks(player.id, allSessions);
-  }, [player.id, allSessions]);
+  }, [player?.id, allSessions]);
 
   // Per-game breakdown
   const perGameStats = useMemo(() => {
+    if (!player) return [];
     const gameMap = new Map<
       string,
       { gameId: string; gameName: string; thumbnail?: string; plays: number; wins: number }
@@ -123,10 +115,11 @@ export const PlayerDetailPage: React.FC = () => {
       ...g,
       winRate: g.plays > 0 ? Math.round((g.wins / g.plays) * 100) : 0,
     }));
-  }, [playerSessions, player.id, gamesById]);
+  }, [playerSessions, player?.id, gamesById]);
 
   // Favorite Game: Pinned or Highest Plays
   const favoriteGame = useMemo(() => {
+    if (!player) return null;
     if (player.favoriteGameId) {
       const stat = perGameStats.find((g) => g.gameId === player.favoriteGameId);
       const storeGame = gamesById.get(player.favoriteGameId);
@@ -146,10 +139,11 @@ export const PlayerDetailPage: React.FC = () => {
     // Fallback: highest plays
     const sorted = [...perGameStats].sort((a, b) => b.plays - a.plays);
     return sorted[0] ? { ...sorted[0], isPinned: false } : null;
-  }, [player.favoriteGameId, perGameStats, gamesById]);
+  }, [player?.favoriteGameId, perGameStats, gamesById]);
 
   // Signature Game: Pinned or Highest Win Rate (minimum 5 plays to eliminate playtest noise)
   const signatureGame = useMemo(() => {
+    if (!player) return null;
     if (player.specialtyGameId) {
       const stat = perGameStats.find((g) => g.gameId === player.specialtyGameId);
       const storeGame = gamesById.get(player.specialtyGameId);
@@ -173,10 +167,11 @@ export const PlayerDetailPage: React.FC = () => {
       return { ...sorted[0], isPinned: false };
     }
     return null;
-  }, [player.specialtyGameId, perGameStats, gamesById]);
+  }, [player?.specialtyGameId, perGameStats, gamesById]);
 
   // Nemesis Game: Pinned or Lowest Win Rate (minimum 5 plays, winRate <= 40%)
   const nemesisGame = useMemo(() => {
+    if (!player) return null;
     if (player.weaknessGameId) {
       const stat = perGameStats.find((g) => g.gameId === player.weaknessGameId);
       const storeGame = gamesById.get(player.weaknessGameId);
@@ -200,10 +195,11 @@ export const PlayerDetailPage: React.FC = () => {
       return { ...sorted[0], isPinned: false };
     }
     return null;
-  }, [player.weaknessGameId, perGameStats, gamesById]);
+  }, [player?.weaknessGameId, perGameStats, gamesById]);
 
   // Arch-Rival Calculation: Top Opponent by Co-occurrence
   const rivalInfo = useMemo(() => {
+    if (!player) return null;
     const opponentCounts = new Map<
       string,
       { plays: number; playerWins: number; opponentWins: number }
@@ -245,7 +241,7 @@ export const PlayerDetailPage: React.FC = () => {
       playerWins: rivalStat?.playerWins || 0,
       rivalWins: rivalStat?.opponentWins || 0,
     };
-  }, [playerSessions, player.id, allPlayers]);
+  }, [playerSessions, player?.id, allPlayers]);
 
   // Filtered & Sorted breakdown list
   const filteredBreakdown = useMemo(() => {
@@ -273,7 +269,29 @@ export const PlayerDetailPage: React.FC = () => {
     }
   };
 
-  const playStyleInfo = getPlayStyleInfo(player.playStyle);
+  const playStyleInfo = getPlayStyleInfo(player?.playStyle);
+
+  // Early return safely placed after all hooks have been invoked
+  if (!player) {
+    return (
+      <PageTransition>
+        <Card className="p-8 text-center space-y-4 max-w-md mx-auto my-12">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-400 mx-auto flex items-center justify-center text-3xl">
+            👤
+          </div>
+          <h1 className="font-display font-bold text-2xl text-white">
+            Không Tìm Thấy Người Chơi
+          </h1>
+          <p className="text-sm text-[var(--text-secondary)]">
+            Người chơi này không tồn tại hoặc đã được xóa khỏi hệ thống.
+          </p>
+          <Link to="/players">
+            <Button variant="primary">Quay Lại Danh Sách</Button>
+          </Link>
+        </Card>
+      </PageTransition>
+    );
+  }
 
   return (
     <PageTransition>

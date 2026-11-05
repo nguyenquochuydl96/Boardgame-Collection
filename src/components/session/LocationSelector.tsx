@@ -8,11 +8,15 @@ import { cn } from '../ui/cn';
 export interface LocationSelectorProps {
   selectedLocation: string;
   onSelectLocation: (locationName: string) => void;
+  label?: string;
+  placeholder?: string;
 }
 
 export const LocationSelector: React.FC<LocationSelectorProps> = ({
   selectedLocation,
   onSelectLocation,
+  label = 'Địa Điểm Chơi (Chọn từ danh sách)',
+  placeholder = 'Tên địa điểm (vd: Nhà Tuấn, Trà Sữa Gong Cha)...',
 }) => {
   const locations = useLocationStore((s) => s.locations);
   const addLocation = useLocationStore((s) => s.addLocation);
@@ -37,7 +41,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       <div className="flex items-center justify-between">
         <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
           <MapPin className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-          Địa Điểm Chơi (Chọn từ danh sách)
+          {label}
         </label>
         {!isAddingNew && (
           <button
@@ -73,6 +77,15 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
             </button>
           );
         })}
+
+        {/* Display selected custom location if not currently in registered presets */}
+        {selectedLocation && !locations.some((l) => l.name.trim().toLowerCase() === selectedLocation.trim().toLowerCase()) && (
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-[var(--accent-glow)] border border-[var(--border-glow)] text-[var(--text-primary)] shadow-md ring-1 ring-[var(--accent-primary)] select-none">
+            <Building2 className="w-3.5 h-3.5 text-[var(--accent-neon)]" />
+            <span>{selectedLocation}</span>
+            <Check className="w-3.5 h-3.5 text-[var(--accent-neon)] stroke-[3]" />
+          </div>
+        )}
       </div>
 
       {/* Inline Add New Location Form */}
@@ -93,7 +106,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Input
-              placeholder="Tên địa điểm (vd: Nhà Tuấn, Trà Sữa Gong Cha)..."
+              placeholder={placeholder}
               value={newLocName}
               onChange={(e) => setNewLocName(e.target.value)}
               className="text-xs"

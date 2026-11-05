@@ -31,6 +31,7 @@ import {
 } from '../lib/utils';
 import { PlayerScore, Player } from '../types';
 import { ScoringSheetMatrix } from '../components/session/ScoringSheetMatrix';
+import { LocationSelector } from '../components/session/LocationSelector';
 import { getScoringTemplateForGame, ScoringCategory } from '../lib/scoringPresets';
 import { cn } from '../components/ui/cn';
 
@@ -693,16 +694,12 @@ export const SessionDetailPage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-                  Địa điểm chơi
-                </label>
-                <input
-                  type="text"
-                  value={editLocation}
-                  onChange={(e) => setEditLocation(e.target.value)}
-                  placeholder="e.g. Heo's House, Lafam..."
-                  className="w-full min-h-[44px] rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+              <div className="sm:col-span-2">
+                <LocationSelector
+                  selectedLocation={editLocation}
+                  onSelectLocation={setEditLocation}
+                  label="Địa điểm chơi"
+                  placeholder="Chọn từ danh sách hoặc nhập địa điểm..."
                 />
               </div>
             </div>

@@ -327,29 +327,44 @@ export const StatsPage: React.FC = () => {
 
   // --- 3. LOCATION & VENUE STATS ---
   const locationStats = useMemo(() => {
-    const map = new Map<string, { count: number; userWins: number }>();
+    const map = new Map<string, { count: number; playerWins: Map<string, number> }>();
 
     sessions.forEach((s) => {
       const loc = s.location || 'Chưa ghi nhận địa điểm';
-      const entry = map.get(loc) || { count: 0, userWins: 0 };
+      const entry = map.get(loc) || { count: 0, playerWins: new Map<string, number>() };
       entry.count += 1;
-      const isUserWin = s.players.some(
-        (p) => (p.isWinner || s.winnerId === p.playerId) && (p.playerName === 'Heo' || p.playerId === 'player-3')
-      );
-      if (isUserWin) entry.userWins += 1;
+      s.players?.forEach((p) => {
+        if (p.isWinner || s.winnerId === p.playerId) {
+          entry.playerWins.set(p.playerId, (entry.playerWins.get(p.playerId) || 0) + 1);
+        }
+      });
       map.set(loc, entry);
     });
 
     return Array.from(map.entries())
-      .map(([location, data]) => ({
-        location,
-        count: data.count,
-        percentage: Math.round((data.count / sessions.length) * 100),
-        userWins: data.userWins,
-        winRate: Math.round((data.userWins / data.count) * 100),
-      }))
+      .map(([location, data]) => {
+        let topWinnerId = '';
+        let topWinnerWins = 0;
+        data.playerWins.forEach((wins, pid) => {
+          if (wins > topWinnerWins) {
+            topWinnerWins = wins;
+            topWinnerId = pid;
+          }
+        });
+        const topPlayer = players.find((p) => p.id === topWinnerId);
+        const topWinnerName = topPlayer?.name || (topWinnerId ? 'Người chơi' : undefined);
+
+        return {
+          location,
+          count: data.count,
+          percentage: Math.round((data.count / (sessions.length || 1)) * 100),
+          topWinnerName,
+          topWinnerWins,
+          topWinnerRate: Math.round((topWinnerWins / (data.count || 1)) * 100),
+        };
+      })
       .sort((a, b) => b.count - a.count);
-  }, [sessions]);
+  }, [sessions, players]);
 
   // --- 4. PLAYER LEADERBOARD & HEAD-TO-HEAD ---
   const playerLeaderboard = useMemo(() => {
@@ -1110,8 +1125,8 @@ export const StatsPage: React.FC = () => {
                   <MapPin className="w-5 h-5 text-rose-400" />
                   <span>Bảng Xếp Hạng Quán Quen &amp; Địa Điểm Tụ Tập</span>
                 </h2>
-                <p className="text-xs text-[#94a3b8] mt-1">
-                  Thống kê các địa điểm bạn và hội bạn bè đã chơi qua 1.417 ván đấu
+                <p className="text-xs text-[var(--text-secondary)] mt-1">
+                  Thống kê các địa điểm bạn và hội bạn bè đã chơi qua {sessions.length.toLocaleString('vi-VN')} ván đấu
                 </p>
               </div>
 
@@ -1135,9 +1150,9 @@ export const StatsPage: React.FC = () => {
                         <span className="text-amber-400 font-bold">
                           {loc.count} ván ({loc.percentage}%)
                         </span>
-                        {loc.userWins > 0 && (
-                          <span className="text-emerald-400 font-bold">
-                            Heo thắng: {loc.userWins} ván ({loc.winRate}%)
+                        {loc.topWinnerWins > 0 && loc.topWinnerName && (
+                          <span className="text-emerald-400 font-bold flex items-center gap-1">
+                            <span>👑</span> {loc.topWinnerName}: {loc.topWinnerWins} ván ({loc.topWinnerRate}%)
                           </span>
                         )}
                       </div>

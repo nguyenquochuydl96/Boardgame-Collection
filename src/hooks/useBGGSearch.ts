@@ -14,11 +14,12 @@ export function useBGGSearch(initialQuery = '') {
 
   // 1. Instant 0ms local response on query change:
   const handleQueryChange = useCallback((newQuery: string) => {
+    // Immediate state update guarantees 0ms typing lag and zero frame drop
     setQuery(newQuery);
 
-    // Instant local filter (0ms delay, runs immediately with high priority)
-    const localMatches = searchLocalBGG(newQuery);
+    // Compute matches in low-priority transition so keyboard typing is never blocked
     startTransition(() => {
+      const localMatches = searchLocalBGG(newQuery);
       setResults(localMatches);
     });
   }, []);

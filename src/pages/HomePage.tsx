@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
@@ -15,6 +15,7 @@ import {
 import { PageTransition } from '../components/layout/PageTransition';
 import { StatCard } from '../components/dashboard/StatCard';
 import { MiniBarChart } from '../components/dashboard/MiniBarChart';
+import { DraftSessionCard } from '../components/session/DraftSessionCard';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useGameStore } from '../store/useGameStore';
@@ -22,6 +23,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import { formatDate, formatDuration, getCollectionTotalValue } from '../lib/utils';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
 import { TiltCard } from '../components/ui/TiltCard';
+import { SessionDraft } from '../types';
 
 const staggerContainer = {
   hidden: { opacity: 0 },
@@ -45,6 +47,28 @@ const fadeUpItem = {
 export const HomePage: React.FC = () => {
   const games = useGameStore((s) => s.games);
   const sessions = useSessionStore((s) => s.sessions);
+
+  // Active Draft Session detection
+  const [activeDraft, setActiveDraft] = useState<SessionDraft | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('boardgame_session_draft');
+      if (raw) {
+        const parsed = JSON.parse(raw) as SessionDraft;
+        if (parsed && Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000) {
+          setActiveDraft(parsed);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const handleDiscardDraft = () => {
+    try {
+      localStorage.removeItem('boardgame_session_draft');
+    } catch {}
+    setActiveDraft(null);
+  };
 
   const ownedGamesCount = games.filter(
     (g) => g.status === 'own' || g.status === 'lent_out'
@@ -137,6 +161,13 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
         </motion.section>
+
+        {/* Active Draft Session In Progress Notification */}
+        {activeDraft && (
+          <motion.section variants={fadeUpItem}>
+            <DraftSessionCard draft={activeDraft} onDiscard={handleDiscardDraft} />
+          </motion.section>
+        )}
 
         {/* Animated Stat Cards Grid (Clickable to target analytics/collection) */}
         <motion.section

@@ -27,13 +27,13 @@ type FilterTab = 'all' | GameStatus;
 type SortOption = 'name' | 'addedDate' | 'bggRating' | 'purchasePrice';
 
 const FILTER_TABS: Array<{ id: FilterTab; label: string }> = [
-  { id: 'all', label: 'All' },
-  { id: 'own', label: 'Own' },
-  { id: 'lent_out', label: 'Lent Out' },
-  { id: 'borrowed', label: 'Borrowed' },
-  { id: 'sold', label: 'Sold' },
+  { id: 'all', label: 'Tất Cả' },
+  { id: 'own', label: 'Đang Sở Hữu' },
+  { id: 'lent_out', label: 'Cho Mượn' },
+  { id: 'borrowed', label: 'Mượn' },
+  { id: 'sold', label: 'Đã Bán' },
   { id: 'wishlist', label: 'Wishlist' },
-  { id: 'previously_owned', label: 'Previously Owned' },
+  { id: 'previously_owned', label: 'Từng Sở Hữu' },
 ];
 
 export const CollectionPage: React.FC = () => {
@@ -118,10 +118,10 @@ export const CollectionPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)]">
-              My Game Collection
+              Kho Game Boardgame
             </h1>
             <p className="text-sm text-[var(--text-secondary)] tabular-nums">
-              Showing {filteredGames.length} of {games.length} boardgames
+              Hiển thị {filteredGames.length} trên tổng số {games.length} tựa game trong kho
             </p>
           </div>
 

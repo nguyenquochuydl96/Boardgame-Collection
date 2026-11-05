@@ -80,6 +80,7 @@ export const INITIAL_LOCATIONS: GameLocation[] = [
 
 export interface LocationStore {
   locations: GameLocation[];
+  hasSyncedHistory: boolean;
   addLocation: (name: string, address?: string, notes?: string, isDefault?: boolean) => GameLocation;
   updateLocation: (
     id: string,
@@ -87,13 +88,14 @@ export interface LocationStore {
   ) => void;
   deleteLocation: (id: string) => void;
   setDefaultLocation: (id: string) => void;
-  syncHistoricalLocations: (sessions: PlaySession[]) => void;
+  syncHistoricalLocations: (sessions: PlaySession[], force?: boolean) => void;
 }
 
 export const useLocationStore = create<LocationStore>()(
   persist(
     (set, get) => ({
       locations: INITIAL_LOCATIONS,
+      hasSyncedHistory: false,
       addLocation: (name, address, notes, isDefault) => {
         const trimmed = name.trim();
         const currentLocs = get().locations;
@@ -169,19 +171,23 @@ export const useLocationStore = create<LocationStore>()(
           })),
         }));
       },
-      syncHistoricalLocations: (sessions: PlaySession[]) => {
+      syncHistoricalLocations: (sessions: PlaySession[], force = false) => {
+        if (get().hasSyncedHistory && !force) return;
+
         const current = get().locations;
         const existingNames = new Set(
           current.map((l) => l.name.trim().toLowerCase())
         );
         const newLocs: GameLocation[] = [];
 
-        // First, also ensure all INITIAL_LOCATIONS exist
-        for (const initLoc of INITIAL_LOCATIONS) {
-          const key = initLoc.name.trim().toLowerCase();
-          if (!existingNames.has(key)) {
-            existingNames.add(key);
-            newLocs.push({ ...initLoc });
+        // First, also ensure all INITIAL_LOCATIONS exist on initial seed
+        if (!get().hasSyncedHistory || force) {
+          for (const initLoc of INITIAL_LOCATIONS) {
+            const key = initLoc.name.trim().toLowerCase();
+            if (!existingNames.has(key)) {
+              existingNames.add(key);
+              newLocs.push({ ...initLoc });
+            }
           }
         }
 
@@ -206,11 +212,10 @@ export const useLocationStore = create<LocationStore>()(
           }
         }
 
-        if (newLocs.length > 0) {
-          set((state) => ({
-            locations: [...state.locations, ...newLocs],
-          }));
-        }
+        set((state) => ({
+          locations: newLocs.length > 0 ? [...state.locations, ...newLocs] : state.locations,
+          hasSyncedHistory: true,
+        }));
       },
     }),
     {

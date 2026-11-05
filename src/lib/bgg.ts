@@ -128,13 +128,18 @@ function levenshteinDistance(a: string, b: string): number {
  * Checks if query words fuzzily match target words (allowing typos like earthbone -> earthborne)
  */
 export function isFuzzyMatch(query: string, target: string): boolean {
-  const qWords = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const cleanQ = query.trim().toLowerCase();
+  // Fast skip: queries shorter than 3 characters should only use direct substring matching
+  if (cleanQ.length < 3) return false;
+
+  const qWords = cleanQ.split(/\s+/).filter(Boolean);
   const tWords = target.toLowerCase().split(/\s+/).filter(Boolean);
   if (!qWords.length) return false;
 
   return qWords.every((qw) =>
     tWords.some((tw) => {
       if (tw.includes(qw) || qw.includes(tw)) return true;
+      if (qw.length < 3) return false;
       const maxDist = qw.length >= 6 ? 2 : 1;
       return levenshteinDistance(qw, tw) <= maxDist;
     })
