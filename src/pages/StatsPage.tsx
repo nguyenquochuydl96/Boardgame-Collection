@@ -21,6 +21,9 @@ import {
   Search,
   ArrowUpRight,
   ChevronRight,
+  Filter,
+  Check,
+  RotateCcw,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
@@ -45,6 +48,39 @@ import {
 } from '../lib/utils';
 import { Player } from '../types';
 
+const GameThumbBox: React.FC<{
+  src?: string;
+  alt: string;
+  fallbackIcon: React.ReactNode;
+  fallbackBg?: string;
+}> = ({ src, alt, fallbackIcon, fallbackBg = 'bg-[var(--bg-elevated)]' }) => {
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <div className="w-16 h-20 rounded-xl overflow-hidden shrink-0 border border-white/10 shadow-md relative group-hover:scale-105 transition-transform bg-[var(--bg-elevated)]">
+      {src && !hasError ? (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setHasError(true)}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <div
+          className={cn(
+            'w-full h-full flex flex-col items-center justify-center text-center p-1',
+            fallbackBg
+          )}
+        >
+          {fallbackIcon}
+        </div>
+      )}
+    </div>
+  );
+};
+
 type StatsTab = 'overview' | 'years' | 'locations' | 'by_player' | 'by_game';
 
 export const StatsPage: React.FC = () => {
@@ -59,6 +95,42 @@ export const StatsPage: React.FC = () => {
     players.slice(0, 2).map((p) => p.id)
   );
 
+  // Time filter for Overview & deep insights
+  // [] = all time
+  // ['2026'] = year 2026
+  // ['2025', '2026'] = range 2025 - 2026
+  const [selectedYears, setSelectedYears] = useState<string[]>([]);
+  const [isCustomMultiYearOpen, setIsCustomMultiYearOpen] = useState(false);
+
+  // Available unique years from all sessions
+  const availableYears = useMemo(() => {
+    const set = new Set<string>();
+    sessions.forEach((s) => {
+      if (s.datePlayed && s.datePlayed.length >= 4) {
+        const y = s.datePlayed.slice(0, 4);
+        if (!isNaN(Number(y))) set.add(y);
+      }
+    });
+    return Array.from(set).sort().reverse();
+  }, [sessions]);
+
+  // Overview sessions filtered by selectedYears
+  const overviewSessions = useMemo(() => {
+    if (selectedYears.length === 0) return sessions;
+    return sessions.filter((s) => {
+      if (!s.datePlayed || s.datePlayed.length < 4) return false;
+      const y = s.datePlayed.slice(0, 4);
+      return selectedYears.includes(y);
+    });
+  }, [sessions, selectedYears]);
+
+  const timeFilterLabel = useMemo(() => {
+    if (selectedYears.length === 0) return 'Toàn bộ thời gian';
+    if (selectedYears.length === 1) return `Năm ${selectedYears[0]}`;
+    const sorted = [...selectedYears].sort();
+    return `Giai đoạn ${sorted.join(' - ')}`;
+  }, [selectedYears]);
+
   const [showPlayedGamesModal, setShowPlayedGamesModal] = useState(false);
   const [playedGamesTab, setPlayedGamesTab] = useState<'played' | 'unplayed'>('played');
   const [playedGamesSearch, setPlayedGamesSearch] = useState('');
@@ -69,11 +141,11 @@ export const StatsPage: React.FC = () => {
   // --- 1. OVERVIEW & H-INDEX METRICS ---
   const playCountByGame = useMemo(() => {
     const map = new Map<string, number>();
-    for (const s of sessions) {
+    for (const s of overviewSessions) {
       map.set(s.gameId, (map.get(s.gameId) || 0) + 1);
     }
     return map;
-  }, [sessions]);
+  }, [overviewSessions]);
 
   // Ranked games by play count
   const sortedGamesByPlays = useMemo(() => {
@@ -89,7 +161,7 @@ export const StatsPage: React.FC = () => {
       });
     }
 
-    for (const s of sessions) {
+    for (const s of overviewSessions) {
       if (!map.has(s.gameId)) {
         map.set(s.gameId, {
           id: s.gameId,
@@ -101,9 +173,9 @@ export const StatsPage: React.FC = () => {
     }
 
     return Array.from(map.values()).sort((a, b) => b.plays - a.plays);
-  }, [games, sessions, playCountByGame]);
+  }, [games, overviewSessions, playCountByGame]);
 
-  const mostPlayedGame = sortedGamesByPlays[0];
+  const mostPlayedGame = sortedGamesByPlays.find((g) => g.plays > 0) || sortedGamesByPlays[0];
   const leastPlayedGame = sortedGamesByPlays.filter((g) => g.plays > 0).slice(-1)[0];
 
   // H-Index computation
@@ -140,35 +212,49 @@ export const StatsPage: React.FC = () => {
 
   // Session duration extremes
   const sortedByDuration = useMemo(() => {
-    return [...sessions]
+    return [...overviewSessions]
       .filter((s) => (s.durationMinutes || 0) > 0)
       .sort((a, b) => (b.durationMinutes || 0) - (a.durationMinutes || 0));
-  }, [sessions]);
+  }, [overviewSessions]);
 
   const longestSession = sortedByDuration[0];
   const shortestSession = sortedByDuration[sortedByDuration.length - 1];
 
+  const longestSessionThumbnail = useMemo(() => {
+    if (!longestSession) return undefined;
+    if (longestSession.gameThumbnail) return longestSession.gameThumbnail;
+    const g = games.find((item) => item.id === longestSession.gameId);
+    return g?.thumbnail || g?.image;
+  }, [longestSession, games]);
+
+  const shortestSessionThumbnail = useMemo(() => {
+    if (!shortestSession) return undefined;
+    if (shortestSession.gameThumbnail) return shortestSession.gameThumbnail;
+    const g = games.find((item) => item.id === shortestSession.gameId);
+    return g?.thumbnail || g?.image;
+  }, [shortestSession, games]);
+
   // Total play time in hours
   const totalHoursPlayed = useMemo(() => {
-    const mins = sessions.reduce((sum, s) => sum + (s.durationMinutes || 60), 0);
+    const mins = overviewSessions.reduce((sum, s) => sum + (s.durationMinutes || 60), 0);
     return Math.round(mins / 60);
-  }, [sessions]);
+  }, [overviewSessions]);
 
   // Winning streaks per player
   const playerStreaks = useMemo(() => {
     return players
       .map((p) => ({
         player: p,
-        streak: calculateLongestWinStreak(p.id, sessions),
+        streak: calculateLongestWinStreak(p.id, overviewSessions),
       }))
       .filter((x) => x.streak > 0)
       .sort((a, b) => b.streak - a.streak);
-  }, [players, sessions]);
+  }, [players, overviewSessions]);
 
   // Monthly play frequency (grouped chronologically)
   const monthlyFrequency = useMemo(() => {
     const monthCounts = new Map<string, number>();
-    const sortedChron = [...sessions].sort(
+    const sortedChron = [...overviewSessions].sort(
       (a, b) => new Date(a.datePlayed).getTime() - new Date(b.datePlayed).getTime()
     );
     for (const s of sortedChron) {
@@ -185,21 +271,11 @@ export const StatsPage: React.FC = () => {
       month,
       count,
     }));
-  }, [sessions]);
+  }, [overviewSessions]);
 
   const maxMonthCount = Math.max(...monthlyFrequency.map((m) => m.count), 1);
 
   // --- 2. YEAR IN REVIEW METRICS ---
-  const availableYears = useMemo(() => {
-    const set = new Set<string>();
-    sessions.forEach((s) => {
-      if (s.datePlayed && s.datePlayed.length >= 4) {
-        set.add(s.datePlayed.slice(0, 4));
-      }
-    });
-    return Array.from(set).sort().reverse();
-  }, [sessions]);
-
   const yearFilteredSessions = useMemo(() => {
     if (selectedYear === 'all') return sessions;
     return sessions.filter((s) => s.datePlayed && s.datePlayed.startsWith(selectedYear));
@@ -397,13 +473,174 @@ export const StatsPage: React.FC = () => {
         {/* ========================================================= */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            {/* TIME FILTER BAR */}
+            <div className="p-4 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] space-y-3 shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5 mr-1">
+                    <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                    Lọc Thời Gian:
+                  </span>
+
+                  {/* Preset: All time */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedYears([]);
+                      setIsCustomMultiYearOpen(false);
+                    }}
+                    className={cn(
+                      'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border select-none',
+                      selectedYears.length === 0
+                        ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
+                        : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
+                    )}
+                  >
+                    Tất Cả ({sessions.length})
+                  </button>
+
+                  {/* Preset: Individual available years (e.g. 2026, 2025) */}
+                  {availableYears.map((yr) => {
+                    const isSelected = selectedYears.length === 1 && selectedYears[0] === yr;
+                    const count = sessions.filter((s) => s.datePlayed && s.datePlayed.startsWith(yr)).length;
+                    return (
+                      <button
+                        key={yr}
+                        type="button"
+                        onClick={() => {
+                          setSelectedYears([yr]);
+                          setIsCustomMultiYearOpen(false);
+                        }}
+                        className={cn(
+                          'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border select-none',
+                          isSelected
+                            ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
+                            : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
+                        )}
+                      >
+                        Năm {yr} ({count})
+                      </button>
+                    );
+                  })}
+
+                  {/* Preset: Multi-year range (e.g. 2025 - 2026) if >= 2 years */}
+                  {availableYears.length >= 2 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedYears([availableYears[1], availableYears[0]]);
+                        setIsCustomMultiYearOpen(false);
+                      }}
+                      className={cn(
+                        'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border select-none',
+                        selectedYears.length === 2 &&
+                          selectedYears.includes(availableYears[0]) &&
+                          selectedYears.includes(availableYears[1])
+                          ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
+                          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
+                      )}
+                    >
+                      {availableYears[1]} - {availableYears[0]} (2 Năm Gần Nhất)
+                    </button>
+                  )}
+
+                  {/* Multi-select toggle button */}
+                  {availableYears.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomMultiYearOpen((v) => !v)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border select-none flex items-center gap-1.5',
+                        isCustomMultiYearOpen || selectedYears.length > 2
+                          ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                          : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
+                      )}
+                    >
+                      <Filter className="w-3.5 h-3.5" />
+                      <span>Tùy Chọn Năm...</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Current Filter Status */}
+                <div className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5">
+                  <span>Đang xem:</span>
+                  <span className="font-bold text-white px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+                    {timeFilterLabel}
+                  </span>
+                  <span className="font-mono text-amber-400 font-bold">
+                    ({overviewSessions.length} ván)
+                  </span>
+                </div>
+              </div>
+
+              {/* Custom Multi-Year Selection Drawer */}
+              {isCustomMultiYearOpen && (
+                <div className="pt-3 border-t border-[var(--border-subtle)] flex flex-wrap items-center gap-2 animate-in fade-in duration-150">
+                  <span className="text-xs text-[var(--text-muted)] font-medium mr-1">
+                    Tích chọn các năm muốn gộp dữ liệu:
+                  </span>
+                  {availableYears.map((yr) => {
+                    const isChecked = selectedYears.includes(yr);
+                    const yrCount = sessions.filter((s) => s.datePlayed && s.datePlayed.startsWith(yr)).length;
+                    return (
+                      <button
+                        key={yr}
+                        type="button"
+                        onClick={() => {
+                          setSelectedYears((prev) =>
+                            prev.includes(yr)
+                              ? prev.filter((x) => x !== yr)
+                              : [...prev, yr]
+                          );
+                        }}
+                        className={cn(
+                          'px-2.5 py-1 rounded-lg text-xs font-semibold border flex items-center gap-1.5 cursor-pointer transition-colors',
+                          isChecked
+                            ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                            : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            'w-3.5 h-3.5 rounded flex items-center justify-center border text-[9px]',
+                            isChecked
+                              ? 'bg-amber-500 border-amber-500 text-slate-950 font-bold'
+                              : 'border-white/30'
+                          )}
+                        >
+                          {isChecked && '✓'}
+                        </div>
+                        <span>{yr} ({yrCount} ván)</span>
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedYears([...availableYears])}
+                    className="text-[11px] font-bold text-amber-400 hover:underline ml-2 cursor-pointer"
+                  >
+                    Chọn tất cả
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedYears([])}
+                    className="text-[11px] font-bold text-rose-400 hover:underline ml-1 cursor-pointer"
+                  >
+                    Xóa chọn
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* H-INDEX SPECIAL HERO BANNER */}
             <div className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-purple-600/20 border-2 border-amber-500/40 shadow-2xl overflow-hidden">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="space-y-3 max-w-xl">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold uppercase tracking-wider">
                     <Award className="w-3.5 h-3.5 fill-current" />
-                    BoardGame Geek Standard Metric
+                    BoardGame Geek Standard Metric · {timeFilterLabel}
                   </div>
                   <h2 className="font-display font-black text-3xl sm:text-4xl text-white">
                     Chỉ Số H-Index:{' '}
@@ -412,8 +649,8 @@ export const StatsPage: React.FC = () => {
                     </span>
                   </h2>
                   <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-                    Bạn đã chơi tối thiểu <strong>{hIndex} tựa game khác nhau</strong>, mỗi game ít nhất{' '}
-                    <strong>{hIndex} lần</strong>! Đây là cột mốc danh giá của các hội boardgame kỳ cựu.
+                    Trong {timeFilterLabel.toLowerCase()}, bạn đã chơi tối thiểu <strong>{hIndex} tựa game khác nhau</strong>, mỗi game ít nhất{' '}
+                    <strong>{hIndex} lần</strong>!
                   </p>
 
                   {/* Progress towards next H-Index */}
@@ -446,132 +683,198 @@ export const StatsPage: React.FC = () => {
                     Danh Sách Game Trong CLB H-{hIndex} ({hIndexClub.length})
                   </span>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                    {hIndexClub.map((g, i) => (
-                      <div
-                        key={g.id}
-                        className="flex items-center justify-between p-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs"
-                      >
-                        <span className="font-bold text-[var(--text-primary)] truncate max-w-[170px]">
-                          #{i + 1}. {g.name}
-                        </span>
-                        <span className="font-mono font-black text-amber-400 shrink-0">
-                          {g.plays} ván
-                        </span>
-                      </div>
-                    ))}
+                    {hIndexClub.length > 0 ? (
+                      hIndexClub.map((g, i) => (
+                        <div
+                          key={g.id}
+                          className="flex items-center justify-between p-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs"
+                        >
+                          <span className="font-bold text-[var(--text-primary)] truncate max-w-[170px]">
+                            #{i + 1}. {g.name}
+                          </span>
+                          <span className="font-mono font-black text-amber-400 shrink-0">
+                            {g.plays} ván
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-xs text-[var(--text-muted)] italic py-2 text-center">
+                        Chưa có game nào đạt H-{hIndex} trong khoảng thời gian này
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Quick Metrics Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 tabular-nums">
-              {mostPlayedGame && (
-                <Card className="p-5 flex gap-3.5 items-center">
-                  {mostPlayedGame.thumbnail ? (
-                    <img
+            {overviewSessions.length === 0 ? (
+              <Card className="p-8 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-2xl mx-auto">
+                  📅
+                </div>
+                <h3 className="font-display font-bold text-lg text-white">
+                  Không Có Ván Chơi Nào
+                </h3>
+                <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
+                  Không tìm thấy ván chơi nào được ghi nhận trong {timeFilterLabel.toLowerCase()}.
+                </p>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedYears([]);
+                    setIsCustomMultiYearOpen(false);
+                  }}
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                  Xem Toàn Bộ Lịch Sử ({sessions.length} ván)
+                </Button>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 tabular-nums">
+                {/* 1. Most Played Game Card */}
+                {mostPlayedGame && (
+                  <Link
+                    to={`/collection/${mostPlayedGame.id}`}
+                    className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-card)]/90 border border-amber-500/30 hover:border-amber-400/60 hover:shadow-xl hover:shadow-amber-500/10 transition-all group cursor-pointer flex gap-3.5 items-center select-none"
+                  >
+                    <GameThumbBox
                       src={mostPlayedGame.thumbnail}
                       alt={mostPlayedGame.name}
-                      className="w-16 h-20 rounded-xl object-cover shrink-0 border border-white/10"
+                      fallbackIcon={<Trophy className="w-7 h-7 text-amber-400" />}
+                      fallbackBg="bg-amber-500/15 border-amber-500/30"
                     />
-                  ) : (
-                    <div className="w-16 h-20 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center text-2xl shrink-0">
-                      🎲
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-[var(--accent-neon)] inline-flex items-center gap-1">
+                          <Trophy className="w-3.5 h-3.5" />
+                          Game Cày Nhiều Nhất
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                      </div>
+                      <h3 className="font-display font-bold text-base text-white truncate block mt-0.5 group-hover:text-amber-300 transition-colors">
+                        {mostPlayedGame.name}
+                      </h3>
+                      <p className="text-xs text-amber-300 font-mono font-bold mt-0.5">
+                        {mostPlayedGame.plays} ván đã chơi
+                      </p>
+                      <p className="text-[10px] text-[var(--text-muted)] truncate">
+                        {((mostPlayedGame.plays / Math.max(1, overviewSessions.length)) * 100).toFixed(0)}% ván trong {timeFilterLabel.toLowerCase()}
+                      </p>
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <span className="text-xs font-semibold text-[var(--accent-neon)]">
-                      Game Cày Nhiều Nhất
-                    </span>
-                    <h3 className="font-display font-bold text-base text-white truncate block">
-                      {mostPlayedGame.name}
-                    </h3>
-                    <p className="text-xs text-amber-300 font-mono font-bold mt-1">
-                      {mostPlayedGame.plays} ván đã chơi
+                  </Link>
+                )}
+
+                {/* 2. Total Games Played from Collection */}
+                <Card
+                  onClick={() => setShowPlayedGamesModal(true)}
+                  className="p-4 sm:p-5 flex gap-3.5 items-center cursor-pointer hover:border-amber-400/60 hover:shadow-xl hover:shadow-amber-500/10 transition-all group select-none"
+                >
+                  <div className="w-16 h-20 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex flex-col items-center justify-center shrink-0">
+                    <Dices className="w-7 h-7" />
+                    <span className="text-[9px] font-extrabold uppercase mt-1 tracking-wider">Kho Game</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-[#94a3b8] group-hover:text-amber-300 transition-colors">
+                        Tựa Game Đã Chơi
+                      </span>
+                      <span className="text-xs font-bold text-amber-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                        Xem <ArrowRight className="w-3 h-3" />
+                      </span>
+                    </div>
+                    <p className="font-display font-black text-2xl text-white mt-0.5">
+                      {sortedGamesByPlays.filter((g) => g.plays > 0).length} / {games.length}
+                    </p>
+                    <p className="text-[11px] text-[#94a3b8] mt-0.5 group-hover:text-[var(--text-secondary)] transition-colors truncate">
+                      {(
+                        (sortedGamesByPlays.filter((g) => g.plays > 0).length /
+                          Math.max(1, games.length)) *
+                        100
+                      ).toFixed(0)}
+                      % kho đã chơi · {sortedGamesByPlays.filter((g) => g.plays === 0).length} chưa chơi
                     </p>
                   </div>
                 </Card>
-              )}
 
-              <Card
-                onClick={() => setShowPlayedGamesModal(true)}
-                className="p-5 flex flex-col justify-between cursor-pointer hover:border-amber-400/60 hover:shadow-xl hover:shadow-amber-500/10 transition-all group select-none"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-[#94a3b8] group-hover:text-amber-300 transition-colors">
-                    Tổng Số Tựa Game Đã Chơi
-                  </span>
-                  <span className="text-xs font-bold text-amber-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-                    Xem danh sách <ArrowRight className="w-3.5 h-3.5" />
-                  </span>
-                </div>
-                <div>
-                  <p className="font-display font-black text-3xl text-white">
-                    {sortedGamesByPlays.filter((g) => g.plays > 0).length} / {games.length}
-                  </p>
-                  <p className="text-xs text-[#94a3b8] mt-1 group-hover:text-[var(--text-secondary)] transition-colors">
-                    {(
-                      (sortedGamesByPlays.filter((g) => g.plays > 0).length /
-                        Math.max(1, games.length)) *
-                      100
-                    ).toFixed(0)}
-                    % kho game đã chơi · {sortedGamesByPlays.filter((g) => g.plays === 0).length} game chưa chơi
-                  </p>
-                </div>
-              </Card>
+                {/* 3. Longest Session Card with Game Thumbnail */}
+                {longestSession ? (
+                  <Link
+                    to={`/sessions/${longestSession.id}`}
+                    className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] hover:border-[#22d3ee]/60 hover:shadow-xl hover:shadow-[#22d3ee]/10 transition-all group cursor-pointer flex gap-3.5 items-center select-none"
+                  >
+                    <GameThumbBox
+                      src={longestSessionThumbnail}
+                      alt={longestSession.gameName}
+                      fallbackIcon={<Clock className="w-7 h-7 text-[#22d3ee]" />}
+                      fallbackBg="bg-cyan-500/15 border-cyan-500/30"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-[#22d3ee] inline-flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          Ván Chơi Dài Nhất
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-[#22d3ee] group-hover:translate-x-0.5 transition-transform shrink-0" />
+                      </div>
+                      <p className="font-display font-black text-2xl text-white mt-0.5">
+                        {formatDuration(longestSession.durationMinutes)}
+                      </p>
+                      <h4 className="font-display font-bold text-sm text-white truncate group-hover:text-[#22d3ee] transition-colors">
+                        {longestSession.gameName}
+                      </h4>
+                      <p className="text-[11px] text-[#94a3b8] truncate mt-0.5">
+                        {formatDate(longestSession.datePlayed)}
+                        {longestSession.location ? ` · ${longestSession.location}` : ''}
+                      </p>
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] flex items-center justify-center text-xs text-[var(--text-muted)] italic">
+                    Chưa có ván đấu nào có ghi nhận thời gian
+                  </div>
+                )}
 
-              {longestSession && (
-                <Link
-                  to={`/sessions/${longestSession.id}`}
-                  className="p-5 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] hover:border-[#22d3ee]/60 hover:shadow-xl hover:shadow-[#22d3ee]/10 transition-all group cursor-pointer flex flex-col justify-between block select-none"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[#22d3ee] inline-flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      Ván Chơi Dài Nhất
-                    </span>
-                    <span className="text-xs font-bold text-[#22d3ee] group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-                      Chi tiết ván <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
+                {/* 4. Shortest Session Card with Game Thumbnail */}
+                {shortestSession ? (
+                  <Link
+                    to={`/sessions/${shortestSession.id}`}
+                    className="p-4 sm:p-5 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] hover:border-emerald-400/60 hover:shadow-xl hover:shadow-emerald-500/10 transition-all group cursor-pointer flex gap-3.5 items-center select-none"
+                  >
+                    <GameThumbBox
+                      src={shortestSessionThumbnail}
+                      alt={shortestSession.gameName}
+                      fallbackIcon={<Clock className="w-7 h-7 text-emerald-400" />}
+                      fallbackBg="bg-emerald-500/15 border-emerald-500/30"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-emerald-400 inline-flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5" />
+                          Ván Chơi Nhanh Nhất
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 text-emerald-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                      </div>
+                      <p className="font-display font-black text-2xl text-white mt-0.5">
+                        {formatDuration(shortestSession.durationMinutes)}
+                      </p>
+                      <h4 className="font-display font-bold text-sm text-white truncate group-hover:text-emerald-300 transition-colors">
+                        {shortestSession.gameName}
+                      </h4>
+                      <p className="text-[11px] text-[#94a3b8] truncate mt-0.5">
+                        {formatDate(shortestSession.datePlayed)}
+                        {shortestSession.location ? ` · ${shortestSession.location}` : ''}
+                      </p>
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] flex items-center justify-center text-xs text-[var(--text-muted)] italic">
+                    Chưa có ván đấu nào có ghi nhận thời gian
                   </div>
-                  <div>
-                    <p className="font-display font-black text-2xl text-white">
-                      {formatDuration(longestSession.durationMinutes)}
-                    </p>
-                    <p className="text-xs text-[#94a3b8] truncate mt-1 group-hover:text-white transition-colors">
-                      {longestSession.gameName} · {formatDate(longestSession.datePlayed)}
-                      {longestSession.location ? ` · ${longestSession.location}` : ''}
-                    </p>
-                  </div>
-                </Link>
-              )}
-
-              {shortestSession && (
-                <Link
-                  to={`/sessions/${shortestSession.id}`}
-                  className="p-5 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] hover:border-emerald-400/60 hover:shadow-xl hover:shadow-emerald-500/10 transition-all group cursor-pointer flex flex-col justify-between block select-none"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-emerald-400 inline-flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      Ván Chơi Nhanh Nhất
-                    </span>
-                    <span className="text-xs font-bold text-emerald-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-                      Chi tiết ván <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-display font-black text-2xl text-white">
-                      {formatDuration(shortestSession.durationMinutes)}
-                    </p>
-                    <p className="text-xs text-[#94a3b8] truncate mt-1 group-hover:text-white transition-colors">
-                      {shortestSession.gameName} · {formatDate(shortestSession.datePlayed)}
-                      {shortestSession.location ? ` · ${shortestSession.location}` : ''}
-                    </p>
-                  </div>
-                </Link>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* Monthly Play Frequency & Winning Streaks */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
