@@ -1,15 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Dices, Plus, Play, Settings, Smartphone } from 'lucide-react';
+import {
+  Dices,
+  Plus,
+  Play,
+  Settings,
+  Smartphone,
+  Cloud,
+  CloudCheck,
+} from 'lucide-react';
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
 import { ThemeSelector } from '../ui/ThemeSelector';
 import { PoweredByBGG } from '../ui/PoweredByBGG';
 import { BGGConfigModal } from '../game/BGGConfigModal';
 import { PwaInstallModal } from '../pwa/PwaInstallModal';
+import { CloudSyncModal } from '../sync/CloudSyncModal';
 import { cn } from '../ui/cn';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { useSyncStore } from '../../store/useSyncStore';
+import { useGameStore } from '../../store/useGameStore';
+import { useSessionStore } from '../../store/useSessionStore';
+import { usePlayerStore } from '../../store/usePlayerStore';
+import {
+  pullVaultFromCloud,
+  pushVaultToCloud,
+  startVaultRealtimeSubscription,
+  checkUrlSyncParameters,
+} from '../../lib/supabaseSync';
 
 export interface AppShellProps {
   children: React.ReactNode;
@@ -20,6 +39,52 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const { isInstalled, deferredPrompt, install } = usePWAInstall();
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showBGGModal, setShowBGGModal] = useState(false);
+  const [showSyncModal, setShowSyncModal] = useState(false);
+
+  const isSyncEnabled = useSyncStore((s) => s.isEnabled);
+  const autoSync = useSyncStore((s) => s.autoSync);
+  const syncStatus = useSyncStore((s) => s.syncStatus);
+
+  // Check 1-click mobile import parameters and setup sync listeners
+  useEffect(() => {
+    const importedFromUrl = checkUrlSyncParameters();
+    if (importedFromUrl) {
+      setShowSyncModal(true);
+    } else if (isSyncEnabled && autoSync) {
+      // Pull latest cloud updates on app launch
+      pullVaultFromCloud('replace');
+    }
+
+    // Subscribe to multi-device Realtime events
+    const unsubscribeRealtime = startVaultRealtimeSubscription();
+    return () => {
+      unsubscribeRealtime();
+    };
+  }, [isSyncEnabled, autoSync]);
+
+  // Debounced auto-push when stores change locally
+  useEffect(() => {
+    if (!isSyncEnabled || !autoSync) return;
+
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const triggerPush = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        pushVaultToCloud();
+      }, 2500);
+    };
+
+    const unsubGames = useGameStore.subscribe(triggerPush);
+    const unsubSessions = useSessionStore.subscribe(triggerPush);
+    const unsubPlayers = usePlayerStore.subscribe(triggerPush);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      unsubGames();
+      unsubSessions();
+      unsubPlayers();
+    };
+  }, [isSyncEnabled, autoSync]);
 
   useEffect(() => {
     const handleOpenInstall = () => setShowInstallModal(true);
@@ -108,6 +173,31 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             </Button>
           </Link>
 
+          {/* Cloud Sync Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              'w-full justify-center text-xs transition-colors',
+              isSyncEnabled
+                ? syncStatus === 'error'
+                  ? 'text-rose-300 bg-rose-500/10 border border-rose-500/30'
+                  : 'text-emerald-300 hover:text-emerald-200 bg-emerald-500/10 border border-emerald-500/25'
+                : 'text-[var(--text-secondary)] hover:text-white'
+            )}
+            onClick={() => setShowSyncModal(true)}
+          >
+            {isSyncEnabled ? (
+              <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
+            ) : (
+              <Cloud className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
+            )}
+            <span>{isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}</span>
+            {isSyncEnabled && syncStatus === 'syncing' && (
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping ml-1" />
+            )}
+          </Button>
+
           <Button
             variant="ghost"
             size="sm"
@@ -162,6 +252,31 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               <span>Install</span>
             </button>
           )}
+
+          {/* Mobile Cloud Sync Icon */}
+          <button
+            type="button"
+            onClick={() => setShowSyncModal(true)}
+            className={cn(
+              'p-1.5 sm:p-2 rounded-xl transition-colors cursor-pointer relative',
+              isSyncEnabled
+                ? syncStatus === 'error'
+                  ? 'text-rose-400 bg-rose-500/10 border border-rose-500/30'
+                  : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30'
+                : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.05]'
+            )}
+            title={isSyncEnabled ? 'Cloud Synced' : 'Connect Cloud Sync'}
+          >
+            {isSyncEnabled ? (
+              <CloudCheck className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <Cloud className="w-4 h-4" />
+            )}
+            {isSyncEnabled && syncStatus === 'syncing' && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            )}
+          </button>
+
           <ThemeSelector compact />
           <button
             type="button"
@@ -197,6 +312,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       <BGGConfigModal
         isOpen={showBGGModal}
         onClose={() => setShowBGGModal(false)}
+      />
+
+      <CloudSyncModal
+        isOpen={showSyncModal}
+        onClose={() => setShowSyncModal(false)}
       />
 
       <PwaInstallModal
