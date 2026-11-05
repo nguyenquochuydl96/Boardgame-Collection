@@ -28,6 +28,40 @@ export interface BoardGame {
   tags?: string[];
 }
 
+export interface GameLocation {
+  id: string;
+  name: string;
+  address?: string;
+  isDefault?: boolean;
+  createdAt: string;
+}
+
+export interface SessionDraft {
+  gameId: string;
+  datePlayed: string;
+  location: string;
+  durationMinutes: string;
+  elapsedSeconds: number;
+  sessionStartTime: number; // timestamp
+  isTimerRunning: boolean;
+  pausedDurationMs: number;
+  pauseStartTime?: number;
+  selectedPlayerIds: string[];
+  oneOffPlayers: Player[];
+  firstPlayerId?: string;
+  firstPlayerMethod: FirstPlayerMethod;
+  firstPlayerAnimStyle: 'wheel' | 'card_shuffle' | 'manual';
+  scoresByPlayerId: Record<string, number | undefined>;
+  breakdownsByPlayerId: Record<string, Record<string, number>>;
+  manualWinnerIds: string[];
+  lowScoreWins: boolean;
+  scoringMode: 'detailed' | 'quick';
+  photos: string[];
+  notes: string;
+  currentStep: number;
+  lastUpdated: string;
+}
+
 export interface Player {
   id: string;
   name: string;

@@ -15,6 +15,7 @@ import {
   RotateCcw,
   Sparkles,
   Crown,
+  Play,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { SessionCard } from '../components/session/SessionCard';
@@ -67,6 +68,28 @@ export const SessionsPage: React.FC = () => {
   const [gameFilterSearch, setGameFilterSearch] = useState('');
   const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
   const [isQuickFirstPlayerOpen, setIsQuickFirstPlayerOpen] = useState(false);
+  const [activeDraft, setActiveDraft] = useState<{ gameName: string; elapsedSecs: number } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('boardgame_session_draft');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000) {
+          const gameObj = games.find((g) => g.id === parsed.gameId);
+          const activeMs = parsed.isTimerRunning
+            ? Date.now() - parsed.sessionStartTime - (parsed.pausedDurationMs || 0)
+            : parsed.pauseStartTime
+            ? parsed.pauseStartTime - parsed.sessionStartTime - (parsed.pausedDurationMs || 0)
+            : 0;
+          setActiveDraft({
+            gameName: gameObj?.name || 'Trận Đấu',
+            elapsedSecs: Math.max(0, Math.floor(activeMs / 1000)),
+          });
+        }
+      }
+    } catch {}
+  }, [games]);
 
   // Sync from URL params on load (e.g. ?gameId=... or ?playerId=...)
   useEffect(() => {
@@ -320,6 +343,33 @@ export const SessionsPage: React.FC = () => {
             </Link>
           </div>
         </div>
+
+        {/* Active Session in Progress Callout Banner */}
+        {activeDraft && (
+          <Link
+            to="/sessions/new"
+            className="block p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-400 hover:border-amber-300 transition-all shadow-lg group"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <div>
+                  <h4 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-amber-300 transition-colors">
+                    Có một ván game đang diễn ra: <strong>{activeDraft.gameName}</strong>
+                  </h4>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Đã chơi được khoảng {Math.floor(activeDraft.elapsedSecs / 60)} phút · Bấm để tiếp tục nhập điểm
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-amber-400 shrink-0">
+                <span>Vào Ván</span>
+                <Play className="w-3.5 h-3.5 fill-current" />
+              </div>
+            </div>
+          </Link>
+        )}
 
         {/* Filter & Search Bar */}
         <div className="p-4 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] space-y-3">

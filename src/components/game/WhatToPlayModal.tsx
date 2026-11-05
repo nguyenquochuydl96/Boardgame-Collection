@@ -95,7 +95,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="🎲 Hôm Nay Chơi Gì? (Gợi Ý Game Ngẫu Nhiên)"
-      size="xl"
+      maxWidthClass="max-w-4xl"
     >
       <div className="space-y-6">
         {/* Style Selector */}

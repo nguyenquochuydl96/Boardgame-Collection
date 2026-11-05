@@ -14,6 +14,7 @@ import {
   Sparkles,
   Crown,
   Trash2,
+  RotateCcw,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
@@ -22,6 +23,7 @@ import { Input } from '../components/ui/Input';
 import { PlayerChip } from '../components/player/PlayerChip';
 import { PlayerScoreRow } from '../components/session/PlayerScoreRow';
 import { ScoringSheetMatrix } from '../components/session/ScoringSheetMatrix';
+import { LocationSelector } from '../components/session/LocationSelector';
 import { getScoringTemplateForGame } from '../lib/scoringPresets';
 import { LuckyWheel } from '../components/picker/LuckyWheel';
 import { MysteryCardShuffle, PickerItem } from '../components/picker/MysteryCardShuffle';
@@ -30,10 +32,12 @@ import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
+import { useLocationStore } from '../store/useLocationStore';
 import {
   FirstPlayerMethod,
   Player,
   PlayerScore,
+  SessionDraft,
 } from '../types';
 import {
   FIRST_PLAYER_METHOD_LABELS,
@@ -43,12 +47,12 @@ import {
 } from '../lib/utils';
 
 const WIZARD_STEPS = [
-  { step: 1, title: 'Pick Game' },
-  { step: 2, title: 'Setup' },
-  { step: 3, title: 'Players' },
-  { step: 4, title: 'Who Goes First?' },
-  { step: 5, title: 'Scores' },
-  { step: 6, title: 'Memories' },
+  { step: 1, title: 'Chọn Game' },
+  { step: 2, title: 'Thiết Lập' },
+  { step: 3, title: 'Người Chơi' },
+  { step: 4, title: 'Ai Đi Đầu?' },
+  { step: 5, title: 'Ghi Điểm' },
+  { step: 6, title: 'Kỷ Niệm' },
 ];
 
 const ONE_OFF_COLORS = ['#f97316', '#22d3ee', '#a855f7', '#10b981', '#ec4899'];
@@ -65,6 +69,9 @@ export const NewSessionPage: React.FC = () => {
   const savedPlayers = usePlayerStore((s) => s.players);
   const addPlayerToStore = usePlayerStore((s) => s.addPlayer);
   const addSession = useSessionStore((s) => s.addSession);
+  const defaultLocation = useLocationStore(
+    (s) => s.locations.find((l) => l.isDefault)?.name || s.locations[0]?.name || 'Nhà Huy (Quận 3)'
+  );
 
   const [currentStep, setCurrentStep] = useState<number>(
     initialStepParam >= 1 && initialStepParam <= 6 ? initialStepParam : 1
@@ -80,10 +87,16 @@ export const NewSessionPage: React.FC = () => {
   const [datePlayed, setDatePlayed] = useState<string>(
     new Date().toISOString().slice(0, 10)
   );
-  const [location, setLocation] = useState<string>('Huy’s Game Room, District 3');
+  const [location, setLocation] = useState<string>(defaultLocation);
   const [durationMinutes, setDurationMinutes] = useState<string>('60');
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  // Auto-Timer & Session Draft state
+  const [sessionStartTime, setSessionStartTime] = useState<number>(() => Date.now());
+  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(true);
+  const [pausedDurationMs, setPausedDurationMs] = useState<number>(0);
+  const [pauseStartTime, setPauseStartTime] = useState<number | undefined>(undefined);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+  const [existingDraft, setExistingDraft] = useState<SessionDraft | null>(null);
 
   // Step 3: Players
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>(() => {
@@ -122,18 +135,145 @@ export const NewSessionPage: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Live timer effect
+  // Detect and offer restoring previous draft on mount
   useEffect(() => {
-    if (!isTimerRunning) return;
-    const interval = window.setInterval(() => {
-      setElapsedSeconds((sec) => {
-        const next = sec + 1;
-        setDurationMinutes(String(Math.max(1, Math.round(next / 60))));
-        return next;
-      });
-    }, 1000);
+    try {
+      const raw = localStorage.getItem('boardgame_session_draft');
+      if (raw) {
+        const parsed = JSON.parse(raw) as SessionDraft;
+        // Offer restoring if draft is less than 36 hours old
+        if (parsed && Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000) {
+          setExistingDraft(parsed);
+        }
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }, []);
+
+  const handleRestoreDraft = () => {
+    if (!existingDraft) return;
+    setSelectedGameId(existingDraft.gameId);
+    setDatePlayed(existingDraft.datePlayed);
+    setLocation(existingDraft.location);
+    setDurationMinutes(existingDraft.durationMinutes);
+    setSessionStartTime(existingDraft.sessionStartTime);
+    setIsTimerRunning(existingDraft.isTimerRunning);
+    setPausedDurationMs(existingDraft.pausedDurationMs);
+    setPauseStartTime(existingDraft.pauseStartTime);
+    setSelectedPlayerIds(existingDraft.selectedPlayerIds);
+    setOneOffPlayers(existingDraft.oneOffPlayers);
+    setFirstPlayerId(existingDraft.firstPlayerId);
+    setFirstPlayerMethod(existingDraft.firstPlayerMethod);
+    setFirstPlayerAnimStyle(existingDraft.firstPlayerAnimStyle);
+    setScoresByPlayerId(existingDraft.scoresByPlayerId);
+    setBreakdownsByPlayerId(existingDraft.breakdownsByPlayerId);
+    setManualWinnerIds(existingDraft.manualWinnerIds);
+    setLowScoreWins(existingDraft.lowScoreWins);
+    setScoringMode(existingDraft.scoringMode);
+    setPhotos(existingDraft.photos);
+    setNotes(existingDraft.notes);
+    setCurrentStep(existingDraft.currentStep);
+    setExistingDraft(null);
+  };
+
+  const handleDiscardDraft = () => {
+    try {
+      localStorage.removeItem('boardgame_session_draft');
+    } catch {}
+    setExistingDraft(null);
+  };
+
+  // Live timer effect based on real wall-clock timestamps (sleep & background proof)
+  useEffect(() => {
+    const updateTime = () => {
+      if (isTimerRunning) {
+        const now = Date.now();
+        const activeMs = now - sessionStartTime - pausedDurationMs;
+        const totalSecs = Math.max(0, Math.floor(activeMs / 1000));
+        setElapsedSeconds(totalSecs);
+        setDurationMinutes(String(Math.max(1, Math.round(totalSecs / 60))));
+      } else if (pauseStartTime) {
+        const activeMs = pauseStartTime - sessionStartTime - pausedDurationMs;
+        const totalSecs = Math.max(0, Math.floor(activeMs / 1000));
+        setElapsedSeconds(totalSecs);
+      }
+    };
+
+    updateTime();
+    const interval = window.setInterval(updateTime, 1000);
     return () => window.clearInterval(interval);
-  }, [isTimerRunning]);
+  }, [isTimerRunning, sessionStartTime, pausedDurationMs, pauseStartTime]);
+
+  const handleToggleTimer = () => {
+    if (isTimerRunning) {
+      setIsTimerRunning(false);
+      setPauseStartTime(Date.now());
+    } else {
+      const now = Date.now();
+      const addedPause = pauseStartTime ? now - pauseStartTime : 0;
+      setPausedDurationMs((prev) => prev + addedPause);
+      setPauseStartTime(undefined);
+      setIsTimerRunning(true);
+    }
+  };
+
+  // Auto-save draft effect to LocalStorage
+  useEffect(() => {
+    if (isSaving) return;
+    const draft: SessionDraft = {
+      gameId: selectedGameId,
+      datePlayed,
+      location,
+      durationMinutes,
+      elapsedSeconds,
+      sessionStartTime,
+      isTimerRunning,
+      pausedDurationMs,
+      pauseStartTime,
+      selectedPlayerIds,
+      oneOffPlayers,
+      firstPlayerId,
+      firstPlayerMethod,
+      firstPlayerAnimStyle,
+      scoresByPlayerId,
+      breakdownsByPlayerId,
+      manualWinnerIds,
+      lowScoreWins,
+      scoringMode,
+      photos,
+      notes,
+      currentStep,
+      lastUpdated: new Date().toISOString(),
+    };
+    try {
+      localStorage.setItem('boardgame_session_draft', JSON.stringify(draft));
+    } catch {}
+  }, [
+    selectedGameId,
+    datePlayed,
+    location,
+    durationMinutes,
+    elapsedSeconds,
+    sessionStartTime,
+    isTimerRunning,
+    pausedDurationMs,
+    pauseStartTime,
+    selectedPlayerIds,
+    oneOffPlayers,
+    firstPlayerId,
+    firstPlayerMethod,
+    firstPlayerAnimStyle,
+    scoresByPlayerId,
+    breakdownsByPlayerId,
+    manualWinnerIds,
+    lowScoreWins,
+    scoringMode,
+    photos,
+    notes,
+    currentStep,
+    isSaving,
+  ]);
 
   const selectedGame = useMemo(
     () => games.find((g) => g.id === selectedGameId) || games[0],
@@ -303,6 +443,9 @@ export const NewSessionPage: React.FC = () => {
   const handleSaveSession = () => {
     if (!selectedGame || activeSessionPlayers.length === 0) return;
     setIsSaving(true);
+    try {
+      localStorage.removeItem('boardgame_session_draft');
+    } catch {}
 
     const winnerEntry =
       computedPlayerScores.find((p) => p.isWinner) || computedPlayerScores[0];
@@ -362,10 +505,10 @@ export const NewSessionPage: React.FC = () => {
                 className={cn(
                   'p-2.5 rounded-xl border text-left transition-all cursor-pointer',
                   isActive
-                    ? 'bg-[#7c3aed]/25 border-[#a78bfa] text-white'
+                    ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[var(--text-primary)] shadow-sm'
                     : isDone
-                    ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
-                    : 'bg-[#16162a] border-white/[0.06] text-[#94a3b8] hover:text-white'
+                    ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-400'
+                    : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 )}
               >
                 <div className="flex items-center justify-between text-[11px] font-mono">
@@ -378,6 +521,100 @@ export const NewSessionPage: React.FC = () => {
               </button>
             );
           })}
+        </div>
+
+        {/* Active Draft Detected Banner */}
+        <AnimatePresence>
+          {existingDraft && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-400 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-3xl shrink-0">📋</span>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-sm text-[var(--text-primary)]">
+                    Tìm thấy ván game chưa hoàn thành!
+                  </h4>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    Bắt đầu lúc {new Date(existingDraft.sessionStartTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} (đã trôi qua {formatTimer(existingDraft.elapsedSeconds)}) · Đang ở Bước {existingDraft.currentStep}/6
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                <Button variant="ghost" size="sm" onClick={handleDiscardDraft}>
+                  Bỏ Qua
+                </Button>
+                <Button variant="primary" size="sm" onClick={handleRestoreDraft} className="bg-amber-500 text-slate-950 font-bold shadow-md">
+                  ▶️ Tiếp Tục Ván Này
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Persistent Session Companion Bar (Always Active) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-sm">
+          <div className="flex items-center gap-3 min-w-0">
+            {selectedGame ? (
+              <img
+                src={selectedGame.thumbnail || selectedGame.image}
+                alt={selectedGame.name}
+                className="w-10 h-10 rounded-xl object-cover border border-[var(--border-subtle)] shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center text-lg shrink-0">
+                🎲
+              </div>
+            )}
+            <div className="min-w-0">
+              <span className="text-[10px] uppercase font-bold text-[var(--accent-neon)] tracking-wider block truncate">
+                {selectedGame ? selectedGame.name : 'Đang thiết lập ván đấu'}
+              </span>
+              <span className="text-xs text-[var(--text-secondary)] truncate block">
+                {location} · {activeSessionPlayers.length} người chơi tại bàn
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            {/* Live Stopwatch with Pulsing Indicator */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+              <span
+                className={cn(
+                  'w-2 h-2 rounded-full',
+                  isTimerRunning ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                )}
+              />
+              <Clock className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+              <span className="font-mono font-extrabold text-sm text-[var(--text-primary)] tabular-nums">
+                {formatTimer(elapsedSeconds)}
+              </span>
+            </div>
+
+            {/* Pause / Resume Button */}
+            <Button
+              variant={isTimerRunning ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={handleToggleTimer}
+              className="text-xs font-bold"
+            >
+              {isTimerRunning ? (
+                <>
+                  <Pause className="w-3.5 h-3.5 mr-1" />
+                  Tạm Dừng
+                </>
+              ) : (
+                <>
+                  <Play className="w-3.5 h-3.5 mr-1 fill-current" />
+                  Tiếp Tục
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Animated Wizard Step Content */}
@@ -394,16 +631,16 @@ export const NewSessionPage: React.FC = () => {
               <Card className="p-6 sm:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <h1 className="font-display font-extrabold text-2xl text-white">
-                      Step 1 — Pick a Boardgame
+                    <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
+                      Bước 1 — Chọn Boardgame Lên Bàn
                     </h1>
-                    <p className="text-sm text-[#94a3b8]">
-                      Choose which game is hitting the table tonight
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Chọn tựa game sẽ khai màn trận đấu tối nay
                     </p>
                   </div>
 
                   {selectedGame && (
-                    <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-[#16162a] border border-[#7c3aed]/40">
+                    <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-glow)]">
                       <img
                         src={selectedGame.thumbnail || selectedGame.image}
                         alt={selectedGame.name}
@@ -411,10 +648,10 @@ export const NewSessionPage: React.FC = () => {
                         className="w-12 h-16 rounded-lg object-cover"
                       />
                       <div>
-                        <span className="text-[11px] text-[#a78bfa] font-semibold">
-                          Selected Game
+                        <span className="text-[11px] text-[var(--accent-neon)] font-semibold">
+                          Game Đã Chọn
                         </span>
-                        <p className="font-display font-bold text-sm text-white">
+                        <p className="font-display font-bold text-sm text-[var(--text-primary)]">
                           {selectedGame.name}
                         </p>
                       </div>
@@ -476,36 +713,36 @@ export const NewSessionPage: React.FC = () => {
             {currentStep === 2 && (
               <Card className="p-6 sm:p-8 space-y-6">
                 <div>
-                  <h1 className="font-display font-extrabold text-2xl text-white">
-                    Step 2 — Session Setup
+                  <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
+                    Bước 2 — Thiết Lập Bàn Chơi
                   </h1>
-                  <p className="text-sm text-[#94a3b8]">
-                    Set date, location, and start the live timer or enter minutes manually
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    Chọn ngày chơi, địa điểm cố định và theo dõi đồng hồ tính giờ trận đấu
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <Input
-                    label="Date Played"
+                    label="Ngày Chơi"
                     type="date"
                     value={datePlayed}
                     onChange={(e) => setDatePlayed(e.target.value)}
                   />
-                  <Input
-                    label="Location"
-                    placeholder="e.g., Huy’s Game Room, Boardgame Cafe..."
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
+
+                  {/* Location Selector from permanent list */}
+                  <LocationSelector
+                    selectedLocation={location}
+                    onSelectLocation={(loc) => setLocation(loc)}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
-                  <div className="p-5 rounded-2xl bg-[#16162a] border border-white/10 space-y-3">
+                  <div className="p-5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-3">
                     <label
                       htmlFor="manual-duration-input"
-                      className="block text-xs font-semibold text-[#94a3b8]"
+                      className="block text-xs font-semibold text-[var(--text-secondary)]"
                     >
-                      Manual Duration (Minutes)
+                      Thời Lượng Ván Đấu (Phút - Tự tính hoặc chỉnh tay)
                     </label>
                     <input
                       id="manual-duration-input"
@@ -513,7 +750,7 @@ export const NewSessionPage: React.FC = () => {
                       min={1}
                       value={durationMinutes}
                       onChange={(e) => setDurationMinutes(e.target.value)}
-                      className="w-full min-h-[44px] rounded-xl bg-[#1e1e35] border border-white/15 px-4 py-2 font-mono font-bold text-xl text-white tabular-nums focus:outline-none focus:border-[#7c3aed]"
+                      className="w-full min-h-[44px] rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-4 py-2 font-mono font-bold text-xl text-[var(--text-primary)] tabular-nums focus:outline-none focus:border-[var(--accent-primary)]"
                     />
                     <div className="flex flex-wrap gap-2">
                       {[30, 45, 60, 90, 120].map((preset) => (
@@ -521,7 +758,7 @@ export const NewSessionPage: React.FC = () => {
                           key={preset}
                           type="button"
                           onClick={() => setDurationMinutes(String(preset))}
-                          className="px-3 py-1 rounded-lg bg-[#1e1e35] hover:bg-[#7c3aed]/30 text-xs font-mono text-[#cbd5e1] border border-white/10 cursor-pointer"
+                          className="px-3 py-1 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--accent-glow)] text-xs font-mono text-[var(--text-primary)] border border-[var(--border-subtle)] cursor-pointer"
                         >
                           {preset}m
                         </button>
@@ -529,46 +766,55 @@ export const NewSessionPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="p-5 rounded-2xl bg-[#16162a] border border-white/10 flex flex-col justify-between space-y-3">
+                  <div className="p-5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex flex-col justify-between space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-[#94a3b8]">
-                        Live Session Stopwatch
+                      <span className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
+                        <span
+                          className={cn(
+                            'w-2 h-2 rounded-full',
+                            isTimerRunning ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                          )}
+                        />
+                        Đồng Hồ Đang Tự Đếm Giờ
                       </span>
-                      <Clock className="w-4 h-4 text-[#22d3ee]" />
+                      <Clock className="w-4 h-4 text-[var(--accent-neon)]" />
                     </div>
-                    <p className="font-mono font-extrabold text-3xl text-[#22d3ee] tabular-nums">
+                    <p className="font-mono font-extrabold text-3xl text-[var(--accent-neon)] tabular-nums">
                       {formatTimer(elapsedSeconds)}
                     </p>
                     <div className="flex items-center gap-2">
                       <Button
                         variant={isTimerRunning ? 'secondary' : 'primary'}
                         size="sm"
-                        onClick={() => setIsTimerRunning((r) => !r)}
+                        onClick={handleToggleTimer}
                       >
                         {isTimerRunning ? (
                           <>
-                            <Pause className="w-4 h-4" />
-                            Pause Timer
+                            <Pause className="w-4 h-4 mr-1" />
+                            Tạm Dừng Trận Đấu
                           </>
                         ) : (
                           <>
-                            <Play className="w-4 h-4 fill-current" />
-                            Start Timer
+                            <Play className="w-4 h-4 mr-1 fill-current" />
+                            Tiếp Tục Tính Giờ
                           </>
                         )}
                       </Button>
-                      {elapsedSeconds > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setIsTimerRunning(false);
-                            setElapsedSeconds(0);
-                          }}
-                        >
-                          Reset
-                        </Button>
-                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSessionStartTime(Date.now());
+                          setPausedDurationMs(0);
+                          setPauseStartTime(undefined);
+                          setElapsedSeconds(0);
+                          setDurationMinutes('1');
+                        }}
+                        className="text-xs text-[var(--text-secondary)]"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                        Đặt Lại
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -579,11 +825,11 @@ export const NewSessionPage: React.FC = () => {
             {currentStep === 3 && (
               <Card className="p-6 sm:p-8 space-y-6">
                 <div>
-                  <h1 className="font-display font-extrabold text-2xl text-white">
-                    Step 3 — Select Players
+                  <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
+                    Bước 3 — Chọn Người Chơi
                   </h1>
-                  <p className="text-sm text-[#94a3b8]">
-                    Tap player chips to include them in tonight’s game ({activeSessionPlayers.length} selected)
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    Chạm vào thẻ để chọn người chơi tham gia ván đấu ({activeSessionPlayers.length} người đã chọn)
                   </p>
                 </div>
 
@@ -604,32 +850,32 @@ export const NewSessionPage: React.FC = () => {
                 {/* Add Guest or New Player */}
                 <form
                   onSubmit={handleAddGuestPlayer}
-                  className="p-4 rounded-2xl bg-[#16162a] border border-white/10 space-y-3"
+                  className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-3"
                 >
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
-                    Add New or One-Off Player
+                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                    Thêm Bạn Chơi Mới Hoặc Bạn Chơi Khách
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="flex-1">
                       <Input
-                        placeholder="Player name (e.g., Bảo Anh)..."
+                        placeholder="Tên người chơi (vd: Bảo Anh, Hoàng)..."
                         value={newGuestName}
                         onChange={(e) => setNewGuestName(e.target.value)}
                       />
                     </div>
                     <Button type="submit" variant="secondary">
-                      <UserPlus className="w-4 h-4" />
-                      Add to Table
+                      <UserPlus className="w-4 h-4 mr-1" />
+                      Thêm Vào Bàn
                     </Button>
                   </div>
-                  <label className="inline-flex items-center gap-2 text-xs text-[#94a3b8] cursor-pointer">
+                  <label className="inline-flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer">
                     <input
                       type="checkbox"
                       checked={saveGuestToVault}
                       onChange={(e) => setSaveGuestToVault(e.target.checked)}
-                      className="rounded border-white/20 bg-[#1e1e35] text-[#7c3aed]"
+                      className="rounded border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--accent-primary)]"
                     />
-                    Also save this player to my permanent Players list
+                    Lưu bạn chơi này vào danh sách người chơi cố định
                   </label>
                 </form>
               </Card>
@@ -658,7 +904,7 @@ export const NewSessionPage: React.FC = () => {
                         'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none',
                         firstPlayerAnimStyle === 'wheel'
                           ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300 shadow-sm'
-                          : 'text-[var(--text-secondary)] hover:text-white'
+                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       )}
                     >
                       <span>🎡 Vòng Quay</span>
@@ -670,7 +916,7 @@ export const NewSessionPage: React.FC = () => {
                         'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none',
                         firstPlayerAnimStyle === 'card_shuffle'
                           ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300 shadow-sm'
-                          : 'text-[var(--text-secondary)] hover:text-white'
+                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       )}
                     >
                       <span>🎴 Xáo Bài</span>
@@ -682,7 +928,7 @@ export const NewSessionPage: React.FC = () => {
                         'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none',
                         firstPlayerAnimStyle === 'manual'
                           ? 'bg-[var(--accent-glow)] border border-[var(--border-glow)] text-[var(--accent-neon)] shadow-sm'
-                          : 'text-[var(--text-secondary)] hover:text-white'
+                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       )}
                     >
                       <span>✋ Thủ Công</span>
@@ -694,7 +940,7 @@ export const NewSessionPage: React.FC = () => {
                 {activeSessionPlayers.length === 0 ? (
                   <div className="p-8 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center space-y-3">
                     <span className="text-3xl">⚠️</span>
-                    <h3 className="font-bold text-base text-white">Chưa có người chơi nào tại bàn</h3>
+                    <h3 className="font-bold text-base text-[var(--text-primary)]">Chưa có người chơi nào tại bàn</h3>
                     <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
                       Vui lòng quay lại Bước 3 để tích chọn ít nhất 1 người chơi tham gia ván đấu.
                     </p>
@@ -713,7 +959,7 @@ export const NewSessionPage: React.FC = () => {
                       />
                       <div className="text-left">
                         <span className="text-[10px] uppercase font-bold text-amber-400">Chế độ Solo</span>
-                        <p className="font-bold text-white text-sm">{activeSessionPlayers[0].name} là người đi đầu</p>
+                        <p className="font-bold text-[var(--text-primary)] text-sm">{activeSessionPlayers[0].name} là người đi đầu</p>
                       </div>
                     </div>
                     <div>
@@ -747,7 +993,7 @@ export const NewSessionPage: React.FC = () => {
                           👑
                         </div>
                         <div>
-                          <h3 className="font-bold text-base text-white">Chỉ định người đi đầu bằng tay</h3>
+                          <h3 className="font-bold text-base text-[var(--text-primary)]">Chỉ định người đi đầu bằng tay</h3>
                           <p className="text-xs text-[var(--text-secondary)] mt-1">
                             Chọn trực tiếp người chơi bên dưới hoặc áp dụng quy tắc bàn chơi phổ biến
                           </p>
@@ -766,8 +1012,8 @@ export const NewSessionPage: React.FC = () => {
                                 className={cn(
                                   'flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer',
                                   isChosen
-                                    ? 'bg-amber-500/25 border-amber-400 text-white shadow-lg ring-2 ring-amber-400/30'
-                                    : 'bg-[var(--bg-surface)] border-white/10 text-[var(--text-secondary)] hover:text-white hover:border-white/20'
+                                    ? 'bg-amber-500/25 border-amber-400 text-[var(--text-primary)] shadow-lg ring-2 ring-amber-400/30'
+                                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-white/20'
                                 )}
                               >
                                 <PlayerAvatar
@@ -811,11 +1057,11 @@ export const NewSessionPage: React.FC = () => {
                                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300">
                                   Người Đi Đầu Ván Này!
                                 </span>
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/80 font-medium">
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-[var(--text-primary)] font-medium">
                                   {FIRST_PLAYER_METHOD_LABELS[firstPlayerMethod]}
                                 </span>
                               </div>
-                              <h4 className="font-display font-extrabold text-base sm:text-lg text-white truncate">
+                              <h4 className="font-display font-extrabold text-base sm:text-lg text-[var(--text-primary)] truncate">
                                 {firstPlayerObj.name}
                               </h4>
                             </div>
@@ -982,22 +1228,22 @@ export const NewSessionPage: React.FC = () => {
               <div className="space-y-6">
                 <Card className="p-6 sm:p-8 space-y-6">
                   <div>
-                    <h1 className="font-display font-extrabold text-2xl text-white">
-                      Step 6 — Memories & Table Notes
+                    <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
+                      Bước 6 — Kỷ Niệm &amp; Ghi Chú Trận Đấu
                     </h1>
-                    <p className="text-sm text-[#94a3b8]">
-                      Capture a photo of the final board state and jot down memorable moments
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      Chụp ảnh bàn cờ kết thúc ván đấu và lưu lại những khoảnh khắc đáng nhớ
                     </p>
                   </div>
 
                   <div className="space-y-3">
-                    <label className="block text-xs font-semibold text-[#94a3b8]">
-                      Session Photos
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)]">
+                      Ảnh Chụp Bàn Chơi
                     </label>
                     <div className="flex flex-wrap items-center gap-3">
-                      <label className="min-h-[88px] px-5 py-4 rounded-2xl border-2 border-dashed border-white/15 hover:border-[#a78bfa] bg-[#16162a] flex flex-col items-center justify-center gap-1.5 text-xs font-semibold text-[#94a3b8] hover:text-white cursor-pointer transition-colors">
-                        <Camera className="w-5 h-5 text-[#a78bfa]" />
-                        <span>Upload Photo</span>
+                      <label className="min-h-[88px] px-5 py-4 rounded-2xl border-2 border-dashed border-[var(--border-subtle)] hover:border-[var(--accent-primary)] bg-[var(--bg-elevated)] flex flex-col items-center justify-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-colors">
+                        <Camera className="w-5 h-5 text-[var(--accent-primary)]" />
+                        <span>Tải Ảnh Lên</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -1010,7 +1256,7 @@ export const NewSessionPage: React.FC = () => {
                       {photos.map((src, idx) => (
                         <div
                           key={idx}
-                          className="relative w-24 h-24 rounded-2xl overflow-hidden border border-white/15 group"
+                          className="relative w-24 h-24 rounded-2xl overflow-hidden border border-[var(--border-subtle)] group"
                         >
                           <img
                             src={src}
@@ -1037,17 +1283,17 @@ export const NewSessionPage: React.FC = () => {
                   <div className="space-y-1.5">
                     <label
                       htmlFor="session-notes"
-                      className="block text-xs font-semibold text-[#94a3b8]"
+                      className="block text-xs font-semibold text-[var(--text-secondary)]"
                     >
-                      Session Notes
+                      Ghi Chú Ván Đấu
                     </label>
                     <textarea
                       id="session-notes"
                       rows={3}
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Any funny moments? House rules used? Who rage-quit? 😄"
-                      className="w-full rounded-xl bg-[#16162a] border border-white/10 p-3.5 text-sm text-[#f1f5f9] placeholder:text-[#475569] focus:outline-none focus:border-[#7c3aed]"
+                      placeholder="Khoảnh khắc hài hước? Luật đặc biệt được dùng? Ai là người lật kèo phút cuối? 😄"
+                      className="w-full rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-3.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
                     />
                   </div>
                 </Card>

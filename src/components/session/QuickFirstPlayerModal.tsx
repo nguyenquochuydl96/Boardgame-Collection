@@ -84,7 +84,7 @@ export const QuickFirstPlayerModal: React.FC<QuickFirstPlayerModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="👑 Chọn Người Đi Đầu Ván Đấu"
-      size="xl"
+      maxWidthClass="max-w-4xl"
     >
       <div className="space-y-6">
         {/* Style Selector Pills */}

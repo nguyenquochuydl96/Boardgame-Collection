@@ -107,7 +107,7 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
       rotate: nextRotation,
       transition: {
         duration: spinDuration,
-        ease: [0.15, 0.9, 0.25, 1], // natural deceleration curve
+        ease: [0.15, 0.9, 0.25, 1],
       },
     });
 
@@ -119,142 +119,157 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
     onSelect(chosen);
   };
 
-  const radius = 140;
-  const center = 160;
+  const radius = 138;
+  const center = 150;
   const avatarR = count > 10 ? 10 : count > 6 ? 12 : 14;
 
+  if (items.length === 0) {
+    return (
+      <div className="text-center p-6 space-y-2">
+        <span className="text-3xl">⚠️</span>
+        <p className="font-bold text-sm text-[var(--text-primary)]">
+          Chưa có lựa chọn nào trên vòng quay
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center py-4 space-y-6">
+    <div className="flex flex-col items-center justify-center py-4 space-y-6 w-full">
       {/* Wheel Stage */}
-      <div className="relative w-80 h-80 flex items-center justify-center select-none">
+      <div className="relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center select-none">
         {/* Top Pointer Arrow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 pointer-events-none drop-shadow-lg">
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none drop-shadow-xl">
           <div className="w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[24px] border-t-amber-400" />
         </div>
 
         {/* Outer Glow Ring */}
-        <div className="absolute inset-0 rounded-full border-4 border-amber-400/40 shadow-2xl shadow-amber-500/20 pointer-events-none" />
+        <div className="absolute inset-0 rounded-full border-4 border-amber-400/50 shadow-2xl shadow-amber-500/25 pointer-events-none" />
 
-        {/* Animated Rotating Wheel SVG */}
-        <motion.svg
+        {/* Animated Rotating Wheel Wrapper */}
+        <motion.div
           animate={controls}
-          className="w-full h-full drop-shadow-2xl"
-          viewBox="0 0 320 320"
+          style={{ rotate: 0 }}
+          className="relative w-full h-full rounded-full overflow-hidden shadow-2xl bg-[#16162a]"
         >
-          <defs>
+          <svg
+            className="w-full h-full"
+            viewBox="0 0 300 300"
+          >
+            <defs>
+              {items.map((item, idx) => {
+                const imageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
+                if (!imageSrc) return null;
+                const midAngle = idx * sliceAngle + sliceAngle / 2;
+                const pos = polarToCartesian(center, center, radius * 0.74, midAngle);
+                return (
+                  <clipPath key={`clip-${item.id}-${idx}`} id={`avatar-clip-${idx}`}>
+                    <circle cx={pos.x} cy={pos.y} r={avatarR} />
+                  </clipPath>
+                );
+              })}
+            </defs>
+
             {items.map((item, idx) => {
+              const startAngle = idx * sliceAngle;
+              const endAngle = (idx + 1) * sliceAngle;
+              const pathData = describeArcSector(center, center, radius, startAngle, endAngle);
+              const midAngle = startAngle + sliceAngle / 2;
+              const textAngle = midAngle + (midAngle > 90 && midAngle < 270 ? 180 : 0);
+
+              const avatarPos = polarToCartesian(center, center, radius * 0.74, midAngle);
+              const textPos = polarToCartesian(center, center, radius * 0.42, midAngle);
+              const color = item.color || SLICE_COLORS[idx % SLICE_COLORS.length];
               const imageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
-              if (!imageSrc) return null;
-              const midAngle = idx * sliceAngle + sliceAngle / 2;
-              const pos = polarToCartesian(center, center, radius * 0.74, midAngle);
+
               return (
-                <clipPath key={`clip-${item.id}`} id={`avatar-clip-${idx}`}>
-                  <circle cx={pos.x} cy={pos.y} r={avatarR} />
-                </clipPath>
+                <g key={`item-${item.id}-${idx}`}>
+                  {/* Sector Slice */}
+                  <path
+                    d={pathData}
+                    fill={color}
+                    stroke="rgba(0,0,0,0.35)"
+                    strokeWidth="2"
+                  />
+
+                  {/* Avatar Circle on Slice */}
+                  {imageSrc ? (
+                    <g>
+                      <circle
+                        cx={avatarPos.x}
+                        cy={avatarPos.y}
+                        r={avatarR + 1}
+                        fill="#ffffff"
+                        stroke="rgba(0,0,0,0.5)"
+                        strokeWidth="1.5"
+                      />
+                      <image
+                        href={imageSrc}
+                        x={avatarPos.x - avatarR}
+                        y={avatarPos.y - avatarR}
+                        width={avatarR * 2}
+                        height={avatarR * 2}
+                        clipPath={`url(#avatar-clip-${idx})`}
+                        preserveAspectRatio="xMidYMid slice"
+                      />
+                    </g>
+                  ) : (
+                    <g>
+                      <circle
+                        cx={avatarPos.x}
+                        cy={avatarPos.y}
+                        r={avatarR}
+                        fill="rgba(0,0,0,0.35)"
+                        stroke="#ffffff"
+                        strokeWidth="1"
+                      />
+                      <text
+                        x={avatarPos.x}
+                        y={avatarPos.y + 0.5}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontSize={avatarR * 1.25}
+                        transform={`rotate(${textAngle}, ${avatarPos.x}, ${avatarPos.y})`}
+                      >
+                        {getSafeDisplayAvatar(item.avatar, '🎲')}
+                      </text>
+                    </g>
+                  )}
+
+                  {/* Player or Game Name (Never raw base64 string) */}
+                  <text
+                    x={textPos.x}
+                    y={textPos.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="#ffffff"
+                    fontSize={count > 12 ? '8.5' : count > 8 ? '10' : '11.5'}
+                    fontWeight="800"
+                    fontFamily="Outfit, sans-serif"
+                    transform={`rotate(${textAngle}, ${textPos.x}, ${textPos.y})`}
+                    style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9)' }}
+                  >
+                    {item.name.length > 9 ? item.name.slice(0, 8) + '…' : item.name}
+                  </text>
+                </g>
               );
             })}
-          </defs>
-
-          {items.map((item, idx) => {
-            const startAngle = idx * sliceAngle;
-            const endAngle = (idx + 1) * sliceAngle;
-            const pathData = describeArcSector(center, center, radius, startAngle, endAngle);
-            const midAngle = startAngle + sliceAngle / 2;
-            const textAngle = midAngle + (midAngle > 90 && midAngle < 270 ? 180 : 0);
-
-            // Positioning: Avatar at outer radius (0.74), Name closer to center (0.42)
-            const avatarPos = polarToCartesian(center, center, radius * 0.74, midAngle);
-            const textPos = polarToCartesian(center, center, radius * 0.42, midAngle);
-            const color = item.color || SLICE_COLORS[idx % SLICE_COLORS.length];
-            const imageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
-
-            return (
-              <g key={item.id}>
-                {/* Sector Background */}
-                <path
-                  d={pathData}
-                  fill={color}
-                  stroke="rgba(0,0,0,0.3)"
-                  strokeWidth="2"
-                  className="transition-colors"
-                />
-
-                {/* Avatar on Slice */}
-                {imageSrc ? (
-                  <g>
-                    <circle
-                      cx={avatarPos.x}
-                      cy={avatarPos.y}
-                      r={avatarR + 1}
-                      fill="#ffffff"
-                      stroke="rgba(0,0,0,0.5)"
-                      strokeWidth="1"
-                    />
-                    <image
-                      href={imageSrc}
-                      x={avatarPos.x - avatarR}
-                      y={avatarPos.y - avatarR}
-                      width={avatarR * 2}
-                      height={avatarR * 2}
-                      clipPath={`url(#avatar-clip-${idx})`}
-                      preserveAspectRatio="xMidYMid slice"
-                    />
-                  </g>
-                ) : (
-                  <g>
-                    <circle
-                      cx={avatarPos.x}
-                      cy={avatarPos.y}
-                      r={avatarR}
-                      fill="rgba(0,0,0,0.35)"
-                      stroke="#ffffff"
-                      strokeWidth="1"
-                    />
-                    <text
-                      x={avatarPos.x}
-                      y={avatarPos.y + 0.5}
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      fontSize={avatarR * 1.25}
-                      transform={`rotate(${textAngle}, ${avatarPos.x}, ${avatarPos.y})`}
-                    >
-                      {getSafeDisplayAvatar(item.avatar, '🎲')}
-                    </text>
-                  </g>
-                )}
-
-                {/* Player / Game Name */}
-                <text
-                  x={textPos.x}
-                  y={textPos.y}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="#ffffff"
-                  fontSize={count > 12 ? '8.5' : count > 8 ? '10' : '11.5'}
-                  fontWeight="bold"
-                  transform={`rotate(${textAngle}, ${textPos.x}, ${textPos.y})`}
-                  style={{ textShadow: '0 2px 4px rgba(0,0,0,0.85)' }}
-                >
-                  {item.name.length > 9 ? item.name.slice(0, 8) + '…' : item.name}
-                </text>
-              </g>
-            );
-          })}
-        </motion.svg>
+          </svg>
+        </motion.div>
 
         {/* Center Spin Hub Button */}
         <button
           type="button"
           onClick={handleSpin}
           disabled={isSpinning || items.length === 0}
-          className="absolute z-10 w-16 h-16 rounded-full bg-[var(--bg-elevated)] border-4 border-amber-400 text-white font-extrabold text-xs shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer disabled:opacity-50"
+          className="absolute z-20 w-16 h-16 rounded-full bg-[var(--bg-elevated)] border-4 border-amber-400 text-white font-extrabold text-xs shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer disabled:opacity-50 select-none"
         >
           {isSpinning ? '...' : 'QUAY'}
         </button>
       </div>
 
-      {/* Result Display & Spin Button */}
-      <div className="flex flex-col items-center gap-3">
+      {/* Spin Button */}
+      <div className="flex flex-col items-center gap-2">
         <Button
           size="lg"
           variant="primary"
@@ -267,11 +282,9 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
         </Button>
 
         <p className="text-xs text-[var(--text-secondary)]">
-          {items.length} lựa chọn trên vòng quay
+          {items.length} người chơi trên vòng quay
         </p>
       </div>
     </div>
   );
 };
-
-export default LuckyWheel;
