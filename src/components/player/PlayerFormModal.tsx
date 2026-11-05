@@ -181,7 +181,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Chỉnh Sửa Hồ Sơ Người Chơi' : 'Thêm Người Chơi Mới'}
+      title={isEditing ? 'Edit Player Profile' : 'Add New Player'}
       maxWidthClass="max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6 max-h-[75vh] overflow-y-auto pr-1">
@@ -218,8 +218,8 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
           {/* Name & Nickname Inputs */}
           <div className="flex-1 w-full space-y-3">
             <Input
-              label="Tên Người Chơi *"
-              placeholder="VD: Huy Nguyễn, Hải Đăng..."
+              label="Player Name *"
+              placeholder="e.g. Huy Nguyen, Alex..."
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -228,8 +228,8 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
             />
 
             <Input
-              label="Biệt Danh / Danh Hiệu Bàn Chơi"
-              placeholder="VD: Vua Đỏ Đen, Chúa Tể Euro, Kẻ Lật Mặt..."
+              label="Nickname / Tabletop Title"
+              placeholder="e.g. The Dice King, Euro Mastermind, Chaos Agent..."
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               className="text-xs"
@@ -242,7 +242,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
               <Smile className="w-4 h-4 text-amber-400" />
-              <span>Ảnh Đại Diện (Avatar)</span>
+              <span>Avatar</span>
             </label>
 
             {/* Avatar Tab Selector */}
@@ -269,7 +269,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                     : 'text-[var(--text-secondary)] hover:text-white'
                 )}
               >
-                Tải ảnh lên
+                Upload Image
               </button>
               <button
                 type="button"
@@ -281,7 +281,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                     : 'text-[var(--text-secondary)] hover:text-white'
                 )}
               >
-                Link ảnh Online
+                Online Image URL
               </button>
             </div>
           </div>
@@ -329,10 +329,10 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                   <Upload className="w-5 h-5" />
                 </div>
                 <p className="text-xs font-bold text-white">
-                  {isUploading ? 'Đang xử lý ảnh...' : 'Bấm để chọn ảnh từ máy tính hoặc điện thoại'}
+                  {isUploading ? 'Processing image...' : 'Click or tap to upload photo'}
                 </p>
                 <p className="text-[11px] text-[var(--text-secondary)]">
-                  Hỗ trợ PNG, JPG, WebP. Tự động tối ưu hóa kích thước cho thiết bị.
+                  Supports PNG, JPG, WebP. Automatically optimized.
                 </p>
               </div>
             </div>
@@ -342,7 +342,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
           {avatarTab === 'url' && (
             <div className="flex gap-2 pt-1">
               <Input
-                placeholder="Dán link ảnh (https://...)"
+                placeholder="Paste image URL (https://...)"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 leftIcon={<LinkIcon className="w-4 h-4 text-[var(--text-secondary)]" />}
@@ -355,7 +355,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                 onClick={handleApplyUrl}
                 disabled={!urlInput.trim()}
               >
-                Áp Dụng
+                Apply
               </Button>
             </div>
           )}
@@ -365,14 +365,14 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
         <div className="space-y-2">
           <label className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
             <Palette className="w-4 h-4 text-purple-400" />
-            <span>Màu Đại Diện Trên Bàn Đấu</span>
+            <span>Signature Color</span>
           </label>
           <div className="flex flex-wrap gap-2.5">
             {PLAYER_COLORS.map((hex) => (
               <button
                 key={hex}
                 type="button"
-                aria-label={`Màu ${hex}`}
+                aria-label={`Color ${hex}`}
                 onClick={() => setColor(hex)}
                 style={{ backgroundColor: hex }}
                 className={cn(
@@ -394,7 +394,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
         <div className="space-y-2">
           <label className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>Phong Cách Chơi Yêu Thích</span>
+            <span>Gamer Persona &amp; Playstyle</span>
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
             {PLAY_STYLES.map((style) => {
@@ -432,14 +432,14 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-amber-400 flex items-center gap-1">
               <Heart className="w-3.5 h-3.5 fill-current" />
-              <span>Game Yêu Thích</span>
+              <span>Favorite Game</span>
             </label>
             <select
               value={favoriteGameId}
               onChange={(e) => setFavoriteGameId(e.target.value)}
               className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer"
             >
-              <option value="">⭐ Tự động (Chơi nhiều nhất)</option>
+              <option value="">⭐ Auto (Most Played)</option>
               {games.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -447,7 +447,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
               ))}
             </select>
             <p className="text-[10px] text-[var(--text-muted)]">
-              Ghim game bạn thích nhất hoặc để tự tính
+              Pin your personal favorite or auto-detect
             </p>
           </div>
 
@@ -455,14 +455,14 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-emerald-400 flex items-center gap-1">
               <Trophy className="w-3.5 h-3.5" />
-              <span>Game Sở Trường</span>
+              <span>Signature Game</span>
             </label>
             <select
               value={specialtyGameId}
               onChange={(e) => setSpecialtyGameId(e.target.value)}
               className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-white focus:outline-none focus:border-emerald-400 cursor-pointer"
             >
-              <option value="">🏆 Tự động (Win Rate cao nhất ≥ 5 ván)</option>
+              <option value="">🏆 Auto (Highest Win Rate ≥ 5 plays)</option>
               {games.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -470,7 +470,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
               ))}
             </select>
             <p className="text-[10px] text-[var(--text-muted)]">
-              Tự tính game từ 5 ván trở lên (loại trừ playtest) hoặc tự ghim
+              Auto-calculated from 5+ plays or pinned manually
             </p>
           </div>
 
@@ -478,14 +478,14 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-rose-400 flex items-center gap-1">
               <Skull className="w-3.5 h-3.5" />
-              <span>Game Sở Đoản</span>
+              <span>Nemesis Game</span>
             </label>
             <select
               value={weaknessGameId}
               onChange={(e) => setWeaknessGameId(e.target.value)}
               className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-white focus:outline-none focus:border-rose-400 cursor-pointer"
             >
-              <option value="">💀 Tự động (Thua nhiều nhất ≥ 5 ván)</option>
+              <option value="">💀 Auto (Lowest Win Rate ≥ 5 plays)</option>
               {games.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -493,7 +493,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
               ))}
             </select>
             <p className="text-[10px] text-[var(--text-muted)]">
-              Tự tính game kỵ rơ từ 5 ván trở lên hoặc tự ghim
+              Auto-calculated from 5+ plays or pinned manually
             </p>
           </div>
         </div>
@@ -502,10 +502,10 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
             <Quote className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-            <span>Châm Ngôn / Ghi Chú Cá Nhân</span>
+            <span>Bio / Tabletop Quote</span>
           </label>
           <textarea
-            placeholder="VD: Thắng không kiêu, bại do xúc xắc! Hay: Chơi là phải cà khịa tới cùng..."
+            placeholder="e.g. Win with grace, blame the dice on defeat! Or: Here for the spicy trades..."
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={2}
@@ -516,10 +516,10 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
         {/* ACTIONS */}
         <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border-subtle)]">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Hủy Bỏ
+            Cancel
           </Button>
           <Button type="submit" variant="primary" disabled={!name.trim()}>
-            {isEditing ? 'Lưu Thay Đổi' : 'Tạo Người Chơi'}
+            {isEditing ? 'Save Changes' : 'Create Player'}
           </Button>
         </div>
       </form>

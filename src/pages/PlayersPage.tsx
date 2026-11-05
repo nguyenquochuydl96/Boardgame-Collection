@@ -128,10 +128,10 @@ export const PlayersPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)]">
-              Thành Viên & Địa Điểm
+              Players &amp; Venues
             </h1>
             <p className="text-sm text-[var(--text-secondary)]">
-              Quản lý hội đồng người chơi, phong cách đối đầu và các tụ điểm bàn chơi quen thuộc
+              Manage your tabletop crew, head-to-head records, and favorite game night venues
             </p>
           </div>
 
@@ -156,7 +156,7 @@ export const PlayersPage: React.FC = () => {
               )}
               <span className="relative z-10 flex items-center gap-1.5">
                 <Users className="w-4 h-4" />
-                <span>Người Chơi</span>
+                <span>Players</span>
                 <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold">
                   {players.length}
                 </span>
@@ -182,7 +182,7 @@ export const PlayersPage: React.FC = () => {
               )}
               <span className="relative z-10 flex items-center gap-1.5">
                 <MapPin className="w-4 h-4" />
-                <span>Địa Điểm</span>
+                <span>Venues</span>
                 <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold">
                   {locations.length}
                 </span>
@@ -199,7 +199,7 @@ export const PlayersPage: React.FC = () => {
             {/* Top Action Bar for Players */}
             <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)]">
               <div className="text-xs text-[var(--text-secondary)]">
-                Có tổng cộng <strong className="text-[var(--text-primary)]">{players.length}</strong> thành viên trong nhóm chơi.
+                Total of <strong className="text-[var(--text-primary)]">{players.length}</strong> players in your tabletop crew.
               </div>
 
               <div className="flex flex-wrap items-center gap-2.5">
@@ -217,8 +217,8 @@ export const PlayersPage: React.FC = () => {
                 >
                   <Swords className="w-3.5 h-3.5 text-[#22d3ee] mr-1" />
                   {compareMode
-                    ? `So Sánh (${selectedCompareIds.length})`
-                    : 'So Sánh Đối Đầu'}
+                    ? `Compare (${selectedCompareIds.length})`
+                    : 'Head-to-Head Compare'}
                 </Button>
 
                 <Button
@@ -227,7 +227,7 @@ export const PlayersPage: React.FC = () => {
                   onClick={() => setIsAddPlayerModalOpen(true)}
                 >
                   <UserPlus className="w-3.5 h-3.5 mr-1" />
-                  Thêm Người Chơi
+                  Add Player
                 </Button>
               </div>
             </div>
@@ -236,7 +236,7 @@ export const PlayersPage: React.FC = () => {
             {compareMode && (
               <div className="p-4 rounded-2xl bg-[var(--accent-primary)]/15 border border-[#a78bfa]/40 flex flex-wrap items-center justify-between gap-3 animate-in fade-in">
                 <p className="text-xs sm:text-sm text-[var(--text-primary)]">
-                  Tích chọn 2 hoặc nhiều người chơi dưới đây để soi lịch sử đối đầu (Head-to-Head).
+                  Select 2 or more players below to inspect head-to-head records.
                 </p>
                 <div className="flex items-center gap-2">
                   <Button
@@ -247,7 +247,7 @@ export const PlayersPage: React.FC = () => {
                       setSelectedCompareIds([]);
                     }}
                   >
-                    Hủy
+                    Cancel
                   </Button>
                   <Button
                     variant="primary"
@@ -255,7 +255,7 @@ export const PlayersPage: React.FC = () => {
                     disabled={selectedCompareIds.length < 2}
                     onClick={() => setIsCompareModalOpen(true)}
                   >
-                    Mở Bảng So Sánh ({selectedCompareIds.length})
+                    Open Comparison ({selectedCompareIds.length})
                   </Button>
                 </div>
               </div>
@@ -298,12 +298,12 @@ export const PlayersPage: React.FC = () => {
                           {compareMode ? (
                             <button
                               type="button"
-                              aria-label={`Chọn ${player.name} để so sánh`}
+                              aria-label={`Select ${player.name} for comparison`}
                               onClick={() => toggleComparePlayer(player.id)}
                               className={cn(
                                 'w-7 h-7 rounded-lg border flex items-center justify-center cursor-pointer transition-colors',
                                 isSelectedForCompare
-                                  ? 'bg-[#22d3ee] border-[#22d3ee] text-slate-950'
+                                    ? 'bg-[#22d3ee] border-[#22d3ee] text-slate-950'
                                   : 'bg-[var(--bg-surface)] border-white/20 text-transparent'
                               )}
                             >
@@ -312,14 +312,14 @@ export const PlayersPage: React.FC = () => {
                           ) : (
                             <button
                               type="button"
-                              aria-label={`Chỉnh sửa ${player.name}`}
+                              aria-label={`Edit ${player.name}`}
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
                                 setEditingPlayer(player);
                               }}
                               className="w-7 h-7 rounded-lg bg-[var(--bg-surface)] hover:bg-amber-500/20 text-[var(--text-secondary)] hover:text-amber-300 border border-[var(--border-subtle)] flex items-center justify-center transition-colors cursor-pointer"
-                              title="Chỉnh sửa hồ sơ"
+                              title="Edit Profile"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
@@ -360,7 +360,7 @@ export const PlayersPage: React.FC = () => {
                                 style={{ color: player.color }}
                                 className="text-[11px] font-semibold mt-0.5 block"
                               >
-                                Thành viên bàn chơi
+                                Tabletop Player
                               </span>
                             )}
                           </div>
@@ -379,7 +379,7 @@ export const PlayersPage: React.FC = () => {
                           <div className="p-2.5 rounded-xl bg-[var(--bg-surface)] text-center">
                             <span className="text-[11px] text-[var(--text-secondary)] inline-flex items-center gap-1">
                               <Gamepad2 className="w-3 h-3 text-[var(--accent-neon)]" />
-                              Đã Chơi
+                              Plays
                             </span>
                             <p className="font-display font-extrabold text-lg text-[var(--text-primary)] mt-0.5">
                               {totalGames}
@@ -389,7 +389,7 @@ export const PlayersPage: React.FC = () => {
                           <div className="p-2.5 rounded-xl bg-[var(--bg-surface)] text-center">
                             <span className="text-[11px] text-[var(--text-secondary)] inline-flex items-center gap-1">
                               <Trophy className="w-3 h-3 text-amber-400" />
-                              Tỉ Lệ Thắng
+                              Win Rate
                             </span>
                             <p className="font-display font-extrabold text-lg text-emerald-400 mt-0.5">
                               {winRate}%
@@ -401,7 +401,7 @@ export const PlayersPage: React.FC = () => {
                           to={`/players/${player.id}`}
                           className="text-xs font-semibold text-[var(--accent-neon)] group-hover:text-amber-300 transition-colors flex items-center justify-between"
                         >
-                          <span>Xem Hồ Sơ Chi Tiết</span>
+                          <span>View Full Profile</span>
                           <span>→</span>
                         </Link>
                       </Card>
@@ -415,14 +415,14 @@ export const PlayersPage: React.FC = () => {
                   👥
                 </div>
                 <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
-                  Chưa Có Người Chơi Nào
+                  No Players Found
                 </h2>
                 <p className="text-sm text-[var(--text-secondary)]">
-                  Hãy thêm bạn bè và người thân vào nhóm để bắt đầu ghi nhận điểm số và tỉ lệ thắng.
+                  Add your gaming friends and family to begin tracking scores, rivals, and win rates.
                 </p>
                 <Button variant="primary" onClick={() => setIsAddPlayerModalOpen(true)}>
                   <UserPlus className="w-4 h-4 mr-1.5" />
-                  Thêm Người Chơi Đầu Tiên
+                  Add First Player
                 </Button>
               </Card>
             )}
@@ -442,10 +442,10 @@ export const PlayersPage: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <span className="text-xs text-[var(--text-secondary)] font-medium block">
-                    Tổng Địa Điểm Lưu Trữ
+                    Total Saved Venues
                   </span>
                   <p className="text-xl font-display font-extrabold text-[var(--text-primary)] tabular-nums">
-                    {locationStats.totalVenues} điểm hẹn
+                    {locationStats.totalVenues} venues
                   </p>
                 </div>
               </div>
@@ -456,12 +456,12 @@ export const PlayersPage: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <span className="text-xs text-[var(--text-secondary)] font-medium block">
-                    Tụ Điểm Chiến Nhiều Nhất
+                    Most Played Venue
                   </span>
                   <p className="text-sm font-display font-bold text-[var(--text-primary)] truncate">
                     {locationStats.topVenueName
-                      ? `${locationStats.topVenueName} (${locationStats.topVenueCount} ván)`
-                      : 'Chưa có dữ liệu'}
+                      ? `${locationStats.topVenueName} (${locationStats.topVenueCount} plays)`
+                      : 'No data yet'}
                   </p>
                 </div>
               </div>
@@ -472,10 +472,10 @@ export const PlayersPage: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <span className="text-xs text-[var(--text-secondary)] font-medium block">
-                    Địa Điểm Mặc Định
+                    Default Venue
                   </span>
                   <p className="text-sm font-display font-bold text-[var(--text-primary)] truncate">
-                    {locationStats.defaultVenueName || 'Chưa thiết lập'}
+                    {locationStats.defaultVenueName || 'Not set'}
                   </p>
                 </div>
               </div>
@@ -489,7 +489,7 @@ export const PlayersPage: React.FC = () => {
                   type="text"
                   value={locationSearch}
                   onChange={(e) => setLocationSearch(e.target.value)}
-                  placeholder="Tìm theo tên địa điểm, địa chỉ, quận, ghi chú..."
+                  placeholder="Search venue by name, address, district, notes..."
                   className="w-full pl-9 pr-4 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] transition-all"
                 />
                 {locationSearch && (
@@ -510,11 +510,11 @@ export const PlayersPage: React.FC = () => {
                   onClick={() => {
                     syncHistoricalLocations(sessions, true);
                   }}
-                  title="Đồng bộ tất cả địa điểm đã từng chơi trong lịch sử ván đấu"
+                  title="Sync all historical venues from play sessions"
                   className="text-xs"
                 >
                   <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-[var(--accent-neon)]" />
-                  Đồng Bộ Lịch Sử
+                  Sync History
                 </Button>
                 <Button
                   variant="primary"
@@ -524,7 +524,7 @@ export const PlayersPage: React.FC = () => {
                   }}
                 >
                   <Plus className="w-4 h-4 mr-1.5" />
-                  Thêm Địa Điểm Mới
+                  Add New Venue
                 </Button>
               </div>
             </div>
@@ -552,12 +552,12 @@ export const PlayersPage: React.FC = () => {
                   📍
                 </div>
                 <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
-                  {locationSearch ? 'Không Tìm Thấy Địa Điểm' : 'Chưa Có Địa Điểm Nào'}
+                  {locationSearch ? 'No Venues Found' : 'No Venues Saved Yet'}
                 </h2>
                 <p className="text-sm text-[var(--text-secondary)]">
                   {locationSearch
-                    ? `Không tìm thấy địa điểm nào khớp với "${locationSearch}". Thử từ khóa khác hoặc thêm mới.`
-                    : 'Thêm địa điểm quen thuộc để dễ dàng chọn nhanh mỗi khi bắt đầu một ván board game.'}
+                    ? `No venues match "${locationSearch}". Try another keyword or add a new one.`
+                    : 'Save your favorite tabletop cafes, friends’ apartments, or clubs for quick 1-tap logging.'}
                 </p>
                 <Button
                   variant="primary"
@@ -567,7 +567,7 @@ export const PlayersPage: React.FC = () => {
                   }}
                 >
                   <Plus className="w-4 h-4 mr-1.5" />
-                  Thêm Địa Điểm Đầu Tiên
+                  Add First Venue
                 </Button>
               </Card>
             )}

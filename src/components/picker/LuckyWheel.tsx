@@ -128,7 +128,7 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
       <div className="text-center p-6 space-y-2">
         <span className="text-3xl">⚠️</span>
         <p className="font-bold text-sm text-[var(--text-primary)]">
-          Chưa có lựa chọn nào trên vòng quay
+          No items on the wheel yet
         </p>
       </div>
     );
@@ -264,7 +264,7 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
           disabled={isSpinning || items.length === 0}
           className="absolute z-20 w-16 h-16 rounded-full bg-[var(--bg-elevated)] border-4 border-amber-400 text-white font-extrabold text-xs shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer disabled:opacity-50 select-none"
         >
-          {isSpinning ? '...' : 'QUAY'}
+          {isSpinning ? '...' : 'SPIN'}
         </button>
       </div>
 
@@ -278,11 +278,11 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
           className="min-w-[200px] shadow-xl shadow-[var(--accent-glow)] text-sm font-extrabold tracking-wide"
         >
           <RotateCcw className={`w-4 h-4 mr-2 ${isSpinning ? 'animate-spin' : ''}`} />
-          {isSpinning ? 'Đang quay may mắn...' : winnerItem ? 'Quay Lại Lần Nữa' : 'Quay Vòng May Mắn'}
+          {isSpinning ? 'Spinning the wheel...' : winnerItem ? 'Spin Again' : 'Spin the Wheel'}
         </Button>
 
         <p className="text-xs text-[var(--text-secondary)]">
-          {items.length} người chơi trên vòng quay
+          {items.length} choices on the wheel
         </p>
       </div>
     </div>

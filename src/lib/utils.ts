@@ -57,14 +57,14 @@ export const STATUS_CONFIG: Record<
   { label: string; color: string; bg: string; border: string; dot: string }
 > = {
   own: {
-    label: 'Own',
+    label: 'Owned',
     color: '#10b981',
     bg: 'rgba(16, 185, 129, 0.14)',
     border: 'rgba(16, 185, 129, 0.35)',
     dot: '#10b981',
   },
   rented: {
-    label: 'Thuê',
+    label: 'Rented',
     color: '#eab308',
     bg: 'rgba(234, 179, 8, 0.14)',
     border: 'rgba(234, 179, 8, 0.35)',

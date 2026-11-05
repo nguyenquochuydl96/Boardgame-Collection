@@ -125,10 +125,10 @@ export const StatsPage: React.FC = () => {
   }, [sessions, selectedYears]);
 
   const timeFilterLabel = useMemo(() => {
-    if (selectedYears.length === 0) return 'Toàn bộ thời gian';
-    if (selectedYears.length === 1) return `Năm ${selectedYears[0]}`;
+    if (selectedYears.length === 0) return 'All Time';
+    if (selectedYears.length === 1) return `Year ${selectedYears[0]}`;
     const sorted = [...selectedYears].sort();
-    return `Giai đoạn ${sorted.join(' - ')}`;
+    return `Period ${sorted.join(' - ')}`;
   }, [selectedYears]);
 
   const [showPlayedGamesModal, setShowPlayedGamesModal] = useState(false);
@@ -330,7 +330,7 @@ export const StatsPage: React.FC = () => {
     const map = new Map<string, { count: number; playerWins: Map<string, number> }>();
 
     sessions.forEach((s) => {
-      const loc = s.location || 'Chưa ghi nhận địa điểm';
+      const loc = s.location || 'Unknown location';
       const entry = map.get(loc) || { count: 0, playerWins: new Map<string, number>() };
       entry.count += 1;
       s.players?.forEach((p) => {
@@ -352,7 +352,7 @@ export const StatsPage: React.FC = () => {
           }
         });
         const topPlayer = players.find((p) => p.id === topWinnerId);
-        const topWinnerName = topPlayer?.name || (topWinnerId ? 'Người chơi' : undefined);
+        const topWinnerName = topPlayer?.name || (topWinnerId ? 'Player' : undefined);
 
         return {
           location,
@@ -431,15 +431,15 @@ export const StatsPage: React.FC = () => {
           <div>
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] flex items-center gap-2.5">
               <span>📈</span>
-              Thống Kê Chuyên Sâu &amp; Insights
+              Advanced Statistics &amp; Insights
             </h1>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-              Phân tích toàn diện chỉ số H-Index, kỷ lục ván đấu, quán quen và đối đầu giữa các người chơi
+              Comprehensive breakdown of H-Index, game records, favorite venues, and player rivalries
             </p>
           </div>
 
           <div className="text-xs font-mono px-3 py-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--accent-neon)] w-fit">
-            Tổng cộng: <strong>{sessions.length}</strong> ván đấu · <strong>{totalHoursPlayed}h</strong> chơi
+            Total: <strong>{sessions.length}</strong> sessions · <strong>{totalHoursPlayed}h</strong> played
           </div>
         </div>
 
@@ -449,11 +449,11 @@ export const StatsPage: React.FC = () => {
           className="flex p-1.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] max-w-full overflow-x-auto gap-1"
         >
           {[
-            { id: 'overview', label: 'Tổng Quan & H-Index', icon: BarChart3, iconColor: '' },
-            { id: 'years', label: 'Theo Năm & Xu Hướng', icon: Calendar, iconColor: 'text-amber-400' },
-            { id: 'locations', label: 'Địa Điểm & Quán Quen', icon: MapPin, iconColor: 'text-rose-400' },
-            { id: 'by_player', label: 'Bảng Xếp Hạng & Đối Đầu', icon: Users, iconColor: 'text-cyan-400' },
-            { id: 'by_game', label: 'Chi Tiết Từng Game', icon: Dices, iconColor: 'text-emerald-400' },
+            { id: 'overview', label: 'Overview & H-Index', icon: BarChart3, iconColor: '' },
+            { id: 'years', label: 'Years & Trends', icon: Calendar, iconColor: 'text-amber-400' },
+            { id: 'locations', label: 'Venues & Locations', icon: MapPin, iconColor: 'text-rose-400' },
+            { id: 'by_player', label: 'Leaderboard & Rivalries', icon: Users, iconColor: 'text-cyan-400' },
+            { id: 'by_game', label: 'Game Breakdown', icon: Dices, iconColor: 'text-emerald-400' },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -494,7 +494,7 @@ export const StatsPage: React.FC = () => {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5 mr-1">
                     <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                    Lọc Thời Gian:
+                    Time Filter:
                   </span>
 
                   {/* Preset: All time */}
@@ -511,7 +511,7 @@ export const StatsPage: React.FC = () => {
                         : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
                     )}
                   >
-                    Tất Cả ({sessions.length})
+                    All Time ({sessions.length})
                   </button>
 
                   {/* Preset: Individual available years (e.g. 2026, 2025) */}
@@ -533,7 +533,7 @@ export const StatsPage: React.FC = () => {
                             : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
                         )}
                       >
-                        Năm {yr} ({count})
+                        Year {yr} ({count})
                       </button>
                     );
                   })}
@@ -555,7 +555,7 @@ export const StatsPage: React.FC = () => {
                           : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
                       )}
                     >
-                      {availableYears[1]} - {availableYears[0]} (2 Năm Gần Nhất)
+                      {availableYears[1]} - {availableYears[0]} (Last 2 Years)
                     </button>
                   )}
 
@@ -572,19 +572,19 @@ export const StatsPage: React.FC = () => {
                       )}
                     >
                       <Filter className="w-3.5 h-3.5" />
-                      <span>Tùy Chọn Năm...</span>
+                      <span>Custom Years...</span>
                     </button>
                   )}
                 </div>
 
                 {/* Current Filter Status */}
                 <div className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5">
-                  <span>Đang xem:</span>
+                  <span>Viewing:</span>
                   <span className="font-bold text-white px-2 py-0.5 rounded-md bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
                     {timeFilterLabel}
                   </span>
                   <span className="font-mono text-amber-400 font-bold">
-                    ({overviewSessions.length} ván)
+                    ({overviewSessions.length} sessions)
                   </span>
                 </div>
               </div>
@@ -593,7 +593,7 @@ export const StatsPage: React.FC = () => {
               {isCustomMultiYearOpen && (
                 <div className="pt-3 border-t border-[var(--border-subtle)] flex flex-wrap items-center gap-2 animate-in fade-in duration-150">
                   <span className="text-xs text-[var(--text-muted)] font-medium mr-1">
-                    Tích chọn các năm muốn gộp dữ liệu:
+                    Select years to combine data:
                   </span>
                   {availableYears.map((yr) => {
                     const isChecked = selectedYears.includes(yr);
@@ -626,7 +626,7 @@ export const StatsPage: React.FC = () => {
                         >
                           {isChecked && '✓'}
                         </div>
-                        <span>{yr} ({yrCount} ván)</span>
+                        <span>{yr} ({yrCount} sessions)</span>
                       </button>
                     );
                   })}
@@ -636,14 +636,14 @@ export const StatsPage: React.FC = () => {
                     onClick={() => setSelectedYears([...availableYears])}
                     className="text-[11px] font-bold text-amber-400 hover:underline ml-2 cursor-pointer"
                   >
-                    Chọn tất cả
+                    Select All
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedYears([])}
                     className="text-[11px] font-bold text-rose-400 hover:underline ml-1 cursor-pointer"
                   >
-                    Xóa chọn
+                    Clear Selection
                   </button>
                 </div>
               )}
@@ -658,23 +658,23 @@ export const StatsPage: React.FC = () => {
                     BoardGame Geek Standard Metric · {timeFilterLabel}
                   </div>
                   <h2 className="font-display font-black text-3xl sm:text-4xl text-white">
-                    Chỉ Số H-Index:{' '}
+                    H-Index Rating:{' '}
                     <span className="text-amber-400 underline decoration-amber-400/50">
                       H-{hIndex}
                     </span>
                   </h2>
                   <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
-                    Trong {timeFilterLabel.toLowerCase()}, bạn đã chơi tối thiểu <strong>{hIndex} tựa game khác nhau</strong>, mỗi game ít nhất{' '}
-                    <strong>{hIndex} lần</strong>!
+                    In {timeFilterLabel.toLowerCase()}, you have played at least <strong>{hIndex} different games</strong>, each at least{' '}
+                    <strong>{hIndex} times</strong>!
                   </p>
 
                   {/* Progress towards next H-Index */}
                   {nextHIndexGame && (
                     <div className="pt-2">
                       <div className="flex justify-between text-xs font-bold text-white mb-1.5">
-                        <span>Tiến trình mở khóa H-{hIndex + 1}:</span>
+                        <span>Progress towards H-{hIndex + 1}:</span>
                         <span className="text-amber-300 font-mono">
-                          {nextHIndexGame.name} ({nextHIndexGame.plays}/{hIndex + 1} ván)
+                          {nextHIndexGame.name} ({nextHIndexGame.plays}/{hIndex + 1} plays)
                         </span>
                       </div>
                       <div className="w-full h-3 rounded-full bg-black/40 overflow-hidden border border-white/10">
@@ -686,7 +686,7 @@ export const StatsPage: React.FC = () => {
                         />
                       </div>
                       <p className="text-[11px] text-[var(--text-secondary)] mt-1">
-                        Chỉ cần thêm <strong>{(hIndex + 1) - nextHIndexGame.plays} ván nữa</strong> cho {nextHIndexGame.name} là bạn sẽ thăng cấp lên <strong>H-{hIndex + 1}</strong>!
+                        Only <strong>{(hIndex + 1) - nextHIndexGame.plays} more {(hIndex + 1) - nextHIndexGame.plays === 1 ? 'play' : 'plays'}</strong> for {nextHIndexGame.name} to advance to <strong>H-{hIndex + 1}</strong>!
                       </p>
                     </div>
                   )}
@@ -695,7 +695,7 @@ export const StatsPage: React.FC = () => {
                 {/* H-Index Club Games Preview */}
                 <div className="bg-[var(--bg-elevated)]/80 border border-[var(--border-subtle)] rounded-2xl p-4 lg:w-80 space-y-2.5">
                   <span className="text-xs font-bold text-[var(--accent-neon)] uppercase tracking-wider block">
-                    Danh Sách Game Trong CLB H-{hIndex} ({hIndexClub.length})
+                    Games in H-{hIndex} Club ({hIndexClub.length})
                   </span>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                     {hIndexClub.length > 0 ? (
@@ -708,13 +708,13 @@ export const StatsPage: React.FC = () => {
                             #{i + 1}. {g.name}
                           </span>
                           <span className="font-mono font-black text-amber-400 shrink-0">
-                            {g.plays} ván
+                            {g.plays} plays
                           </span>
                         </div>
                       ))
                     ) : (
                       <p className="text-xs text-[var(--text-muted)] italic py-2 text-center">
-                        Chưa có game nào đạt H-{hIndex} trong khoảng thời gian này
+                        No games have reached H-{hIndex} in this period
                       </p>
                     )}
                   </div>
@@ -729,10 +729,10 @@ export const StatsPage: React.FC = () => {
                   📅
                 </div>
                 <h3 className="font-display font-bold text-lg text-white">
-                  Không Có Ván Chơi Nào
+                  No Sessions Found
                 </h3>
                 <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
-                  Không tìm thấy ván chơi nào được ghi nhận trong {timeFilterLabel.toLowerCase()}.
+                  No play sessions recorded in {timeFilterLabel.toLowerCase()}.
                 </p>
                 <Button
                   variant="primary"
@@ -743,7 +743,7 @@ export const StatsPage: React.FC = () => {
                   }}
                 >
                   <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                  Xem Toàn Bộ Lịch Sử ({sessions.length} ván)
+                  View All Time ({sessions.length} sessions)
                 </Button>
               </Card>
             ) : (
@@ -764,7 +764,7 @@ export const StatsPage: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-[var(--accent-neon)] inline-flex items-center gap-1">
                           <Trophy className="w-3.5 h-3.5" />
-                          Game Cày Nhiều Nhất
+                          Most Played Game
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
                       </div>
@@ -772,10 +772,10 @@ export const StatsPage: React.FC = () => {
                         {mostPlayedGame.name}
                       </h3>
                       <p className="text-xs text-amber-300 font-mono font-bold mt-0.5">
-                        {mostPlayedGame.plays} ván đã chơi
+                        {mostPlayedGame.plays} plays logged
                       </p>
                       <p className="text-[10px] text-[var(--text-muted)] truncate">
-                        {((mostPlayedGame.plays / Math.max(1, overviewSessions.length)) * 100).toFixed(0)}% ván trong {timeFilterLabel.toLowerCase()}
+                        {((mostPlayedGame.plays / Math.max(1, overviewSessions.length)) * 100).toFixed(0)}% of sessions in {timeFilterLabel.toLowerCase()}
                       </p>
                     </div>
                   </Link>
@@ -788,15 +788,15 @@ export const StatsPage: React.FC = () => {
                 >
                   <div className="w-16 h-20 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex flex-col items-center justify-center shrink-0">
                     <Dices className="w-7 h-7" />
-                    <span className="text-[9px] font-extrabold uppercase mt-1 tracking-wider">Kho Game</span>
+                    <span className="text-[9px] font-extrabold uppercase mt-1 tracking-wider">Vault</span>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-[#94a3b8] group-hover:text-amber-300 transition-colors">
-                        Tựa Game Đã Chơi
+                        Played Games in Vault
                       </span>
                       <span className="text-xs font-bold text-amber-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-                        Xem <ArrowRight className="w-3 h-3" />
+                        View <ArrowRight className="w-3 h-3" />
                       </span>
                     </div>
                     <p className="font-display font-black text-2xl text-white mt-0.5">
@@ -808,7 +808,7 @@ export const StatsPage: React.FC = () => {
                           Math.max(1, games.length)) *
                         100
                       ).toFixed(0)}
-                      % kho đã chơi · {sortedGamesByPlays.filter((g) => g.plays === 0).length} chưa chơi
+                      % vault played · {sortedGamesByPlays.filter((g) => g.plays === 0).length} unplayed
                     </p>
                   </div>
                 </Card>
@@ -829,7 +829,7 @@ export const StatsPage: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-[#22d3ee] inline-flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" />
-                          Ván Chơi Dài Nhất
+                          Longest Play Session
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-[#22d3ee] group-hover:translate-x-0.5 transition-transform shrink-0" />
                       </div>
@@ -847,7 +847,7 @@ export const StatsPage: React.FC = () => {
                   </Link>
                 ) : (
                   <div className="p-4 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] flex items-center justify-center text-xs text-[var(--text-muted)] italic">
-                    Chưa có ván đấu nào có ghi nhận thời gian
+                    No play sessions with recorded duration
                   </div>
                 )}
 
@@ -867,7 +867,7 @@ export const StatsPage: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-emerald-400 inline-flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5" />
-                          Ván Chơi Nhanh Nhất
+                          Shortest Play Session
                         </span>
                         <ArrowRight className="w-3.5 h-3.5 text-emerald-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
                       </div>
@@ -885,7 +885,7 @@ export const StatsPage: React.FC = () => {
                   </Link>
                 ) : (
                   <div className="p-4 rounded-2xl bg-[var(--bg-card)]/50 border border-[var(--border-subtle)] flex items-center justify-center text-xs text-[var(--text-muted)] italic">
-                    Chưa có ván đấu nào có ghi nhận thời gian
+                    No play sessions with recorded duration
                   </div>
                 )}
               </div>
@@ -898,14 +898,14 @@ export const StatsPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="font-display font-bold text-xl text-white">
-                      Tần Suất Chơi Theo Tháng
+                      Play Frequency by Month
                     </h2>
                     <p className="text-xs text-[#94a3b8]">
-                      Lịch sử ghi nhận qua các tháng (cuộn ngang để xem toàn bộ)
+                      Session history by month (scroll horizontally to explore)
                     </p>
                   </div>
                   <span className="text-xs font-mono text-amber-400 font-bold bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg">
-                    Đỉnh: {maxMonthCount} ván/tháng
+                    Peak: {maxMonthCount} sessions/month
                   </span>
                 </div>
 
@@ -944,9 +944,9 @@ export const StatsPage: React.FC = () => {
                   <Flame className="w-5 h-5 text-orange-400" />
                   <div>
                     <h2 className="font-display font-bold text-lg text-white">
-                      Chuỗi Thắng Dài Nhất
+                      Longest Win Streak
                     </h2>
-                    <p className="text-xs text-[#94a3b8]">Số ván thắng liên tiếp</p>
+                    <p className="text-xs text-[#94a3b8]">Consecutive wins across all games</p>
                   </div>
                 </div>
 
@@ -960,7 +960,7 @@ export const StatsPage: React.FC = () => {
                         setSelectedStreakData(sDetails.longestWinStreak);
                       }}
                       className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-surface)] border border-white/[0.06] hover:border-amber-400/50 hover:shadow-md transition-all cursor-pointer group select-none"
-                      title="Nhấp để xem chi tiết chuỗi thắng và ván bắt đầu"
+                      title="Click to view winning streak history"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <PlayerAvatar player={player} size="sm" />
@@ -969,7 +969,7 @@ export const StatsPage: React.FC = () => {
                         </span>
                       </div>
                       <span className="font-mono font-bold text-xs text-orange-300 shrink-0 flex items-center gap-1 group-hover:underline">
-                        🔥 {streak} ván liên tiếp <ChevronRight className="w-3 h-3 opacity-60" />
+                        🔥 {streak} in a row <ChevronRight className="w-3 h-3 opacity-60" />
                       </span>
                     </div>
                   ))}
@@ -986,7 +986,7 @@ export const StatsPage: React.FC = () => {
           <div className="space-y-6">
             {/* Year Selector Tabs with sliding spring pill */}
             <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] w-fit flex-wrap">
-              <span className="text-xs font-bold text-[var(--text-secondary)] px-2">Chọn năm:</span>
+              <span className="text-xs font-bold text-[var(--text-secondary)] px-2">Filter Year:</span>
               <button
                 type="button"
                 onClick={() => setSelectedYear('all')}
@@ -1004,7 +1004,7 @@ export const StatsPage: React.FC = () => {
                     transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                   />
                 )}
-                <span className="relative z-10">Tất Cả Các Năm</span>
+                <span className="relative z-10">All Years</span>
               </button>
               {availableYears.map((yr) => (
                 <button
@@ -1025,7 +1025,7 @@ export const StatsPage: React.FC = () => {
                       transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                     />
                   )}
-                  <span className="relative z-10">Năm {yr}</span>
+                  <span className="relative z-10">{yr}</span>
                 </button>
               ))}
             </div>
@@ -1037,9 +1037,9 @@ export const StatsPage: React.FC = () => {
                   🎲
                 </div>
                 <div>
-                  <span className="text-xs text-[var(--text-secondary)]">Tổng Ván Chơi ({selectedYear === 'all' ? 'Toàn bộ' : selectedYear})</span>
+                  <span className="text-xs text-[var(--text-secondary)]">Total Sessions ({selectedYear === 'all' ? 'All-Time' : selectedYear})</span>
                   <p className="font-display font-black text-2xl text-white mt-0.5">
-                    {yearStats.totalSessions} ván
+                    {yearStats.totalSessions} plays
                   </p>
                 </div>
               </Card>
@@ -1049,9 +1049,9 @@ export const StatsPage: React.FC = () => {
                   ⏱️
                 </div>
                 <div>
-                  <span className="text-xs text-[var(--text-secondary)]">Thời Gian Bàn Chơi</span>
+                  <span className="text-xs text-[var(--text-secondary)]">Tabletop Playtime</span>
                   <p className="font-display font-black text-2xl text-white mt-0.5">
-                    ~{yearStats.hours} giờ
+                    ~{yearStats.hours} hrs
                   </p>
                 </div>
               </Card>
@@ -1061,13 +1061,13 @@ export const StatsPage: React.FC = () => {
                   👑
                 </div>
                 <div>
-                  <span className="text-xs text-[var(--text-secondary)]">Người Thắng Nhiều Nhất</span>
+                  <span className="text-xs text-[var(--text-secondary)]">Most Wins</span>
                   <p className="font-display font-black text-xl text-white mt-0.5 truncate">
                     {yearStats.topWinners[0]?.playerName || '—'}
                   </p>
                   {yearStats.topWinners[0] && (
                     <span className="text-[11px] text-amber-300 font-bold">
-                      {yearStats.topWinners[0].wins} ván thắng
+                      {yearStats.topWinners[0].wins} wins
                     </span>
                   )}
                 </div>
@@ -1078,7 +1078,7 @@ export const StatsPage: React.FC = () => {
             <Card className="p-6 space-y-4">
               <h2 className="font-display font-bold text-xl text-white flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-amber-400" />
-                <span>Top Board Game Được Cày Nhiều Nhất ({selectedYear === 'all' ? 'Toàn bộ' : selectedYear})</span>
+                <span>Top Played Board Games ({selectedYear === 'all' ? 'All-Time' : selectedYear})</span>
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1104,7 +1104,7 @@ export const StatsPage: React.FC = () => {
                     <div>
                       <h4 className="font-display font-bold text-xs text-white truncate">{g.name}</h4>
                       <p className="font-mono text-xs font-bold text-amber-400 mt-1">
-                        {g.count} ván chơi
+                        {g.count} plays
                       </p>
                     </div>
                   </div>
@@ -1123,10 +1123,10 @@ export const StatsPage: React.FC = () => {
               <div>
                 <h2 className="font-display font-bold text-xl text-white flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-rose-400" />
-                  <span>Bảng Xếp Hạng Quán Quen &amp; Địa Điểm Tụ Tập</span>
+                  <span>Favorite Venues &amp; Locations</span>
                 </h2>
                 <p className="text-xs text-[var(--text-secondary)] mt-1">
-                  Thống kê các địa điểm bạn và hội bạn bè đã chơi qua {sessions.length.toLocaleString('vi-VN')} ván đấu
+                  Tabletop gaming locations logged across {sessions.length.toLocaleString('en-US')} sessions
                 </p>
               </div>
 
@@ -1148,11 +1148,11 @@ export const StatsPage: React.FC = () => {
 
                       <div className="flex items-center gap-4 text-xs tabular-nums font-mono">
                         <span className="text-amber-400 font-bold">
-                          {loc.count} ván ({loc.percentage}%)
+                          {loc.count} plays ({loc.percentage}%)
                         </span>
                         {loc.topWinnerWins > 0 && loc.topWinnerName && (
                           <span className="text-emerald-400 font-bold flex items-center gap-1">
-                            <span>👑</span> {loc.topWinnerName}: {loc.topWinnerWins} ván ({loc.topWinnerRate}%)
+                            <span>👑</span> {loc.topWinnerName}: {loc.topWinnerWins} wins ({loc.topWinnerRate}%)
                           </span>
                         )}
                       </div>
@@ -1183,10 +1183,10 @@ export const StatsPage: React.FC = () => {
                 <div>
                   <h2 className="font-display font-bold text-xl text-white flex items-center gap-2">
                     <Trophy className="w-5 h-5 text-amber-400" />
-                    <span>Bảng Vinh Danh Bạn Bè (All-Time Leaderboard)</span>
+                    <span>All-Time Player Leaderboard</span>
                   </h2>
                   <p className="text-xs text-[#94a3b8]">
-                    Xếp hạng tổng số ván tham gia và tỷ lệ thắng của từng người chơi
+                    Rankings by total sessions logged and win rates across all tabletop games
                   </p>
                 </div>
               </div>
@@ -1195,11 +1195,11 @@ export const StatsPage: React.FC = () => {
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)] text-[#94a3b8]">
                     <tr>
-                      <th className="py-3 px-4 font-bold">Hạng</th>
-                      <th className="py-3 px-4 font-bold">Người Chơi</th>
-                      <th className="py-3 px-3 font-bold text-right">Số Ván Tham Gia</th>
-                      <th className="py-3 px-3 font-bold text-right">Số Ván Thắng</th>
-                      <th className="py-3 px-3 font-bold text-right">Tỷ Lệ Thắng (%)</th>
+                      <th className="py-3 px-4 font-bold">Rank</th>
+                      <th className="py-3 px-4 font-bold">Player</th>
+                      <th className="py-3 px-3 font-bold text-right">Plays</th>
+                      <th className="py-3 px-3 font-bold text-right">Wins</th>
+                      <th className="py-3 px-3 font-bold text-right">Win Rate (%)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border-subtle)] tabular-nums bg-[var(--bg-surface)]">
@@ -1212,15 +1212,15 @@ export const StatsPage: React.FC = () => {
                           <div className="flex items-center gap-2.5">
                             <PlayerAvatar player={item.player} size="sm" />
                             <span>{item.player.name}</span>
-                            {item.player.name === 'Hằng' && (
+                            {idx === 0 && item.winRate > 0 && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                👑 Cao nhất (45%)
+                                👑 Top Win Rate ({item.winRate}%)
                               </span>
                             )}
                           </div>
                         </td>
                         <td className="py-3 px-3 text-right font-mono font-bold text-white">
-                          {item.plays} ván
+                          {item.plays} plays
                         </td>
                         <td className="py-3 px-3 text-right font-mono font-bold text-amber-400">
                           {item.wins}
@@ -1241,11 +1241,11 @@ export const StatsPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Swords className="w-5 h-5 text-cyan-400" />
                   <h2 className="font-display font-bold text-xl text-white">
-                    So Sánh Đối Đầu Trực Diện (Head-to-Head)
+                    Head-to-Head Comparison
                   </h2>
                 </div>
                 <p className="text-xs text-[#94a3b8]">
-                  Chọn 2 hoặc nhiều người chơi để so sánh thành tích khi ngồi chung bàn
+                  Select 2 or more players to compare head-to-head records at the same table
                 </p>
                 <div className="flex flex-wrap gap-2 pt-2">
                   {players.map((p) => (
@@ -1262,7 +1262,7 @@ export const StatsPage: React.FC = () => {
               {activeComparisonPlayers.length < 2 ? (
                 <div className="p-8 rounded-2xl bg-[var(--bg-surface)] border border-white/10 text-center">
                   <p className="text-sm text-[#94a3b8]">
-                    Vui lòng chọn ít nhất 2 người chơi ở trên để xem đối đầu trực tiếp.
+                    Please select at least 2 players above to compare head-to-head records.
                   </p>
                 </div>
               ) : (
@@ -1271,11 +1271,11 @@ export const StatsPage: React.FC = () => {
                     <div className="flex items-center gap-2.5">
                       <Swords className="w-5 h-5 text-cyan-400" />
                       <span className="font-display font-bold text-sm text-white">
-                        Số Ván Chơi Cùng Nhau
+                        Shared Sessions Played
                       </span>
                     </div>
                     <span className="font-mono font-black text-2xl text-cyan-300 tabular-nums">
-                      {headToHead.sharedSessionsCount} ván
+                      {headToHead.sharedSessionsCount} plays
                     </span>
                   </div>
 
@@ -1284,11 +1284,11 @@ export const StatsPage: React.FC = () => {
                     <table className="w-full text-left text-sm">
                       <thead className="bg-[var(--bg-elevated)] text-xs text-[#94a3b8]">
                         <tr>
-                          <th className="py-3 px-4 font-semibold">Người Chơi</th>
-                          <th className="py-3 px-4 font-semibold text-right">Thắng Khi Chơi Chung</th>
-                          <th className="py-3 px-4 font-semibold text-right">Tỷ Lệ Thắng (%)</th>
-                          <th className="py-3 px-4 font-semibold text-right">Điểm Cao Nhất</th>
-                          <th className="py-3 px-4 font-semibold text-right">Điểm Thấp Nhất</th>
+                          <th className="py-3 px-4 font-semibold">Player</th>
+                          <th className="py-3 px-4 font-semibold text-right">Shared Wins</th>
+                          <th className="py-3 px-4 font-semibold text-right">Win Rate (%)</th>
+                          <th className="py-3 px-4 font-semibold text-right">High Score</th>
+                          <th className="py-3 px-4 font-semibold text-right">Low Score</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/[0.06] bg-[var(--bg-surface)] tabular-nums">
@@ -1322,17 +1322,17 @@ export const StatsPage: React.FC = () => {
                   {headToHead.perGameBreakdown.length > 0 && (
                     <div className="space-y-2.5 pt-2">
                       <h3 className="text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
-                        Chi Tiết Từng Game Chơi Cùng Nhau
+                        Per-Game Shared Record
                       </h3>
                       <div className="overflow-x-auto rounded-2xl border border-white/10 max-h-64 overflow-y-auto">
                         <table className="w-full text-left text-xs">
                           <thead className="bg-[var(--bg-elevated)] text-[#94a3b8] sticky top-0">
                             <tr>
-                              <th className="py-2.5 px-4 font-semibold">Tựa Game</th>
-                              <th className="py-2.5 px-3 font-semibold text-right">Số Ván Chung</th>
+                              <th className="py-2.5 px-4 font-semibold">Board Game</th>
+                              <th className="py-2.5 px-3 font-semibold text-right">Shared Plays</th>
                               {activeComparisonPlayers.map((p) => (
                                 <th key={p.id} className="py-2.5 px-3 font-semibold text-right">
-                                  {p.name} Thắng
+                                  {p.name} Wins
                                 </th>
                               ))}
                             </tr>
@@ -1390,13 +1390,13 @@ export const StatsPage: React.FC = () => {
                     {activeGame.name}
                   </h2>
                   <p className="text-xs text-[#94a3b8]">
-                    Chọn bất kỳ boardgame nào trong kho để xem kỷ lục điểm &amp; người chơi xuất sắc nhất
+                    Select any board game to inspect high score records, average playtime, and top winners
                   </p>
                 </div>
               </div>
 
               <select
-                aria-label="Chọn boardgame để xem thống kê"
+                aria-label="Select board game to view analytics"
                 value={selectedGameId}
                 onChange={(e) => setSelectedGameId(e.target.value)}
                 className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--bg-surface)] border border-white/15 text-sm font-semibold text-white focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer"
@@ -1411,39 +1411,39 @@ export const StatsPage: React.FC = () => {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 tabular-nums">
               <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
-                <span className="text-xs text-[#94a3b8]">Tổng Ván Đã Chơi</span>
+                <span className="text-xs text-[#94a3b8]">Total Plays Logged</span>
                 <p className="font-display font-black text-2xl text-[var(--accent-neon)] mt-1">
                   {activeGameStats.totalPlays}
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
-                <span className="text-xs text-[#94a3b8]">Thời Lượng Trung Bình</span>
+                <span className="text-xs text-[#94a3b8]">Average Duration</span>
                 <p className="font-display font-black text-2xl text-[#22d3ee] mt-1">
                   {formatDuration(activeGameStats.averageDuration)}
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
-                <span className="text-xs text-[#94a3b8]">Kỷ Lục Điểm Số</span>
+                <span className="text-xs text-[#94a3b8]">High Score Record</span>
                 <p className="font-mono font-black text-2xl text-emerald-400 mt-1">
                   {activeGameStats.highestScore ? activeGameStats.highestScore.score : '—'}
                 </p>
                 {activeGameStats.highestScore && (
                   <span className="text-xs text-[#94a3b8]">
-                    bởi {activeGameStats.highestScore.playerName}
+                    by {activeGameStats.highestScore.playerName}
                   </span>
                 )}
               </div>
 
               <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-white/[0.06]">
-                <span className="text-xs text-[#94a3b8]">Trùm Game Này (Top Win)</span>
+                <span className="text-xs text-[#94a3b8]">Champion (Most Wins)</span>
                 <p className="font-display font-bold text-base text-amber-400 mt-1 truncate">
                   {activeGameStats.playerWinRates[0]?.playerName || '—'}
                 </p>
                 {activeGameStats.playerWinRates[0] && (
                   <span className="text-xs text-[#94a3b8]">
-                    {activeGameStats.playerWinRates[0].winRate}% tỉ lệ thắng
+                    {activeGameStats.playerWinRates[0].winRate}% win rate
                   </span>
                 )}
               </div>
@@ -1452,7 +1452,7 @@ export const StatsPage: React.FC = () => {
             {/* Win rates for this game */}
             {activeGameStats.playerWinRates.length > 0 && (
               <div className="space-y-3 pt-3 border-t border-white/[0.08]">
-                <h3 className="font-bold text-sm text-white">Thành Tích Bạn Bè Ở Game Này</h3>
+                <h3 className="font-bold text-sm text-white">Player Performance in this Game</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {activeGameStats.playerWinRates.map((pw) => (
                     <div
@@ -1461,7 +1461,7 @@ export const StatsPage: React.FC = () => {
                     >
                       <span className="font-bold text-xs text-white">{pw.playerName}</span>
                       <div className="text-xs font-mono">
-                        <span className="text-amber-400 font-bold">{pw.wins} thắng</span>
+                        <span className="text-amber-400 font-bold">{pw.wins} wins</span>
                         <span className="text-[#94a3b8] ml-2">({pw.winRate}%)</span>
                       </div>
                     </div>
@@ -1476,7 +1476,7 @@ export const StatsPage: React.FC = () => {
         <Modal
           isOpen={showPlayedGamesModal}
           onClose={() => setShowPlayedGamesModal(false)}
-          title="Kho Game Đã &amp; Chưa Trải Nghiệm"
+          title="Played vs. Unplayed Games (Pile of Shame)"
           maxWidthClass="max-w-2xl"
         >
           <div className="space-y-4">
@@ -1492,7 +1492,7 @@ export const StatsPage: React.FC = () => {
                     : 'text-[var(--text-secondary)] hover:text-white'
                 )}
               >
-                <span>Đã Trải Nghiệm</span>
+                <span>Played Games</span>
                 <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 tabular-nums">
                   {playedGamesList.length}
                 </span>
@@ -1507,7 +1507,7 @@ export const StatsPage: React.FC = () => {
                     : 'text-[var(--text-secondary)] hover:text-white'
                 )}
               >
-                <span>Chưa Chơi (Pile of Shame)</span>
+                <span>Unplayed (Pile of Shame)</span>
                 <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20 tabular-nums">
                   {unplayedGamesList.length}
                 </span>
@@ -1516,7 +1516,7 @@ export const StatsPage: React.FC = () => {
 
             {/* Search Input */}
             <Input
-              placeholder="Tìm kiếm tựa game..."
+              placeholder="Search games..."
               value={playedGamesSearch}
               onChange={(e) => setPlayedGamesSearch(e.target.value)}
               leftIcon={<Search className="w-4 h-4 text-[var(--text-secondary)]" />}
@@ -1527,7 +1527,7 @@ export const StatsPage: React.FC = () => {
             <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
               {filteredModalGames.length === 0 ? (
                 <div className="text-center py-8 text-xs text-[var(--text-muted)]">
-                  Không tìm thấy tựa game phù hợp
+                  No matching board games found
                 </div>
               ) : (
                 filteredModalGames.map((item) => (
@@ -1558,11 +1558,11 @@ export const StatsPage: React.FC = () => {
                         <div className="flex items-center gap-2 mt-0.5 text-xs text-[var(--text-secondary)] tabular-nums">
                           {item.plays > 0 ? (
                             <span className="text-amber-400 font-bold font-mono">
-                              {item.plays} ván đã chơi
+                              {item.plays} plays logged
                             </span>
                           ) : (
                             <span className="text-rose-400 font-medium">
-                              Chưa ghi nhận ván nào
+                              No plays recorded yet
                             </span>
                           )}
                         </div>
@@ -1576,7 +1576,7 @@ export const StatsPage: React.FC = () => {
                       >
                         <Button size="sm" variant="secondary" className="text-xs px-2.5 py-1">
                           <Play className="w-3.5 h-3.5 mr-1 fill-current" />
-                          Chơi ván mới
+                          Play Session
                         </Button>
                       </Link>
                     </div>

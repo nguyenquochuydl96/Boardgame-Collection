@@ -7,6 +7,7 @@ export interface GameGridProps {
   games: BoardGame[];
   playCountsByGameId: Record<string, number>;
   viewMode?: 'grid' | 'list';
+  onEdit?: (game: BoardGame) => void;
 }
 
 const containerVariants = {
@@ -32,6 +33,7 @@ export const GameGrid: React.FC<GameGridProps> = ({
   games,
   playCountsByGameId,
   viewMode = 'grid',
+  onEdit,
 }) => {
   if (viewMode === 'list') {
     return (
@@ -47,6 +49,7 @@ export const GameGrid: React.FC<GameGridProps> = ({
               game={game}
               playCount={playCountsByGameId[game.id] || 0}
               viewMode="list"
+              onEdit={onEdit}
             />
           </motion.div>
         ))}
@@ -67,6 +70,7 @@ export const GameGrid: React.FC<GameGridProps> = ({
             game={game}
             playCount={playCountsByGameId[game.id] || 0}
             viewMode="grid"
+            onEdit={onEdit}
           />
         </motion.div>
       ))}

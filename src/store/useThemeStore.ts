@@ -20,7 +20,7 @@ export const AVAILABLE_THEMES: ThemeConfig[] = [
   {
     id: 'amber',
     name: 'Warm Amber & Coffee',
-    tagline: 'Ấm áp, gỗ mộc & cà phê cozy (Khuyên dùng)',
+    tagline: 'Warm timber, cozy coffee & tabletop vibe (Recommended)',
     colors: {
       bg: '#101216',
       surface: '#171920',
@@ -32,7 +32,7 @@ export const AVAILABLE_THEMES: ThemeConfig[] = [
   {
     id: 'navy',
     name: 'Slate Navy & Tangerine',
-    tagline: 'Xanh hải quân thể thao & Cam rực rỡ',
+    tagline: 'Deep slate navy & vibrant tangerine punch',
     colors: {
       bg: '#071526',
       surface: '#0b1e36',
@@ -44,7 +44,7 @@ export const AVAILABLE_THEMES: ThemeConfig[] = [
   {
     id: 'emerald',
     name: 'Midnight & Mint',
-    tagline: 'Phong cách Apple / Linear tối giản sang trọng',
+    tagline: 'Minimalist Apple / Linear inspired elegance',
     colors: {
       bg: '#090d10',
       surface: '#10161c',
@@ -56,7 +56,7 @@ export const AVAILABLE_THEMES: ThemeConfig[] = [
   {
     id: 'light',
     name: 'Warm Canvas & Terracotta',
-    tagline: 'Giao diện sáng ấm, trang nhã ban ngày',
+    tagline: 'Cozy, warm daylight paper & terracotta',
     colors: {
       bg: '#f8f6f0',
       surface: '#ffffff',
@@ -68,7 +68,7 @@ export const AVAILABLE_THEMES: ThemeConfig[] = [
   {
     id: 'purple',
     name: 'Cyberpunk Violet',
-    tagline: 'Tím neon & Xanh cyan nguyên bản',
+    tagline: 'Neon violet & electric cyan glow',
     colors: {
       bg: '#0f0f1a',
       surface: '#16162a',

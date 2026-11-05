@@ -45,8 +45,8 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
       onClose={onClose}
       title={
         isWin
-          ? `🔥 Kỷ Lục Chuỗi Thắng Liên Tiếp (${count} Ván)`
-          : `🌧️ Kỷ Lục Chuỗi Thua Liên Tiếp (${count} Ván)`
+          ? `🔥 Winning Streak Record (${count} Games)`
+          : `🌧️ Losing Streak Record (${count} Games)`
       }
       maxWidthClass="max-w-2xl"
     >
@@ -75,8 +75,8 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
               </div>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                 {isWin
-                  ? 'Giai đoạn thăng hoa với chuỗi thắng bất bại liên tiếp!'
-                  : 'Giai đoạn kém may mắn nhất trong lịch sử thi đấu.'}
+                  ? 'Golden era: undefeated consecutive winning streak!'
+                  : 'Toughest tabletop run in logged gaming history.'}
               </p>
             </div>
           </div>
@@ -91,7 +91,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
               )}
             >
               {isWin ? <Flame className="w-5 h-5 fill-current text-orange-400" /> : <CloudRain className="w-5 h-5 text-rose-400" />}
-              <span>{count} Ván Liên Tiếp</span>
+              <span>{count} Consecutive Games</span>
             </div>
 
             {sessions.length > 0 && (
@@ -109,8 +109,8 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
         {count > 0 && sessions.length > 0 ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs font-bold text-[var(--text-secondary)] px-1">
-              <span>Hành trình chuỗi từ ván đầu tiên đến ván cuối cùng:</span>
-              <span className="text-[var(--text-muted)] font-mono">{sessions.length} ván đấu</span>
+              <span>Streak timeline from game 1 to game {sessions.length}:</span>
+              <span className="text-[var(--text-muted)] font-mono">{sessions.length} sessions</span>
             </div>
 
             <div className="space-y-3 relative before:absolute before:top-4 before:bottom-4 before:left-[19px] before:w-0.5 before:bg-[var(--border-subtle)]">
@@ -176,12 +176,12 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
                             )}
                             {playerEntry?.score !== undefined && (
                               <span className="text-white font-mono font-bold">
-                                Điểm: {playerEntry.score}
+                                Score: {playerEntry.score}
                               </span>
                             )}
                             {playerEntry?.rank !== undefined && (
                               <span className="text-amber-300 font-mono font-bold">
-                                Hạng #{playerEntry.rank}
+                                Rank #{playerEntry.rank}
                               </span>
                             )}
                           </div>
@@ -189,7 +189,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
                           {/* Opponents who played together */}
                           {opponents.length > 0 && (
                             <p className="text-[11px] text-[var(--text-muted)] mt-1.5 truncate">
-                              Cùng chơi: {opponents.map((o) => o.playerName).join(', ')}
+                              With: {opponents.map((o) => o.playerName).join(', ')}
                             </p>
                           )}
                         </div>
@@ -206,7 +206,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
                           size="sm"
                           className="text-xs px-2.5 py-1 w-full sm:w-auto"
                         >
-                          <span>Xem Ván</span>
+                          <span>View Session</span>
                           <ChevronRight className="w-3.5 h-3.5 ml-1" />
                         </Button>
                       </Link>
@@ -219,7 +219,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
         ) : (
           <div className="py-12 text-center rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-2">
             <p className="text-xs text-[var(--text-muted)]">
-              Chưa có dữ liệu chuỗi ván đấu nào được ghi nhận cho người chơi này.
+              No streak data recorded for this player yet.
             </p>
           </div>
         )}
@@ -231,12 +231,12 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
             onClick={onClose}
             className="text-xs font-bold text-amber-400 hover:underline inline-flex items-center gap-1"
           >
-            <span>Xem toàn bộ lịch sử đấu của {player.name}</span>
+            <span>View all match history for {player.name}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
 
           <Button variant="ghost" size="sm" onClick={onClose}>
-            Đóng
+            Close
           </Button>
         </div>
       </div>

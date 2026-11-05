@@ -126,13 +126,13 @@ export const SessionDetailPage: React.FC = () => {
       <PageTransition>
         <Card className="p-8 text-center space-y-4 max-w-md mx-auto">
           <h1 className="font-display font-bold text-2xl text-[var(--text-primary)]">
-            Không Tìm Thấy Ván Chơi
+            Session Not Found
           </h1>
           <p className="text-sm text-[var(--text-secondary)]">
-            Ván chơi này đã được xóa khỏi lịch sử hoặc không tồn tại.
+            This session may have been deleted or does not exist.
           </p>
           <Link to="/sessions">
-            <Button variant="primary">Về Danh Sách Ván Chơi</Button>
+            <Button variant="primary">Back to Sessions</Button>
           </Link>
         </Card>
       </PageTransition>
@@ -307,7 +307,7 @@ export const SessionDetailPage: React.FC = () => {
 
   const handleDelete = () => {
     if (!session) return;
-    if (window.confirm('Bạn có chắc chắn muốn xóa ván chơi này khỏi lịch sử?')) {
+    if (window.confirm('Are you sure you want to delete this session from history?')) {
       const sessionId = session.id;
       navigate('/sessions', { replace: true });
       setTimeout(() => {
@@ -340,7 +340,7 @@ export const SessionDetailPage: React.FC = () => {
             className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            Về danh sách ván chơi
+            Back to Sessions
           </Link>
 
           <div className="flex items-center gap-2">
@@ -349,18 +349,18 @@ export const SessionDetailPage: React.FC = () => {
               size="sm"
               onClick={handleRematch}
               className="bg-[image:var(--gradient-hero)] text-white shadow-md shadow-[var(--accent-glow)] font-bold"
-              title="Tạo trận mới giữ nguyên game này, cùng người chơi và địa điểm, vào thẳng bước chọn người đi đầu"
+              title="Launch rematch keeping game, players, and location, skipping to first player picker"
             >
               <RotateCcw className="w-4 h-4 mr-1.5" />
-              Tái Đấu / Trận Mới
+              Rematch
             </Button>
             <Button variant="secondary" size="sm" onClick={handleOpenEdit}>
               <Edit3 className="w-4 h-4 mr-1.5 text-[var(--accent-neon)]" />
-              Chỉnh Sửa
+              Edit
             </Button>
             <Button variant="danger" size="sm" onClick={handleDelete}>
               <Trash2 className="w-4 h-4 mr-1.5" />
-              Xóa
+              Delete
             </Button>
           </div>
         </div>
@@ -386,7 +386,7 @@ export const SessionDetailPage: React.FC = () => {
               </Link>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
-                Hoàn Thành
+                Completed
               </span>
             </div>
 
@@ -413,7 +413,7 @@ export const SessionDetailPage: React.FC = () => {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]">
                 <Sparkles className="w-3.5 h-3.5 text-[var(--accent-secondary)]" />
                 <span>
-                  Người đi đầu:{' '}
+                  First player:{' '}
                   <strong className="text-[var(--text-primary)] font-bold">
                     {firstPlayer.playerName}
                   </strong>{' '}
@@ -429,11 +429,11 @@ export const SessionDetailPage: React.FC = () => {
         <Card className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
-              Bảng Điểm &amp; Xếp Hạng
+              Leaderboard &amp; Rankings
             </h2>
             <Button variant="ghost" size="sm" onClick={handleOpenEdit}>
               <Edit3 className="w-3.5 h-3.5 mr-1" />
-              Sửa Điểm &amp; Người Thắng
+              Edit Scores &amp; Winner
             </Button>
           </div>
 
@@ -441,10 +441,10 @@ export const SessionDetailPage: React.FC = () => {
             <table className="w-full text-left text-sm">
               <thead className="bg-[var(--bg-elevated)] text-xs text-[var(--text-secondary)]">
                 <tr>
-                  <th className="py-3.5 px-4 font-semibold">Hạng</th>
-                  <th className="py-3.5 px-4 font-semibold">Người chơi</th>
-                  <th className="py-3.5 px-4 font-semibold text-right">Điểm</th>
-                  <th className="py-3.5 px-4 font-semibold text-right">Kết quả</th>
+                  <th className="py-3.5 px-4 font-semibold">Rank</th>
+                  <th className="py-3.5 px-4 font-semibold">Player</th>
+                  <th className="py-3.5 px-4 font-semibold text-right">Score</th>
+                  <th className="py-3.5 px-4 font-semibold text-right">Outcome</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)] bg-[var(--bg-surface)] tabular-nums">
@@ -481,10 +481,10 @@ export const SessionDetailPage: React.FC = () => {
                         {isWin ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">
                             <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                            Chiến Thắng
+                            Winner
                           </span>
                         ) : (
-                          <span className="text-xs text-[var(--text-secondary)]">Đã chơi</span>
+                          <span className="text-xs text-[var(--text-secondary)]">Played</span>
                         )}
                       </td>
                     </tr>
@@ -495,7 +495,7 @@ export const SessionDetailPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Chi Tiết Bảng Điểm Thành Phần */}
+        {/* Scoring Breakdown Details */}
         {hasBreakdown && breakdownCategories.length > 0 && (
           <Card className="p-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -505,15 +505,15 @@ export const SessionDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
-                    Chi Tiết Bảng Điểm Thành Phần
+                    Scoring Breakdown Details
                   </h2>
                   <p className="text-xs text-[var(--text-secondary)]">
-                    {scoringTemplate.displayName} · Phân tích điểm theo từng hạng mục
+                    {scoringTemplate.displayName} · Detailed category score analysis
                   </p>
                 </div>
               </div>
               <span className="text-xs font-mono px-3 py-1 rounded-xl bg-[var(--bg-elevated)] text-[var(--accent-neon)] border border-[var(--border-subtle)] w-fit">
-                {breakdownCategories.length} Hạng Mục
+                {breakdownCategories.length} Categories
               </span>
             </div>
 
@@ -522,7 +522,7 @@ export const SessionDetailPage: React.FC = () => {
                 <thead>
                   <tr className="bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)]">
                     <th className="py-3 px-4 font-bold text-[var(--text-secondary)] min-w-[200px]">
-                      Hạng Mục Tính Điểm
+                      Scoring Category
                     </th>
                     {session.players.map((p) => {
                       const savedPlayer = playersById[p.playerId];
@@ -560,7 +560,7 @@ export const SessionDetailPage: React.FC = () => {
                             <span>{cat.name}</span>
                             {isPenalty && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold shrink-0">
-                                - trừ điểm
+                                - penalty
                               </span>
                             )}
                           </div>
@@ -582,7 +582,7 @@ export const SessionDetailPage: React.FC = () => {
                               <div className="flex items-center justify-center gap-1">
                                 <span>{numVal}</span>
                                 {isTop && !isPenalty && (
-                                  <span className="text-xs" title="Cao nhất mục này">
+                                  <span className="text-xs" title="Highest in category">
                                     🥇
                                   </span>
                                 )}
@@ -597,7 +597,7 @@ export const SessionDetailPage: React.FC = () => {
                 <tfoot>
                   <tr className="bg-[var(--bg-elevated)] border-t-2 border-[var(--border-glow)] font-bold">
                     <td className="py-3 px-4 font-extrabold text-[var(--text-primary)]">
-                      TỔNG ĐIỂM
+                      TOTAL SCORE
                     </td>
                     {session.players.map((p) => {
                       const isLeader = p.isWinner || session.winnerId === p.playerId;
@@ -627,7 +627,7 @@ export const SessionDetailPage: React.FC = () => {
         {session.notes && (
           <Card className="p-6 space-y-2">
             <h2 className="font-display font-bold text-lg text-[var(--text-primary)]">
-              Ghi Chú Ván Chơi
+              Session Notes
             </h2>
             <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap">
               {session.notes}
@@ -639,7 +639,7 @@ export const SessionDetailPage: React.FC = () => {
         {session.photos && session.photos.length > 0 && (
           <Card className="p-6 space-y-4">
             <h2 className="font-display font-bold text-lg text-[var(--text-primary)]">
-              Hình Ảnh Kỷ Niệm ({session.photos.length})
+              Game Night Photos ({session.photos.length})
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {session.photos.map((photo, index) => (
@@ -669,11 +669,11 @@ export const SessionDetailPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="text-xl">🎲</span>
               <h3 className="font-display font-bold text-base text-[var(--text-primary)]">
-                Chơi tiếp ván nữa cùng hội bạn?
+                Ready for another round with the crew?
               </h3>
             </div>
             <p className="text-xs text-[var(--text-secondary)]">
-              Tạo ngay ván đấu mới giữ nguyên <strong>{session.gameName}</strong>, <strong>{session.players.length} người chơi</strong> và địa điểm <strong>{session.location || 'hiện tại'}</strong>, vào thẳng bước chọn người đi đầu!
+              Instantly launch a rematch with <strong>{session.gameName}</strong>, <strong>{session.players.length} players</strong> at <strong>{session.location || 'current venue'}</strong>, skipping directly to first player picker!
             </p>
           </div>
           <Button
@@ -683,7 +683,7 @@ export const SessionDetailPage: React.FC = () => {
             className="shrink-0 bg-[image:var(--gradient-hero)] text-white shadow-lg shadow-[var(--accent-glow)] font-bold"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
-            Tái Đấu Ngay
+            Play Rematch
           </Button>
         </Card>
 
@@ -691,7 +691,7 @@ export const SessionDetailPage: React.FC = () => {
         <Modal
           isOpen={Boolean(fullscreenPhoto)}
           onClose={() => setFullscreenPhoto(null)}
-          title="Ảnh Kỷ Niệm Ván Chơi"
+          title="Session Photo"
           maxWidthClass="max-w-4xl"
         >
           {fullscreenPhoto && (
@@ -707,7 +707,7 @@ export const SessionDetailPage: React.FC = () => {
         <Modal
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
-          title="Chỉnh Sửa Chi Tiết Ván Chơi"
+          title="Edit Session Details"
           maxWidthClass="max-w-2xl"
         >
           <form onSubmit={handleSaveEdit} className="space-y-5 text-sm">
@@ -715,7 +715,7 @@ export const SessionDetailPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-                  Ngày &amp; Giờ chơi
+                  Date &amp; Time
                 </label>
                 <input
                   type="datetime-local"
@@ -727,7 +727,7 @@ export const SessionDetailPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
-                  Thời lượng (Phút)
+                  Duration (Minutes)
                 </label>
                 <input
                   type="number"
@@ -743,8 +743,8 @@ export const SessionDetailPage: React.FC = () => {
                 <LocationSelector
                   selectedLocation={editLocation}
                   onSelectLocation={setEditLocation}
-                  label="Địa điểm chơi"
-                  placeholder="Chọn từ danh sách hoặc nhập địa điểm..."
+                  label="Venue Location"
+                  placeholder="Select from list or type location..."
                 />
               </div>
             </div>
@@ -754,10 +754,10 @@ export const SessionDetailPage: React.FC = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="font-bold text-[var(--text-primary)] text-sm">
-                    Người Chơi, Điểm Số &amp; Người Thắng
+                    Players, Scores &amp; Winners
                   </h3>
                   <p className="text-[11px] text-[var(--text-secondary)]">
-                    Chọn nhập nhanh hoặc tính điểm chi tiết theo bảng điểm riêng
+                    Choose quick total entry or category breakdown
                   </p>
                 </div>
 
@@ -767,14 +767,14 @@ export const SessionDetailPage: React.FC = () => {
                     onClick={() => setEditScoreMode(editScoreMode === 'detailed' ? 'quick' : 'detailed')}
                     className="px-3 py-1 rounded-xl text-xs font-bold bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--accent-neon)] hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5"
                   >
-                    <span>{editScoreMode === 'detailed' ? '⚡ Chuyển sang Nhập Nhanh' : '📊 Bảng Điểm Chi Tiết'}</span>
+                    <span>{editScoreMode === 'detailed' ? '⚡ Switch to Quick Entry' : '📊 Detailed Score Sheet'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={handleAutoWinner}
                     className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-[var(--bg-elevated)] text-[var(--accent-secondary)] hover:brightness-110 border border-[var(--border-subtle)] cursor-pointer"
                   >
-                    ⚡ Chọn điểm cao nhất
+                    ⚡ Auto Highest Score
                   </button>
                 </div>
               </div>
@@ -840,7 +840,7 @@ export const SessionDetailPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleSetFirstPlayer(p.playerId)}
-                          title="Chỉ định người đi đầu"
+                          title="Assign first player"
                           className={cn(
                             'px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer',
                             p.isFirstPlayer
@@ -848,14 +848,14 @@ export const SessionDetailPage: React.FC = () => {
                               : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
                           )}
                         >
-                          Đi đầu
+                          First
                         </button>
 
                         {/* Winner Crown button */}
                         <button
                           type="button"
                           onClick={() => handleToggleWinner(p.playerId)}
-                          title={p.isWinner ? 'Bỏ chọn chiến thắng' : 'Chọn người chiến thắng'}
+                          title={p.isWinner ? 'Remove winner status' : 'Set as winner'}
                           className={cn(
                             'p-1.5 rounded-lg border transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold',
                             p.isWinner
@@ -865,14 +865,14 @@ export const SessionDetailPage: React.FC = () => {
                         >
                           <Crown className="w-3.5 h-3.5 fill-current" />
                           <span className="text-[10px] hidden sm:inline">
-                            {p.isWinner ? 'Thắng' : 'Thua'}
+                            {p.isWinner ? 'Winner' : 'Defeat'}
                           </span>
                         </button>
 
                         {/* Score Input */}
                         <input
                           type="number"
-                          placeholder="Điểm"
+                          placeholder="Score"
                           value={p.score}
                           onChange={(e) => handleScoreChange(p.playerId, e.target.value)}
                           className="w-20 min-h-[36px] rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2.5 py-1 text-right font-mono font-bold text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
@@ -883,7 +883,7 @@ export const SessionDetailPage: React.FC = () => {
                           type="button"
                           onClick={() => handleRemovePlayer(p.playerId)}
                           className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Xóa khỏi ván chơi này"
+                          title="Remove from session"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -897,12 +897,12 @@ export const SessionDetailPage: React.FC = () => {
               {availablePlayersToAdd.length > 0 && (
                 <div className="flex items-center gap-2 pt-1">
                   <select
-                    aria-label="Thêm người chơi vào ván"
+                    aria-label="Add player to session"
                     value={addPlayerSelectId}
                     onChange={(e) => setAddPlayerSelectId(e.target.value)}
                     className="flex-1 min-h-[38px] px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] cursor-pointer"
                   >
-                    <option value="">+ Chọn thêm bạn bè vào ván chơi...</option>
+                    <option value="">+ Add another friend to session...</option>
                     {availablePlayersToAdd.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -916,7 +916,7 @@ export const SessionDetailPage: React.FC = () => {
                     disabled={!addPlayerSelectId}
                   >
                     <Plus className="w-3.5 h-3.5 mr-1" />
-                    Thêm
+                    Add
                   </Button>
                 </div>
               )}
@@ -925,13 +925,13 @@ export const SessionDetailPage: React.FC = () => {
             {/* 3. Notes */}
             <div className="space-y-1.5 pt-2 border-t border-[var(--border-subtle)]">
               <label className="block text-xs font-semibold text-[var(--text-secondary)]">
-                Ghi chú ván chơi
+                Session notes
               </label>
               <textarea
                 rows={3}
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
-                placeholder="Chiến thuật, kỷ niệm đáng nhớ, combo thẻ bài..."
+                placeholder="Strategies, fun memories, epic combos..."
                 className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-3 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
               />
             </div>
@@ -939,11 +939,11 @@ export const SessionDetailPage: React.FC = () => {
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]">
               <Button variant="ghost" size="sm" onClick={() => setIsEditOpen(false)}>
-                Hủy bỏ
+                Cancel
               </Button>
               <Button type="submit" variant="primary">
                 <Check className="w-4 h-4 mr-1.5" />
-                Lưu Thay Đổi
+                Save Changes
               </Button>
             </div>
           </form>

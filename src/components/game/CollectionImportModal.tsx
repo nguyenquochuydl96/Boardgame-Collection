@@ -193,7 +193,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
     }
 
     setSuccessMessage(
-      `Đã nạp thành công ${importOptions.games ? `${summary.gameCount} boardgame, ` : ''}${importOptions.players ? `${summary.playerCount} người chơi, ` : ''}${importOptions.sessions ? `${summary.playCount} ván chơi, ` : ''}${importOptions.locations && summary.locationCount ? `${summary.locationCount} địa điểm` : ''} vào Vault!`
+      `Successfully restored ${importOptions.games ? `${summary.gameCount} board games, ` : ''}${importOptions.players ? `${summary.playerCount} players, ` : ''}${importOptions.sessions ? `${summary.playCount} sessions, ` : ''}${importOptions.locations && summary.locationCount ? `${summary.locationCount} locations` : ''} into Vault!`
     );
     setFullBackup(null);
   };
@@ -284,7 +284,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
       });
     }
 
-    setSuccessMessage(`Đã thêm thành công ${selected.length} boardgame vào bộ sưu tập!`);
+    setSuccessMessage(`Successfully added ${selected.length} board games to collection!`);
     setPreviewItems([]);
   };
 
@@ -292,7 +292,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Import Dữ Liệu Bộ Sưu Tập"
+      title="Import & Export Collection Data"
       maxWidthClass="max-w-2xl"
     >
       <div className="space-y-5 text-sm">
@@ -308,7 +308,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
             }`}
           >
             <Upload className="w-3.5 h-3.5" />
-            Nhập File (.ZIP / .JSON)
+            Upload File (.ZIP / .JSON)
           </button>
           <button
             type="button"
@@ -320,7 +320,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
             }`}
           >
             <Download className="w-3.5 h-3.5" />
-            Sao Lưu &amp; Xuất Dữ Liệu
+            Backup &amp; Export Data
           </button>
           <button
             type="button"
@@ -344,17 +344,16 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
             </div>
             <div>
               <p className="font-bold text-white text-base">
-                Kéo thả file Export từ BG Catalog vào đây
+                Drag and drop export files here
               </p>
               <p className="text-xs text-[#94a3b8] mt-1 max-w-md mx-auto">
-                Hỗ trợ trực tiếp file sao lưu <strong className="text-white">.ZIP</strong> hoặc{' '}
-                <strong className="text-white">.JSON</strong> xuất từ BG Catalog (iOS). Tự động nạp
-                toàn bộ Game, Bạn bè &amp; 1.000+ Ván chơi lịch sử!
+                Directly supports <strong className="text-white">.ZIP</strong> or{' '}
+                <strong className="text-white">.JSON</strong> backups exported from BG Catalog (iOS) or BoardGame Vault. Automatically imports your games, players, venues, and match histories!
               </p>
             </div>
             <label className="inline-block cursor-pointer">
               <span className="px-5 py-2.5 rounded-xl bg-[image:var(--gradient-hero)] text-white text-xs font-bold shadow hover:opacity-95 transition-opacity inline-flex items-center gap-2 cursor-pointer">
-                <Upload className="w-4 h-4" /> Chọn File (.zip / .json / .csv)
+                <Upload className="w-4 h-4" /> Choose File (.zip / .json / .csv)
               </span>
               <input
                 type="file"
@@ -366,7 +365,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
             </label>
             {loading && (
               <p className="text-xs text-[#a78bfa] animate-pulse">
-                Đang đọc và phân tích dữ liệu...
+                Reading and parsing backup archive...
               </p>
             )}
           </div>
@@ -382,10 +381,10 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                 </div>
                 <div>
                   <h4 className="font-bold text-white text-sm">
-                    Đã nhận diện bản sao lưu BG Catalog hoàn chỉnh!
+                    Complete BG Catalog Backup Detected!
                   </h4>
                   <p className="text-xs text-[#94a3b8]">
-                    Bản xuất này chứa đầy đủ kho game, người chơi và lịch sử các ván đấu.
+                    This export contains your games library, player profiles, locations, and tabletop match history.
                   </p>
                 </div>
               </div>
@@ -402,14 +401,14 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                   {fullBackup.summary.gameCount}
                 </p>
                 <p className="text-[10px] text-[#94a3b8]">
-                  {fullBackup.summary.ownCount} sở hữu{Boolean(fullBackup.summary.rentedCount) ? ' · ' + fullBackup.summary.rentedCount + ' thuê' : ''} · {fullBackup.summary.soldCount} đã bán
+                  {fullBackup.summary.ownCount} owned{Boolean(fullBackup.summary.rentedCount) ? ' · ' + fullBackup.summary.rentedCount + ' rented' : ''} · {fullBackup.summary.soldCount} sold
                 </p>
               </div>
 
               <div className="p-3 rounded-xl bg-[#1e1e35] border border-white/5 space-y-1">
                 <div className="flex items-center gap-1.5 text-xs text-[#a78bfa]">
                   <Users className="w-4 h-4" />
-                  <span className="font-bold">Người chơi</span>
+                  <span className="font-bold">Players</span>
                 </div>
                 <p className="text-2xl font-black text-white tabular-nums">
                   {fullBackup.summary.playerCount}
@@ -422,18 +421,18 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
               <div className="p-3 rounded-xl bg-[#1e1e35] border border-white/5 space-y-1">
                 <div className="flex items-center gap-1.5 text-xs text-[#ec4899]">
                   <Trophy className="w-4 h-4" />
-                  <span className="font-bold">Ván đấu đã chơi</span>
+                  <span className="font-bold">Sessions Played</span>
                 </div>
                 <p className="text-2xl font-black text-white tabular-nums">
                   {fullBackup.summary.playCount}
                 </p>
-                <p className="text-[10px] text-[#94a3b8]">Kèm điểm &amp; người thắng</p>
+                <p className="text-[10px] text-[#94a3b8]">With scores &amp; winners</p>
               </div>
             </div>
 
             {/* Options */}
             <div className="pt-2 border-t border-white/10 space-y-2 text-xs">
-              <p className="font-bold text-white">Tùy chọn nạp:</p>
+              <p className="font-bold text-white">Import options:</p>
               <div className="flex flex-wrap gap-4 text-[#94a3b8]">
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
@@ -444,7 +443,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                     }
                     className="rounded text-[#7c3aed]"
                   />
-                  <span>Nạp {fullBackup.summary.gameCount} Games</span>
+                  <span>Import {fullBackup.summary.gameCount} Games</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
@@ -455,7 +454,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                     }
                     className="rounded text-[#7c3aed]"
                   />
-                  <span>Nạp {fullBackup.summary.playerCount} Người chơi</span>
+                  <span>Import {fullBackup.summary.playerCount} Players</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
@@ -466,7 +465,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                     }
                     className="rounded text-[#7c3aed]"
                   />
-                  <span>Nạp {fullBackup.summary.playCount} Ván chơi</span>
+                  <span>Import {fullBackup.summary.playCount} Sessions</span>
                 </label>
                 {fullBackup.locations && fullBackup.locations.length > 0 && (
                   <label className="flex items-center gap-1.5 cursor-pointer">
@@ -478,7 +477,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                       }
                       className="rounded text-[#7c3aed]"
                     />
-                    <span>Nạp {fullBackup.locations.length} Địa điểm</span>
+                    <span>Import {fullBackup.locations.length} Locations</span>
                   </label>
                 )}
               </div>
@@ -487,11 +486,11 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
               <Button variant="ghost" size="sm" onClick={() => setFullBackup(null)}>
-                Hủy bỏ
+                Cancel
               </Button>
               <Button variant="primary" onClick={handleExecuteFullRestore}>
                 <Sparkles className="w-4 h-4 mr-1.5" />
-                Khôi Phục Toàn Bộ Dữ Liệu
+                Restore All Data
               </Button>
             </div>
           </div>
@@ -509,10 +508,10 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                   </div>
                   <div>
                     <h3 className="font-display font-bold text-base text-[var(--text-primary)]">
-                      Sao Lưu Toàn Bộ Dữ Liệu (.JSON)
+                      Full Collection Backup (.JSON)
                     </h3>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                      Xuất 1 file đầy đủ Kho Game, Người Chơi, Địa Điểm &amp; Lịch Sử Ván Đấu. Dùng để backup an toàn hoặc chuyển sang máy khác.
+                      Export a complete archive containing Games, Players, Venues &amp; Session History. Use this to safely backup or migrate across devices.
                     </p>
                   </div>
                 </div>
@@ -520,19 +519,19 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                 <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Kho Game</span>
+                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Games</span>
                   <span className="font-display font-black text-lg text-[var(--text-primary)]">{games.length}</span>
                 </div>
                 <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Người Chơi</span>
+                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Players</span>
                   <span className="font-display font-black text-lg text-[var(--accent-neon)]">{players.length}</span>
                 </div>
                 <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Ván Chơi</span>
+                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Sessions</span>
                   <span className="font-display font-black text-lg text-amber-400">{sessions.length}</span>
                 </div>
                 <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Địa Điểm</span>
+                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Venues</span>
                   <span className="font-display font-black text-lg text-emerald-400">{locations.length}</span>
                 </div>
               </div>
@@ -542,11 +541,11 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                 className="w-full justify-center py-3 text-sm font-bold shadow-lg shadow-[var(--accent-glow)]"
                 onClick={() => {
                   exportVaultJSON();
-                  setSuccessMessage('Đã tải xuống file sao lưu BoardGameVault JSON thành công!');
+                  setSuccessMessage('BoardGameVault JSON backup downloaded successfully!');
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
-                Tải Bản Sao Lưu Toàn Bộ (.JSON)
+                Download Full Archive (.JSON)
               </Button>
             </div>
 
@@ -555,7 +554,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-emerald-400" />
                 <h4 className="font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)]">
-                  Xuất Bảng Tính CSV (Xem trên Excel / Google Sheets)
+                  Export CSV Spreadsheets (Excel / Google Sheets)
                 </h4>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -563,13 +562,13 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                   type="button"
                   onClick={() => {
                     exportGamesCSV();
-                    setSuccessMessage('Đã xuất danh sách Game ra file CSV thành công!');
+                    setSuccessMessage('Exported Games catalog to CSV successfully!');
                   }}
                   className="p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-white/[0.08] border border-[var(--border-subtle)] text-left flex items-center justify-between group transition-all cursor-pointer"
                 >
                   <div>
-                    <span className="text-xs font-bold text-[var(--text-primary)] block">Xuất Danh Sách Game</span>
-                    <span className="text-[11px] text-[var(--text-secondary)]">{games.length} tựa game</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)] block">Export Games Catalog</span>
+                    <span className="text-[11px] text-[var(--text-secondary)]">{games.length} games</span>
                   </div>
                   <Download className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-neon)] transition-colors" />
                 </button>
@@ -578,13 +577,13 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                   type="button"
                   onClick={() => {
                     exportSessionsCSV();
-                    setSuccessMessage('Đã xuất lịch sử Ván Chơi ra file CSV thành công!');
+                    setSuccessMessage('Exported Play Sessions to CSV successfully!');
                   }}
                   className="p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-white/[0.08] border border-[var(--border-subtle)] text-left flex items-center justify-between group transition-all cursor-pointer"
                 >
                   <div>
-                    <span className="text-xs font-bold text-[var(--text-primary)] block">Xuất Lịch Sử Ván Chơi</span>
-                    <span className="text-[11px] text-[var(--text-secondary)]">{sessions.length} ván đấu</span>
+                    <span className="text-xs font-bold text-[var(--text-primary)] block">Export Session Logs</span>
+                    <span className="text-[11px] text-[var(--text-secondary)]">{sessions.length} sessions</span>
                   </div>
                   <Download className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-neon)] transition-colors" />
                 </button>
@@ -598,14 +597,14 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs text-[#94a3b8]">
-                Nhập BoardGameGeek username công khai để kéo toàn bộ game đánh dấu "Owned".
+                Enter a public BoardGameGeek username to fetch all games marked "Owned".
               </p>
               <PoweredByBGG variant="inline" />
             </div>
             <div className="flex gap-2">
               <div className="flex-1">
                 <Input
-                  placeholder="ví dụ: your_bgg_username"
+                  placeholder="e.g. your_bgg_username"
                   value={bggUsername}
                   onChange={(e) => setBggUsername(e.target.value)}
                   leftIcon={<Database className="w-4 h-4 text-[#22d3ee]" />}
@@ -616,7 +615,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                 onClick={handleFetchBGG}
                 disabled={loading || !bggUsername.trim()}
               >
-                {loading ? 'Đang tải...' : 'Kéo Games'}
+                {loading ? 'Fetching...' : 'Fetch Games'}
               </Button>
             </div>
           </div>
@@ -638,7 +637,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
               <span>{successMessage}</span>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
-              Đóng
+              Close
             </Button>
           </div>
         )}
@@ -648,15 +647,15 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs text-[#94a3b8]">
               <span>
-                Tìm thấy <strong className="text-white">{previewItems.length}</strong> games (
-                {previewItems.filter((i) => i.selected).length} đã chọn)
+                Found <strong className="text-white">{previewItems.length}</strong> games (
+                {previewItems.filter((i) => i.selected).length} selected)
               </span>
               <button
                 type="button"
                 onClick={toggleAll}
                 className="text-[#a78bfa] hover:underline cursor-pointer"
               >
-                {previewItems.every((i) => i.selected) ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                {previewItems.every((i) => i.selected) ? 'Deselect All' : 'Select All'}
               </button>
             </div>
 
@@ -691,7 +690,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-white text-xs truncate">{item.name}</p>
                     <p className="text-[11px] text-[#94a3b8]">
-                      {item.yearPublished || 'N/A'} · {item.minPlayers}-{item.maxPlayers} người · Trạng thái: {item.status}
+                      {item.yearPublished || 'N/A'} · {item.minPlayers}-{item.maxPlayers} players · Status: {item.status}
                     </p>
                   </div>
                 </div>
@@ -700,7 +699,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
 
             <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
               <Button variant="ghost" size="sm" onClick={() => setPreviewItems([])}>
-                Xóa
+                Clear
               </Button>
               <Button
                 variant="primary"
@@ -709,7 +708,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                 disabled={!previewItems.some((i) => i.selected)}
               >
                 <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                Nạp {previewItems.filter((i) => i.selected).length} Games
+                Import {previewItems.filter((i) => i.selected).length} Games
               </Button>
             </div>
           </div>

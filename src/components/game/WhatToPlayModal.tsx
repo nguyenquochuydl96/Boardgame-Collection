@@ -73,7 +73,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
       .map((g) => ({
         id: g.id,
         name: g.name,
-        subtitle: `${g.minPlayers}-${g.maxPlayers} người · ${g.playingTime} phút`,
+        subtitle: `${g.minPlayers}-${g.maxPlayers} players · ${g.playingTime}m`,
         thumbnail: g.thumbnail || g.image,
       }));
   }, [filteredAvailableGames, selectedGameIds]);
@@ -94,7 +94,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="🎲 Hôm Nay Chơi Gì? (Gợi Ý Game Ngẫu Nhiên)"
+      title="🎲 What to Play Tonight? (Random Game Picker)"
       maxWidthClass="max-w-4xl"
     >
       <div className="space-y-6">
@@ -102,7 +102,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
           <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>Hình thức chọn game:</span>
+            <span>Picker Mode:</span>
           </div>
 
           <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
@@ -119,7 +119,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
                   : 'text-[var(--text-secondary)] hover:text-white'
               )}
             >
-              <span>🎡 Vòng Quay May Mắn</span>
+              <span>🎡 Lucky Wheel</span>
             </button>
             <button
               type="button"
@@ -134,7 +134,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
                   : 'text-[var(--text-secondary)] hover:text-white'
               )}
             >
-              <span>🎴 Xáo Bài Bí Ẩn</span>
+              <span>🎴 Mystery Card Shuffle</span>
             </button>
           </div>
         </div>
@@ -144,7 +144,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <Input
-                placeholder="Tìm nhanh tên game..."
+                placeholder="Search game title..."
                 value={gameSearch}
                 onChange={(e) => setGameSearch(e.target.value)}
                 className="text-xs py-1.5"
@@ -153,7 +153,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
             </div>
             {/* Player Count */}
             <div className="flex items-center gap-1">
-              <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Số người:</span>
+              <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Players:</span>
               {(['all', '2', '3', '4', '5+'] as const).map((cnt) => (
                 <button
                   key={cnt}
@@ -166,21 +166,21 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
                       : 'border-white/10 text-[var(--text-secondary)] hover:text-white'
                   )}
                 >
-                  {cnt === 'all' ? 'Tất cả' : `${cnt}p`}
+                  {cnt === 'all' ? 'All' : `${cnt}p`}
                 </button>
               ))}
             </div>
           </div>
 
           <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] pt-1 border-t border-white/[0.06]">
-            <span>Đã chọn <strong>{gameItems.length}</strong> / {filteredAvailableGames.length} game</span>
+            <span>Selected <strong>{gameItems.length}</strong> of {filteredAvailableGames.length} games</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setSelectedGameIds(filteredAvailableGames.map((g) => g.id))}
                 className="text-[11px] text-[var(--accent-neon)] font-bold hover:underline cursor-pointer"
               >
-                Chọn hết
+                Select All
               </button>
               <span>·</span>
               <button
@@ -188,7 +188,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
                 onClick={() => setSelectedGameIds([])}
                 className="text-[11px] text-[var(--text-secondary)] hover:underline cursor-pointer"
               >
-                Bỏ hết
+                Clear All
               </button>
             </div>
           </div>
@@ -200,10 +200,10 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
             <div className="text-center p-6 space-y-2">
               <span className="text-3xl">⚠️</span>
               <p className="font-bold text-sm text-[var(--text-primary)]">
-                Cần ít nhất 2 boardgame để quay
+                Need at least 2 board games to pick
               </p>
               <p className="text-xs text-[var(--text-secondary)]">
-                Vui lòng nới lỏng bộ lọc hoặc tích chọn thêm game
+                Please loosen filters or select more games
               </p>
             </div>
           ) : animStyle === 'wheel' ? (
@@ -246,7 +246,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
                   )}
                   <div className="min-w-0">
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300">
-                      🎯 Game Lên Bàn Tối Nay!
+                      🎯 Tonight's Featured Tabletop Game!
                     </span>
                     <h4 className="font-display font-extrabold text-base sm:text-lg text-white truncate">
                       {chosenGame.name}
@@ -264,7 +264,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
                   className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg shrink-0 w-full sm:w-auto"
                 >
                   <Play className="w-4 h-4 fill-current mr-1" />
-                  Bắt Đầu Ván Game Này
+                  Start This Session
                 </Button>
               </motion.div>
             )}

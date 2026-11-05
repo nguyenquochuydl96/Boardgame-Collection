@@ -332,7 +332,7 @@ export const HomePage: React.FC = () => {
                 className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-emerald-400/60 hover:shadow-lg transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-emerald-400 font-semibold transition-colors">In Vault (Own)</span>
+                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-emerald-400 font-semibold transition-colors">Owned</span>
                   <span className="text-xs text-[var(--text-muted)] group-hover:text-emerald-400">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-emerald-400 mt-1">
@@ -345,7 +345,7 @@ export const HomePage: React.FC = () => {
                 className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-amber-400/60 hover:shadow-lg transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-amber-400 font-semibold transition-colors">Thuê / Quán</span>
+                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-amber-400 font-semibold transition-colors">Rented / Cafe</span>
                   <span className="text-xs text-[var(--text-muted)] group-hover:text-amber-400">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-amber-400 mt-1">
@@ -371,7 +371,7 @@ export const HomePage: React.FC = () => {
                 className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-cyan-400/60 hover:shadow-lg transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-cyan-400 font-semibold transition-colors">Đang Mượn</span>
+                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-cyan-400 font-semibold transition-colors">Borrowed</span>
                   <span className="text-xs text-[var(--text-muted)] group-hover:text-cyan-400">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-cyan-400 mt-1">

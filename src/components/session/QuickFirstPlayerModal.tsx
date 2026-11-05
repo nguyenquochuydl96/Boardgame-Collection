@@ -83,7 +83,7 @@ export const QuickFirstPlayerModal: React.FC<QuickFirstPlayerModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="👑 Chọn Người Đi Đầu Ván Đấu"
+      title="👑 Determine First Player"
       maxWidthClass="max-w-4xl"
     >
       <div className="space-y-6">
@@ -91,7 +91,7 @@ export const QuickFirstPlayerModal: React.FC<QuickFirstPlayerModalProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
           <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>Hình thức quay thưởng:</span>
+            <span>Picker Mode:</span>
           </div>
 
           <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
@@ -108,7 +108,7 @@ export const QuickFirstPlayerModal: React.FC<QuickFirstPlayerModalProps> = ({
                   : 'text-[var(--text-secondary)] hover:text-white'
               )}
             >
-              <span>🎡 Vòng Quay May Mắn</span>
+              <span>🎡 Lucky Wheel</span>
             </button>
             <button
               type="button"
@@ -123,7 +123,7 @@ export const QuickFirstPlayerModal: React.FC<QuickFirstPlayerModalProps> = ({
                   : 'text-[var(--text-secondary)] hover:text-white'
               )}
             >
-              <span>🎴 Xáo Bài Bí Ẩn</span>
+              <span>🎴 Mystery Card Shuffle</span>
             </button>
           </div>
         </div>
@@ -133,10 +133,10 @@ export const QuickFirstPlayerModal: React.FC<QuickFirstPlayerModalProps> = ({
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
               <Users className="w-4 h-4 text-[var(--accent-neon)]" />
-              Người ngồi tại bàn chơi ({playerItems.length} người)
+              Players at the Table ({playerItems.length})
             </span>
             <span className="text-[11px] text-[var(--text-muted)]">
-              Chạm để bật/tắt người tham gia
+              Tap to toggle participants
             </span>
           </div>
 
@@ -174,7 +174,7 @@ export const QuickFirstPlayerModal: React.FC<QuickFirstPlayerModalProps> = ({
               >
                 <span>🎲</span>
                 <span>{guest.name}</span>
-                <span className="text-[10px] text-orange-300 font-mono">(Khách)</span>
+                <span className="text-[10px] text-orange-300 font-mono">(Guest)</span>
               </div>
             ))}
           </div>
@@ -182,13 +182,13 @@ export const QuickFirstPlayerModal: React.FC<QuickFirstPlayerModalProps> = ({
           {/* Quick Guest Input */}
           <form onSubmit={handleAddGuest} className="flex items-center gap-2 pt-2">
             <Input
-              placeholder="Thêm nhanh bạn chơi ngoài (vd: Tuấn, Mai)..."
+              placeholder="Add guest player (e.g. Alex, Sam)..."
               value={newGuestName}
               onChange={(e) => setNewGuestName(e.target.value)}
               className="text-xs py-1.5"
             />
             <Button type="submit" size="sm" variant="secondary" disabled={!newGuestName.trim()}>
-              <Plus className="w-3.5 h-3.5 mr-1" /> Thêm
+              <Plus className="w-3.5 h-3.5 mr-1" /> Add
             </Button>
           </form>
         </div>
@@ -199,10 +199,10 @@ export const QuickFirstPlayerModal: React.FC<QuickFirstPlayerModalProps> = ({
             <div className="text-center p-6 space-y-2">
               <span className="text-3xl">⚠️</span>
               <p className="font-bold text-sm text-[var(--text-primary)]">
-                Cần ít nhất 2 người chơi để quay
+                Need at least 2 players
               </p>
               <p className="text-xs text-[var(--text-secondary)]">
-                Vui lòng tích chọn thêm bạn bè ở danh sách phía trên
+                Please select more players from the list above
               </p>
             </div>
           ) : animStyle === 'wheel' ? (
@@ -241,7 +241,7 @@ export const QuickFirstPlayerModal: React.FC<QuickFirstPlayerModalProps> = ({
                   </div>
                   <div>
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300">
-                      Người Đi Đầu Ván Đấu!
+                      First Player Selected!
                     </span>
                     <h4 className="font-display font-extrabold text-base text-white truncate">
                       {chosenWinner.name}
@@ -256,7 +256,7 @@ export const QuickFirstPlayerModal: React.FC<QuickFirstPlayerModalProps> = ({
                   className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg shrink-0 w-full sm:w-auto"
                 >
                   <Play className="w-4 h-4 fill-current mr-1" />
-                  Bắt Đầu Ván Mới Ngay
+                  Start Session Now
                 </Button>
               </motion.div>
             )}

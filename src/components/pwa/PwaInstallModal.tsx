@@ -91,10 +91,10 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
                 <Dices className="w-7 h-7 text-white" />
               </div>
               <h3 className="text-lg font-display font-extrabold text-white tracking-tight">
-                Cài Đặt BoardGame Vault
+                Install BoardGame Vault
               </h3>
               <p className="text-xs text-[#94a3b8] mt-1 leading-relaxed">
-                Thêm ứng dụng vào màn hình chính điện thoại để trải nghiệm toàn màn hình mượt mà như app gốc
+                Add to your mobile home screen for a seamless fullscreen, native-like tabletop companion app
               </p>
             </div>
 
@@ -103,7 +103,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
               <div className="space-y-3">
                 <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/30 text-xs text-emerald-200 flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Thiết bị của bạn đã sẵn sàng cài đặt chỉ với 1 chạm!</span>
+                  <span>Your device is ready to install with 1 tap!</span>
                 </div>
                 <button
                   type="button"
@@ -111,7 +111,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
                   className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-950 bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 hover:to-teal-200 active:scale-98 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer"
                 >
                   <Download className="w-4 h-4 text-slate-950" />
-                  <span>Cài Đặt Ngay Vào Màn Hình Chính</span>
+                  <span>Install to Home Screen</span>
                 </button>
               </div>
             ) : isIOS ? (
@@ -119,27 +119,27 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
               <div className="space-y-3 text-xs bg-[#1e1e35]/80 p-4 rounded-2xl border border-white/10">
                 <div className="font-bold text-white flex items-center gap-2 text-xs">
                   <Smartphone className="w-4 h-4 text-[#a78bfa]" />
-                  <span>Hướng dẫn cài đặt trên iPhone / iPad (Safari):</span>
+                  <span>Install on iPhone / iPad (Safari):</span>
                 </div>
                 <ol className="space-y-2.5 text-[11px] text-[#cbd5e1] leading-relaxed">
                   <li className="flex items-start gap-2">
                     <span className="w-4 h-4 rounded-full bg-white/10 text-white font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">1</span>
                     <div>
-                      Ở thanh dưới cùng của Safari, bấm nút <strong>Chia sẻ (Share)</strong>{' '}
-                      <Share className="w-3.5 h-3.5 inline text-sky-400 mx-0.5" />.
+                      Tap the <strong>Share</strong> button{' '}
+                      <Share className="w-3.5 h-3.5 inline text-sky-400 mx-0.5" /> in Safari's bottom toolbar.
                     </div>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="w-4 h-4 rounded-full bg-white/10 text-white font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">2</span>
                     <div>
-                      Cuộn xuống danh sách và chọn <strong>Thêm vào MH chính (Add to Home Screen)</strong>{' '}
+                      Scroll down and select <strong>Add to Home Screen</strong>{' '}
                       <PlusSquare className="w-3.5 h-3.5 inline text-amber-300 mx-0.5" />.
                     </div>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="w-4 h-4 rounded-full bg-white/10 text-white font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">3</span>
                     <div>
-                      Bấm <strong>Thêm (Add)</strong> ở góc trên bên phải. Biểu tượng BoardGame Vault sẽ xuất hiện ngay trên màn hình điện thoại!
+                      Tap <strong>Add</strong> in the top right corner. The BoardGame Vault app icon will appear right on your home screen!
                     </div>
                   </li>
                 </ol>
@@ -149,10 +149,10 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
               <div className="space-y-3 text-xs bg-[#1e1e35]/80 p-4 rounded-2xl border border-white/10">
                 <div className="font-bold text-white flex items-center gap-2 text-xs">
                   <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>Cách thêm vào màn hình chính:</span>
+                  <span>Add to Home Screen:</span>
                 </div>
                 <p className="text-[11px] text-[#cbd5e1] leading-relaxed">
-                  Trên trình duyệt điện thoại (Chrome / Cốc Cốc / Samsung Internet), chạm vào menu <strong>⋮</strong> ở góc trên ➔ chọn <strong>&quot;Cài đặt ứng dụng&quot;</strong> hoặc <strong>&quot;Thêm vào màn hình chính&quot;</strong>.
+                  In your mobile browser (Chrome, Edge, or Samsung Internet), tap the <strong>⋮</strong> menu icon in the top corner and select <strong>&quot;Install app&quot;</strong> or <strong>&quot;Add to Home screen&quot;</strong>.
                 </p>
               </div>
             )}
@@ -161,18 +161,18 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
             <div className="mt-4 pt-3.5 border-t border-white/10 grid grid-cols-3 gap-2 text-center">
               <div className="p-2 rounded-xl bg-white/[0.03]">
                 <Zap className="w-4 h-4 text-amber-400 mx-auto mb-1" />
-                <p className="text-[10px] font-bold text-white">Khởi động tức thì</p>
-                <p className="text-[9px] text-[#94a3b8]">Mở từ MH chính</p>
+                <p className="text-[10px] font-bold text-white">Instant Launch</p>
+                <p className="text-[9px] text-[#94a3b8]">Home screen icon</p>
               </div>
               <div className="p-2 rounded-xl bg-white/[0.03]">
                 <Smartphone className="w-4 h-4 text-[#a78bfa] mx-auto mb-1" />
-                <p className="text-[10px] font-bold text-white">Toàn màn hình</p>
-                <p className="text-[9px] text-[#94a3b8]">Không dính URL</p>
+                <p className="text-[10px] font-bold text-white">Fullscreen</p>
+                <p className="text-[9px] text-[#94a3b8]">No browser bars</p>
               </div>
               <div className="p-2 rounded-xl bg-white/[0.03]">
                 <Wifi className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
-                <p className="text-[10px] font-bold text-white">Dùng Offline</p>
-                <p className="text-[9px] text-[#94a3b8]">Mượt mà mọi nơi</p>
+                <p className="text-[10px] font-bold text-white">Works Offline</p>
+                <p className="text-[9px] text-[#94a3b8]">Play anywhere</p>
               </div>
             </div>
 
@@ -182,7 +182,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
                 onClick={onClose}
                 className="text-xs font-semibold text-[#94a3b8] hover:text-white transition-colors cursor-pointer"
               >
-                Đóng
+                Close
               </button>
             </div>
           </motion.div>

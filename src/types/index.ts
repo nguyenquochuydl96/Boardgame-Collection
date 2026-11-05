@@ -67,18 +67,18 @@ export interface SessionDraft {
 export interface Player {
   id: string;
   name: string;
-  nickname?: string;             // Biệt danh (e.g. "Vua Đỏ Đen", "Chúa Tể Euro")
+  nickname?: string;             // Nickname / Title (e.g. "The Dice King", "Euro Mastermind")
   avatar?: string;               // emoji, image URL, or base64 data
   color: string;                 // hex color for charts/badges
   createdAt: string;
-  bio?: string;                  // Châm ngôn / Ghi chú cá nhân
-  playStyle?: string;            // Phong cách chơi ('strategist', 'aggressive', 'coop', etc.)
-  specialtyGameId?: string;      // Game sở trường (tự ghim)
-  specialtyGameName?: string;    // Tên game sở trường
-  weaknessGameId?: string;       // Game sở đoản (tự ghim)
-  weaknessGameName?: string;     // Tên game sở đoản
-  favoriteGameId?: string;       // Game yêu thích tự ghim
-  favoriteGameName?: string;     // Tên game yêu thích tự ghim
+  bio?: string;                  // Quote / Personal bio
+  playStyle?: string;            // Preferred playstyle ('strategist', 'aggressive', 'coop', etc.)
+  specialtyGameId?: string;      // Signature game ID (pinned or auto-calculated)
+  specialtyGameName?: string;    // Signature game title
+  weaknessGameId?: string;       // Nemesis game ID (pinned or auto-calculated)
+  weaknessGameName?: string;     // Nemesis game title
+  favoriteGameId?: string;       // Pinned personal favorite game ID
+  favoriteGameName?: string;     // Pinned personal favorite game title
 }
 
 export interface PlayerScore {

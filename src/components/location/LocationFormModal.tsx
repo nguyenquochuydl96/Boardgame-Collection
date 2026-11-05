@@ -47,7 +47,7 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
     e.preventDefault();
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setError('Vui lòng nhập tên địa điểm');
+      setError('Please enter a venue name');
       return;
     }
 
@@ -58,7 +58,7 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
         l.name.toLowerCase() === trimmedName.toLowerCase()
     );
     if (isDuplicate) {
-      setError('Tên địa điểm này đã tồn tại trong danh sách');
+      setError('This venue name already exists');
       return;
     }
 
@@ -82,7 +82,7 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEdit ? 'Chỉnh Sửa Địa Điểm Chơi' : 'Thêm Địa Điểm Chơi Mới'}
+      title={isEdit ? 'Edit Gaming Venue' : 'Add New Venue'}
       maxWidthClass="max-w-lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4 pt-2">
@@ -95,7 +95,7 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-[var(--accent-neon)]" />
-            Tên Địa Điểm <span className="text-rose-400">*</span>
+            Venue Name <span className="text-rose-400">*</span>
           </label>
           <Input
             value={name}
@@ -103,7 +103,7 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
               setName(e.target.value);
               if (error) setError('');
             }}
-            placeholder="vd: Nhà Huy (Quận 3), The Boardgame Loft..."
+            placeholder="e.g. Huy's Apartment, The Board Game Loft..."
             autoFocus
             required
           />
@@ -112,24 +112,24 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-rose-400" />
-            Địa Chỉ / Khu Vực (Tùy chọn)
+            Address / Area (Optional)
           </label>
           <Input
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder="vd: 123 Võ Văn Tần, Phường 6, Quận 3..."
+            placeholder="e.g. District 3, Ho Chi Minh City..."
           />
         </div>
 
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-1.5 flex items-center gap-1.5">
             <FileText className="w-3.5 h-3.5 text-amber-400" />
-            Ghi Chú / Đặc Điểm (Tùy chọn)
+            Notes & Amenities (Optional)
           </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="vd: Bàn lớn 8 người, có máy lạnh, chỗ đỗ xe thoải mái, mở cửa muộn..."
+            placeholder="e.g. Large 8-player table, AC, cozy lighting, open late..."
             rows={3}
             className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)] transition-all resize-none"
           />
@@ -146,10 +146,10 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
             <div className="flex-1">
               <span className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
                 <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                Đặt làm địa điểm mặc định
+                Set as default venue
               </span>
               <p className="text-[11px] text-[var(--text-secondary)]">
-                Tự động chọn địa điểm này khi tạo ván game mới
+                Automatically selects this venue when starting a new session
               </p>
             </div>
           </label>
@@ -157,11 +157,11 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
 
         <div className="flex justify-end gap-2.5 pt-4 border-t border-[var(--border-subtle)]">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Hủy
+            Cancel
           </Button>
           <Button type="submit" variant="primary">
             <Sparkles className="w-4 h-4 mr-1.5" />
-            {isEdit ? 'Cập Nhật Địa Điểm' : 'Lưu Địa Điểm'}
+            {isEdit ? 'Update Venue' : 'Save Venue'}
           </Button>
         </div>
       </form>

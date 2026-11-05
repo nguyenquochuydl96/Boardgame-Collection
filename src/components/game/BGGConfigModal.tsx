@@ -34,12 +34,12 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
         setTestResult({
           success: true,
           message:
-            '✓ BGG Personal Access Token hợp lệ! Khi không dùng Proxy trung gian, ứng dụng sẽ lưu Token và tự động tra cứu kho BoardGame Catalog mở rộng tích hợp sẵn. Bạn hãy bấm "Save Settings" để lưu lại nhé.',
+            '✓ BGG Personal Access Token is valid! When no proxy is configured, the application uses your token with the embedded expanded Board Game Catalog. Click "Save Settings" to persist.',
         });
       } else {
         setTestResult({
           success: false,
-          message: 'Vui lòng dán BGG Access Token của bạn trước khi kiểm tra hoặc lưu cài đặt.',
+          message: 'Please paste your BGG Access Token before testing or saving settings.',
         });
       }
       setTesting(false);
@@ -71,7 +71,7 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
         }
         setTestResult({
           success: true,
-          message: `✓ Kết nối thành công! Đã kết nối trực tiếp với BoardGameGeek (${count} kết quả cho "catan").`,
+          message: `✓ Connected successfully! Direct connection to BoardGameGeek confirmed (${count} results for "catan").`,
         });
       } else if (res.status === 401) {
         setTestResult({
@@ -108,7 +108,7 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
                 BGG XML API
               </div>
               <div className="font-extrabold text-sm text-[var(--text-primary)] truncate">
-                Đã Phê Duyệt (Approved)
+                Approved Non-Commercial
               </div>
             </div>
           </div>
@@ -116,34 +116,34 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
         </div>
 
         <p className="text-[#94a3b8] leading-relaxed text-xs">
-          Ứng dụng của bạn đã được quản trị viên BoardGameGeek phê duyệt quyền sử dụng phi thương mại. Hãy dán <strong>BGG API Token (Bearer Token)</strong> và địa chỉ Proxy (nếu dùng Cloudflare Worker / Serverless) để kích hoạt tìm kiếm và đồng bộ trực tiếp.
+          Your application has non-commercial API access approval from BoardGameGeek. Paste your <strong>BGG API Token (Bearer Token)</strong> and optional proxy endpoint to enable live search and direct synchronization.
         </p>
 
         <div className="space-y-4">
           <div>
             <Input
-              label="Proxy Base URL (Không bắt buộc - Tùy chọn nâng cao)"
-              placeholder="Để trống nếu không dùng Cloudflare Worker..."
+              label="Proxy Base URL (Optional - Advanced)"
+              placeholder="Leave empty if using built-in catalog..."
               value={proxyUrl}
               onChange={(e) => setProxyUrl(e.target.value)}
               leftIcon={<Globe className="w-4 h-4 text-[#7c3aed]" />}
             />
             <p className="text-[11px] text-[var(--text-muted)] mt-1.5 pl-1">
-              💡 <em>Không bắt buộc:</em> Trình duyệt web có cơ chế bảo mật CORS chặn gọi trực tiếp đến boardgamegeek.com. Bạn có thể để trống ô này; hệ thống sẽ tự động dùng kho Catalog tích hợp sẵn.
+              💡 <em>Optional:</em> Standard browsers enforce CORS policies on direct BGG XML API calls. Leaving this blank automatically falls back to our embedded high-speed catalog.
             </p>
           </div>
 
           <div>
             <Input
               label="BGG Personal Access Token (Bearer Token)"
-              placeholder="Dán token lấy từ boardgamegeek.com/applications"
+              placeholder="Paste token from boardgamegeek.com/applications"
               type="password"
               value={apiToken}
               onChange={(e) => setApiToken(e.target.value)}
               leftIcon={<Key className="w-4 h-4 text-[#a78bfa]" />}
             />
             <p className="text-[11px] text-[#a78bfa] mt-1.5 pl-1 font-medium">
-              🔑 Mã Token đã được cấp khi đơn đăng ký BGG XML API của bạn được duyệt.
+              🔑 Access token granted under your approved BGG XML API application.
             </p>
           </div>
         </div>
@@ -167,12 +167,12 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
 
         <div className="p-4 rounded-2xl bg-[#1e1e35]/60 border border-white/10 space-y-2 text-xs text-[#94a3b8]">
           <p className="font-bold text-white flex items-center gap-1.5">
-            <ExternalLink className="w-3.5 h-3.5 text-[#ff7722]" /> Cách lấy Access Token trên BGG:
+            <ExternalLink className="w-3.5 h-3.5 text-[#ff7722]" /> How to obtain your BGG Access Token:
           </p>
           <ol className="list-decimal list-inside space-y-1.5 pl-1">
-            <li>Đăng nhập tài khoản BoardGameGeek của bạn.</li>
+            <li>Log in to your BoardGameGeek account.</li>
             <li>
-              Truy cập{' '}
+              Visit{' '}
               <a
                 href="https://boardgamegeek.com/applications"
                 target="_blank"
@@ -183,9 +183,9 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
               </a>
               .
             </li>
-            <li>Chọn ứng dụng đã được duyệt và sao chép <strong>Access Token (Bearer Token)</strong>.</li>
+            <li>Select your approved application and copy the <strong>Access Token (Bearer Token)</strong>.</li>
             <li className="text-emerald-400">
-              ✓ Logo <strong>"Powered by BGG"</strong> đã được gắn đầy đủ khắp ứng dụng theo đúng điều khoản sử dụng của BGG.
+              ✓ The <strong>"Powered by BGG"</strong> badge is displayed across the app adhering to BGG terms of service.
             </li>
           </ol>
         </div>

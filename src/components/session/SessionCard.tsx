@@ -58,12 +58,12 @@ export const SessionCard: React.FC<SessionCardProps> = ({
               {session.status === 'draft' || session.status === 'in_progress' ? (
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-bold shrink-0 animate-pulse">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                  Đang Chơi
+                  In Progress
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold shrink-0">
                   <Check className="w-2.5 h-2.5 stroke-[3]" />
-                  Hoàn Thành
+                  Completed
                 </span>
               )}
             </div>

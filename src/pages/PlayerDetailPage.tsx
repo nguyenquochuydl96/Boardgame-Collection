@@ -260,7 +260,7 @@ export const PlayerDetailPage: React.FC = () => {
 
   const handleDelete = () => {
     if (!player) return;
-    if (window.confirm(`Bạn có chắc muốn xóa hồ sơ người chơi "${player.name}"?`)) {
+    if (window.confirm(`Are you sure you want to delete player profile "${player.name}"?`)) {
       const playerId = player.id;
       navigate('/players', { replace: true });
       setTimeout(() => {
@@ -280,13 +280,13 @@ export const PlayerDetailPage: React.FC = () => {
             👤
           </div>
           <h1 className="font-display font-bold text-2xl text-white">
-            Không Tìm Thấy Người Chơi
+            Player Not Found
           </h1>
           <p className="text-sm text-[var(--text-secondary)]">
-            Người chơi này không tồn tại hoặc đã được xóa khỏi hệ thống.
+            This player profile does not exist or has been deleted.
           </p>
           <Link to="/players">
-            <Button variant="primary">Quay Lại Danh Sách</Button>
+            <Button variant="primary">Back to Players List</Button>
           </Link>
         </Card>
       </PageTransition>
@@ -303,7 +303,7 @@ export const PlayerDetailPage: React.FC = () => {
             className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--text-secondary)] hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Danh Sách Người Chơi</span>
+            <span>Players Roster</span>
           </Link>
 
           <div className="flex items-center gap-2">
@@ -314,10 +314,10 @@ export const PlayerDetailPage: React.FC = () => {
               className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10 shadow-sm"
             >
               <Edit3 className="w-4 h-4 mr-1.5" />
-              Chỉnh Sửa Hồ Sơ
+              Edit Profile
             </Button>
 
-            <Button variant="danger" size="sm" onClick={handleDelete} title="Xóa người chơi này">
+            <Button variant="danger" size="sm" onClick={handleDelete} title="Delete this player">
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
@@ -377,71 +377,71 @@ export const PlayerDetailPage: React.FC = () => {
 
               <p className="text-xs text-[var(--text-muted)] inline-flex items-center gap-1.5 pt-0.5">
                 <Calendar className="w-3.5 h-3.5 text-purple-400" />
-                Gia nhập bàn đấu từ {formatDate(player.createdAt)}
+                Member since {formatDate(player.createdAt)}
               </p>
             </div>
           </div>
 
           {/* 5 INTERACTIVE QUICK STAT BADGES */}
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 w-full lg:w-auto tabular-nums">
-            {/* 1. Số Ván */}
+            {/* 1. Total Plays */}
             <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[95px]">
-              <span className="text-[11px] text-[var(--text-secondary)] block">Số Ván</span>
+              <span className="text-[11px] text-[var(--text-secondary)] block">Total Plays</span>
               <p className="font-display font-extrabold text-xl text-white mt-0.5">
                 {totalPlays}
               </p>
             </div>
 
-            {/* 2. Tỉ Lệ Thắng */}
+            {/* 2. Win Rate */}
             <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[95px]">
-              <span className="text-[11px] text-[var(--text-secondary)] block">Tỉ Lệ Thắng</span>
+              <span className="text-[11px] text-[var(--text-secondary)] block">Win Rate</span>
               <p className="font-display font-extrabold text-xl text-emerald-400 mt-0.5">
                 {overallWinRate}%
               </p>
-              <span className="text-[10px] text-[var(--text-muted)]">({totalWins} thắng)</span>
+              <span className="text-[10px] text-[var(--text-muted)]">({totalWins} wins)</span>
             </div>
 
-            {/* 3. Chuỗi Thắng Kỷ Lục (Clickable) */}
+            {/* 3. Win Streak (Clickable) */}
             <div
               onClick={() => setActiveStreakType('win')}
               className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-amber-500/30 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/15 text-center min-w-[105px] cursor-pointer transition-all select-none group"
-              title="Nhấp để xem chi tiết chuỗi thắng liên tiếp và ván bắt đầu"
+              title="Click to view winning streak history"
             >
               <div className="flex items-center justify-center gap-1 text-[11px] text-amber-400 font-bold group-hover:text-amber-300">
                 <Flame className="w-3.5 h-3.5 fill-current text-orange-400" />
-                <span>Chuỗi Thắng</span>
+                <span>Win Streak</span>
               </div>
               <p className="font-display font-black text-xl text-white mt-0.5 group-hover:text-amber-300 transition-colors">
                 {streaks.longestWinStreak.count}W
               </p>
               <span className="text-[10px] text-amber-400/90 group-hover:underline flex items-center justify-center gap-0.5 mt-0.5 font-medium">
-                Chi tiết <ChevronRight className="w-2.5 h-2.5" />
+                Details <ChevronRight className="w-2.5 h-2.5" />
               </span>
             </div>
 
-            {/* 4. Chuỗi Thua Kỷ Lục (Clickable) */}
+            {/* 4. Loss Streak (Clickable) */}
             <div
               onClick={() => setActiveStreakType('loss')}
               className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-rose-500/30 hover:border-rose-400 hover:shadow-lg hover:shadow-rose-500/15 text-center min-w-[105px] cursor-pointer transition-all select-none group"
-              title="Nhấp để xem chi tiết chuỗi thua liên tiếp và ván bắt đầu"
+              title="Click to view losing streak history"
             >
               <div className="flex items-center justify-center gap-1 text-[11px] text-rose-400 font-bold group-hover:text-rose-300">
                 <CloudRain className="w-3.5 h-3.5 text-rose-400" />
-                <span>Chuỗi Thua</span>
+                <span>Loss Streak</span>
               </div>
               <p className="font-display font-black text-xl text-white mt-0.5 group-hover:text-rose-300 transition-colors">
                 {streaks.longestLossStreak.count}L
               </p>
               <span className="text-[10px] text-rose-400/90 group-hover:underline flex items-center justify-center gap-0.5 mt-0.5 font-medium">
-                Chi tiết <ChevronRight className="w-2.5 h-2.5" />
+                Details <ChevronRight className="w-2.5 h-2.5" />
               </span>
             </div>
 
-            {/* 5. Đối Thủ / Thắng Trận */}
+            {/* 5. Nemesis / Total Wins */}
             {rivalInfo && rivalInfo.player ? (
               <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-purple-500/30 text-center min-w-[105px]">
                 <span className="text-[11px] text-purple-300 block flex items-center justify-center gap-1">
-                  <Swords className="w-3 h-3" /> Đối Thủ
+                  <Swords className="w-3 h-3" /> Top Nemesis
                 </span>
                 <p className="font-display font-bold text-xs text-white truncate mt-1">
                   {rivalInfo.player.name}
@@ -452,7 +452,7 @@ export const PlayerDetailPage: React.FC = () => {
               </div>
             ) : (
               <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[95px]">
-                <span className="text-[11px] text-[var(--text-secondary)] block">Thắng Trận</span>
+                <span className="text-[11px] text-[var(--text-secondary)] block">Total Wins</span>
                 <p className="font-display font-extrabold text-xl text-amber-400 mt-0.5">
                   {totalWins}
                 </p>
@@ -469,11 +469,11 @@ export const PlayerDetailPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-400">
                   <Heart className="w-4 h-4 fill-current" />
-                  Game Yêu Thích
+                  Favorite Game
                 </span>
                 {favoriteGame?.isPinned && (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                    Đã ghim
+                    Pinned
                   </span>
                 )}
               </div>
@@ -499,26 +499,26 @@ export const PlayerDetailPage: React.FC = () => {
                       {favoriteGame.gameName}
                     </Link>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5 tabular-nums">
-                      Đã chơi <strong className="text-white">{favoriteGame.plays} ván</strong> · Thắng{' '}
+                      Played <strong className="text-white">{favoriteGame.plays} {favoriteGame.plays === 1 ? 'play' : 'plays'}</strong> · Won{' '}
                       <strong className="text-emerald-400">{favoriteGame.winRate}%</strong>
                     </p>
                   </div>
                 </div>
               ) : (
                 <p className="text-xs text-[var(--text-muted)] py-4">
-                  Chưa ghi nhận ván đấu nào để xác định game yêu thích.
+                  No game plays logged yet to determine favorite game.
                 </p>
               )}
             </div>
 
             <div className="text-[11px] text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-2.5 flex items-center justify-between">
-              <span>{favoriteGame?.isPinned ? 'Tự chọn ghim yêu thích' : 'Game chơi nhiều nhất'}</span>
+              <span>{favoriteGame?.isPinned ? 'Manually pinned favorite' : 'Most played game'}</span>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
                 className="text-amber-400 hover:underline cursor-pointer"
               >
-                Đổi game →
+                Change game →
               </button>
             </div>
           </Card>
@@ -529,11 +529,11 @@ export const PlayerDetailPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-400">
                   <Trophy className="w-4 h-4" />
-                  Game Sở Trường
+                  Signature Game
                 </span>
                 {signatureGame?.isPinned && (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    Đã ghim
+                    Pinned
                   </span>
                 )}
               </div>
@@ -559,31 +559,31 @@ export const PlayerDetailPage: React.FC = () => {
                       {signatureGame.gameName}
                     </Link>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5 tabular-nums">
-                      Tỉ lệ thắng: <strong className="text-emerald-400 font-bold">{signatureGame.winRate}%</strong>{' '}
-                      ({signatureGame.wins}/{signatureGame.plays} ván)
+                      Win rate: <strong className="text-emerald-400 font-bold">{signatureGame.winRate}%</strong>{' '}
+                      ({signatureGame.wins}/{signatureGame.plays} plays)
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="py-4 px-3 text-center rounded-xl bg-[var(--bg-elevated)]/40 border border-white/5 space-y-1">
                   <p className="text-xs text-[var(--text-secondary)] font-medium">
-                    Chưa đủ dữ liệu (cần tối thiểu trên 5 ván)
+                    Not enough data yet (minimum 5 plays required)
                   </p>
                   <p className="text-[11px] text-[var(--text-muted)]">
-                    Cần chơi từ 5 ván trở lên để tránh sai lệch từ playtest / thử game, hoặc bạn có thể tự ghim game sở trường.
+                    Requires at least 5 sessions to avoid playtest bias, or you can manually pin your specialty game.
                   </p>
                 </div>
               )}
             </div>
 
             <div className="text-[11px] text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-2.5 flex items-center justify-between">
-              <span>{signatureGame?.isPinned ? 'Tự chọn sở trường' : 'Tỉ lệ thắng cao nhất (≥ 5 ván)'}</span>
+              <span>{signatureGame?.isPinned ? 'Manually pinned specialty' : 'Highest win rate (≥ 5 plays)'}</span>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
                 className="text-emerald-400 hover:underline cursor-pointer"
               >
-                Ghim sở trường →
+                Pin specialty →
               </button>
             </div>
           </Card>
@@ -594,11 +594,11 @@ export const PlayerDetailPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-rose-400">
                   <Skull className="w-4 h-4" />
-                  Game Sở Đoản (Kỵ Rơ)
+                  Nemesis Game (Kryptonite)
                 </span>
                 {nemesisGame?.isPinned && (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                    Đã ghim
+                    Pinned
                   </span>
                 )}
               </div>
@@ -624,30 +624,30 @@ export const PlayerDetailPage: React.FC = () => {
                       {nemesisGame.gameName}
                     </Link>
                     <p className="text-xs text-[var(--text-secondary)] mt-0.5 tabular-nums">
-                      Thắng {nemesisGame.winRate}% ({nemesisGame.wins}/{nemesisGame.plays} ván) · Cần phục thù!
+                      Win rate: {nemesisGame.winRate}% ({nemesisGame.wins}/{nemesisGame.plays} plays) · Time for revenge!
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="py-4 px-3 text-center rounded-xl bg-[var(--bg-elevated)]/40 border border-white/5 space-y-1">
                   <p className="text-xs text-[var(--text-secondary)] font-medium">
-                    Chưa phát hiện game kỵ rơ (≥ 5 ván)
+                    No nemesis game detected (≥ 5 plays)
                   </p>
                   <p className="text-[11px] text-[var(--text-muted)]">
-                    Chưa có tựa game nào chơi từ 5 ván trở lên có tỉ lệ thắng thấp (≤ 40%), hoặc bạn có thể tự ghim game sợ nhất.
+                    No game played 5+ times has a low win rate (≤ 40%), or you can manually pin your toughest game.
                   </p>
                 </div>
               )}
             </div>
 
             <div className="text-[11px] text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-2.5 flex items-center justify-between">
-              <span>{nemesisGame?.isPinned ? 'Tự chọn sở đoản' : 'Tỉ lệ thắng thấp nhất (≥ 5 ván)'}</span>
+              <span>{nemesisGame?.isPinned ? 'Manually pinned nemesis' : 'Lowest win rate (≥ 5 plays)'}</span>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
                 className="text-rose-400 hover:underline cursor-pointer"
               >
-                Ghim sở đoản →
+                Pin nemesis →
               </button>
             </div>
           </Card>
@@ -658,16 +658,16 @@ export const PlayerDetailPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="font-display font-bold text-lg text-white">
-                Thống Kê Chi Tiết Từng Tựa Game
+                Detailed Per-Game Performance
               </h2>
               <p className="text-xs text-[var(--text-secondary)]">
-                Đã tham gia {perGameStats.length} tựa game khác nhau
+                Competed across {perGameStats.length} different boardgame titles
               </p>
             </div>
 
             <div className="flex items-center gap-2">
               <Input
-                placeholder="Tìm game trong lịch sử..."
+                placeholder="Search played games..."
                 value={breakdownSearch}
                 onChange={(e) => setBreakdownSearch(e.target.value)}
                 leftIcon={<Search className="w-3.5 h-3.5 text-[var(--text-secondary)]" />}
@@ -675,15 +675,15 @@ export const PlayerDetailPage: React.FC = () => {
               />
 
               <select
-                aria-label="Sắp xếp danh sách game"
+                aria-label="Sort games list"
                 value={breakdownSort}
                 onChange={(e) => setBreakdownSort(e.target.value as any)}
                 className="px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-white cursor-pointer focus:outline-none"
               >
-                <option value="plays">Nhiều ván nhất</option>
-                <option value="winRate">Tỉ lệ thắng cao nhất</option>
-                <option value="wins">Thắng nhiều nhất</option>
-                <option value="name">Tên A-Z</option>
+                <option value="plays">Most Plays</option>
+                <option value="winRate">Highest Win Rate</option>
+                <option value="wins">Most Wins</option>
+                <option value="name">Name A-Z</option>
               </select>
             </div>
           </div>
@@ -716,7 +716,7 @@ export const PlayerDetailPage: React.FC = () => {
                         {item.gameName}
                       </h4>
                       <p className="text-[11px] text-[var(--text-muted)] tabular-nums">
-                        {item.plays} ván · {item.wins} chiến thắng
+                        {item.plays} {item.plays === 1 ? 'play' : 'plays'} · {item.wins} {item.wins === 1 ? 'win' : 'wins'}
                       </p>
                     </div>
                   </Link>
@@ -756,7 +756,7 @@ export const PlayerDetailPage: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-8 text-xs text-[var(--text-muted)]">
-              Không tìm thấy tựa game nào phù hợp với từ khóa tìm kiếm.
+              No games match your search query.
             </div>
           )}
         </Card>
@@ -765,13 +765,13 @@ export const PlayerDetailPage: React.FC = () => {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-display font-bold text-xl text-white">
-              Ván Đấu Gần Đây (5 Ván Mới Nhất)
+              Recent Sessions (Last 5 Plays)
             </h2>
             <Link
               to={`/sessions?playerId=${player.id}`}
               className="text-xs font-bold text-amber-400 hover:underline flex items-center gap-1"
             >
-              Xem tất cả {playerSessions.length} ván <ArrowRight className="w-3.5 h-3.5" />
+              View all {playerSessions.length} sessions <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
@@ -787,7 +787,7 @@ export const PlayerDetailPage: React.FC = () => {
             </div>
           ) : (
             <Card className="p-8 text-center text-xs text-[var(--text-muted)]">
-              Chưa có ván đấu nào được ghi nhận cho người chơi này.
+              No game sessions recorded for this player yet.
             </Card>
           )}
         </div>

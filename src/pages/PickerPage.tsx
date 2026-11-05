@@ -114,7 +114,7 @@ export const PickerPage: React.FC = () => {
       .map((g) => ({
         id: g.id,
         name: g.name,
-        subtitle: `${g.minPlayers}-${g.maxPlayers} người · ${g.playingTime} phút`,
+        subtitle: `${g.minPlayers}-${g.maxPlayers} players · ${g.playingTime}m`,
         thumbnail: g.thumbnail || g.image,
       }));
   }, [filteredAvailableGames, selectedGameIds]);
@@ -165,10 +165,10 @@ export const PickerPage: React.FC = () => {
           <div>
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] flex items-center gap-2.5">
               <span>🎲</span>
-              Bàn Chơi &amp; Vòng Quay May Mắn
+              Tabletop Hub &amp; Lucky Picker
             </h1>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-              Chọn người đi đầu ngẫu nhiên hoặc quyết định tối nay cả nhóm chơi game gì!
+              Randomly choose the first player or decide what game hits the table tonight!
             </p>
           </div>
 
@@ -195,7 +195,7 @@ export const PickerPage: React.FC = () => {
                 />
               )}
               <Crown className="w-4 h-4 text-amber-400 relative z-10" />
-              <span className="relative z-10">Chọn Người Đi Đầu</span>
+              <span className="relative z-10">Determine First Player</span>
             </button>
             <button
               type="button"
@@ -218,7 +218,7 @@ export const PickerPage: React.FC = () => {
                 />
               )}
               <Dices className="w-4 h-4 text-[var(--accent-neon)] relative z-10" />
-              <span className="relative z-10">Hôm Nay Chơi Gì?</span>
+              <span className="relative z-10">What to Play Tonight?</span>
             </button>
           </div>
         </div>
@@ -227,7 +227,7 @@ export const PickerPage: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
           <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
             <Sparkles className="w-4 h-4 text-[var(--accent-neon)]" />
-            <span>Hiệu Ứng Trải Nghiệm:</span>
+            <span>Picker Style:</span>
           </div>
 
           <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
@@ -248,7 +248,7 @@ export const PickerPage: React.FC = () => {
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
-              <span className="relative z-10">🎡 Vòng Quay May Mắn</span>
+              <span className="relative z-10">🎡 Lucky Wheel</span>
             </button>
             <button
               type="button"
@@ -267,7 +267,7 @@ export const PickerPage: React.FC = () => {
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
-              <span className="relative z-10">🎴 Xáo &amp; Rút Thẻ Bí Ẩn</span>
+              <span className="relative z-10">🎴 Mystery Card Shuffle</span>
             </button>
           </div>
         </div>
@@ -282,10 +282,10 @@ export const PickerPage: React.FC = () => {
                   ⚠️
                 </div>
                 <p className="font-bold text-[var(--text-primary)] text-sm">
-                  Chưa có lựa chọn nào trong danh sách
+                  No items in selection pool
                 </p>
                 <p className="text-xs text-[var(--text-secondary)] max-w-xs mx-auto">
-                  Vui lòng tích chọn ít nhất 2 người chơi hoặc 2 boardgame ở cột bên phải để bắt đầu quay!
+                  Please select at least 2 players or 2 board games on the right to start spinning!
                 </p>
               </div>
             ) : animStyle === 'wheel' ? (
@@ -326,7 +326,7 @@ export const PickerPage: React.FC = () => {
                     )}
                     <div className="min-w-0">
                       <div className="text-[10px] font-mono text-amber-300 font-bold uppercase tracking-wider">
-                        {mode === 'first_player' ? '👑 Người Đi Đầu' : '🎯 Game Tối Nay'}
+                        {mode === 'first_player' ? '👑 First Player' : '🎯 Game Tonight'}
                       </div>
                       <h4 className="font-display font-extrabold text-sm sm:text-base text-white truncate">
                         {chosenResult.name}
@@ -345,7 +345,7 @@ export const PickerPage: React.FC = () => {
                       className="shrink-0 text-xs shadow-md"
                     >
                       <Play className="w-3.5 h-3.5 mr-1 fill-current" />
-                      Vào Ván
+                      Start Session
                     </Button>
                   )}
                 </motion.div>
@@ -361,10 +361,10 @@ export const PickerPage: React.FC = () => {
                 <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
                   <div>
                     <h3 className="font-bold text-sm text-[var(--text-primary)]">
-                      Bạn Bè Tại Bàn Chơi ({playerItems.length}/{allPlayers.length + guestPlayers.length})
+                      Players at Table ({playerItems.length}/{allPlayers.length + guestPlayers.length})
                     </h3>
                     <p className="text-[11px] text-[var(--text-secondary)]">
-                      Tích chọn những người có mặt tối nay
+                      Select everyone attending game night
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -373,7 +373,7 @@ export const PickerPage: React.FC = () => {
                       onClick={() => setActivePlayerIds(allPlayers.map((p) => p.id))}
                       className="text-[11px] text-[var(--accent-neon)] font-bold hover:underline cursor-pointer"
                     >
-                      Chọn hết
+                      Select All
                     </button>
                     <span className="text-xs text-[var(--text-muted)]">|</span>
                     <button
@@ -381,7 +381,7 @@ export const PickerPage: React.FC = () => {
                       onClick={() => setActivePlayerIds([])}
                       className="text-[11px] text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
                     >
-                      Bỏ chọn hết
+                      Deselect All
                     </button>
                   </div>
                 </div>
@@ -427,14 +427,14 @@ export const PickerPage: React.FC = () => {
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="text-base">{getSafeDisplayAvatar(g.avatar, '🎲')}</span>
-                        <span className="font-bold text-xs truncate">{g.name} (Khách)</span>
+                        <span className="font-bold text-xs truncate">{g.name} (Guest)</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => setGuestPlayers((prev) => prev.filter((x) => x.id !== g.id))}
                         className="text-xs text-rose-400 font-bold hover:underline"
                       >
-                        Xóa
+                        Remove
                       </button>
                     </div>
                   ))}
@@ -443,13 +443,13 @@ export const PickerPage: React.FC = () => {
                 {/* Add Guest Form */}
                 <form onSubmit={handleAddGuest} className="pt-2 border-t border-[var(--border-subtle)] flex gap-2">
                   <Input
-                    placeholder="Tên bạn mới (khách)..."
+                    placeholder="Add guest player name..."
                     value={newGuestName}
                     onChange={(e) => setNewGuestName(e.target.value)}
                     className="text-xs py-1.5"
                   />
                   <Button type="submit" size="sm" variant="secondary" disabled={!newGuestName.trim()}>
-                    <Plus className="w-3.5 h-3.5 mr-1" /> Thêm
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Add
                   </Button>
                 </form>
               </div>
@@ -459,10 +459,10 @@ export const PickerPage: React.FC = () => {
                 <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
                   <div>
                     <h3 className="font-bold text-sm text-[var(--text-primary)]">
-                      Kho Boardgame ({gameItems.length}/{filteredAvailableGames.length})
+                      Board Games Vault ({gameItems.length}/{filteredAvailableGames.length})
                     </h3>
                     <p className="text-[11px] text-[var(--text-secondary)]">
-                      Lọc game phù hợp số người &amp; thời gian
+                      Filter games by player count &amp; duration
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -471,7 +471,7 @@ export const PickerPage: React.FC = () => {
                       onClick={selectAllGames}
                       className="text-[11px] text-[var(--accent-neon)] font-bold hover:underline cursor-pointer"
                     >
-                      Chọn hết
+                      Select All
                     </button>
                     <span className="text-xs text-[var(--text-muted)]">|</span>
                     <button
@@ -479,7 +479,7 @@ export const PickerPage: React.FC = () => {
                       onClick={deselectAllGames}
                       className="text-[11px] text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
                     >
-                      Bỏ chọn hết
+                      Deselect All
                     </button>
                   </div>
                 </div>
@@ -488,7 +488,7 @@ export const PickerPage: React.FC = () => {
                 <div className="space-y-2">
                   {/* Search */}
                   <Input
-                    placeholder="Tìm tên game..."
+                    placeholder="Search game title..."
                     value={gameSearch}
                     onChange={(e) => setGameSearch(e.target.value)}
                     className="text-xs py-1.5"
@@ -496,13 +496,13 @@ export const PickerPage: React.FC = () => {
 
                   {/* Status Filter */}
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Kho:</span>
+                    <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Vault:</span>
                     {[
-                      { id: 'own', label: 'Sở hữu (Có sẵn)' },
-                      { id: 'rented', label: 'Thuê/Quán' },
-                      { id: 'borrowed', label: 'Đang mượn' },
-                      { id: 'lent_out', label: 'Cho mượn' },
-                      { id: 'all', label: 'Tất cả' },
+                      { id: 'own', label: 'Owned' },
+                      { id: 'rented', label: 'Rented' },
+                      { id: 'borrowed', label: 'Borrowed' },
+                      { id: 'lent_out', label: 'Lent Out' },
+                      { id: 'all', label: 'All' },
                     ].map((st) => {
                       const isSelected =
                         st.id === 'all'
@@ -539,7 +539,7 @@ export const PickerPage: React.FC = () => {
 
                   {/* Player Count Filter */}
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Người:</span>
+                    <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Players:</span>
                     {(['all', '2', '3', '4', '5+'] as const).map((cnt) => (
                       <button
                         key={cnt}
@@ -552,14 +552,14 @@ export const PickerPage: React.FC = () => {
                             : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)]'
                         )}
                       >
-                        {cnt === 'all' ? 'Tất cả' : `${cnt} người`}
+                        {cnt === 'all' ? 'All' : `${cnt} players`}
                       </button>
                     ))}
                   </div>
 
                   {/* Duration Filter */}
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Thời lượng:</span>
+                    <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Duration:</span>
                     {(['all', 'short', 'medium', 'long'] as const).map((dur) => (
                       <button
                         key={dur}
@@ -573,12 +573,12 @@ export const PickerPage: React.FC = () => {
                         )}
                       >
                         {dur === 'all'
-                          ? 'Tất cả'
+                          ? 'All'
                           : dur === 'short'
-                          ? '< 45p'
+                          ? '< 45m'
                           : dur === 'medium'
-                          ? '45-90p'
-                          : '> 90p'}
+                          ? '45-90m'
+                          : '> 90m'}
                       </button>
                     ))}
                   </div>
@@ -614,7 +614,7 @@ export const PickerPage: React.FC = () => {
                           <div className="min-w-0">
                             <span className="font-bold text-xs truncate block">{g.name}</span>
                             <span className="text-[10px] text-[var(--text-secondary)] block">
-                              {g.minPlayers}-{g.maxPlayers} người · {g.playingTime}p
+                              {g.minPlayers}-{g.maxPlayers} players · {g.playingTime}m
                             </span>
                           </div>
                         </div>

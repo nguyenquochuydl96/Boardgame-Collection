@@ -407,9 +407,9 @@ export const AddGamePage: React.FC = () => {
                   <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3 text-xs text-amber-200">
                     <span className="text-base">☕</span>
                     <div>
-                      <p className="font-bold text-amber-300">Game Thuê / Chơi Quán</p>
+                      <p className="font-bold text-amber-300">Rented / Cafe Play</p>
                       <p className="text-amber-200/80 mt-0.5">
-                        Trải nghiệm tại tiệm cafe boardgame — không tính vào tổng giá trị tài sản kho sở hữu cá nhân.
+                        Played at board game cafes or rented — excluded from personal collection valuation.
                       </p>
                     </div>
                   </div>
@@ -418,7 +418,7 @@ export const AddGamePage: React.FC = () => {
               {/* Price Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
-                  label="Purchase Price (VNĐ)"
+                  label="Purchase Price (VND)"
                   type="number"
                   placeholder="e.g. 1450000"
                   value={purchasePrice}
@@ -428,7 +428,7 @@ export const AddGamePage: React.FC = () => {
 
                 {status === 'sold' && (
                   <Input
-                    label="Sell Price (VNĐ)"
+                    label="Sell Price (VND)"
                     type="number"
                     placeholder="e.g. 950000"
                     value={sellPrice}
@@ -443,7 +443,7 @@ export const AddGamePage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[#7c3aed]/10 border border-[#7c3aed]/30">
                   <Input
                     label="Lent to (Borrower Name)"
-                    placeholder="e.g. Minh Quân"
+                    placeholder="e.g. Alex, Sam"
                     value={lentToName}
                     onChange={(e) => setLentToName(e.target.value)}
                   />

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Users, Clock, Star, Play, Dices } from 'lucide-react';
+import { Users, Clock, Star, Play, Dices, Edit3 } from 'lucide-react';
 import { BoardGame } from '../../types';
 import { GameStatusBadge } from './GameStatusBadge';
 import { formatVND } from '../../lib/utils';
@@ -11,12 +11,14 @@ export interface GameCardProps {
   game: BoardGame;
   playCount?: number;
   viewMode?: 'grid' | 'list';
+  onEdit?: (game: BoardGame) => void;
 }
 
 export const GameCard: React.FC<GameCardProps> = ({
   game,
   playCount = 0,
   viewMode = 'grid',
+  onEdit,
 }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -95,7 +97,24 @@ export const GameCard: React.FC<GameCardProps> = ({
           </div>
 
           <div className="flex flex-col items-end gap-2 shrink-0">
-            <GameStatusBadge status={game.status} />
+            <div className="flex items-center gap-1.5">
+              <GameStatusBadge status={game.status} />
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onEdit(game);
+                  }}
+                  className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Quick Edit Game"
+                  aria-label={`Quick Edit ${game.name}`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             <span className="text-xs font-semibold text-[var(--text-secondary)] tabular-nums">
               {playCount} {playCount === 1 ? 'play' : 'plays'}
             </span>
@@ -146,15 +165,32 @@ export const GameCard: React.FC<GameCardProps> = ({
           {/* Smooth gradient scrim for high-contrast legible text */}
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--bg-base)] via-black/35 to-transparent opacity-90 pointer-events-none" />
 
-          {/* Top bar: Status Badge + Rating */}
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-10">
+          {/* Top bar: Status Badge + Rating + Quick Edit */}
+          <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-20">
             <GameStatusBadge status={game.status} />
-            {game.bggRating && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-xs font-bold text-amber-400 tabular-nums border border-white/10 shadow-sm">
-                <Star className="w-3 h-3 fill-amber-400" />
-                {game.bggRating.toFixed(1)}
-              </span>
-            )}
+            <div className="flex items-center gap-1.5">
+              {game.bggRating && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-xs font-bold text-amber-400 tabular-nums border border-white/10 shadow-sm">
+                  <Star className="w-3 h-3 fill-amber-400" />
+                  {game.bggRating.toFixed(1)}
+                </span>
+              )}
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onEdit(game);
+                  }}
+                  className="p-1.5 rounded-lg bg-black/70 hover:bg-black/95 backdrop-blur-md text-white/80 hover:text-white border border-white/15 transition-colors shadow-sm cursor-pointer"
+                  title="Quick Edit Game"
+                  aria-label={`Quick Edit ${game.name}`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Hover Play Count Overlay */}

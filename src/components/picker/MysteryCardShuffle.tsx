@@ -314,7 +314,7 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
 
                   <div className="w-full min-w-0 px-1">
                     <div className="text-[10px] font-mono font-bold tracking-wider uppercase text-amber-300/80 mb-0.5">
-                      {mode === 'first_player' ? '👑 Người Đi Đầu' : '🎯 Game Tối Nay'}
+                      {mode === 'first_player' ? '👑 First Player' : '🎯 Game Tonight'}
                     </div>
                     <h3 className="font-display font-extrabold text-base sm:text-lg text-white truncate max-w-full">
                       {revealedItem.name}
@@ -336,11 +336,11 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
                       onClick={() => onEnterGame(revealedItem.id)}
                       className="w-full text-xs shadow-lg py-1.5 font-bold"
                     >
-                      <Play className="w-3.5 h-3.5 mr-1 fill-current" /> Vào Ván Chơi Ngay
+                      <Play className="w-3.5 h-3.5 mr-1 fill-current" /> Start Game Session
                     </Button>
                   ) : (
                     <div className="text-[10px] font-mono text-emerald-300 font-extrabold bg-emerald-500/20 border border-emerald-500/40 px-3.5 py-1 rounded-full shadow-sm">
-                      ✨ LỰA CHỌN MAY MẮN ✨
+                      ✨ LUCKY PICK ✨
                     </div>
                   )}
                 </div>
@@ -362,10 +362,10 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
           >
             <Shuffle className={cn('w-4 h-4 mr-2', isBusy && 'animate-spin')} />
             {isBusy
-              ? 'Đang xáo bài...'
+              ? 'Shuffling deck...'
               : stage === 'revealed'
-              ? 'Rút Thẻ Khác'
-              : 'Xáo & Rút Thẻ May Mắn'}
+              ? 'Draw Another Card'
+              : 'Shuffle & Draw Card'}
           </Button>
 
           {stage === 'revealed' && (
@@ -374,7 +374,7 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
               variant="secondary"
               onClick={handleReset}
               className="text-xs"
-              title="Đặt lại cỗ bài"
+              title="Reset deck"
             >
               <RotateCcw className="w-4 h-4" />
             </Button>
@@ -382,7 +382,7 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
         </div>
 
         <p className="text-xs text-[var(--text-secondary)] tabular-nums">
-          {items.length} lựa chọn trong cỗ bài
+          {items.length} cards in deck
         </p>
       </div>
     </div>

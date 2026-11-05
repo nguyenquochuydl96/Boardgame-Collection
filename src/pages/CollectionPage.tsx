@@ -14,12 +14,13 @@ import {
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { GameGrid } from '../components/game/GameGrid';
+import { QuickEditGameModal } from '../components/game/QuickEditGameModal';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
-import { GameStatus } from '../types';
+import { BoardGame, GameStatus } from '../types';
 import { CollectionImportModal } from '../components/game/CollectionImportModal';
 import { BGGConfigModal } from '../components/game/BGGConfigModal';
 import { WhatToPlayModal } from '../components/game/WhatToPlayModal';
@@ -28,18 +29,20 @@ type FilterTab = 'all' | GameStatus;
 type SortOption = 'name' | 'addedDate' | 'bggRating' | 'purchasePrice';
 
 const FILTER_TABS: Array<{ id: FilterTab; label: string }> = [
-  { id: 'all', label: 'Tất Cả' },
-  { id: 'own', label: 'Đang Sở Hữu' },
-  { id: 'rented', label: 'Thuê / Chơi Quán' },
-  { id: 'lent_out', label: 'Cho Mượn' },
-  { id: 'borrowed', label: 'Mượn' },
-  { id: 'sold', label: 'Đã Bán' },
+  { id: 'all', label: 'All Games' },
+  { id: 'own', label: 'Owned' },
+  { id: 'rented', label: 'Rented' },
+  { id: 'lent_out', label: 'Lent Out' },
+  { id: 'borrowed', label: 'Borrowed' },
+  { id: 'sold', label: 'Sold' },
   { id: 'wishlist', label: 'Wishlist' },
-  { id: 'previously_owned', label: 'Từng Sở Hữu' },
+  { id: 'previously_owned', label: 'Prev. Owned' },
 ];
 
 export const CollectionPage: React.FC = () => {
   const games = useGameStore((s) => s.games);
+  const updateGame = useGameStore((s) => s.updateGame);
+  const deleteGame = useGameStore((s) => s.deleteGame);
   const sessions = useSessionStore((s) => s.sessions);
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -69,6 +72,7 @@ export const CollectionPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('addedDate');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [quickEditGame, setQuickEditGame] = useState<BoardGame | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importModalTab, setImportModalTab] = useState<'file' | 'export' | 'bgg'>('file');
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -121,10 +125,10 @@ export const CollectionPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)]">
-              Kho Game Boardgame
+              Boardgame Vault
             </h1>
             <p className="text-sm text-[var(--text-secondary)] tabular-nums">
-              Hiển thị {filteredGames.length} trên tổng số {games.length} tựa game trong kho
+              Showing {filteredGames.length} of {games.length} tabletop games in your vault
             </p>
           </div>
 
@@ -136,7 +140,7 @@ export const CollectionPage: React.FC = () => {
               className="border-amber-500/30 text-amber-300 hover:border-amber-400"
             >
               <Sparkles className="w-4 h-4 mr-1 text-amber-400" />
-              Hôm Nay Chơi Gì?
+              What to Play?
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setIsConfigOpen(true)}>
               <Settings className="w-4 h-4 mr-1 text-[var(--accent-neon)]" />
@@ -149,7 +153,7 @@ export const CollectionPage: React.FC = () => {
                 setImportModalTab('file');
                 setIsImportOpen(true);
               }}
-              title="Nhập dữ liệu từ file sao lưu ZIP/JSON hoặc BGG"
+              title="Import collection from ZIP/JSON backup or BGG"
             >
               <Upload className="w-4 h-4 mr-1 text-[var(--accent-secondary)]" />
               Import
@@ -161,11 +165,11 @@ export const CollectionPage: React.FC = () => {
                 setImportModalTab('export');
                 setIsImportOpen(true);
               }}
-              title="Sao lưu toàn bộ dữ liệu ra file JSON hoặc CSV"
+              title="Backup all collection data to JSON or CSV"
               className="border-emerald-500/30 text-emerald-300 hover:border-emerald-400"
             >
               <Download className="w-4 h-4 mr-1 text-emerald-400" />
-              Sao Lưu &amp; Export
+              Backup &amp; Export
             </Button>
             <Link to="/collection/add">
               <Button variant="primary">
@@ -304,6 +308,7 @@ export const CollectionPage: React.FC = () => {
             games={filteredGames}
             viewMode={viewMode}
             playCountsByGameId={playCountsByGameId}
+            onEdit={(game) => setQuickEditGame(game)}
           />
         ) : (
           /* Empty State */
@@ -357,6 +362,13 @@ export const CollectionPage: React.FC = () => {
         </Link>
 
         {/* Modals */}
+        <QuickEditGameModal
+          game={quickEditGame}
+          isOpen={Boolean(quickEditGame)}
+          onClose={() => setQuickEditGame(null)}
+          onSave={(updated) => updateGame(updated.id, updated)}
+          onDelete={(id) => deleteGame(id)}
+        />
         <CollectionImportModal
           isOpen={isImportOpen}
           onClose={() => setIsImportOpen(false)}

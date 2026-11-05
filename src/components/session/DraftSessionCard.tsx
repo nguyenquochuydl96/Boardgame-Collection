@@ -32,7 +32,7 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
   const [isConfirmingDiscard, setIsConfirmingDiscard] = useState(false);
 
   const game = games.find((g) => g.id === draft.gameId);
-  const gameName = game?.name || 'Trận Board Game';
+  const gameName = game?.name || 'Board Game Session';
   const gameThumbnail = game?.thumbnail || game?.image;
 
   // Live timer calculation
@@ -79,19 +79,19 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
   const getStepLabel = (step: number) => {
     switch (step) {
       case 1:
-        return 'Bước 1/6 · Chọn Game';
+        return 'Step 1/6 · Pick Game';
       case 2:
-        return 'Bước 2/6 · Thiết lập & Tính giờ';
+        return 'Step 2/6 · Setup & Timer';
       case 3:
-        return 'Bước 3/6 · Chọn người chơi';
+        return 'Step 3/6 · Choose Players';
       case 4:
-        return 'Bước 4/6 · Chọn người đi đầu';
+        return 'Step 4/6 · Pick First Player';
       case 5:
-        return 'Bước 5/6 · Đang ghi điểm';
+        return 'Step 5/6 · Score Sheet';
       case 6:
-        return 'Bước 6/6 · Ghi chú & Kỷ niệm';
+        return 'Step 6/6 · Notes & Memories';
       default:
-        return `Bước ${step}/6 · Đang chơi`;
+        return `Step ${step}/6 · In Progress`;
     }
   };
 
@@ -113,7 +113,7 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
             <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
           </span>
           <span className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-            🟢 Đang Diễn Ra · Ván Chơi Chưa Hoàn Thành (Draft)
+            🟢 Active Match · In Progress (Draft)
           </span>
         </div>
 
@@ -159,7 +159,7 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
                 )}
                 {formatTimer(currentElapsedSec)}
                 <span className="text-[10px] font-normal text-amber-400/80">
-                  {draft.isTimerRunning ? '(Đang tính giờ)' : '(Tạm dừng)'}
+                  {draft.isTimerRunning ? '(Running)' : '(Paused)'}
                 </span>
               </span>
 
@@ -172,7 +172,7 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
 
               <span className="inline-flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-[var(--accent-neon)]" />
-                {draft.datePlayed ? formatDate(draft.datePlayed) : 'Hôm nay'}
+                {draft.datePlayed ? formatDate(draft.datePlayed) : 'Today'}
               </span>
             </div>
 
@@ -180,7 +180,7 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
             {participants.length > 0 && (
               <div className="pt-1 flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] text-[var(--text-muted)] font-semibold">
-                  Người chơi ({participants.length}):
+                  Players ({participants.length}):
                 </span>
                 {participants.map((p) => (
                   <div
@@ -202,7 +202,7 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
             type="button"
             onClick={() => setIsConfirmingDiscard(true)}
             className="p-2.5 rounded-xl bg-[var(--bg-surface)] hover:bg-rose-500/20 text-[var(--text-secondary)] hover:text-rose-400 border border-[var(--border-subtle)] transition-colors cursor-pointer"
-            title="Hủy bỏ ván nháp này"
+            title="Discard this draft session"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -210,7 +210,7 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
           <Link to="/sessions/new">
             <Button variant="primary" className="shadow-lg shadow-amber-500/25">
               <Play className="w-4 h-4 mr-1.5 fill-current" />
-              Vào Bàn Chơi Tiếp
+              Resume Session
             </Button>
           </Link>
         </div>
@@ -222,10 +222,10 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
           <AlertCircle className="w-8 h-8 text-rose-400" />
           <div>
             <h4 className="font-bold text-sm text-[var(--text-primary)]">
-              Bạn có chắc muốn hủy ván chơi đang diễn ra?
+              Are you sure you want to discard this in-progress session?
             </h4>
             <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-              Toàn bộ tiến trình, thời gian đếm giờ và điểm nháp của ván này sẽ bị xóa.
+              All current elapsed time, player assignments, and draft scores will be cleared.
             </p>
           </div>
           <div className="flex gap-2 pt-1">
@@ -234,7 +234,7 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
               variant="ghost"
               onClick={() => setIsConfirmingDiscard(false)}
             >
-              Giữ Lại Ván Chơi
+              Keep Session
             </Button>
             <Button
               size="sm"
@@ -244,7 +244,7 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
                 setIsConfirmingDiscard(false);
               }}
             >
-              Hủy Ván Nháp
+              Discard Draft
             </Button>
           </div>
         </div>

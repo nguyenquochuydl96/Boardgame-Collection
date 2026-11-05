@@ -47,10 +47,10 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
             <div>
               <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
-                Đã Xảy Ra Sự Cố Hiển Thị
+                Rendering Error Encountered
               </h2>
               <p className="text-xs text-[var(--text-secondary)] mt-1.5 leading-relaxed">
-                Ứng dụng vừa gặp một lỗi hiển thị bất ngờ. Dữ liệu của bạn vẫn an toàn trong kho lưu trữ.
+                An unexpected error occurred while rendering this view. Your stored data remains safe in local storage.
               </p>
             </div>
 
@@ -63,11 +63,11 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="flex gap-2.5 pt-2 justify-center">
               <Button variant="secondary" size="sm" onClick={this.handleReload}>
                 <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                Tải Lại Trang
+                Reload Page
               </Button>
               <Button variant="primary" size="sm" onClick={this.handleGoHome}>
                 <Home className="w-3.5 h-3.5 mr-1" />
-                Về Màn Hình Chính
+                Back to Home
               </Button>
             </div>
           </Card>

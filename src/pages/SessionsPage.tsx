@@ -34,18 +34,18 @@ import { cn } from '../components/ui/cn';
 const PAGE_SIZE = 30;
 
 const MONTH_NAMES = [
-  'Tháng 1',
-  'Tháng 2',
-  'Tháng 3',
-  'Tháng 4',
-  'Tháng 5',
-  'Tháng 6',
-  'Tháng 7',
-  'Tháng 8',
-  'Tháng 9',
-  'Tháng 10',
-  'Tháng 11',
-  'Tháng 12',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 export const SessionsPage: React.FC = () => {
@@ -327,10 +327,10 @@ export const SessionsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)]">
-              Lịch Sử Ván Chơi
+              Play Sessions History
             </h1>
             <p className="text-sm text-[var(--text-secondary)] tabular-nums">
-              Đã ghi nhận {sessions.length.toLocaleString()} ván đấu cùng bạn bè
+              {sessions.length.toLocaleString()} tabletop sessions logged with friends
             </p>
           </div>
 
@@ -341,12 +341,12 @@ export const SessionsPage: React.FC = () => {
               className="border-amber-500/30 text-amber-300 hover:border-amber-400"
             >
               <Crown className="w-4 h-4 mr-1.5 text-amber-400" />
-              Chọn Người Đi Đầu
+              First Player Picker
             </Button>
             <Link to="/sessions/new">
               <Button variant="primary">
                 <Plus className="w-4 h-4 mr-1.5" />
-                Tạo Ván Mới
+                New Session
               </Button>
             </Link>
           </div>
@@ -366,7 +366,7 @@ export const SessionsPage: React.FC = () => {
             {/* Search Input */}
             <div className="flex-1">
               <Input
-                placeholder="Tìm theo tên game, người chơi, quán cafe, ghi chú..."
+                placeholder="Search by game, player, venue, notes..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -392,7 +392,7 @@ export const SessionsPage: React.FC = () => {
                 )}
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>Người chơi</span>
+                <span>Players</span>
                 {selectedPlayerIds.length > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-slate-950 font-mono font-bold">
                     {selectedPlayerIds.length}
@@ -414,7 +414,7 @@ export const SessionsPage: React.FC = () => {
                 )}
               >
                 <Gamepad2 className="w-3.5 h-3.5" />
-                <span>Tựa game</span>
+                <span>Games</span>
                 {selectedGameIds.length > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500 text-slate-950 font-mono font-bold">
                     {selectedGameIds.length}
@@ -436,7 +436,7 @@ export const SessionsPage: React.FC = () => {
                 )}
               >
                 <Calendar className="w-3.5 h-3.5" />
-                <span>Năm &amp; Tháng</span>
+                <span>Date &amp; Time</span>
                 {selectedYears.length + selectedMonths.length > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-sky-500 text-slate-950 font-mono font-bold">
                     {selectedYears.length + selectedMonths.length}
@@ -453,10 +453,10 @@ export const SessionsPage: React.FC = () => {
                     ? 'bg-[var(--accent-primary)] text-white border-transparent'
                     : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
                 )}
-                title="Bật / tắt bảng bộ lọc nâng cao"
+                title="Toggle advanced filter drawer"
               >
                 <Filter className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Bộ lọc</span>
+                <span className="hidden sm:inline">Filters</span>
                 {isFilterPanelOpen ? (
                   <ChevronUp className="w-3.5 h-3.5" />
                 ) : (
@@ -482,7 +482,7 @@ export const SessionsPage: React.FC = () => {
                   )}
                 >
                   <Users className="w-3.5 h-3.5" />
-                  <span>👥 Người chơi ({selectedPlayerIds.length})</span>
+                  <span>👥 Players ({selectedPlayerIds.length})</span>
                 </button>
                 <button
                   type="button"
@@ -495,7 +495,7 @@ export const SessionsPage: React.FC = () => {
                   )}
                 >
                   <Gamepad2 className="w-3.5 h-3.5" />
-                  <span>🎲 Tựa Game ({selectedGameIds.length})</span>
+                  <span>🎲 Games ({selectedGameIds.length})</span>
                 </button>
                 <button
                   type="button"
@@ -508,7 +508,7 @@ export const SessionsPage: React.FC = () => {
                   )}
                 >
                   <Calendar className="w-3.5 h-3.5" />
-                  <span>📅 Thời Gian ({selectedYears.length + selectedMonths.length})</span>
+                  <span>📅 Period ({selectedYears.length + selectedMonths.length})</span>
                 </button>
               </div>
 
@@ -518,7 +518,7 @@ export const SessionsPage: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     {/* Match Mode Toggle */}
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-[var(--text-secondary)] font-medium">Chế độ khớp:</span>
+                      <span className="text-xs text-[var(--text-secondary)] font-medium">Match mode:</span>
                       <div className="flex p-0.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
                         <button
                           type="button"
@@ -529,9 +529,9 @@ export const SessionsPage: React.FC = () => {
                               ? 'bg-amber-500 text-slate-950 shadow-sm'
                               : 'text-[var(--text-secondary)] hover:text-white'
                           )}
-                          title="Ván có ít nhất 1 người chơi được chọn"
+                          title="Sessions with any of the selected players"
                         >
-                          Bất kỳ ai (OR)
+                          Any (OR)
                         </button>
                         <button
                           type="button"
@@ -542,9 +542,9 @@ export const SessionsPage: React.FC = () => {
                               ? 'bg-amber-500 text-slate-950 shadow-sm'
                               : 'text-[var(--text-secondary)] hover:text-white'
                           )}
-                          title="Ván có đầy đủ tất cả những người được chọn cùng chơi chung"
+                          title="Sessions where all selected players played together"
                         >
-                          Cùng tham gia (AND)
+                          Together (AND)
                         </button>
                       </div>
                     </div>
@@ -556,7 +556,7 @@ export const SessionsPage: React.FC = () => {
                         onClick={() => setSelectedPlayerIds(players.map((p) => p.id))}
                         className="text-[var(--accent-neon)] font-bold hover:underline cursor-pointer"
                       >
-                        Chọn tất cả ({players.length})
+                        Select All ({players.length})
                       </button>
                       <span className="text-[var(--text-muted)]">|</span>
                       <button
@@ -564,14 +564,14 @@ export const SessionsPage: React.FC = () => {
                         onClick={() => setSelectedPlayerIds([])}
                         className="text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
                       >
-                        Bỏ chọn hết
+                        Clear All
                       </button>
                     </div>
                   </div>
 
                   {/* Player Search Input */}
                   <Input
-                    placeholder="Lọc tên người chơi..."
+                    placeholder="Search player name..."
                     value={playerFilterSearch}
                     onChange={(e) => setPlayerFilterSearch(e.target.value)}
                     className="text-xs py-1"
@@ -618,7 +618,7 @@ export const SessionsPage: React.FC = () => {
                 <div className="space-y-3 bg-[var(--bg-surface)]/60 p-3.5 rounded-xl border border-[var(--border-subtle)]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <span className="text-xs text-[var(--text-secondary)]">
-                      Chọn một hoặc nhiều tựa game đã từng chơi:
+                      Select one or more played games:
                     </span>
                     <div className="flex items-center gap-2 text-xs">
                       <button
@@ -626,7 +626,7 @@ export const SessionsPage: React.FC = () => {
                         onClick={() => setSelectedGameIds(gamesWithPlays.slice(0, 10).map((g) => g.id))}
                         className="text-emerald-400 font-bold hover:underline cursor-pointer"
                       >
-                        Top 10 phổ biến
+                        Top 10 Popular
                       </button>
                       <span className="text-[var(--text-muted)]">|</span>
                       <button
@@ -634,7 +634,7 @@ export const SessionsPage: React.FC = () => {
                         onClick={() => setSelectedGameIds(gamesWithPlays.map((g) => g.id))}
                         className="text-[var(--accent-neon)] font-bold hover:underline cursor-pointer"
                       >
-                        Chọn tất cả ({gamesWithPlays.length})
+                        Select All ({gamesWithPlays.length})
                       </button>
                       <span className="text-[var(--text-muted)]">|</span>
                       <button
@@ -642,14 +642,14 @@ export const SessionsPage: React.FC = () => {
                         onClick={() => setSelectedGameIds([])}
                         className="text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
                       >
-                        Bỏ chọn hết
+                        Clear All
                       </button>
                     </div>
                   </div>
 
                   {/* Game Search Input */}
                   <Input
-                    placeholder="Tìm kiếm theo tên tựa game..."
+                    placeholder="Search game title..."
                     value={gameFilterSearch}
                     onChange={(e) => setGameFilterSearch(e.target.value)}
                     className="text-xs py-1"
@@ -685,7 +685,7 @@ export const SessionsPage: React.FC = () => {
                             <div className="min-w-0">
                               <h4 className="text-xs font-bold truncate">{g.name}</h4>
                               <p className="text-[10px] text-[var(--text-muted)] tabular-nums">
-                                {g.plays} ván đã chơi
+                                {g.plays} {g.plays === 1 ? 'play' : 'plays'}
                               </p>
                             </div>
                           </div>
@@ -712,14 +712,14 @@ export const SessionsPage: React.FC = () => {
                   {/* Years Section */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-[var(--text-primary)]">Lọc theo Năm:</span>
+                      <span className="font-bold text-[var(--text-primary)]">Filter by Year:</span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setSelectedYears([...availableYears])}
                           className="text-sky-400 font-bold hover:underline cursor-pointer"
                         >
-                          Tất cả các năm
+                          All Years
                         </button>
                         <span className="text-[var(--text-muted)]">|</span>
                         <button
@@ -727,7 +727,7 @@ export const SessionsPage: React.FC = () => {
                           onClick={() => setSelectedYears([])}
                           className="text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
                         >
-                          Bỏ chọn năm
+                          Clear Years
                         </button>
                       </div>
                     </div>
@@ -747,7 +747,7 @@ export const SessionsPage: React.FC = () => {
                                 : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
                             )}
                           >
-                            Năm {yr}
+                            Year {yr}
                           </button>
                         );
                       })}
@@ -757,14 +757,14 @@ export const SessionsPage: React.FC = () => {
                   {/* Months Section */}
                   <div className="space-y-2 pt-3 border-t border-[var(--border-subtle)]">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-[var(--text-primary)]">Lọc theo Tháng:</span>
+                      <span className="font-bold text-[var(--text-primary)]">Filter by Month:</span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setSelectedMonths([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])}
                           className="text-sky-400 font-bold hover:underline cursor-pointer"
                         >
-                          Cả 12 tháng
+                          All 12 Months
                         </button>
                         <span className="text-[var(--text-muted)]">|</span>
                         <button
@@ -772,7 +772,7 @@ export const SessionsPage: React.FC = () => {
                           onClick={() => setSelectedMonths([])}
                           className="text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
                         >
-                          Bỏ chọn tháng
+                          Clear Months
                         </button>
                       </div>
                     </div>
@@ -809,7 +809,7 @@ export const SessionsPage: React.FC = () => {
             <div className="pt-2 border-t border-[var(--border-subtle)] space-y-2">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[11px] font-medium text-[var(--text-muted)] mr-1">
-                  Đang lọc:
+                  Filtering:
                 </span>
 
                 {/* Match Mode Pill */}
@@ -818,9 +818,9 @@ export const SessionsPage: React.FC = () => {
                     type="button"
                     onClick={() => setPlayerMatchMode((m) => (m === 'or' ? 'and' : 'or'))}
                     className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 cursor-pointer"
-                    title="Nhấn để đổi giữa Cùng tham gia (AND) và Bất kỳ ai (OR)"
+                    title="Toggle between Together (AND) and Any (OR)"
                   >
-                    <span>Khớp: {playerMatchMode === 'and' ? 'Cùng tham gia (AND)' : 'Bất kỳ ai (OR)'}</span>
+                    <span>Match: {playerMatchMode === 'and' ? 'Together (AND)' : 'Any (OR)'}</span>
                     <RotateCcw className="w-2.5 h-2.5 ml-0.5" />
                   </button>
                 )}
@@ -833,12 +833,12 @@ export const SessionsPage: React.FC = () => {
                       key={pid}
                       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30"
                     >
-                      <span>👥 {p ? p.name : 'Người chơi'}</span>
+                      <span>👥 {p ? p.name : 'Player'}</span>
                       <button
                         type="button"
                         onClick={() => togglePlayer(pid)}
                         className="hover:text-white ml-0.5 cursor-pointer"
-                        title="Bỏ người chơi này"
+                        title="Remove player filter"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -859,7 +859,7 @@ export const SessionsPage: React.FC = () => {
                         type="button"
                         onClick={() => toggleGame(gid)}
                         className="hover:text-white ml-0.5 cursor-pointer"
-                        title="Bỏ tựa game này"
+                        title="Remove game filter"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -878,7 +878,7 @@ export const SessionsPage: React.FC = () => {
                       type="button"
                       onClick={() => toggleYear(yr)}
                       className="hover:text-white ml-0.5 cursor-pointer"
-                      title="Bỏ năm này"
+                      title="Remove year filter"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -896,7 +896,7 @@ export const SessionsPage: React.FC = () => {
                       type="button"
                       onClick={() => toggleMonth(mNum)}
                       className="hover:text-white ml-0.5 cursor-pointer"
-                      title="Bỏ tháng này"
+                      title="Remove month filter"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -910,12 +910,12 @@ export const SessionsPage: React.FC = () => {
                   className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-400 hover:text-rose-300 hover:underline cursor-pointer ml-auto"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  <span>Xóa tất cả bộ lọc</span>
+                  <span>Clear all filters</span>
                 </button>
               </div>
 
               <div className="text-xs text-[var(--text-secondary)]">
-                Tìm thấy <strong className="text-white font-bold">{filteredSessions.length}</strong> trên tổng số {sessions.length} ván đấu
+                Showing <strong className="text-white font-bold">{filteredSessions.length}</strong> of {sessions.length} sessions
               </div>
             </div>
           )}
@@ -952,7 +952,7 @@ export const SessionsPage: React.FC = () => {
             {hasMore ? (
               <div className="p-6 rounded-2xl bg-[var(--bg-card)]/80 border border-[var(--border-subtle)] text-center space-y-3">
                 <p className="text-xs text-[var(--text-secondary)] tabular-nums">
-                  Đang hiển thị {visibleSessions.length} trên tổng số {filteredSessions.length} ván đấu
+                  Showing {visibleSessions.length} of {filteredSessions.length} sessions
                 </p>
                 <Button
                   variant="secondary"
@@ -961,13 +961,13 @@ export const SessionsPage: React.FC = () => {
                   className="mx-auto"
                 >
                   <ChevronDown className="w-4 h-4 mr-1.5" />
-                  Tải Thêm 30 Ván Nữa
+                  Load 30 More Sessions
                 </Button>
               </div>
             ) : (
               filteredSessions.length > PAGE_SIZE && (
                 <p className="text-center text-xs text-[var(--text-muted)] py-4">
-                  Đã hiển thị toàn bộ {filteredSessions.length} ván đấu
+                  All {filteredSessions.length} sessions displayed
                 </p>
               )
             )}
@@ -980,23 +980,23 @@ export const SessionsPage: React.FC = () => {
             </div>
             <div className="space-y-1">
               <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
-                Không tìm thấy ván chơi nào
+                No sessions found
               </h2>
               <p className="text-sm text-[var(--text-secondary)]">
                 {searchQuery || activeFiltersCount > 0
-                  ? 'Không có ván chơi nào khớp với bộ lọc hiện tại của bạn.'
-                  : 'Chưa có lịch sử ván chơi nào được ghi nhận. Hãy tạo ván chơi đầu tiên!'}
+                  ? 'No play sessions match your current filters.'
+                  : 'No play sessions recorded yet. Start logging your first tabletop game night!'}
               </p>
             </div>
             {searchQuery || activeFiltersCount > 0 ? (
               <Button variant="secondary" onClick={handleResetFilters}>
-                Đặt lại bộ lọc
+                Reset Filters
               </Button>
             ) : (
               <Link to="/sessions/new">
                 <Button variant="primary">
                   <Plus className="w-4 h-4 mr-1.5" />
-                  Ghi Nhận Ván Đầu Tiên
+                  Log First Session
                 </Button>
               </Link>
             )}
@@ -1006,11 +1006,11 @@ export const SessionsPage: React.FC = () => {
         {/* Floating Action Button (FAB) */}
         <Link
           to="/sessions/new"
-          aria-label="Tạo ván chơi mới"
+          aria-label="New Session"
           className="fixed right-5 bottom-20 lg:bottom-8 z-30 min-h-[52px] px-5 rounded-2xl bg-[image:var(--gradient-hero)] text-white font-display font-bold text-sm shadow-xl shadow-[var(--accent-glow)] inline-flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform"
         >
           <Plus className="w-5 h-5" />
-          <span>Tạo Ván Mới</span>
+          <span>New Session</span>
         </Link>
 
         {/* Quick First Player Picker Modal */}

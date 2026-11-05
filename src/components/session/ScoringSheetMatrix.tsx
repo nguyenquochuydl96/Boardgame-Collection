@@ -117,7 +117,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
           <thead>
             <tr className="bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)]">
               <th className="py-3 px-4 font-bold text-[var(--text-secondary)] min-w-[180px]">
-                Hạng Mục Tính Điểm
+                Scoring Categories
               </th>
               {players.map((p) => {
                 const isLeader = p.id === winnerId;
@@ -160,7 +160,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                       <span className="truncate">{cat.name}</span>
                       {isPenalty && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold shrink-0">
-                          - trừ điểm
+                          - penalty
                         </span>
                       )}
                     </div>
@@ -191,7 +191,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                       type="button"
                       onClick={() => handleDeleteCategory(cat.id)}
                       className="text-[var(--text-muted)] hover:text-rose-400 p-1 rounded transition-colors cursor-pointer"
-                      title="Xóa mục này"
+                      title="Remove category"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -205,7 +205,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
           <tfoot>
             <tr className="bg-[var(--bg-elevated)] border-t-2 border-[var(--border-glow)] font-bold">
               <td className="py-3.5 px-4 text-sm font-extrabold text-[var(--text-primary)]">
-                TỔNG ĐIỂM (TOTAL)
+                TOTAL SCORE
               </td>
               {players.map((p) => {
                 const total = playerTotals[p.id] ?? 0;
@@ -240,13 +240,13 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
           className="text-xs"
         >
           <Plus className="w-3.5 h-3.5 mr-1 text-[var(--accent-neon)]" />
-          Thêm Mục Tính Điểm Mới
+          Add Scoring Category
         </Button>
       ) : (
         <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] max-w-md">
           <input
             type="text"
-            placeholder="Tên mục (ví dụ: Tiền dư, Thẻ đặc biệt...)"
+            placeholder="Category name (e.g. Leftover Coins, Special Cards)..."
             value={newCatName}
             onChange={(e) => setNewCatName(e.target.value)}
             className="flex-1 min-h-[36px] px-3 py-1.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
@@ -259,10 +259,10 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
             }}
           />
           <Button variant="primary" size="sm" onClick={handleAddCategory}>
-            Thêm
+            Add
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setIsAddingCat(false)}>
-            Hủy
+            Cancel
           </Button>
         </div>
       )}

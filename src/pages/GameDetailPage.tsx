@@ -264,9 +264,9 @@ export const GameDetailPage: React.FC = () => {
                     <Coffee className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs text-amber-300 font-bold">Game Thuê / Chơi Quán</p>
+                    <p className="text-xs text-amber-300 font-bold">Rented / Cafe Play</p>
                     <p className="text-xs text-white/80 mt-0.5">
-                      Tựa game trải nghiệm tại tiệm cafe boardgame, không tính vào giá trị tổng tài sản kho sở hữu cá nhân.
+                      Tabletop game played at cafes or rented — excluded from total personal vault valuation.
                     </p>
                   </div>
                 </div>
@@ -429,7 +429,7 @@ export const GameDetailPage: React.FC = () => {
                       onClick={() => setVisibleSessionsCount((prev) => prev + 20)}
                       className="w-full justify-center"
                     >
-                      Xem thêm ván chơi ({gameSessions.length - visibleSessionsCount} ván nữa)
+                      Load More Sessions ({gameSessions.length - visibleSessionsCount} remaining)
                     </Button>
                   )}
                 </div>

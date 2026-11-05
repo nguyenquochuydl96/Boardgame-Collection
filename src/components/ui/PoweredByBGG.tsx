@@ -90,7 +90,7 @@ export const PoweredByBGG: React.FC<PoweredByBGGProps> = ({
         )}
       >
         <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-[var(--text-secondary)]">
-          <span>Dữ liệu boardgame được cung cấp bởi</span>
+          <span>Board game catalog data powered by</span>
           <a
             href={bggUrl}
             target="_blank"
@@ -103,7 +103,7 @@ export const PoweredByBGG: React.FC<PoweredByBGGProps> = ({
           </a>
         </div>
         <p className="text-[11px] text-[var(--text-muted)] max-w-md mx-auto">
-          BoardGame Vault sử dụng BGG XML API chính thức để tra cứu thông tin, điểm xếp hạng và bộ sưu tập.
+          BoardGame Vault leverages the official BGG XML API for metadata, rankings, and collection sync.
         </p>
       </footer>
     );

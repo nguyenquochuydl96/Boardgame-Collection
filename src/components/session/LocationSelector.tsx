@@ -15,8 +15,8 @@ export interface LocationSelectorProps {
 export const LocationSelector: React.FC<LocationSelectorProps> = ({
   selectedLocation,
   onSelectLocation,
-  label = 'Địa Điểm Chơi (Chọn từ danh sách)',
-  placeholder = 'Tên địa điểm (vd: Nhà Tuấn, Trà Sữa Gong Cha)...',
+  label = 'Gaming Venue (Select from presets)',
+  placeholder = 'Venue name (e.g. Huy’s Place, The Board Game Loft)...',
 }) => {
   const locations = useLocationStore((s) => s.locations);
   const addLocation = useLocationStore((s) => s.addLocation);
@@ -50,7 +50,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
             className="text-xs text-[var(--accent-neon)] hover:underline font-bold flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3 h-3" />
-            Thêm địa điểm mới
+            Add new venue
           </button>
         )}
       </div>
@@ -95,13 +95,13 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
           className="p-3.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-glow)] space-y-2.5 animate-in fade-in zoom-in-95 duration-200"
         >
           <div className="flex items-center justify-between text-xs font-bold text-[var(--text-primary)]">
-            <span>Thêm địa điểm mới vào danh sách cố định:</span>
+            <span>Add new venue to saved presets:</span>
             <button
               type="button"
               onClick={() => setIsAddingNew(false)}
               className="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
             >
-              Hủy
+              Cancel
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -113,7 +113,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
               autoFocus
             />
             <Input
-              placeholder="Địa chỉ / Quận (tùy chọn)..."
+              placeholder="Address / Area (optional)..."
               value={newLocAddress}
               onChange={(e) => setNewLocAddress(e.target.value)}
               className="text-xs"
@@ -126,7 +126,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
               variant="ghost"
               onClick={() => setIsAddingNew(false)}
             >
-              Đóng
+              Cancel
             </Button>
             <Button
               type="submit"
@@ -135,7 +135,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
               disabled={!newLocName.trim()}
             >
               <Plus className="w-3.5 h-3.5 mr-1" />
-              Lưu Địa Điểm
+              Save Venue
             </Button>
           </div>
         </form>

@@ -45,7 +45,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false })
             ? 'p-2 min-h-[38px] min-w-[38px] justify-center'
             : 'px-3 py-2 text-xs font-semibold w-full justify-between'
         )}
-        aria-label="Chọn Theme màu giao diện"
+        aria-label="Select Theme"
       >
         <div className="flex items-center gap-2">
           <span className="text-base leading-none">{currentTheme.icon}</span>
@@ -73,9 +73,9 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ compact = false })
           )}
         >
           <div className="px-3 py-2 border-b border-[var(--border-subtle)] mb-1">
-            <p className="text-xs font-bold text-[var(--text-primary)]">Giao Diện &amp; Màu Sắc</p>
+            <p className="text-xs font-bold text-[var(--text-primary)]">Theme & Appearance</p>
             <p className="text-[11px] text-[var(--text-secondary)]">
-              Chọn phong cách phù hợp nhất với mắt bạn
+              Select your favorite look and ambient style
             </p>
           </div>
 

@@ -47,12 +47,12 @@ import {
 } from '../lib/utils';
 
 const WIZARD_STEPS = [
-  { step: 1, title: 'Chọn Game' },
-  { step: 2, title: 'Thiết Lập' },
-  { step: 3, title: 'Người Chơi' },
-  { step: 4, title: 'Ai Đi Đầu?' },
-  { step: 5, title: 'Ghi Điểm' },
-  { step: 6, title: 'Kỷ Niệm' },
+  { step: 1, title: 'Game' },
+  { step: 2, title: 'Setup' },
+  { step: 3, title: 'Players' },
+  { step: 4, title: 'First Player' },
+  { step: 5, title: 'Scores' },
+  { step: 6, title: 'Memories' },
 ];
 
 const ONE_OFF_COLORS = ['#f97316', '#22d3ee', '#a855f7', '#10b981', '#ec4899'];
@@ -72,7 +72,7 @@ export const NewSessionPage: React.FC = () => {
   const addPlayerToStore = usePlayerStore((s) => s.addPlayer);
   const addSession = useSessionStore((s) => s.addSession);
   const defaultLocation = useLocationStore(
-    (s) => s.locations.find((l) => l.isDefault)?.name || s.locations[0]?.name || 'Nhà Huy (Quận 3)'
+    (s) => s.locations.find((l) => l.isDefault)?.name || s.locations[0]?.name || 'Huy’s Game Room, District 3'
   );
 
   const [currentStep, setCurrentStep] = useState<number>(
@@ -543,20 +543,20 @@ export const NewSessionPage: React.FC = () => {
                 <span className="text-3xl shrink-0">📋</span>
                 <div className="min-w-0">
                   <h4 className="font-bold text-sm text-[var(--text-primary)]">
-                    Tìm thấy ván game chưa hoàn thành!
+                    Unfinished game session found!
                   </h4>
                   <p className="text-xs text-[var(--text-secondary)]">
-                    Bắt đầu lúc {new Date(existingDraft.sessionStartTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} (đã trôi qua {formatTimer(existingDraft.elapsedSeconds)}) · Đang ở Bước {existingDraft.currentStep}/6
+                    Started at {new Date(existingDraft.sessionStartTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} ({formatTimer(existingDraft.elapsedSeconds)} elapsed) · Currently at Step {existingDraft.currentStep}/6
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
                 <Button variant="ghost" size="sm" onClick={handleDiscardDraft}>
-                  Bỏ Qua
+                  Discard
                 </Button>
                 <Button variant="primary" size="sm" onClick={handleRestoreDraft} className="bg-amber-500 text-slate-950 font-bold shadow-md">
-                  ▶️ Tiếp Tục Ván Này
+                  ▶️ Resume Session
                 </Button>
               </div>
             </motion.div>
@@ -579,10 +579,10 @@ export const NewSessionPage: React.FC = () => {
             )}
             <div className="min-w-0">
               <span className="text-[10px] uppercase font-bold text-[var(--accent-neon)] tracking-wider block truncate">
-                {selectedGame ? selectedGame.name : 'Đang thiết lập ván đấu'}
+                {selectedGame ? selectedGame.name : 'Setting up game session'}
               </span>
               <span className="text-xs text-[var(--text-secondary)] truncate block">
-                {location} · {activeSessionPlayers.length} người chơi tại bàn
+                {location} · {activeSessionPlayers.length} players at table
               </span>
             </div>
           </div>
@@ -612,12 +612,12 @@ export const NewSessionPage: React.FC = () => {
               {isTimerRunning ? (
                 <>
                   <Pause className="w-3.5 h-3.5 mr-1" />
-                  Tạm Dừng
+                  Pause
                 </>
               ) : (
                 <>
                   <Play className="w-3.5 h-3.5 mr-1 fill-current" />
-                  Tiếp Tục
+                  Resume
                 </>
               )}
             </Button>
@@ -639,10 +639,10 @@ export const NewSessionPage: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
-                      Bước 1 — Chọn Boardgame Lên Bàn
+                      Step 1 — Choose Boardgame
                     </h1>
                     <p className="text-sm text-[var(--text-secondary)]">
-                      Chọn tựa game sẽ khai màn trận đấu tối nay
+                      Select the tabletop game to bring to the table
                     </p>
                   </div>
 
@@ -656,7 +656,7 @@ export const NewSessionPage: React.FC = () => {
                       />
                       <div>
                         <span className="text-[11px] text-[var(--accent-neon)] font-semibold">
-                          Game Đã Chọn
+                          Selected Game
                         </span>
                         <p className="font-display font-bold text-sm text-[var(--text-primary)]">
                           {selectedGame.name}
@@ -717,20 +717,21 @@ export const NewSessionPage: React.FC = () => {
             )}
 
             {/* STEP 2: SETUP */}
+            {/* STEP 2: SETUP */}
             {currentStep === 2 && (
               <Card className="p-6 sm:p-8 space-y-6">
                 <div>
                   <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
-                    Bước 2 — Thiết Lập Bàn Chơi
+                    Step 2 — Session Setup
                   </h1>
                   <p className="text-sm text-[var(--text-secondary)]">
-                    Chọn ngày chơi, địa điểm cố định và theo dõi đồng hồ tính giờ trận đấu
+                    Select play date, venue location, and track game time
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <Input
-                    label="Ngày Chơi"
+                    label="Date Played"
                     type="date"
                     value={datePlayed}
                     onChange={(e) => setDatePlayed(e.target.value)}
@@ -749,7 +750,7 @@ export const NewSessionPage: React.FC = () => {
                       htmlFor="manual-duration-input"
                       className="block text-xs font-semibold text-[var(--text-secondary)]"
                     >
-                      Thời Lượng Ván Đấu (Phút - Tự tính hoặc chỉnh tay)
+                      Duration (Minutes - Auto or manual adjustment)
                     </label>
                     <input
                       id="manual-duration-input"
@@ -782,7 +783,7 @@ export const NewSessionPage: React.FC = () => {
                             isTimerRunning ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
                           )}
                         />
-                        Đồng Hồ Đang Tự Đếm Giờ
+                        Stopwatch Active
                       </span>
                       <Clock className="w-4 h-4 text-[var(--accent-neon)]" />
                     </div>
@@ -798,12 +799,12 @@ export const NewSessionPage: React.FC = () => {
                         {isTimerRunning ? (
                           <>
                             <Pause className="w-4 h-4 mr-1" />
-                            Tạm Dừng Trận Đấu
+                            Pause Timer
                           </>
                         ) : (
                           <>
                             <Play className="w-4 h-4 mr-1 fill-current" />
-                            Tiếp Tục Tính Giờ
+                            Resume Timer
                           </>
                         )}
                       </Button>
@@ -820,7 +821,7 @@ export const NewSessionPage: React.FC = () => {
                         className="text-xs text-[var(--text-secondary)]"
                       >
                         <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                        Đặt Lại
+                        Reset
                       </Button>
                     </div>
                   </div>
@@ -833,10 +834,10 @@ export const NewSessionPage: React.FC = () => {
               <Card className="p-6 sm:p-8 space-y-6">
                 <div>
                   <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
-                    Bước 3 — Chọn Người Chơi
+                    Step 3 — Select Players
                   </h1>
                   <p className="text-sm text-[var(--text-secondary)]">
-                    Chạm vào thẻ để chọn người chơi tham gia ván đấu ({activeSessionPlayers.length} người đã chọn)
+                    Tap cards to select participating players ({activeSessionPlayers.length} selected)
                   </p>
                 </div>
 
@@ -860,19 +861,19 @@ export const NewSessionPage: React.FC = () => {
                   className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-3"
                 >
                   <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                    Thêm Bạn Chơi Mới Hoặc Bạn Chơi Khách
+                    Add New Friend or Guest Player
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="flex-1">
                       <Input
-                        placeholder="Tên người chơi (vd: Bảo Anh, Hoàng)..."
+                        placeholder="Player name (e.g. Alex, Sam)..."
                         value={newGuestName}
                         onChange={(e) => setNewGuestName(e.target.value)}
                       />
                     </div>
                     <Button type="submit" variant="secondary">
                       <UserPlus className="w-4 h-4 mr-1" />
-                      Thêm Vào Bàn
+                      Add to Table
                     </Button>
                   </div>
                   <label className="inline-flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer">
@@ -882,7 +883,7 @@ export const NewSessionPage: React.FC = () => {
                       onChange={(e) => setSaveGuestToVault(e.target.checked)}
                       className="rounded border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--accent-primary)]"
                     />
-                    Lưu bạn chơi này vào danh sách người chơi cố định
+                    Save this player to permanent vault roster
                   </label>
                 </form>
               </Card>
@@ -896,11 +897,11 @@ export const NewSessionPage: React.FC = () => {
                     <div className="flex items-center gap-2.5">
                       <span className="text-xl">🔄</span>
                       <span>
-                        <strong className="text-amber-300">Trận Tái Đấu:</strong> Đã giữ nguyên <strong>{selectedGame?.name}</strong>, <strong>{activeSessionPlayers.length} người chơi</strong> và địa điểm <strong>{location}</strong>. Hãy quay để tìm người đi đầu mới cho trận này!
+                        <strong className="text-amber-300">Rematch:</strong> Kept <strong>{selectedGame?.name}</strong>, <strong>{activeSessionPlayers.length} players</strong> and venue <strong>{location}</strong>. Spin or draw to pick a new first player!
                       </span>
                     </div>
                     <span className="font-mono text-emerald-400 font-bold shrink-0 flex items-center gap-1">
-                      <span>⏱️</span> Giờ ván mới đang tính
+                      <span>⏱️</span> New timer running
                     </span>
                   </div>
                 )}
@@ -909,10 +910,10 @@ export const NewSessionPage: React.FC = () => {
                   <div>
                     <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] flex items-center gap-2.5">
                       <span>👑</span>
-                      Bước 4 — Ai Đi Đầu Ván Này?
+                      Step 4 — Who Goes First?
                     </h1>
                     <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-                      Quay vòng may mắn, xáo bài bí ẩn hoặc chọn theo quy tắc bàn chơi cho {activeSessionPlayers.length} người chơi
+                      Spin the lucky wheel, shuffle mystery cards, or choose house rules for {activeSessionPlayers.length} players
                     </p>
                   </div>
 
@@ -928,7 +929,7 @@ export const NewSessionPage: React.FC = () => {
                           : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       )}
                     >
-                      <span>🎡 Vòng Quay</span>
+                      <span>🎡 Spin Wheel</span>
                     </button>
                     <button
                       type="button"
@@ -940,7 +941,7 @@ export const NewSessionPage: React.FC = () => {
                           : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       )}
                     >
-                      <span>🎴 Xáo Bài</span>
+                      <span>🎴 Draw Card</span>
                     </button>
                     <button
                       type="button"
@@ -952,7 +953,7 @@ export const NewSessionPage: React.FC = () => {
                           : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       )}
                     >
-                      <span>✋ Thủ Công</span>
+                      <span>✋ Manual</span>
                     </button>
                   </div>
                 </div>
@@ -961,12 +962,12 @@ export const NewSessionPage: React.FC = () => {
                 {activeSessionPlayers.length === 0 ? (
                   <div className="p-8 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center space-y-3">
                     <span className="text-3xl">⚠️</span>
-                    <h3 className="font-bold text-base text-[var(--text-primary)]">Chưa có người chơi nào tại bàn</h3>
+                    <h3 className="font-bold text-base text-[var(--text-primary)]">No players at the table yet</h3>
                     <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
-                      Vui lòng quay lại Bước 3 để tích chọn ít nhất 1 người chơi tham gia ván đấu.
+                      Please return to Step 3 and select at least 1 player for this session.
                     </p>
                     <Button variant="secondary" size="sm" onClick={() => setCurrentStep(3)}>
-                      <ArrowLeft className="w-4 h-4 mr-1" /> Quay lại Bước 3
+                      <ArrowLeft className="w-4 h-4 mr-1" /> Back to Step 3
                     </Button>
                   </div>
                 ) : activeSessionPlayers.length === 1 ? (
@@ -979,13 +980,13 @@ export const NewSessionPage: React.FC = () => {
                         size="md"
                       />
                       <div className="text-left">
-                        <span className="text-[10px] uppercase font-bold text-amber-400">Chế độ Solo</span>
-                        <p className="font-bold text-[var(--text-primary)] text-sm">{activeSessionPlayers[0].name} là người đi đầu</p>
+                        <span className="text-[10px] uppercase font-bold text-amber-400">Solo Mode</span>
+                        <p className="font-bold text-[var(--text-primary)] text-sm">{activeSessionPlayers[0].name} goes first</p>
                       </div>
                     </div>
                     <div>
                       <Button variant="primary" onClick={() => setCurrentStep(5)}>
-                        Tiếp Tục Đến Nhập Điểm (Bước 5) 👉
+                        Continue to Score Entry (Step 5) 👉
                       </Button>
                     </div>
                   </div>
@@ -1014,9 +1015,9 @@ export const NewSessionPage: React.FC = () => {
                           👑
                         </div>
                         <div>
-                          <h3 className="font-bold text-base text-[var(--text-primary)]">Chỉ định người đi đầu bằng tay</h3>
+                          <h3 className="font-bold text-base text-[var(--text-primary)]">Manually Assign First Player</h3>
                           <p className="text-xs text-[var(--text-secondary)] mt-1">
-                            Chọn trực tiếp người chơi bên dưới hoặc áp dụng quy tắc bàn chơi phổ biến
+                            Choose directly below or use custom tabletop house rules
                           </p>
                         </div>
                         <div className="flex flex-wrap justify-center gap-2.5">
@@ -1076,7 +1077,7 @@ export const NewSessionPage: React.FC = () => {
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300">
-                                  Người Đi Đầu Ván Này!
+                                  First Player This Session!
                                 </span>
                                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-[var(--text-primary)] font-medium">
                                   {FIRST_PLAYER_METHOD_LABELS[firstPlayerMethod]}
@@ -1094,7 +1095,7 @@ export const NewSessionPage: React.FC = () => {
                             onClick={() => setCurrentStep(5)}
                             className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg shrink-0 w-full sm:w-auto"
                           >
-                            Vào Bàn Chơi &amp; Ghi Điểm 👉
+                            Enter Scores 👉
                           </Button>
                         </motion.div>
                       )}
@@ -1107,7 +1108,7 @@ export const NewSessionPage: React.FC = () => {
                   <div className="pt-4 border-t border-white/[0.08] space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-semibold text-[var(--text-secondary)]">
-                        Quy tắc bàn chơi khác:
+                        Alternative house rules:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {(
@@ -1162,10 +1163,10 @@ export const NewSessionPage: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
-                      Bước 5 — Nhập Điểm & Bảng Điểm
+                      Step 5 — Scores &amp; Scoring Sheet
                     </h1>
                     <p className="text-sm text-[var(--text-secondary)]">
-                      Tự động tính tổng điểm theo từng hạng mục riêng của game và gắn vương miện người chiến thắng
+                      Automatically calculate category scores and crown table champions
                     </p>
                   </div>
 
@@ -1176,7 +1177,7 @@ export const NewSessionPage: React.FC = () => {
                       onChange={(e) => setLowScoreWins(e.target.checked)}
                       className="rounded border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--accent-primary)]"
                     />
-                    Điểm thấp nhất thắng
+                    Lowest score wins
                   </label>
                 </div>
 
@@ -1192,7 +1193,7 @@ export const NewSessionPage: React.FC = () => {
                         : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     )}
                   >
-                    <span>📊 Bảng Tính Điểm:</span>
+                    <span>📊 Scoring Sheet:</span>
                     <span className="text-[var(--accent-neon)] font-extrabold">{scoringTemplate.displayName}</span>
                   </button>
                   <button
@@ -1205,7 +1206,7 @@ export const NewSessionPage: React.FC = () => {
                         : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     )}
                   >
-                    <span>⚡ Nhập Tổng Điểm Nhanh</span>
+                    <span>⚡ Quick Total Entry</span>
                   </button>
                 </div>
 
@@ -1250,21 +1251,21 @@ export const NewSessionPage: React.FC = () => {
                 <Card className="p-6 sm:p-8 space-y-6">
                   <div>
                     <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
-                      Bước 6 — Kỷ Niệm &amp; Ghi Chú Trận Đấu
+                      Step 6 — Game Night Memories &amp; Notes
                     </h1>
                     <p className="text-sm text-[var(--text-secondary)]">
-                      Chụp ảnh bàn cờ kết thúc ván đấu và lưu lại những khoảnh khắc đáng nhớ
+                      Snap final board photos and record memorable tabletop moments
                     </p>
                   </div>
 
                   <div className="space-y-3">
                     <label className="block text-xs font-semibold text-[var(--text-secondary)]">
-                      Ảnh Chụp Bàn Chơi
+                      Boardgame Photos
                     </label>
                     <div className="flex flex-wrap items-center gap-3">
                       <label className="min-h-[88px] px-5 py-4 rounded-2xl border-2 border-dashed border-[var(--border-subtle)] hover:border-[var(--accent-primary)] bg-[var(--bg-elevated)] flex flex-col items-center justify-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-colors">
                         <Camera className="w-5 h-5 text-[var(--accent-primary)]" />
-                        <span>Tải Ảnh Lên</span>
+                        <span>Upload Photos</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -1306,14 +1307,14 @@ export const NewSessionPage: React.FC = () => {
                       htmlFor="session-notes"
                       className="block text-xs font-semibold text-[var(--text-secondary)]"
                     >
-                      Ghi Chú Ván Đấu
+                      Session Notes
                     </label>
                     <textarea
                       id="session-notes"
                       rows={3}
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Khoảnh khắc hài hước? Luật đặc biệt được dùng? Ai là người lật kèo phút cuối? 😄"
+                      placeholder="Epic comeback? House rule used? Fun moments at the table? 😄"
                       className="w-full rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-3.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
                     />
                   </div>

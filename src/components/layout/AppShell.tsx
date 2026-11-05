@@ -115,7 +115,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             onClick={() => setShowBGGModal(true)}
           >
             <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722]" />
-            Cài Đặt BGG API
+            BGG Settings
           </Button>
 
           {/* Official Powered by BGG Badge in Sidebar */}
@@ -131,7 +131,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               onClick={() => setShowInstallModal(true)}
             >
               <Smartphone className="w-4 h-4 mr-1.5 text-emerald-400" />
-              Cài App Điện Thoại
+              Install Mobile App
             </Button>
           )}
         </div>
@@ -156,10 +156,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               type="button"
               onClick={() => setShowInstallModal(true)}
               className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 text-xs font-bold inline-flex items-center gap-1 transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
-              title="Cài đặt BoardGame Vault vào màn hình chính điện thoại"
+              title="Install BoardGame Vault on your mobile home screen"
             >
               <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Cài App</span>
+              <span>Install</span>
             </button>
           )}
           <ThemeSelector compact />
@@ -167,7 +167,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             type="button"
             onClick={() => setShowBGGModal(true)}
             className="p-1.5 sm:p-2 rounded-xl text-[var(--text-secondary)] hover:text-[#ff7722] hover:bg-white/[0.05] transition-colors cursor-pointer"
-            title="Cài đặt BGG API"
+            title="BGG API Settings"
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -177,7 +177,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span className="hidden xs:inline">New Session</span>
-            <span className="xs:hidden">Trận Mới</span>
+            <span className="xs:hidden">Play</span>
           </Link>
         </div>
       </header>
