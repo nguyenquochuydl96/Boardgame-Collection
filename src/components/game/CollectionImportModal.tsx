@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Upload,
   FileText,
@@ -67,6 +67,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Simple game preview list (from CSV or basic JSON)
   const [previewItems, setPreviewItems] = useState<ImportPreviewItem[]>([]);
@@ -351,18 +352,24 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                 <strong className="text-white">.JSON</strong> backups exported from BG Catalog (iOS) or BoardGame Vault. Automatically imports your games, players, venues, and match histories!
               </p>
             </div>
-            <label className="inline-block cursor-pointer">
-              <span className="px-5 py-2.5 rounded-xl bg-[image:var(--gradient-hero)] text-white text-xs font-bold shadow hover:opacity-95 transition-opacity inline-flex items-center gap-2 cursor-pointer">
-                <Upload className="w-4 h-4" /> Choose File (.zip / .json / .csv)
-              </span>
+            <div>
               <input
+                ref={fileInputRef}
                 type="file"
-                accept=".zip,.json,.csv,.txt"
+                accept=".zip,.json,.csv,.txt,application/json,application/zip,text/csv"
                 onChange={handleFileUpload}
-                className="hidden"
+                className="sr-only"
                 disabled={loading}
               />
-            </label>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading}
+                className="px-5 py-2.5 rounded-xl bg-[image:var(--gradient-hero)] text-white text-xs font-bold shadow hover:opacity-95 active:scale-95 transition-all inline-flex items-center gap-2 cursor-pointer"
+              >
+                <Upload className="w-4 h-4" /> Choose File (.zip / .json / .csv)
+              </button>
+            </div>
             {loading && (
               <p className="text-xs text-[#a78bfa] animate-pulse">
                 Reading and parsing backup archive...
