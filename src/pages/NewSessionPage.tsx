@@ -500,7 +500,7 @@ export const NewSessionPage: React.FC = () => {
         </div>
 
         {/* Wizard Step Progress Bar */}
-        <div className="grid grid-cols-6 gap-2">
+        <div className="flex sm:grid sm:grid-cols-6 gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none">
           {WIZARD_STEPS.map((s) => {
             const isActive = currentStep === s.step;
             const isDone = currentStep > s.step;
@@ -510,7 +510,7 @@ export const NewSessionPage: React.FC = () => {
                 type="button"
                 onClick={() => setCurrentStep(s.step)}
                 className={cn(
-                  'p-2.5 rounded-xl border text-left transition-all cursor-pointer',
+                  'min-w-[85px] sm:min-w-0 flex-1 p-2 sm:p-2.5 rounded-xl border text-left transition-all cursor-pointer shrink-0 select-none',
                   isActive
                     ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[var(--text-primary)] shadow-sm'
                     : isDone

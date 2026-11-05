@@ -23,7 +23,7 @@ export const BottomNavBar: React.FC = () => {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-surface)]/95 backdrop-blur-xl border-t border-[var(--border-subtle)]"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-surface)]/95 backdrop-blur-xl border-t border-[var(--border-subtle)] pb-[env(safe-area-inset-bottom)]"
     >
       <div className="grid grid-cols-5 items-center h-16 max-w-lg mx-auto px-1">
         {NAV_ITEMS.map((item) => {

@@ -11,6 +11,8 @@ import {
   Crown,
   ArrowRight,
   Calendar,
+  Smartphone,
+  Download,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { StatCard } from '../components/dashboard/StatCard';
@@ -23,6 +25,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import { formatDate, formatDuration, getCollectionTotalValue } from '../lib/utils';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
 import { TiltCard } from '../components/ui/TiltCard';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 import { SessionDraft } from '../types';
 
 const staggerContainer = {
@@ -47,6 +50,7 @@ const fadeUpItem = {
 export const HomePage: React.FC = () => {
   const games = useGameStore((s) => s.games);
   const sessions = useSessionStore((s) => s.sessions);
+  const { isInstalled } = usePWAInstall();
 
   // Active Draft Session detection
   const [activeDraft, setActiveDraft] = useState<SessionDraft | null>(null);
@@ -161,6 +165,40 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
         </motion.section>
+
+        {/* Mobile PWA Install Banner */}
+        {!isInstalled && (
+          <motion.section
+            variants={fadeUpItem}
+            className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-indigo-500/15 border border-emerald-500/30 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0 text-emerald-400 shadow-md shadow-emerald-500/10">
+                <Smartphone className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white flex items-center gap-2">
+                  Dùng BoardGame Vault trên điện thoại?
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/25 text-emerald-300 font-mono font-bold border border-emerald-500/30">
+                    PWA App
+                  </span>
+                </p>
+                <p className="text-xs text-[#94a3b8] mt-0.5">
+                  Cài vào màn hình chính để mở tức thì, trải nghiệm toàn màn hình và dùng offline mượt mà tại bàn chơi.
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-pwa-install'))}
+              className="w-full sm:w-auto bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 hover:to-teal-200 text-slate-950 font-bold border-none shadow-md shrink-0 cursor-pointer"
+            >
+              <Download className="w-4 h-4 mr-1 text-slate-950" />
+              Cài Đặt Ngay
+            </Button>
+          </motion.section>
+        )}
 
         {/* Active Draft Session In Progress Notification */}
         {activeDraft && (

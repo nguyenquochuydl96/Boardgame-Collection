@@ -190,6 +190,12 @@ export const RandomPlayerWheel: React.FC<RandomPlayerWheelProps> = ({
               const labelPos = polarToCartesian(150, 150, 92, midAngle);
               const textRotation = midAngle - 90;
 
+              const isEmoji =
+                player.avatar &&
+                player.avatar.length <= 4 &&
+                !player.avatar.startsWith('http') &&
+                !player.avatar.startsWith('data:');
+
               return (
                 <g key={player.id}>
                   <path
@@ -221,7 +227,7 @@ export const RandomPlayerWheel: React.FC<RandomPlayerWheelProps> = ({
                       fontSize={players.length > 6 ? '11' : '13'}
                       style={{ textShadow: '0 1px 4px rgba(0,0,0,0.65)' }}
                     >
-                      {player.avatar ? `${player.avatar} ` : ''}
+                      {isEmoji ? `${player.avatar} ` : ''}
                       {player.name.length > 10
                         ? `${player.name.slice(0, 9)}…`
                         : player.name}
