@@ -39,6 +39,8 @@ const FILTER_TABS: Array<{ id: FilterTab; label: string }> = [
   { id: 'previously_owned', label: 'Prev. Owned' },
 ];
 
+const PAGE_SIZE = 36;
+
 export const CollectionPage: React.FC = () => {
   const games = useGameStore((s) => s.games);
   const updateGame = useGameStore((s) => s.updateGame);
@@ -72,16 +74,24 @@ export const CollectionPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('addedDate');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
   const [quickEditGame, setQuickEditGame] = useState<BoardGame | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importModalTab, setImportModalTab] = useState<'file' | 'export' | 'bgg'>('file');
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isWhatToPlayOpen, setIsWhatToPlayOpen] = useState(false);
 
+  // Reset pagination when search or filters change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [activeFilter, searchQuery, sortBy]);
+
   const playCountsByGameId = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const s of sessions) {
-      counts[s.gameId] = (counts[s.gameId] || 0) + 1;
+      if (s.gameId) {
+        counts[s.gameId] = (counts[s.gameId] || 0) + 1;
+      }
     }
     return counts;
   }, [sessions]);
@@ -111,12 +121,14 @@ export const CollectionPage: React.FC = () => {
             return (b.purchasePrice || 0) - (a.purchasePrice || 0);
           case 'addedDate':
           default:
-            return (
-              new Date(b.addedDate).getTime() - new Date(a.addedDate).getTime()
-            );
+            return (b.addedDate || '').localeCompare(a.addedDate || '');
         }
       });
   }, [games, activeFilter, searchQuery, sortBy]);
+
+  const visibleGames = useMemo(() => {
+    return filteredGames.slice(0, visibleCount);
+  }, [filteredGames, visibleCount]);
 
   return (
     <PageTransition>
@@ -128,7 +140,7 @@ export const CollectionPage: React.FC = () => {
               Boardgame Vault
             </h1>
             <p className="text-sm text-[var(--text-secondary)] tabular-nums">
-              Showing {filteredGames.length} of {games.length} tabletop games in your vault
+              Showing {visibleGames.length < filteredGames.length ? `${visibleGames.length} of ` : ''}{filteredGames.length} tabletop games in your vault
             </p>
           </div>
 
@@ -304,12 +316,27 @@ export const CollectionPage: React.FC = () => {
 
         {/* Game List / Grid */}
         {filteredGames.length > 0 ? (
-          <GameGrid
-            games={filteredGames}
-            viewMode={viewMode}
-            playCountsByGameId={playCountsByGameId}
-            onEdit={(game) => setQuickEditGame(game)}
-          />
+          <>
+            <GameGrid
+              games={visibleGames}
+              viewMode={viewMode}
+              playCountsByGameId={playCountsByGameId}
+              onEdit={(game) => setQuickEditGame(game)}
+            />
+
+            {/* Load More Button */}
+            {visibleCount < filteredGames.length && (
+              <div className="flex justify-center pt-4 pb-4">
+                <Button
+                  variant="secondary"
+                  onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                  className="px-6 py-2.5 rounded-xl border-[var(--border-subtle)] hover:border-[var(--border-glow)] text-xs font-bold"
+                >
+                  Load More Games ({filteredGames.length - visibleCount} remaining)
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           /* Empty State */
           <div className="p-12 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center space-y-4 max-w-md mx-auto my-8">

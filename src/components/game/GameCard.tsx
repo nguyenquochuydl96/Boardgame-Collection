@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
 import { Users, Clock, Star, Play, Dices, Edit3 } from 'lucide-react';
 import { BoardGame } from '../../types';
 import { GameStatusBadge } from './GameStatusBadge';
 import { formatVND } from '../../lib/utils';
-import { TiltCard } from '../ui/TiltCard';
 
 export interface GameCardProps {
   game: BoardGame;
@@ -14,7 +12,7 @@ export interface GameCardProps {
   onEdit?: (game: BoardGame) => void;
 }
 
-export const GameCard: React.FC<GameCardProps> = ({
+const GameCardComponent: React.FC<GameCardProps> = ({
   game,
   playCount = 0,
   viewMode = 'grid',
@@ -25,14 +23,10 @@ export const GameCard: React.FC<GameCardProps> = ({
 
   if (viewMode === 'list') {
     return (
-      <motion.div
-        whileHover={{ scale: 1.012, x: 4 }}
-        whileTap={{ scale: 0.985 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-      >
+      <div className="transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.99]">
         <Link
           to={`/collection/${game.id}`}
-          className="flex items-center gap-4 p-3.5 rounded-2xl bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] hover:border-[var(--border-glow)] hover:shadow-xl hover:shadow-[var(--accent-glow)] transition-all duration-300 group"
+          className="flex items-center gap-4 p-3.5 rounded-2xl bg-[var(--bg-card)]/90 backdrop-blur-md border border-[var(--border-subtle)] hover:border-[var(--border-glow)] hover:shadow-xl hover:shadow-[var(--accent-glow)] transition-all duration-200 group"
         >
           {/* Cover with spine accent */}
           <div className="relative w-16 h-20 rounded-xl overflow-hidden bg-[var(--bg-elevated)] shrink-0 shadow-md">
@@ -44,10 +38,12 @@ export const GameCard: React.FC<GameCardProps> = ({
               <img
                 src={game.thumbnail || game.image}
                 alt={game.name}
+                loading="lazy"
+                decoding="async"
                 referrerPolicy="no-referrer"
                 onLoad={() => setImageLoaded(true)}
                 onError={() => setImageError(true)}
-                className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-300"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-[image:var(--gradient-hero)] opacity-70">
@@ -120,19 +116,16 @@ export const GameCard: React.FC<GameCardProps> = ({
             </span>
           </div>
         </Link>
-      </motion.div>
+      </div>
     );
   }
 
+  // Grid View (High performance GPU transition, no physics spring loops)
   return (
-    <TiltCard
-      maxTilt={6}
-      glare={true}
-      className="h-full group border border-[var(--border-subtle)] hover:border-[var(--border-glow)] rounded-2xl overflow-hidden transition-all duration-300"
-    >
+    <div className="h-full group border border-[var(--border-subtle)] hover:border-[var(--border-glow)] rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-xl hover:shadow-[var(--accent-glow)] bg-[var(--bg-card)]/90 backdrop-blur-md flex flex-col">
       <Link
         to={`/collection/${game.id}`}
-        className="flex flex-col h-full bg-[var(--bg-card)]/90 backdrop-blur-md"
+        className="flex flex-col h-full focus:outline-none"
       >
         <div className="relative aspect-[3/4] w-full overflow-hidden bg-[var(--bg-elevated)]">
           {/* Authentic physical box spine highlight (left edge shadow) */}
@@ -148,10 +141,12 @@ export const GameCard: React.FC<GameCardProps> = ({
             <img
               src={game.image || game.thumbnail}
               alt={game.name}
+              loading="lazy"
+              decoding="async"
               referrerPolicy="no-referrer"
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
-              className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-108"
+              className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-[image:var(--gradient-card)] text-center">
@@ -194,8 +189,8 @@ export const GameCard: React.FC<GameCardProps> = ({
           </div>
 
           {/* Hover Play Count Overlay */}
-          <div className="absolute inset-0 z-15 flex items-center justify-center bg-[var(--bg-base)]/75 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="px-4 py-2 rounded-xl bg-[image:var(--gradient-hero)] text-white font-display font-bold text-sm shadow-xl flex items-center gap-2 transform translate-y-3 group-hover:translate-y-0 transition-transform duration-300">
+          <div className="absolute inset-0 z-15 flex items-center justify-center bg-[var(--bg-base)]/75 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+            <div className="px-4 py-2 rounded-xl bg-[image:var(--gradient-hero)] text-white font-display font-bold text-sm shadow-xl flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-200">
               <Play className="w-4 h-4 fill-current" />
               <span>
                 {playCount} {playCount === 1 ? 'Session' : 'Sessions'} Played
@@ -221,7 +216,7 @@ export const GameCard: React.FC<GameCardProps> = ({
         </div>
 
         {game.purchasePrice ? (
-          <div className="px-3.5 py-2.5 flex items-center justify-between text-xs border-t border-[var(--border-subtle)] bg-[var(--bg-surface)]/80">
+          <div className="px-3.5 py-2.5 flex items-center justify-between text-xs border-t border-[var(--border-subtle)] bg-[var(--bg-surface)]/80 mt-auto">
             <span className="text-[var(--text-secondary)] font-medium">Valuation</span>
             <span className="font-mono font-semibold text-[var(--text-primary)] tabular-nums">
               {formatVND(game.purchasePrice)}
@@ -229,8 +224,9 @@ export const GameCard: React.FC<GameCardProps> = ({
           </div>
         ) : null}
       </Link>
-    </TiltCard>
+    </div>
   );
 };
 
+export const GameCard = memo(GameCardComponent);
 export default GameCard;
