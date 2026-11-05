@@ -55,10 +55,23 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
 
       const res = await fetch(`${targetUrl}/api/search?q=catan`, { headers });
       if (res.ok) {
-        const data = await res.json();
+        const text = await res.text();
+        const isXml = text.trim().startsWith('<');
+        let count = 1;
+        if (isXml) {
+          const match = text.match(/<item/g);
+          count = match ? match.length : 1;
+        } else {
+          try {
+            const json = JSON.parse(text);
+            count = Array.isArray(json) ? json.length : 1;
+          } catch {
+            //
+          }
+        }
         setTestResult({
           success: true,
-          message: `Connection successful! Received ${Array.isArray(data) ? data.length : 1} search results from BGG.`,
+          message: `✓ Kết nối thành công! Đã kết nối trực tiếp với BoardGameGeek (${count} kết quả cho "catan").`,
         });
       } else if (res.status === 401) {
         setTestResult({
