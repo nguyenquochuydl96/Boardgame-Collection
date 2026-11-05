@@ -19,6 +19,7 @@ import { useGameStore } from '../store/useGameStore';
 import { createGameCoverDataUri, STATUS_CONFIG } from '../lib/utils';
 import { BGGGameDetail, GameStatus } from '../types';
 import { BGGConfigModal } from '../components/game/BGGConfigModal';
+import { PoweredByBGG } from '../components/ui/PoweredByBGG';
 
 export const AddGamePage: React.FC = () => {
   const navigate = useNavigate();
@@ -130,13 +131,16 @@ export const AddGamePage: React.FC = () => {
           </Link>
         </div>
 
-        <div>
-          <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-white">
-            Add Game to Vault
-          </h1>
-          <p className="text-sm text-[#94a3b8]">
-            Import box details from BoardGameGeek or enter a custom title manually
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-white">
+              Add Game to Vault
+            </h1>
+            <p className="text-sm text-[#94a3b8]">
+              Import box details from BoardGameGeek or enter a custom title manually
+            </p>
+          </div>
+          <PoweredByBGG variant="badge" />
         </div>
 
         {/* Two-Tab Selector */}
@@ -183,15 +187,18 @@ export const AddGamePage: React.FC = () => {
         {/* Tab 1: BGG Search Picker */}
         {activeTab === 'bgg' && (
           <Card className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-[#94a3b8]">Live BGG Catalog Lookup</span>
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-white/5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#94a3b8]">Live BGG Catalog Lookup</span>
+                <PoweredByBGG variant="inline" />
+              </div>
               <button
                 type="button"
                 onClick={() => setIsConfigOpen(true)}
                 className="inline-flex items-center gap-1.5 text-xs text-[#a78bfa] hover:text-white transition-colors cursor-pointer"
               >
                 <Settings className="w-3.5 h-3.5" />
-                Proxy & Token Settings
+                Proxy &amp; Token Settings
               </button>
             </div>
 

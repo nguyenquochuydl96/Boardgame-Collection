@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Dices, Plus, Play, Download } from 'lucide-react';
+import { Dices, Plus, Play, Download, Settings } from 'lucide-react';
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { ThemeSelector } from '../ui/ThemeSelector';
+import { PoweredByBGG } from '../ui/PoweredByBGG';
+import { BGGConfigModal } from '../game/BGGConfigModal';
 import { cn } from '../ui/cn';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 
@@ -17,6 +19,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const location = useLocation();
   const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
   const [showIOSModal, setShowIOSModal] = useState(false);
+  const [showBGGModal, setShowBGGModal] = useState(false);
 
   const isTabActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -98,6 +101,22 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               Add Game
             </Button>
           </Link>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-center text-xs text-[var(--text-secondary)] hover:text-white"
+            onClick={() => setShowBGGModal(true)}
+          >
+            <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722]" />
+            Cài Đặt BGG API
+          </Button>
+
+          {/* Official Powered by BGG Badge in Sidebar */}
+          <div className="pt-1">
+            <PoweredByBGG variant="sidebar" />
+          </div>
+
           {!isInstalled && (isInstallable || isIOS) && (
             <Button
               variant="outline"
@@ -132,6 +151,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
         <div className="flex items-center gap-2 shrink-0">
           <ThemeSelector compact />
+          <button
+            type="button"
+            onClick={() => setShowBGGModal(true)}
+            className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[#ff7722] hover:bg-white/[0.05] transition-colors"
+            title="Cài đặt BGG API"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
           <Link
             to="/sessions/new"
             className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-[image:var(--gradient-hero)] text-xs font-semibold text-white inline-flex items-center gap-1.5 shadow-md shadow-[var(--accent-glow)] whitespace-nowrap shrink-0"
@@ -146,10 +173,18 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       <main className="flex-1 lg:pl-64 pb-24 lg:pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
           {children}
+
+          {/* Persistent Compliance Footer */}
+          <PoweredByBGG variant="footer" />
         </div>
       </main>
 
       <BottomNavBar />
+
+      <BGGConfigModal
+        isOpen={showBGGModal}
+        onClose={() => setShowBGGModal(false)}
+      />
 
       <Modal
         isOpen={showIOSModal}

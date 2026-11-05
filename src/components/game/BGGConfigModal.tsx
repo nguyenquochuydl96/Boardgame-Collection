@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Globe, Key, Check, ExternalLink, RefreshCw, AlertCircle } from 'lucide-react';
+import { Globe, Key, Check, ExternalLink, RefreshCw, AlertCircle, ShieldCheck } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { getBGGApiToken, getBGGProxyUrl, saveBGGSettings } from '../../lib/bgg';
+import { PoweredByBGG } from '../ui/PoweredByBGG';
 
 export interface BGGConfigModalProps {
   isOpen: boolean;
@@ -75,14 +76,32 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="BoardGameGeek Integration" maxWidthClass="max-w-xl">
       <div className="space-y-5 text-sm">
-        <p className="text-[#94a3b8] leading-relaxed">
-          Configure a serverless proxy (Cloudflare Worker or Vercel) and your BGG Access Token to enable live catalog search and collection sync.
+        {/* Official BGG Approval Status Card */}
+        <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#ff5100]/15 via-[#ff7722]/10 to-amber-500/10 border border-[#ff5100]/30 flex items-center justify-between gap-3 shadow-md">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-[#ff5100] text-white flex items-center justify-center shrink-0 shadow">
+              <ShieldCheck className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-[#ff7722] font-bold">
+                BGG XML API
+              </div>
+              <div className="font-extrabold text-sm text-[var(--text-primary)] truncate">
+                Đã Phê Duyệt (Approved)
+              </div>
+            </div>
+          </div>
+          <PoweredByBGG variant="badge" />
+        </div>
+
+        <p className="text-[#94a3b8] leading-relaxed text-xs">
+          Ứng dụng của bạn đã được quản trị viên BoardGameGeek phê duyệt quyền sử dụng phi thương mại. Hãy dán <strong>BGG API Token (Bearer Token)</strong> và địa chỉ Proxy (nếu dùng Cloudflare Worker / Serverless) để kích hoạt tìm kiếm và đồng bộ trực tiếp.
         </p>
 
         <div className="space-y-4">
           <Input
-            label="Proxy Base URL"
-            placeholder="e.g. https://bgg-proxy.your-subdomain.workers.dev"
+            label="Proxy Base URL (Tùy chọn)"
+            placeholder="ví dụ: https://bgg-proxy.your-subdomain.workers.dev"
             value={proxyUrl}
             onChange={(e) => setProxyUrl(e.target.value)}
             leftIcon={<Globe className="w-4 h-4 text-[#7c3aed]" />}
@@ -90,7 +109,7 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
 
           <Input
             label="BGG Personal Access Token (Bearer Token)"
-            placeholder="Paste token from boardgamegeek.com/applications"
+            placeholder="Dán token lấy từ boardgamegeek.com/applications"
             type="password"
             value={apiToken}
             onChange={(e) => setApiToken(e.target.value)}
@@ -117,12 +136,26 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
 
         <div className="p-4 rounded-2xl bg-[#1e1e35]/60 border border-white/10 space-y-2 text-xs text-[#94a3b8]">
           <p className="font-bold text-white flex items-center gap-1.5">
-            <ExternalLink className="w-3.5 h-3.5 text-[#22d3ee]" /> How to get a BGG Token:
+            <ExternalLink className="w-3.5 h-3.5 text-[#ff7722]" /> Cách lấy Access Token trên BGG:
           </p>
-          <ol className="list-decimal list-inside space-y-1 pl-1">
-            <li>Log into your account on BoardGameGeek.</li>
-            <li>Visit <span className="font-mono text-white">boardgamegeek.com/applications</span>.</li>
-            <li>Register an application and copy your generated Access Token.</li>
+          <ol className="list-decimal list-inside space-y-1.5 pl-1">
+            <li>Đăng nhập tài khoản BoardGameGeek của bạn.</li>
+            <li>
+              Truy cập{' '}
+              <a
+                href="https://boardgamegeek.com/applications"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-[#ff7722] underline hover:text-white"
+              >
+                boardgamegeek.com/applications
+              </a>
+              .
+            </li>
+            <li>Chọn ứng dụng đã được duyệt và sao chép <strong>Access Token (Bearer Token)</strong>.</li>
+            <li className="text-emerald-400">
+              ✓ Logo <strong>"Powered by BGG"</strong> đã được gắn đầy đủ khắp ứng dụng theo đúng điều khoản sử dụng của BGG.
+            </li>
           </ol>
         </div>
 

@@ -30,6 +30,7 @@ import { createGameCoverDataUri } from '../../lib/utils';
 import { exportVaultJSON, exportGamesCSV, exportSessionsCSV } from '../../lib/exportVault';
 import { Download, HardDriveDownload } from 'lucide-react';
 import { GameStatus } from '../../types';
+import { PoweredByBGG } from '../ui/PoweredByBGG';
 
 export interface CollectionImportModalProps {
   isOpen: boolean;
@@ -465,9 +466,12 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
         {/* Tab 2: BGG Username */}
         {activeTab === 'bgg' && (
           <div className="space-y-3">
-            <p className="text-xs text-[#94a3b8]">
-              Nhập BoardGameGeek username công khai để kéo toàn bộ game đánh dấu "Owned".
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-[#94a3b8]">
+                Nhập BoardGameGeek username công khai để kéo toàn bộ game đánh dấu "Owned".
+              </p>
+              <PoweredByBGG variant="inline" />
+            </div>
             <div className="flex gap-2">
               <div className="flex-1">
                 <Input
