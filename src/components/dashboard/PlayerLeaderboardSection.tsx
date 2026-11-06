@@ -3,15 +3,11 @@ import {
   Trophy,
   Crown,
   Flame,
-  Zap,
   Gamepad2,
-  Dices,
   Medal,
   Frown,
   Snowflake,
   HeartCrack,
-  Sparkles,
-  Award,
 } from 'lucide-react';
 import { Player, PlaySession } from '../../types';
 import { PlayerAvatar } from '../player/PlayerAvatar';
@@ -23,9 +19,7 @@ export type LeaderboardCriterion =
   | 'win_rate'
   | 'total_wins'
   | 'win_streak'
-  | 'high_score'
   | 'game_variety'
-  | 'most_played'
   // Negative & Spicy / Fun
   | 'runner_up'
   | 'wooden_spoon'
@@ -48,11 +42,6 @@ export interface PlayerComprehensiveStats {
   maxColdStreak: number;
   currentColdStreak: number;
   closeLosses: number;
-  highScore: {
-    score: number;
-    game: string;
-    date: string;
-  };
   uniqueGamesCount: number;
 }
 
@@ -130,24 +119,6 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     sortFn: (a, b) => b.maxWinStreak - a.maxWinStreak || b.wins - a.wins,
   },
   {
-    id: 'high_score',
-    label: 'Kỷ Lục Điểm Số (High Score)',
-    shortLabel: 'Kỷ Lục Điểm',
-    group: 'positive',
-    icon: Zap,
-    iconColor: 'text-yellow-500 dark:text-yellow-400',
-    badgeBg: 'bg-yellow-500/15 border-yellow-500/30 text-yellow-700 dark:text-yellow-300',
-    badgeText: '⚡ Bùng Nổ Điểm Số',
-    tagline: 'Kỷ Lục Điểm Cao Nhất Từng Đạt',
-    description: 'Điểm số cao nhất mà người chơi từng ghi được trong một ván bất kỳ trong lịch sử.',
-    metricHeader: 'Điểm Kỷ Lục',
-    contextHeader: 'Game & Ngày Lập Kỷ Lục',
-    getPrimaryMetric: (st) => (st.highScore.score > -Infinity ? `${st.highScore.score}đ` : 'Chưa có'),
-    getSecondaryMetric: (st) => (st.highScore.score > -Infinity ? `${st.highScore.game} (${st.highScore.date})` : 'N/A'),
-    sortFn: (a, b) => b.highScore.score - a.highScore.score,
-    filterFn: (st) => st.highScore.score > -Infinity,
-  },
-  {
     id: 'game_variety',
     label: 'Đa Dạng Tựa Game (Variety)',
     shortLabel: 'Đa Dạng Game',
@@ -163,23 +134,6 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     getPrimaryMetric: (st) => `${st.uniqueGamesCount} game`,
     getSecondaryMetric: (st) => `Tổng cộng ${st.plays} lượt chơi trên bàn cờ`,
     sortFn: (a, b) => b.uniqueGamesCount - a.uniqueGamesCount || b.plays - a.plays,
-  },
-  {
-    id: 'most_played',
-    label: 'Chăm Chỉ Nhất (Most Plays)',
-    shortLabel: 'Chơi Nhiều Nhất',
-    group: 'positive',
-    icon: Dices,
-    iconColor: 'text-cyan-500 dark:text-cyan-400',
-    badgeBg: 'bg-cyan-500/15 border-cyan-500/30 text-cyan-700 dark:text-cyan-300',
-    badgeText: '🎲 Chuyên Cần',
-    tagline: 'Gương Mặt Thân Quen Của Mọi Kèo',
-    description: 'Tổng số ván tham gia nhiều nhất trong toàn bộ lịch sử hội chơi board game.',
-    metricHeader: 'Số Ván Tham Gia',
-    contextHeader: 'Thành Tích Đạt Được',
-    getPrimaryMetric: (st) => `${st.plays} ván`,
-    getSecondaryMetric: (st) => `${st.wins} trận thắng (${st.winRate}% win rate)`,
-    sortFn: (a, b) => b.plays - a.plays || b.wins - a.wins,
   },
 
   // NEGATIVE & SPICY / FUN
@@ -287,7 +241,6 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
           maxColdStreak: 0,
           currentColdStreak: 0,
           closeLosses: 0,
-          highScore: { score: -Infinity, game: '', date: '' },
           uniqueGamesCount: 0,
         });
       });
@@ -343,14 +296,6 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               st.lastPlaces += 1;
             }
           }
-
-          if (typeof ps.score === 'number' && ps.score > st.highScore.score) {
-            st.highScore = {
-              score: ps.score,
-              game: s.gameName,
-              date: s.datePlayed ? s.datePlayed.split('T')[0] : '',
-            };
-          }
         });
       });
 
@@ -369,18 +314,26 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
       return Array.from(statsMap.values()).filter((st) => st.plays > 0);
     }, [players, sessions]);
 
-    // 2. Active criterion configuration
-    const activeCriterion = useMemo(() => {
-      return (
-        CRITERIA_CONFIG.find((c) => c.id === activeCriterionId) || CRITERIA_CONFIG[0]
-      );
-    }, [activeCriterionId]);
-
-    // 3. Filter criteria options by group (All, Positive, Negative)
+    // 2. Filter criteria options by group (All, Positive, Negative)
     const availableCriteria = useMemo(() => {
       if (activeGroup === 'all') return CRITERIA_CONFIG;
       return CRITERIA_CONFIG.filter((c) => c.group === activeGroup);
     }, [activeGroup]);
+
+    // 3. Active criterion configuration
+    const activeCriterion = useMemo(() => {
+      const match = availableCriteria.find((c) => c.id === activeCriterionId);
+      return match || availableCriteria[0] || CRITERIA_CONFIG[0];
+    }, [availableCriteria, activeCriterionId]);
+
+    const positiveCount = useMemo(
+      () => CRITERIA_CONFIG.filter((c) => c.group === 'positive').length,
+      []
+    );
+    const negativeCount = useMemo(
+      () => CRITERIA_CONFIG.filter((c) => c.group === 'negative').length,
+      []
+    );
 
     // 4. Sorted ranking list for the active criterion
     const rankedStats = useMemo(() => {
@@ -422,11 +375,17 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                   : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
             >
-              🌟 Tất Cả (10)
+              🌟 Tất Cả ({CRITERIA_CONFIG.length})
             </button>
             <button
               type="button"
-              onClick={() => setActiveGroup('positive')}
+              onClick={() => {
+                setActiveGroup('positive');
+                const first = CRITERIA_CONFIG.find((c) => c.group === 'positive');
+                if (first && !CRITERIA_CONFIG.filter((c) => c.group === 'positive').some((c) => c.id === activeCriterionId)) {
+                  setActiveCriterionId(first.id);
+                }
+              }}
               className={cn(
                 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
                 activeGroup === 'positive'
@@ -434,11 +393,17 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                   : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
             >
-              🏆 Vinh Danh (6)
+              🏆 Vinh Danh ({positiveCount})
             </button>
             <button
               type="button"
-              onClick={() => setActiveGroup('negative')}
+              onClick={() => {
+                setActiveGroup('negative');
+                const first = CRITERIA_CONFIG.find((c) => c.group === 'negative');
+                if (first && !CRITERIA_CONFIG.filter((c) => c.group === 'negative').some((c) => c.id === activeCriterionId)) {
+                  setActiveCriterionId(first.id);
+                }
+              }}
               className={cn(
                 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
                 activeGroup === 'negative'
@@ -446,7 +411,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                   : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
             >
-              😈 Cà Khịa (4)
+              😈 Cà Khịa ({negativeCount})
             </button>
           </div>
         </div>
