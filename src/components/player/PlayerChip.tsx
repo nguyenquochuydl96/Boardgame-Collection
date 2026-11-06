@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Check, Crown } from 'lucide-react';
 import { Player } from '../../types';
 import { PlayerAvatar } from './PlayerAvatar';
@@ -17,7 +17,7 @@ export interface PlayerChipProps {
   className?: string;
 }
 
-export const PlayerChip: React.FC<PlayerChipProps> = ({
+const PlayerChipComponent: React.FC<PlayerChipProps> = ({
   player,
   name,
   color,
@@ -97,4 +97,5 @@ export const PlayerChip: React.FC<PlayerChipProps> = ({
   );
 };
 
+export const PlayerChip = memo(PlayerChipComponent);
 export default PlayerChip;

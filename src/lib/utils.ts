@@ -339,7 +339,7 @@ export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
   >();
 
   for (const session of sessions) {
-    for (const p of session.players) {
+    for (const p of (session.players || [])) {
       if (typeof p.score === 'number' && !Number.isNaN(p.score)) {
         if (!highestScore || p.score > highestScore.score) {
           highestScore = { score: p.score, playerName: p.playerName };
@@ -506,7 +506,7 @@ export function calculateHeadToHead(
 ): HeadToHeadSummary {
   const selectedIds = selectedPlayers.map((p) => p.id);
   const sharedSessions = allSessions.filter((s) =>
-    selectedIds.every((id) => s.players.some((p) => p.playerId === id))
+    selectedIds.every((id) => (s.players || []).some((p) => p.playerId === id))
   );
 
   const playerStats = selectedPlayers.map((player) => {
@@ -516,7 +516,7 @@ export function calculateHeadToHead(
     const scores: number[] = [];
 
     for (const session of sharedSessions) {
-      const entry = session.players.find((p) => p.playerId === player.id);
+      const entry = (session.players || []).find((p) => p.playerId === player.id);
       if (!entry) continue;
       if (entry.isWinner || session.winnerId === player.id) {
         winsInShared += 1;

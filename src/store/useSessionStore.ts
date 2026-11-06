@@ -275,17 +275,11 @@ export const useSessionStore = create<SessionStore>()(
       getSessionsByGame: (gameId) =>
         get()
           .sessions.filter((s) => s.gameId === gameId)
-          .sort(
-            (a, b) =>
-              new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime()
-          ),
+          .sort((a, b) => (b.datePlayed || '').localeCompare(a.datePlayed || '')),
       getSessionsByPlayer: (playerId) =>
         get()
           .sessions.filter((s) => s.players.some((p) => p.playerId === playerId))
-          .sort(
-            (a, b) =>
-              new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime()
-          ),
+          .sort((a, b) => (b.datePlayed || '').localeCompare(a.datePlayed || '')),
     }),
     {
       name: 'bg-vault-sessions-v2',

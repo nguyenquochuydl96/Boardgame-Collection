@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Player } from '../../types';
 import { Avatar, AvatarProps } from '../ui/Avatar';
 import { getDeterministicAvatar } from '../../lib/boardgameAvatars';
@@ -10,7 +10,7 @@ export interface PlayerAvatarProps extends Omit<AvatarProps, 'name' | 'avatar' |
   color?: string;
 }
 
-export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
+const PlayerAvatarComponent: React.FC<PlayerAvatarProps> = ({
   player,
   name,
   avatar,
@@ -34,4 +34,5 @@ export const PlayerAvatar: React.FC<PlayerAvatarProps> = ({
   );
 };
 
+export const PlayerAvatar = memo(PlayerAvatarComponent);
 export default PlayerAvatar;

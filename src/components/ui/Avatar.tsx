@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { cn } from './cn';
 import { resolveAvatarImage, getSafeDisplayAvatar } from '../../lib/utils';
 
@@ -10,7 +10,7 @@ export interface AvatarProps {
   className?: string;
 }
 
-export const Avatar: React.FC<AvatarProps> = ({
+const AvatarComponent: React.FC<AvatarProps> = ({
   name,
   avatar,
   color = 'var(--accent-primary)',
@@ -65,4 +65,5 @@ export const Avatar: React.FC<AvatarProps> = ({
   );
 };
 
+export const Avatar = memo(AvatarComponent);
 export default Avatar;

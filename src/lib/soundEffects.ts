@@ -1,5 +1,3 @@
-import confetti from 'canvas-confetti';
-
 let audioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
@@ -104,7 +102,35 @@ export function playCardSnapSound() {
 }
 
 /**
- * Play an upbeat victory fanfare / chime
+ * Play a resonant flip sound when a card is revealed
+ */
+export function playCardFlipSound() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(260, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(620, ctx.currentTime + 0.09);
+
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.09);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.09);
+  } catch {
+    // Ignore audio autoplay restrictions
+  }
+}
+
+/**
+ * Play a triumphant fanfare chord when a final choice is revealed
  */
 export function playFanfareSound() {
   try {
@@ -137,38 +163,44 @@ export function playFanfareSound() {
 }
 
 /**
- * Trigger celebratory confetti explosions
+ * Trigger celebratory confetti explosions (dynamically loaded on-demand)
  */
 export function triggerConfetti() {
-  try {
-    // Left side burst
-    confetti({
-      particleCount: 60,
-      angle: 60,
-      spread: 55,
-      origin: { x: 0, y: 0.7 },
-      colors: ['#f59e0b', '#ec4899', '#3b82f6', '#10b981', '#a855f7'],
-    });
+  import('canvas-confetti')
+    .then(({ default: confetti }) => {
+      try {
+        // Left side burst
+        confetti({
+          particleCount: 60,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.7 },
+          colors: ['#f59e0b', '#ec4899', '#3b82f6', '#10b981', '#a855f7'],
+        });
 
-    // Right side burst
-    confetti({
-      particleCount: 60,
-      angle: 120,
-      spread: 55,
-      origin: { x: 1, y: 0.7 },
-      colors: ['#f59e0b', '#ec4899', '#3b82f6', '#10b981', '#a855f7'],
-    });
+        // Right side burst
+        confetti({
+          particleCount: 60,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.7 },
+          colors: ['#f59e0b', '#ec4899', '#3b82f6', '#10b981', '#a855f7'],
+        });
 
-    // Center starburst slightly delayed
-    setTimeout(() => {
-      confetti({
-        particleCount: 80,
-        spread: 100,
-        origin: { y: 0.6 },
-        colors: ['#ffd700', '#ff6b6b', '#48dbfb', '#1dd1a1', '#f368e0'],
-      });
-    }, 200);
-  } catch {
-    // Ignore confetti errors if canvas fails
-  }
+        // Center starburst slightly delayed
+        setTimeout(() => {
+          confetti({
+            particleCount: 80,
+            spread: 100,
+            origin: { y: 0.6 },
+            colors: ['#ffd700', '#ff6b6b', '#48dbfb', '#1dd1a1', '#f368e0'],
+          });
+        }, 200);
+      } catch {
+        // Ignore confetti errors if canvas fails
+      }
+    })
+    .catch(() => {
+      // Ignore load error
+    });
 }
