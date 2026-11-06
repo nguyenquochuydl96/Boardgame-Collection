@@ -17,8 +17,6 @@ import {
   Crown,
   Medal,
   Award,
-  Play,
-  Search,
   ArrowUpRight,
   ChevronRight,
   Filter,
@@ -27,9 +25,7 @@ import {
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
-import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import { PlayerChip } from '../components/player/PlayerChip';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { StreakDetailModal } from '../components/player/StreakDetailModal';
@@ -131,10 +127,6 @@ export const StatsPage: React.FC = () => {
     return `Period ${sorted.join(' - ')}`;
   }, [selectedYears]);
 
-  const [showPlayedGamesModal, setShowPlayedGamesModal] = useState(false);
-  const [playedGamesTab, setPlayedGamesTab] = useState<'played' | 'unplayed'>('played');
-  const [playedGamesSearch, setPlayedGamesSearch] = useState('');
-
   const [selectedStreakPlayer, setSelectedStreakPlayer] = useState<Player | null>(null);
   const [selectedStreakData, setSelectedStreakData] = useState<StreakData | null>(null);
 
@@ -194,21 +186,6 @@ export const StatsPage: React.FC = () => {
       nextHIndexGame: sortedGamesByPlays[h], // index h is (h+1)-th game
     };
   }, [sortedGamesByPlays]);
-
-  const playedGamesList = useMemo(() => {
-    return sortedGamesByPlays.filter((g) => g.plays > 0);
-  }, [sortedGamesByPlays]);
-
-  const unplayedGamesList = useMemo(() => {
-    return sortedGamesByPlays.filter((g) => g.plays === 0);
-  }, [sortedGamesByPlays]);
-
-  const filteredModalGames = useMemo(() => {
-    const list = playedGamesTab === 'played' ? playedGamesList : unplayedGamesList;
-    if (!playedGamesSearch.trim()) return list;
-    const q = playedGamesSearch.toLowerCase();
-    return list.filter((item) => item.name.toLowerCase().includes(q));
-  }, [playedGamesTab, playedGamesList, unplayedGamesList, playedGamesSearch]);
 
   // Session duration extremes
   const sortedByDuration = useMemo(() => {
@@ -747,7 +724,7 @@ export const StatsPage: React.FC = () => {
                 </Button>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 tabular-nums">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 tabular-nums">
                 {/* 1. Most Played Game Card */}
                 {mostPlayedGame && (
                   <Link
@@ -781,39 +758,7 @@ export const StatsPage: React.FC = () => {
                   </Link>
                 )}
 
-                {/* 2. Total Games Played from Collection */}
-                <Card
-                  onClick={() => setShowPlayedGamesModal(true)}
-                  className="p-4 sm:p-5 flex gap-3.5 items-center cursor-pointer hover:border-amber-400/60 hover:shadow-xl hover:shadow-amber-500/10 transition-all group select-none bg-[var(--card)] border border-[var(--line)]"
-                >
-                  <div className="w-16 h-20 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex flex-col items-center justify-center shrink-0">
-                    <Dices className="w-7 h-7" />
-                    <span className="text-[9px] font-extrabold uppercase mt-1 tracking-wider">Vault</span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-[var(--muted)] group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
-                        Played Games in Vault
-                      </span>
-                      <span className="text-xs font-bold text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-                        View <ArrowRight className="w-3 h-3" />
-                      </span>
-                    </div>
-                    <p className="font-display font-black text-2xl text-[var(--ink)] mt-0.5">
-                      {sortedGamesByPlays.filter((g) => g.plays > 0).length} / {games.length}
-                    </p>
-                    <p className="text-[11px] text-[var(--muted)] mt-0.5 transition-colors truncate">
-                      {(
-                        (sortedGamesByPlays.filter((g) => g.plays > 0).length /
-                          Math.max(1, games.length)) *
-                        100
-                      ).toFixed(0)}
-                      % vault played · {sortedGamesByPlays.filter((g) => g.plays === 0).length} unplayed
-                    </p>
-                  </div>
-                </Card>
-
-                {/* 3. Longest Session Card with Game Thumbnail */}
+                {/* 2. Longest Session Card with Game Thumbnail */}
                 {longestSession ? (
                   <Link
                     to={`/sessions/${longestSession.id}`}
@@ -1471,121 +1416,6 @@ export const StatsPage: React.FC = () => {
             )}
           </Card>
         )}
-
-        {/* Played & Unplayed Games Drilldown Modal */}
-        <Modal
-          isOpen={showPlayedGamesModal}
-          onClose={() => setShowPlayedGamesModal(false)}
-          title="Played vs. Unplayed Games (Pile of Shame)"
-          maxWidthClass="max-w-2xl"
-        >
-          <div className="space-y-4">
-            {/* Modal Tabs */}
-            <div className="flex p-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)] gap-1">
-              <button
-                type="button"
-                onClick={() => setPlayedGamesTab('played')}
-                className={cn(
-                  'flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 select-none',
-                  playedGamesTab === 'played'
-                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
-                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
-                )}
-              >
-                <span>Played Games</span>
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/15 dark:bg-white/20 tabular-nums">
-                  {playedGamesList.length}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPlayedGamesTab('unplayed')}
-                className={cn(
-                  'flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 select-none',
-                  playedGamesTab === 'unplayed'
-                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
-                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
-                )}
-              >
-                <span>Unplayed (Pile of Shame)</span>
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-black/15 dark:bg-white/20 tabular-nums">
-                  {unplayedGamesList.length}
-                </span>
-              </button>
-            </div>
-
-            {/* Search Input */}
-            <Input
-              placeholder="Search games..."
-              value={playedGamesSearch}
-              onChange={(e) => setPlayedGamesSearch(e.target.value)}
-              leftIcon={<Search className="w-4 h-4 text-[var(--muted)]" />}
-              className="text-xs"
-            />
-
-            {/* Games List */}
-            <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1">
-              {filteredModalGames.length === 0 ? (
-                <div className="text-center py-8 text-xs text-[var(--muted)]">
-                  No matching board games found
-                </div>
-              ) : (
-                filteredModalGames.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3 rounded-xl bg-[var(--card-2)] border border-[var(--line)] hover:border-[var(--accent)] flex items-center justify-between gap-3 transition-colors group"
-                  >
-                    <Link
-                      to={`/collection/${item.id}`}
-                      onClick={() => setShowPlayedGamesModal(false)}
-                      className="flex items-center gap-3 min-w-0 flex-1"
-                    >
-                      {item.thumbnail ? (
-                        <img
-                          src={item.thumbnail}
-                          alt={item.name}
-                          className="w-12 h-14 rounded-lg object-cover border border-[var(--line)] shrink-0 bg-[var(--card-3)]"
-                        />
-                      ) : (
-                        <div className="w-12 h-14 rounded-lg bg-[var(--card-3)] flex items-center justify-center text-xl shrink-0">
-                          🎲
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <h4 className="font-display font-bold text-sm text-[var(--ink)] group-hover:text-[var(--accent)] transition-colors truncate">
-                          {item.name}
-                        </h4>
-                        <div className="flex items-center gap-2 mt-0.5 text-xs text-[var(--muted)] tabular-nums">
-                          {item.plays > 0 ? (
-                            <span className="text-amber-600 dark:text-amber-400 font-bold font-mono">
-                              {item.plays} plays logged
-                            </span>
-                          ) : (
-                            <span className="text-rose-600 dark:text-rose-400 font-medium">
-                              No plays recorded yet
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Link
-                        to={`/sessions/new?gameId=${item.id}`}
-                        onClick={() => setShowPlayedGamesModal(false)}
-                      >
-                        <Button size="sm" variant="secondary" className="text-xs px-2.5 py-1">
-                          <Play className="w-3.5 h-3.5 mr-1 fill-current" />
-                          Play Session
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </Modal>
 
         {/* Player Streak Detail Modal */}
         <StreakDetailModal
