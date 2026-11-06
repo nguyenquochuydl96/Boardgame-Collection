@@ -21,12 +21,6 @@ import { useSyncStore } from '../../store/useSyncStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useSessionStore } from '../../store/useSessionStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
-import {
-  pullVaultFromCloud,
-  pushVaultToCloud,
-  startVaultRealtimeSubscription,
-  checkUrlSyncParameters,
-} from '../../lib/supabaseSync';
 
 // Lazy load modals on-demand to keep core AppShell bundle ultra-lightweight
 const BGGConfigModal = React.lazy(() =>
@@ -80,18 +74,25 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   // Check 1-click mobile import parameters and setup sync listeners
   useEffect(() => {
-    const importedFromUrl = checkUrlSyncParameters();
-    if (importedFromUrl) {
-      setShowSyncModal(true);
-    } else if (isSyncEnabled && autoSync) {
-      // Pull latest cloud updates on app launch
-      pullVaultFromCloud('replace');
-    }
+    let unsubscribeRealtime: (() => void) | null = null;
 
-    // Subscribe to multi-device Realtime events
-    const unsubscribeRealtime = startVaultRealtimeSubscription();
+    import('../../lib/supabaseSync').then((sync) => {
+      const importedFromUrl = sync.checkUrlSyncParameters();
+      if (importedFromUrl) {
+        setShowSyncModal(true);
+      } else if (isSyncEnabled && autoSync) {
+        // Pull latest cloud updates on app launch
+        sync.pullVaultFromCloud('replace');
+      }
+
+      // Subscribe to multi-device Realtime events
+      unsubscribeRealtime = sync.startVaultRealtimeSubscription();
+    });
+
     return () => {
-      unsubscribeRealtime();
+      if (unsubscribeRealtime) {
+        unsubscribeRealtime();
+      }
     };
   }, [isSyncEnabled, autoSync]);
 
@@ -103,7 +104,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     const triggerPush = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-        pushVaultToCloud();
+        import('../../lib/supabaseSync').then((sync) => {
+          sync.pushVaultToCloud();
+        });
       }, 2500);
     };
 

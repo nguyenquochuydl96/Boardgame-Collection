@@ -44,8 +44,27 @@ export function parseNumberInput(formatted: string | undefined | null): number |
   return Number.isNaN(num) ? undefined : num;
 }
 
+const SHORT_MONTHS = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+const FULL_MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
 export function formatDate(isoDate?: string): string {
   if (!isoDate) return 'Unknown date';
+  // Fast path for standard ISO 8601 strings (zero Date and Intl allocations)
+  if (isoDate.length >= 10 && isoDate[4] === '-' && isoDate[7] === '-') {
+    const year = isoDate.slice(0, 4);
+    const mIdx = parseInt(isoDate.slice(5, 7), 10) - 1;
+    const day = parseInt(isoDate.slice(8, 10), 10);
+    if (mIdx >= 0 && mIdx < 12 && !isNaN(day)) {
+      return `${SHORT_MONTHS[mIdx]} ${day}, ${year}`;
+    }
+  }
   const d = new Date(isoDate);
   if (Number.isNaN(d.getTime())) return isoDate;
   return d.toLocaleDateString('en-US', {
@@ -71,6 +90,15 @@ export function getGameCoverImage(game?: Partial<BoardGame> | null): string {
 }
 
 export function formatMonthYear(isoDate: string): string {
+  if (!isoDate) return 'Recent';
+  // Fast path for standard ISO 8601 strings (zero Date and Intl allocations)
+  if (isoDate.length >= 7 && isoDate[4] === '-') {
+    const year = isoDate.slice(0, 4);
+    const mIdx = parseInt(isoDate.slice(5, 7), 10) - 1;
+    if (mIdx >= 0 && mIdx < 12) {
+      return `${FULL_MONTHS[mIdx]} ${year}`;
+    }
+  }
   const d = new Date(isoDate);
   if (Number.isNaN(d.getTime())) return 'Recent';
   return d.toLocaleDateString('en-US', {
