@@ -17,7 +17,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { cn } from '../components/ui/cn';
 import { useBGGSearch } from '../hooks/useBGGSearch';
 import { useGameStore } from '../store/useGameStore';
-import { createGameCoverDataUri, STATUS_CONFIG } from '../lib/utils';
+import { createGameCoverDataUri, STATUS_CONFIG, formatNumberInput, parseNumberInput } from '../lib/utils';
 import { BGGGameDetail, GameStatus } from '../types';
 import { BGGConfigModal } from '../components/game/BGGConfigModal';
 import { BGGCardThumbnail } from '../components/game/BGGCardThumbnail';
@@ -43,7 +43,7 @@ export const AddGamePage: React.FC = () => {
   const [description, setDescription] = useState('');
   const [thumbnail, setThumbnail] = useState('');
   const [status, setStatus] = useState<GameStatus>('own');
-  const [purchasePrice, setPurchasePrice] = useState('1200000');
+  const [purchasePrice, setPurchasePrice] = useState('1,200,000');
   const [sellPrice, setSellPrice] = useState('');
   const [lentToName, setLentToName] = useState('');
   const [lentDate, setLentDate] = useState(
@@ -102,9 +102,9 @@ export const AddGamePage: React.FC = () => {
         yearPublished: Number(yearPublished) || 2024,
         bggRating: bggRating ? Number(bggRating) : undefined,
         status,
-        purchasePrice: purchasePrice ? Number(purchasePrice) : undefined,
+        purchasePrice: parseNumberInput(purchasePrice),
         sellPrice:
-          status === 'sold' && sellPrice ? Number(sellPrice) : undefined,
+          status === 'sold' && sellPrice ? parseNumberInput(sellPrice) : undefined,
         lentToName:
           status === 'lent_out' && lentToName.trim()
             ? lentToName.trim()
@@ -419,20 +419,22 @@ export const AddGamePage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Purchase Price (VND)"
-                  type="number"
-                  placeholder="e.g. 1450000"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="e.g. 1,450,000"
                   value={purchasePrice}
-                  onChange={(e) => setPurchasePrice(e.target.value)}
+                  onChange={(e) => setPurchasePrice(formatNumberInput(e.target.value))}
                   helperText="Tracked in collection total portfolio value"
                 />
 
                 {status === 'sold' && (
                   <Input
                     label="Sell Price (VND)"
-                    type="number"
-                    placeholder="e.g. 950000"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="e.g. 950,000"
                     value={sellPrice}
-                    onChange={(e) => setSellPrice(e.target.value)}
+                    onChange={(e) => setSellPrice(formatNumberInput(e.target.value))}
                     helperText="Displayed for sold or traded boardgames"
                   />
                 )}

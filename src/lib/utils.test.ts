@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   formatVND,
+  formatNumberInput,
+  parseNumberInput,
   formatDuration,
   calculateGameStats,
   calculateLongestWinStreak,
@@ -9,6 +11,21 @@ import {
   getCollectionTotalValue,
 } from './utils';
 import { BoardGame, PlaySession, Player } from '../types';
+
+test('formatNumberInput and parseNumberInput handle commas in price fields', () => {
+  assert.equal(formatNumberInput(1800000), '1,800,000');
+  assert.equal(formatNumberInput('1800000'), '1,800,000');
+  assert.equal(formatNumberInput('1,800,000'), '1,800,000');
+  assert.equal(formatNumberInput('1.800.000'), '1,800,000');
+  assert.equal(formatNumberInput('44000'), '44,000');
+  assert.equal(formatNumberInput(''), '');
+  assert.equal(formatNumberInput(undefined), '');
+
+  assert.equal(parseNumberInput('1,800,000'), 1800000);
+  assert.equal(parseNumberInput('44,000'), 44000);
+  assert.equal(parseNumberInput(''), undefined);
+  assert.equal(parseNumberInput(undefined), undefined);
+});
 
 test('formatVND formats Vietnamese Dong with dot separators and symbol', () => {
   assert.equal(formatVND(1500000), '1.500.000 ₫');

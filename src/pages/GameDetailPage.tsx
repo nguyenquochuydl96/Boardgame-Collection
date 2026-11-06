@@ -29,6 +29,8 @@ import {
   formatDate,
   formatDuration,
   formatVND,
+  formatNumberInput,
+  parseNumberInput,
   STATUS_CONFIG,
 } from '../lib/utils';
 import { GameStatus } from '../types';
@@ -53,10 +55,10 @@ export const GameDetailPage: React.FC = () => {
   // Edit modal state
   const [editName, setEditName] = useState(game?.name || '');
   const [editPurchasePrice, setEditPurchasePrice] = useState(
-    game?.purchasePrice?.toString() || ''
+    game?.purchasePrice ? formatNumberInput(game.purchasePrice) : ''
   );
   const [editSellPrice, setEditSellPrice] = useState(
-    game?.sellPrice?.toString() || ''
+    game?.sellPrice ? formatNumberInput(game.sellPrice) : ''
   );
   const [editLentTo, setEditLentTo] = useState(game?.lentToName || '');
 
@@ -99,8 +101,8 @@ export const GameDetailPage: React.FC = () => {
     e.preventDefault();
     updateGame(game.id, {
       name: editName.trim() || game.name,
-      purchasePrice: editPurchasePrice ? Number(editPurchasePrice) : undefined,
-      sellPrice: editSellPrice ? Number(editSellPrice) : undefined,
+      purchasePrice: parseNumberInput(editPurchasePrice),
+      sellPrice: parseNumberInput(editSellPrice),
       lentToName: editLentTo.trim() || undefined,
     });
     setIsEditOpen(false);
@@ -141,8 +143,8 @@ export const GameDetailPage: React.FC = () => {
               size="sm"
               onClick={() => {
                 setEditName(game.name);
-                setEditPurchasePrice(game.purchasePrice?.toString() || '');
-                setEditSellPrice(game.sellPrice?.toString() || '');
+                setEditPurchasePrice(game.purchasePrice ? formatNumberInput(game.purchasePrice) : '');
+                setEditSellPrice(game.sellPrice ? formatNumberInput(game.sellPrice) : '');
                 setEditLentTo(game.lentToName || '');
                 setIsEditOpen(true);
               }}
@@ -500,16 +502,20 @@ export const GameDetailPage: React.FC = () => {
             />
             <Input
               label="Purchase Price (VND)"
-              type="number"
+              type="text"
+              inputMode="numeric"
+              placeholder="e.g. 1,450,000"
               value={editPurchasePrice}
-              onChange={(e) => setEditPurchasePrice(e.target.value)}
+              onChange={(e) => setEditPurchasePrice(formatNumberInput(e.target.value))}
             />
             {game.status === 'sold' && (
               <Input
                 label="Sell Price (VND)"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                placeholder="e.g. 950,000"
                 value={editSellPrice}
-                onChange={(e) => setEditSellPrice(e.target.value)}
+                onChange={(e) => setEditSellPrice(formatNumberInput(e.target.value))}
               />
             )}
             {game.status === 'lent_out' && (

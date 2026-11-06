@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BoardGame, GameStatus } from '../../types';
-import { STATUS_CONFIG } from '../../lib/utils';
+import { STATUS_CONFIG, formatNumberInput, parseNumberInput } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { cn } from '../ui/cn';
@@ -56,8 +56,8 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
     if (!game) return;
     setName(game.name || '');
     setStatus(game.status || 'own');
-    setPurchasePrice(game.purchasePrice ? String(game.purchasePrice) : '');
-    setSellPrice(game.sellPrice ? String(game.sellPrice) : '');
+    setPurchasePrice(game.purchasePrice ? formatNumberInput(game.purchasePrice) : '');
+    setSellPrice(game.sellPrice ? formatNumberInput(game.sellPrice) : '');
     setLentToName(game.lentToName || '');
     setLentDate(game.lentDate ? game.lentDate.slice(0, 10) : '');
     setMinPlayers(game.minPlayers || 1);
@@ -95,8 +95,8 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
       ...game,
       name: name.trim(),
       status,
-      purchasePrice: purchasePrice ? Number(purchasePrice) : undefined,
-      sellPrice: status === 'sold' && sellPrice ? Number(sellPrice) : undefined,
+      purchasePrice: parseNumberInput(purchasePrice),
+      sellPrice: status === 'sold' && sellPrice ? parseNumberInput(sellPrice) : undefined,
       lentToName: status === 'lent_out' && lentToName.trim() ? lentToName.trim() : undefined,
       lentDate: status === 'lent_out' && lentDate ? new Date(lentDate).toISOString() : undefined,
       minPlayers: Math.max(1, Number(minPlayers) || 1),
@@ -292,20 +292,22 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 label="Purchase Price (VND)"
-                type="number"
-                placeholder="e.g. 1450000"
+                type="text"
+                inputMode="numeric"
+                placeholder="e.g. 1,450,000"
                 value={purchasePrice}
-                onChange={(e) => setPurchasePrice(e.target.value)}
+                onChange={(e) => setPurchasePrice(formatNumberInput(e.target.value))}
                 helperText="Active shelf valuation"
               />
 
               {status === 'sold' && (
                 <Input
                   label="Sell Price (VND)"
-                  type="number"
-                  placeholder="e.g. 950000"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="e.g. 950,000"
                   value={sellPrice}
-                  onChange={(e) => setSellPrice(e.target.value)}
+                  onChange={(e) => setSellPrice(formatNumberInput(e.target.value))}
                   helperText="Final sold price"
                 />
               )}

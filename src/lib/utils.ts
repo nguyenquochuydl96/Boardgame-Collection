@@ -23,6 +23,27 @@ export function formatVND(amount?: number | null): string {
   return `${formatted} ₫`;
 }
 
+/**
+ * Formats a raw number or input string with comma separators for clean financial inputs (e.g. 1800000 -> "1,800,000")
+ */
+export function formatNumberInput(value: number | string | undefined | null): string {
+  if (value === undefined || value === null || value === '') return '';
+  const digits = String(value).replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * Parses a comma-separated formatted number string back to a numeric value or undefined (e.g. "1,800,000" -> 1800000)
+ */
+export function parseNumberInput(formatted: string | undefined | null): number | undefined {
+  if (formatted === undefined || formatted === null) return undefined;
+  const digits = String(formatted).replace(/\D/g, '');
+  if (!digits) return undefined;
+  const num = Number(digits);
+  return Number.isNaN(num) ? undefined : num;
+}
+
 export function formatDate(isoDate?: string): string {
   if (!isoDate) return 'Unknown date';
   const d = new Date(isoDate);
