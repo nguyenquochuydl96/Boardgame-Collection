@@ -197,14 +197,14 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
                 }}
                 className="w-full py-2 px-3 rounded-xl text-xs font-bold text-[var(--ink-2)] bg-[var(--card-2)] hover:bg-[var(--card-3)] hover:text-[var(--ink)] border border-[var(--line-2)] transition-colors cursor-pointer"
               >
-                🔄 Làm mới bộ nhớ đệm / Tải bản mới nhất
+                🔄 Force Update &amp; Clear Cache
               </button>
               <button
                 type="button"
                 onClick={onClose}
                 className="text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer text-center py-1"
               >
-                Đóng
+                Close
               </button>
             </div>
           </motion.div>

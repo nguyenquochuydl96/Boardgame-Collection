@@ -553,7 +553,7 @@ export const StatsPage: React.FC = () => {
                   {/* 2. Calendar Date Range Filter */}
                   <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] text-xs">
                     <Calendar className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
-                    <span className="text-[11px] font-bold text-[var(--muted)]">Từ:</span>
+                    <span className="text-[11px] font-bold text-[var(--muted)]">From:</span>
                     <input
                       type="date"
                       aria-label="Start date"
@@ -562,7 +562,7 @@ export const StatsPage: React.FC = () => {
                       className="bg-transparent border-0 text-xs font-bold text-[var(--ink)] focus:outline-none p-0 cursor-pointer min-w-[100px] [color-scheme:light] dark:[color-scheme:dark]"
                     />
                     <span className="text-[var(--muted)] font-bold px-0.5">➔</span>
-                    <span className="text-[11px] font-bold text-[var(--muted)]">Đến:</span>
+                    <span className="text-[11px] font-bold text-[var(--muted)]">To:</span>
                     <input
                       type="date"
                       aria-label="End date"
@@ -601,10 +601,10 @@ export const StatsPage: React.FC = () => {
                       <Calendar className="w-3.5 h-3.5 text-amber-500" />
                       <span>
                         {selectedYears.length === 0
-                          ? 'Năm: Tất cả'
+                          ? 'Year: All'
                           : selectedYears.length === 1
-                          ? `Năm: ${selectedYears[0]}`
-                          : `Năm: ${selectedYears.length} đã chọn`}
+                          ? `Year: ${selectedYears[0]}`
+                          : `Years: ${selectedYears.length} selected`}
                       </span>
                       {selectedYears.length > 0 && (
                         <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-slate-950 font-mono font-bold">
@@ -623,14 +623,14 @@ export const StatsPage: React.FC = () => {
                     {isYearPickerOpen && (
                       <div className="absolute left-0 top-full mt-2 w-64 p-3 rounded-2xl bg-[var(--card)] border border-[var(--line-2)] shadow-2xl z-30 space-y-2 animate-in fade-in duration-150">
                         <div className="flex items-center justify-between border-b border-[var(--line)] pb-2">
-                          <span className="text-xs font-bold text-[var(--ink)]">Tick chọn theo năm</span>
+                          <span className="text-xs font-bold text-[var(--ink)]">Select Years</span>
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
                               onClick={() => setSelectedYears([...availableYears])}
                               className="text-[11px] font-bold text-[var(--accent)] hover:underline cursor-pointer"
                             >
-                              Tất cả
+                              All
                             </button>
                             <span className="text-[var(--muted)] text-[10px]">·</span>
                             <button
@@ -638,7 +638,7 @@ export const StatsPage: React.FC = () => {
                               onClick={() => setSelectedYears([])}
                               className="text-[11px] font-bold text-rose-500 hover:underline cursor-pointer"
                             >
-                              Bỏ chọn
+                              Clear
                             </button>
                           </div>
                         </div>
@@ -672,10 +672,10 @@ export const StatsPage: React.FC = () => {
                                     }}
                                     className="w-4 h-4 rounded border-[var(--line-2)] text-amber-500 focus:ring-amber-400 cursor-pointer accent-amber-500"
                                   />
-                                  <span>Năm {yr}</span>
+                                  <span>Year {yr}</span>
                                 </div>
                                 <span className="text-[11px] font-mono text-[var(--muted)]">
-                                  {count} ván
+                                  {count} plays
                                 </span>
                               </label>
                             );
@@ -694,19 +694,19 @@ export const StatsPage: React.FC = () => {
                       title="Reset all filters"
                     >
                       <RotateCcw className="w-3 h-3" />
-                      <span>Xóa lọc</span>
+                      <span>Reset</span>
                     </button>
                   )}
                 </div>
 
                 {/* Right: Active Filter Status */}
                 <div className="text-xs text-[var(--muted)] flex items-center gap-1.5 font-medium shrink-0">
-                  <span>Đang xem:</span>
+                  <span>Viewing:</span>
                   <span className="font-bold text-[var(--ink)] px-2.5 py-0.5 rounded-md bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line-2)] max-w-[220px] truncate">
                     {timeFilterLabel}
                   </span>
                   <span className="font-mono text-amber-600 dark:text-amber-400 font-extrabold">
-                    ({overviewSessions.length} ván)
+                    ({overviewSessions.length} plays)
                   </span>
                 </div>
               </div>
