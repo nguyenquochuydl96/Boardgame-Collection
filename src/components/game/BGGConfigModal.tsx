@@ -115,7 +115,7 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
           <PoweredByBGG variant="badge" />
         </div>
 
-        <p className="text-[#94a3b8] leading-relaxed text-xs">
+        <p className="text-[var(--muted)] leading-relaxed text-xs">
           Your application has non-commercial API access approval from BoardGameGeek. Paste your <strong>BGG API Token (Bearer Token)</strong> and optional proxy endpoint to enable live search and direct synchronization.
         </p>
 
@@ -190,7 +190,7 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
           </ol>
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-white/10">
+        <div className="flex items-center justify-between pt-2 border-t border-[var(--line)]">
           <Button variant="ghost" size="sm" onClick={handleTestConnection} disabled={testing}>
             <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${testing ? 'animate-spin' : ''}`} />
             {testing ? 'Testing...' : 'Test Connection'}

@@ -157,32 +157,54 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
               </div>
             )}
 
-            {/* Feature Perks */}
-            <div className="mt-4 pt-3.5 border-t border-white/10 grid grid-cols-3 gap-2 text-center">
-              <div className="p-2 rounded-xl bg-white/[0.03]">
-                <Zap className="w-4 h-4 text-amber-400 mx-auto mb-1" />
-                <p className="text-[10px] font-bold text-white">Instant Launch</p>
-                <p className="text-[9px] text-[#94a3b8]">Home screen icon</p>
+            {/* Feature Perks & Force Update */}
+            <div className="mt-4 pt-3.5 border-t border-[var(--line)] grid grid-cols-3 gap-2 text-center">
+              <div className="p-2 rounded-xl bg-[var(--card-2)]">
+                <Zap className="w-4 h-4 text-amber-500 mx-auto mb-1" />
+                <p className="text-[10px] font-bold text-[var(--ink)]">Instant Launch</p>
+                <p className="text-[9px] text-[var(--muted)]">Home screen icon</p>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.03]">
-                <Smartphone className="w-4 h-4 text-[#a78bfa] mx-auto mb-1" />
-                <p className="text-[10px] font-bold text-white">Fullscreen</p>
-                <p className="text-[9px] text-[#94a3b8]">No browser bars</p>
+              <div className="p-2 rounded-xl bg-[var(--card-2)]">
+                <Smartphone className="w-4 h-4 text-[var(--accent)] mx-auto mb-1" />
+                <p className="text-[10px] font-bold text-[var(--ink)]">Fullscreen</p>
+                <p className="text-[9px] text-[var(--muted)]">No browser bars</p>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.03]">
-                <Wifi className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
-                <p className="text-[10px] font-bold text-white">Works Offline</p>
-                <p className="text-[9px] text-[#94a3b8]">Play anywhere</p>
+              <div className="p-2 rounded-xl bg-[var(--card-2)]">
+                <Wifi className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
+                <p className="text-[10px] font-bold text-[var(--ink)]">Works Offline</p>
+                <p className="text-[9px] text-[var(--muted)]">Play anywhere</p>
               </div>
             </div>
 
-            <div className="mt-4 flex justify-center">
+            {/* Clear cache and force reload button */}
+            <div className="mt-4 pt-3 border-t border-[var(--line)] flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    if ('caches' in window) {
+                      const keys = await caches.keys();
+                      await Promise.all(keys.map((k) => caches.delete(k)));
+                    }
+                    if ('serviceWorker' in navigator) {
+                      const regs = await navigator.serviceWorker.getRegistrations();
+                      await Promise.all(regs.map((r) => r.unregister()));
+                    }
+                  } catch (e) {
+                    console.warn(e);
+                  }
+                  window.location.reload();
+                }}
+                className="w-full py-2 px-3 rounded-xl text-xs font-bold text-[var(--ink-2)] bg-[var(--card-2)] hover:bg-[var(--card-3)] hover:text-[var(--ink)] border border-[var(--line-2)] transition-colors cursor-pointer"
+              >
+                🔄 Làm mới bộ nhớ đệm / Tải bản mới nhất
+              </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="text-xs font-semibold text-[#94a3b8] hover:text-white transition-colors cursor-pointer"
+                className="text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer text-center py-1"
               >
-                Close
+                Đóng
               </button>
             </div>
           </motion.div>
