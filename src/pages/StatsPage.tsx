@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
@@ -19,6 +19,7 @@ import {
   Award,
   ArrowUpRight,
   ChevronRight,
+  ChevronDown,
   Filter,
   Check,
   RotateCcw,
@@ -91,12 +92,27 @@ export const StatsPage: React.FC = () => {
     players.slice(0, 2).map((p) => p.id)
   );
 
-  // Time filter for Overview & deep insights
-  // [] = all time
-  // ['2026'] = year 2026
-  // ['2025', '2026'] = range 2025 - 2026
+  // Time filter states for Overview & deep insights
   const [selectedYears, setSelectedYears] = useState<string[]>([]);
-  const [isCustomMultiYearOpen, setIsCustomMultiYearOpen] = useState(false);
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [isYearPickerOpen, setIsYearPickerOpen] = useState(false);
+  const yearPickerRef = useRef<HTMLDivElement>(null);
+
+  // Close year picker popover on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (yearPickerRef.current && !yearPickerRef.current.contains(e.target as Node)) {
+        setIsYearPickerOpen(false);
+      }
+    };
+    if (isYearPickerOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isYearPickerOpen]);
 
   // Available unique years from all sessions
   const availableYears = useMemo(() => {
@@ -110,22 +126,66 @@ export const StatsPage: React.FC = () => {
     return Array.from(set).sort().reverse();
   }, [sessions]);
 
-  // Overview sessions filtered by selectedYears
+  // Overview sessions filtered by date range and selected years
   const overviewSessions = useMemo(() => {
-    if (selectedYears.length === 0) return sessions;
     return sessions.filter((s) => {
-      if (!s.datePlayed || s.datePlayed.length < 4) return false;
-      const y = s.datePlayed.slice(0, 4);
-      return selectedYears.includes(y);
+      if (!s.datePlayed) return false;
+      const sDate = s.datePlayed.slice(0, 10);
+      const sYear = s.datePlayed.slice(0, 4);
+
+      // Check year filter
+      if (selectedYears.length > 0 && !selectedYears.includes(sYear)) {
+        return false;
+      }
+
+      // Check start date (inclusive)
+      if (startDate && sDate < startDate) {
+        return false;
+      }
+
+      // Check end date (inclusive)
+      if (endDate && sDate > endDate) {
+        return false;
+      }
+
+      return true;
     });
-  }, [sessions, selectedYears]);
+  }, [sessions, selectedYears, startDate, endDate]);
+
+  const hasActiveTimeFilter = selectedYears.length > 0 || !!startDate || !!endDate;
+
+  const resetTimeFilter = () => {
+    setSelectedYears([]);
+    setStartDate('');
+    setEndDate('');
+    setIsYearPickerOpen(false);
+  };
 
   const timeFilterLabel = useMemo(() => {
-    if (selectedYears.length === 0) return 'All Time';
-    if (selectedYears.length === 1) return `Year ${selectedYears[0]}`;
-    const sorted = [...selectedYears].sort();
-    return `Period ${sorted.join(' - ')}`;
-  }, [selectedYears]);
+    const parts: string[] = [];
+
+    if (startDate && endDate) {
+      parts.push(`${formatDate(startDate)} – ${formatDate(endDate)}`);
+    } else if (startDate) {
+      parts.push(`From ${formatDate(startDate)}`);
+    } else if (endDate) {
+      parts.push(`Until ${formatDate(endDate)}`);
+    }
+
+    if (selectedYears.length > 0) {
+      const sorted = [...selectedYears].sort();
+      if (sorted.length === 1) {
+        parts.push(`Year ${sorted[0]}`);
+      } else if (sorted.length === availableYears.length) {
+        parts.push(`All Years (${sorted.length})`);
+      } else {
+        parts.push(`Years: ${sorted.join(', ')}`);
+      }
+    }
+
+    if (parts.length === 0) return 'All Time';
+    return parts.join(' · ');
+  }, [selectedYears, startDate, endDate, availableYears]);
 
   const [selectedStreakPlayer, setSelectedStreakPlayer] = useState<Player | null>(null);
   const [selectedStreakData, setSelectedStreakData] = useState<StreakData | null>(null);
@@ -465,165 +525,191 @@ export const StatsPage: React.FC = () => {
         {/* ========================================================= */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            {/* TIME FILTER BAR */}
-            <div className="p-4 rounded-2xl bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line)] space-y-3">
+            {/* TIME FILTER TOOLBAR (Compact, Calendar Range & Year Checkbox Popover) */}
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line)] space-y-2">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                {/* Left: Filter Controls */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5 mr-1">
-                    <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                    Time Filter:
-                  </span>
+                  {/* Filter Icon & Label */}
+                  <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--muted)] mr-1">
+                    <Filter className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Filter:</span>
+                  </div>
 
-                  {/* Preset: All time */}
+                  {/* 1. All Time Quick Button */}
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedYears([]);
-                      setIsCustomMultiYearOpen(false);
-                    }}
+                    onClick={resetTimeFilter}
                     className={cn(
-                      'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none',
-                      selectedYears.length === 0
+                      'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none',
+                      !hasActiveTimeFilter
                         ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
                         : 'bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] text-[var(--ink-2)] hover:bg-[var(--card-3)] hover:text-[var(--ink)]'
                     )}
                   >
-                    All Time ({sessions.length})
+                    All Time
                   </button>
 
-                  {/* Preset: Individual available years (e.g. 2026, 2025) */}
-                  {availableYears.map((yr) => {
-                    const isSelected = selectedYears.length === 1 && selectedYears[0] === yr;
-                    const count = sessions.filter((s) => s.datePlayed && s.datePlayed.startsWith(yr)).length;
-                    return (
+                  {/* 2. Calendar Date Range Filter */}
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] text-xs">
+                    <Calendar className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
+                    <span className="text-[11px] font-bold text-[var(--muted)]">Từ:</span>
+                    <input
+                      type="date"
+                      aria-label="Start date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="bg-transparent border-0 text-xs font-bold text-[var(--ink)] focus:outline-none p-0 cursor-pointer min-w-[100px] [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                    <span className="text-[var(--muted)] font-bold px-0.5">➔</span>
+                    <span className="text-[11px] font-bold text-[var(--muted)]">Đến:</span>
+                    <input
+                      type="date"
+                      aria-label="End date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="bg-transparent border-0 text-xs font-bold text-[var(--ink)] focus:outline-none p-0 cursor-pointer min-w-[100px] [color-scheme:light] dark:[color-scheme:dark]"
+                    />
+                    {(startDate || endDate) && (
                       <button
-                        key={yr}
                         type="button"
                         onClick={() => {
-                          setSelectedYears([yr]);
-                          setIsCustomMultiYearOpen(false);
+                          setStartDate('');
+                          setEndDate('');
                         }}
-                        className={cn(
-                          'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none',
-                          isSelected
-                            ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
-                            : 'bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] text-[var(--ink-2)] hover:bg-[var(--card-3)] hover:text-[var(--ink)]'
-                        )}
+                        className="w-4 h-4 rounded-full bg-[var(--card-3)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center text-[10px] ml-1 cursor-pointer"
+                        title="Clear date range"
                       >
-                        Year {yr} ({count})
+                        ✕
                       </button>
-                    );
-                  })}
+                    )}
+                  </div>
 
-                  {/* Preset: Multi-year range (e.g. 2025 - 2026) if >= 2 years */}
-                  {availableYears.length >= 2 && (
+                  {/* 3. Year Multi-Select Checkbox Popover */}
+                  <div className="relative" ref={yearPickerRef}>
                     <button
                       type="button"
-                      onClick={() => {
-                        setSelectedYears([availableYears[1], availableYears[0]]);
-                        setIsCustomMultiYearOpen(false);
-                      }}
+                      onClick={() => setIsYearPickerOpen((prev) => !prev)}
                       className={cn(
-                        'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none',
-                        selectedYears.length === 2 &&
-                          selectedYears.includes(availableYears[0]) &&
-                          selectedYears.includes(availableYears[1])
-                          ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
-                          : 'bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] text-[var(--ink-2)] hover:bg-[var(--card-3)] hover:text-[var(--ink)]'
+                        'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none shadow-[inset_0_0_0_1px_var(--line)]',
+                        selectedYears.length > 0
+                          ? 'bg-amber-500/15 border border-amber-500/40 text-amber-700 dark:text-amber-300 font-extrabold'
+                          : 'bg-[var(--card-2)] text-[var(--ink-2)] hover:bg-[var(--card-3)] hover:text-[var(--ink)]'
                       )}
+                      aria-expanded={isYearPickerOpen}
                     >
-                      {availableYears[1]} - {availableYears[0]} (Last 2 Years)
+                      <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                      <span>
+                        {selectedYears.length === 0
+                          ? 'Năm: Tất cả'
+                          : selectedYears.length === 1
+                          ? `Năm: ${selectedYears[0]}`
+                          : `Năm: ${selectedYears.length} đã chọn`}
+                      </span>
+                      {selectedYears.length > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-slate-950 font-mono font-bold">
+                          {selectedYears.length}
+                        </span>
+                      )}
+                      <ChevronDown
+                        className={cn(
+                          'w-3.5 h-3.5 transition-transform duration-200',
+                          isYearPickerOpen && 'rotate-180'
+                        )}
+                      />
                     </button>
-                  )}
 
-                  {/* Multi-select toggle button */}
-                  {availableYears.length > 2 && (
+                    {/* Popover Menu with Checkboxes */}
+                    {isYearPickerOpen && (
+                      <div className="absolute left-0 top-full mt-2 w-64 p-3 rounded-2xl bg-[var(--card)] border border-[var(--line-2)] shadow-2xl z-30 space-y-2 animate-in fade-in duration-150">
+                        <div className="flex items-center justify-between border-b border-[var(--line)] pb-2">
+                          <span className="text-xs font-bold text-[var(--ink)]">Tick chọn theo năm</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedYears([...availableYears])}
+                              className="text-[11px] font-bold text-[var(--accent)] hover:underline cursor-pointer"
+                            >
+                              Tất cả
+                            </button>
+                            <span className="text-[var(--muted)] text-[10px]">·</span>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedYears([])}
+                              className="text-[11px] font-bold text-rose-500 hover:underline cursor-pointer"
+                            >
+                              Bỏ chọn
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
+                          {availableYears.map((yr) => {
+                            const isChecked = selectedYears.includes(yr);
+                            const count = sessions.filter(
+                              (s) => s.datePlayed && s.datePlayed.startsWith(yr)
+                            ).length;
+                            return (
+                              <label
+                                key={yr}
+                                className={cn(
+                                  'flex items-center justify-between p-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors select-none',
+                                  isChecked
+                                    ? 'bg-amber-500/15 text-amber-800 dark:text-amber-200 font-bold'
+                                    : 'hover:bg-[var(--card-2)] text-[var(--ink-2)]'
+                                )}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => {
+                                      setSelectedYears((prev) =>
+                                        prev.includes(yr)
+                                          ? prev.filter((y) => y !== yr)
+                                          : [...prev, yr]
+                                      );
+                                    }}
+                                    className="w-4 h-4 rounded border-[var(--line-2)] text-amber-500 focus:ring-amber-400 cursor-pointer accent-amber-500"
+                                  />
+                                  <span>Năm {yr}</span>
+                                </div>
+                                <span className="text-[11px] font-mono text-[var(--muted)]">
+                                  {count} ván
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 4. Reset Button */}
+                  {hasActiveTimeFilter && (
                     <button
                       type="button"
-                      onClick={() => setIsCustomMultiYearOpen((v) => !v)}
-                      className={cn(
-                        'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none flex items-center gap-1.5',
-                        isCustomMultiYearOpen || selectedYears.length > 2
-                          ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
-                          : 'bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] text-[var(--ink-2)] hover:bg-[var(--card-3)] hover:text-[var(--ink)]'
-                      )}
+                      onClick={resetTimeFilter}
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors flex items-center gap-1 cursor-pointer select-none"
+                      title="Reset all filters"
                     >
-                      <Filter className="w-3.5 h-3.5" />
-                      <span>Custom Years...</span>
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Xóa lọc</span>
                     </button>
                   )}
                 </div>
 
-                {/* Current Filter Status */}
-                <div className="text-xs text-[var(--muted)] flex items-center gap-1.5 font-medium">
-                  <span>Viewing:</span>
-                  <span className="font-bold text-[var(--ink)] px-2.5 py-0.5 rounded-md bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line-2)]">
+                {/* Right: Active Filter Status */}
+                <div className="text-xs text-[var(--muted)] flex items-center gap-1.5 font-medium shrink-0">
+                  <span>Đang xem:</span>
+                  <span className="font-bold text-[var(--ink)] px-2.5 py-0.5 rounded-md bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line-2)] max-w-[220px] truncate">
                     {timeFilterLabel}
                   </span>
                   <span className="font-mono text-amber-600 dark:text-amber-400 font-extrabold">
-                    ({overviewSessions.length} sessions)
+                    ({overviewSessions.length} ván)
                   </span>
                 </div>
               </div>
-
-              {/* Custom Multi-Year Selection Drawer */}
-              {isCustomMultiYearOpen && (
-                <div className="pt-3 border-t border-[var(--line)] flex flex-wrap items-center gap-2 animate-in fade-in duration-150">
-                  <span className="text-xs text-[var(--muted)] font-medium mr-1">
-                    Select years to combine data:
-                  </span>
-                  {availableYears.map((yr) => {
-                    const isChecked = selectedYears.includes(yr);
-                    const yrCount = sessions.filter((s) => s.datePlayed && s.datePlayed.startsWith(yr)).length;
-                    return (
-                      <button
-                        key={yr}
-                        type="button"
-                        onClick={() => {
-                          setSelectedYears((prev) =>
-                            prev.includes(yr)
-                              ? prev.filter((x) => x !== yr)
-                              : [...prev, yr]
-                          );
-                        }}
-                        className={cn(
-                          'px-2.5 py-1 rounded-lg text-xs font-semibold border flex items-center gap-1.5 cursor-pointer transition-colors',
-                          isChecked
-                            ? 'bg-amber-500/20 border-amber-500/50 text-amber-700 dark:text-amber-300'
-                            : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink-2)] hover:text-[var(--ink)]'
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            'w-3.5 h-3.5 rounded flex items-center justify-center border text-[9px]',
-                            isChecked
-                              ? 'bg-amber-500 border-amber-500 text-slate-950 font-bold'
-                              : 'border-[var(--line-2)]'
-                          )}
-                        >
-                          {isChecked && '✓'}
-                        </div>
-                        <span>{yr} ({yrCount} sessions)</span>
-                      </button>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedYears([...availableYears])}
-                    className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline ml-2 cursor-pointer"
-                  >
-                    Select All
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedYears([])}
-                    className="text-[11px] font-bold text-rose-500 hover:underline ml-1 cursor-pointer"
-                  >
-                    Clear Selection
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* H-INDEX SPECIAL HERO BANNER (High Contrast) */}
@@ -714,10 +800,7 @@ export const StatsPage: React.FC = () => {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={() => {
-                    setSelectedYears([]);
-                    setIsCustomMultiYearOpen(false);
-                  }}
+                  onClick={resetTimeFilter}
                 >
                   <RotateCcw className="w-3.5 h-3.5 mr-1" />
                   View All Time ({sessions.length} sessions)
