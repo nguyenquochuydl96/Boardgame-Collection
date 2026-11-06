@@ -189,15 +189,15 @@ export const AddGamePage: React.FC = () => {
         {/* Tab 1: BGG Search Picker */}
         {activeTab === 'bgg' && (
           <Card className="p-6 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-white/5">
+            <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-[var(--line)]">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#94a3b8]">Live BGG Catalog Lookup</span>
+                <span className="text-xs font-bold text-[var(--muted)]">Live BGG Catalog Lookup</span>
                 <PoweredByBGG variant="inline" />
               </div>
               <button
                 type="button"
                 onClick={() => setIsConfigOpen(true)}
-                className="inline-flex items-center gap-1.5 text-xs text-[#a78bfa] hover:text-white transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs text-[var(--accent)] hover:underline font-semibold transition-colors cursor-pointer"
               >
                 <Settings className="w-3.5 h-3.5" />
                 Proxy &amp; Token Settings
@@ -211,7 +211,7 @@ export const AddGamePage: React.FC = () => {
               leftIcon={<Search className="w-4 h-4" />}
               rightIcon={
                 isLoading ? (
-                  <div className="flex items-center gap-1.5 text-xs text-[#a78bfa]">
+                  <div className="flex items-center gap-1.5 text-xs text-[var(--accent)]">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span className="hidden sm:inline text-[11px] font-mono">BGG...</span>
                   </div>
@@ -219,7 +219,7 @@ export const AddGamePage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setQuery('')}
-                    className="w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 text-[#94a3b8] hover:text-white flex items-center justify-center transition-colors cursor-pointer text-xs"
+                    className="w-5 h-5 rounded-full bg-[var(--card-3)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer text-xs"
                     title="Clear search"
                   >
                     ✕

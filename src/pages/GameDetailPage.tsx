@@ -438,7 +438,7 @@ export const GameDetailPage: React.FC = () => {
                 </div>
               ) : (
                 <Card className="p-8 text-center space-y-3">
-                  <p className="text-sm text-[#94a3b8]">
+                  <p className="text-sm text-[var(--muted)]">
                     No sessions recorded for {game.name} yet.
                   </p>
                   <Link to={`/sessions/new?gameId=${game.id}`}>

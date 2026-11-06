@@ -1034,8 +1034,8 @@ export const NewSessionPage: React.FC = () => {
                                 className={cn(
                                   'flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer',
                                   isChosen
-                                    ? 'bg-amber-500/25 border-amber-400 text-[var(--text-primary)] shadow-lg ring-2 ring-amber-400/30'
-                                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-white/20'
+                                    ? 'bg-amber-500/25 border-amber-400 text-[var(--ink)] shadow-lg ring-2 ring-amber-400/30'
+                                    : 'bg-[var(--card)] border-[var(--line)] text-[var(--ink-2)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
                                 )}
                               >
                                 <PlayerAvatar
@@ -1105,9 +1105,9 @@ export const NewSessionPage: React.FC = () => {
 
                 {/* Alternative Quick Manual Rule Selector */}
                 {activeSessionPlayers.length > 1 && (
-                  <div className="pt-4 border-t border-white/[0.08] space-y-3">
+                  <div className="pt-4 border-t border-[var(--line)] space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                      <span className="text-xs font-semibold text-[var(--muted)]">
                         Alternative house rules:
                       </span>
                       <div className="flex flex-wrap gap-1.5">

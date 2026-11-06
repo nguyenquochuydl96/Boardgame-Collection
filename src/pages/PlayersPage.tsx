@@ -215,7 +215,7 @@ export const PlayersPage: React.FC = () => {
                     }
                   }}
                 >
-                  <Swords className="w-3.5 h-3.5 text-[#22d3ee] mr-1" />
+                  <Swords className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 mr-1" />
                   {compareMode
                     ? `Compare (${selectedCompareIds.length})`
                     : 'Head-to-Head Compare'}
@@ -234,8 +234,8 @@ export const PlayersPage: React.FC = () => {
 
             {/* Compare Mode Banner */}
             {compareMode && (
-              <div className="p-4 rounded-2xl bg-[var(--accent-primary)]/15 border border-[#a78bfa]/40 flex flex-wrap items-center justify-between gap-3 animate-in fade-in">
-                <p className="text-xs sm:text-sm text-[var(--text-primary)]">
+              <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line-2)] shadow-sm flex flex-wrap items-center justify-between gap-3 animate-in fade-in">
+                <p className="text-xs sm:text-sm text-[var(--ink)] font-semibold">
                   Select 2 or more players below to inspect head-to-head records.
                 </p>
                 <div className="flex items-center gap-2">
@@ -289,7 +289,7 @@ export const PlayersPage: React.FC = () => {
                         className={cn(
                           'p-5 flex flex-col justify-between gap-4 relative h-full transition-all group border-2',
                           isSelectedForCompare
-                            ? 'border-[#22d3ee] ring-2 ring-[#22d3ee]/30'
+                            ? 'border-cyan-500 ring-2 ring-cyan-500/30'
                             : 'hover:border-amber-400/40'
                         )}
                       >
@@ -303,8 +303,8 @@ export const PlayersPage: React.FC = () => {
                               className={cn(
                                 'w-7 h-7 rounded-lg border flex items-center justify-center cursor-pointer transition-colors',
                                 isSelectedForCompare
-                                    ? 'bg-[#22d3ee] border-[#22d3ee] text-slate-950'
-                                  : 'bg-[var(--bg-surface)] border-white/20 text-transparent'
+                                  ? 'bg-cyan-500 border-cyan-500 text-slate-950 font-bold'
+                                  : 'bg-[var(--card-2)] border-[var(--line-2)] text-transparent'
                               )}
                             >
                               <Check className="w-4 h-4" />
