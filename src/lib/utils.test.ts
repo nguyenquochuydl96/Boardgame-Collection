@@ -146,7 +146,7 @@ test('calculateHeadToHead compares shared sessions between selected players', ()
   assert.equal(h2h.playerStats[1].winsInShared, 0);
 });
 
-test('getCollectionTotalValue sums purchase prices of owned and lent_out games only', () => {
+test('getCollectionTotalValue sums purchase prices of owned games only', () => {
   const games: BoardGame[] = [
     {
       id: '1',
@@ -204,7 +204,21 @@ test('getCollectionTotalValue sums purchase prices of owned and lent_out games o
       purchasePrice: 350000,
       addedDate: '2026-01-01',
     },
+    {
+      id: '5',
+      name: 'G5',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 1,
+      maxPlayers: 4,
+      playingTime: 60,
+      yearPublished: 2020,
+      status: 'previously_owned',
+      purchasePrice: 750000,
+      addedDate: '2026-01-01',
+    },
   ];
 
-  assert.equal(getCollectionTotalValue(games), 1500000);
+  assert.equal(getCollectionTotalValue(games), 1000000);
 });

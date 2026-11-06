@@ -520,7 +520,7 @@ export function calculateHeadToHead(
 
 export function getCollectionTotalValue(games: BoardGame[]): number {
   return games
-    .filter((g) => g.status === 'own' || g.status === 'lent_out')
+    .filter((g) => g.status === 'own')
     .reduce((sum, g) => sum + (g.purchasePrice || 0), 0);
 }
 
