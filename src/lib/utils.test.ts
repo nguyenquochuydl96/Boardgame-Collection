@@ -239,3 +239,16 @@ test('getCollectionTotalValue sums purchase prices of owned games only', () => {
 
   assert.equal(getCollectionTotalValue(games), 1000000);
 });
+
+test('getScoringTemplateForGame resolves official Natera template correctly', async () => {
+  const { getScoringTemplateForGame } = await import('./scoringPresets');
+  const template = getScoringTemplateForGame('Natera: New Beginning');
+  assert.equal(template.gameNameKeyword, 'natera');
+  assert.equal(template.displayName, 'Natera: New Beginning (Venture Points)');
+  assert.ok(template.categories.some((c) => c.id === 'claim_tokens'));
+  assert.ok(template.categories.some((c) => c.id === 'settlements'));
+  assert.ok(template.categories.some((c) => c.id === 'science_board'));
+  assert.ok(template.categories.some((c) => c.id === 'authority_tracks'));
+  assert.ok(template.categories.some((c) => c.id === 'specialist_cards'));
+  assert.ok(template.categories.some((c) => c.id === 'exploration_cards'));
+});

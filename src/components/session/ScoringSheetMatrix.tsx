@@ -155,14 +155,23 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
               return (
                 <tr key={cat.id} className="hover:bg-white/[0.02] transition-colors">
                   <td className="py-2.5 px-4 font-medium text-[var(--text-primary)]">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base leading-none">{cat.icon || '🎲'}</span>
-                      <span className="truncate">{cat.name}</span>
-                      {isPenalty && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold shrink-0">
-                          - penalty
-                        </span>
-                      )}
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-base leading-none mt-0.5">{cat.icon || '🎲'}</span>
+                      <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-xs text-[var(--text-primary)] truncate">{cat.name}</span>
+                          {isPenalty && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold shrink-0">
+                              - penalty
+                            </span>
+                          )}
+                        </div>
+                        {cat.description && (
+                          <span className="text-[10px] text-[var(--text-muted)] line-clamp-1 font-normal">
+                            {cat.description}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </td>
 

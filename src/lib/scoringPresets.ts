@@ -13,7 +13,64 @@ export interface GameScoringTemplate {
 }
 
 export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
-  // 1. Wondrous Creatures (User's #1 most played - 317 plays)
+  // 1. Natera: New Beginning (Venture Points Breakdown)
+  {
+    gameNameKeyword: 'natera',
+    displayName: 'Natera: New Beginning (Venture Points)',
+    categories: [
+      {
+        id: 'claim_tokens',
+        name: 'Claim Tokens (7 pts 1st / 3 pts 2nd)',
+        description: '7 VP per primary Claim flag, 3 VP per duplicate Claim token placed',
+        icon: '🚩',
+        multiplier: 1,
+      },
+      {
+        id: 'settlements',
+        name: 'Settlements (3 pts each)',
+        description: '3 VP for each settlement established on the map',
+        icon: '🏕️',
+        multiplier: 1,
+      },
+      {
+        id: 'science_board',
+        name: 'Science Board & Technology',
+        description: 'Victory points unlocked from human science track & tech tiles',
+        icon: '🔬',
+        multiplier: 1,
+      },
+      {
+        id: 'authority_tracks',
+        name: 'Authority Tracks (4 Regions Area Control)',
+        description: '1st: 7 VP, 2nd: 3 VP, 3rd: 1 VP across the 4 district tracks',
+        icon: '👑',
+        multiplier: 1,
+      },
+      {
+        id: 'specialist_cards',
+        name: 'Specialist Cards',
+        description: 'Venture points on active Specialist cards in tableau',
+        icon: '🧑‍🔬',
+        multiplier: 1,
+      },
+      {
+        id: 'exploration_cards',
+        name: 'Exploration Cards',
+        description: 'Venture points from basic and advanced Exploration cards',
+        icon: '🧭',
+        multiplier: 1,
+      },
+      {
+        id: 'resources_bonus',
+        name: 'Bonus & Remaining Resources',
+        description: 'Any end-game bonuses or leftover material crates',
+        icon: '📦',
+        multiplier: 1,
+      },
+    ],
+  },
+
+  // 2. Wondrous Creatures (User's #1 most played - 317 plays)
   {
     gameNameKeyword: 'wondrous creatures',
     displayName: 'Wondrous Creatures',

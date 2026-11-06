@@ -137,9 +137,9 @@ export const useLocationStore = create<LocationStore>()(
         }));
       },
       syncHistoricalLocations: (sessions: PlaySession[], force = false) => {
-        if (get().hasSyncedHistory && !force) return;
-
         const current = get().locations;
+        if (get().hasSyncedHistory && current.length > 0 && !force) return;
+
         const existingNames = new Set(
           current.map((l) => l.name.trim().toLowerCase())
         );

@@ -21,6 +21,7 @@ import { useSyncStore } from '../../store/useSyncStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useSessionStore } from '../../store/useSessionStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
+import { useLocationStore } from '../../store/useLocationStore';
 
 // Lazy load modals on-demand to keep core AppShell bundle ultra-lightweight
 const BGGConfigModal = React.lazy(() =>
@@ -71,6 +72,16 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const isSyncEnabled = useSyncStore((s) => s.isEnabled);
   const autoSync = useSyncStore((s) => s.autoSync);
   const syncStatus = useSyncStore((s) => s.syncStatus);
+  const syncHistoricalLocations = useLocationStore((s) => s.syncHistoricalLocations);
+  const sessions = useSessionStore((s) => s.sessions);
+  const locationsCount = useLocationStore((s) => s.locations.length);
+
+  // Automatically hydrate venue presets from sessions on boot if empty
+  useEffect(() => {
+    if (sessions.length > 0 && locationsCount === 0) {
+      syncHistoricalLocations(sessions);
+    }
+  }, [sessions, locationsCount, syncHistoricalLocations]);
 
   // Check 1-click mobile import parameters and setup sync listeners
   useEffect(() => {

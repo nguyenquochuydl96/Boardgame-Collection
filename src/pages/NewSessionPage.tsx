@@ -93,6 +93,12 @@ export const NewSessionPage: React.FC = () => {
     if (preselectedLocation) return decodeURIComponent(preselectedLocation);
     return defaultLocation;
   });
+
+  useEffect(() => {
+    if (!location && defaultLocation) {
+      setLocation(defaultLocation);
+    }
+  }, [defaultLocation, location]);
   const [durationMinutes, setDurationMinutes] = useState<string>('60');
 
   // Auto-Timer & Session Draft state
