@@ -127,31 +127,31 @@ export const PlayersPage: React.FC = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-display font-black text-2xl sm:text-4xl text-[var(--text-primary)] uppercase tracking-tight">
-              Players &amp; <span className="font-serif italic lowercase font-normal text-3xl sm:text-5xl">venues</span>
+            <h1 className="font-display font-bold text-2xl sm:text-4xl text-[var(--text-primary)] tracking-tight">
+              Players &amp; Venues
             </h1>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium mt-0.5">
               Manage your tabletop crew, head-to-head records, and favorite game night venues
             </p>
           </div>
 
-          {/* Subtab Navigation Pills with Rayé styling */}
-          <div className="flex items-center p-1 rounded-full bg-[var(--bg-card)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-xs)]">
+          {/* Subtab Navigation Pills with Fitlo styling */}
+          <div className="flex items-center p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--line-2)] shadow-xs">
             <button
               type="button"
               onClick={() => handleTabChange('players')}
               className={cn(
-                'relative flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold font-display uppercase tracking-wider transition-all duration-200 cursor-pointer select-none',
+                'relative flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer select-none',
                 activeTab === 'players'
-                  ? 'bg-[var(--ink)] text-[var(--cream)] shadow-[2px_2px_0_var(--coral)]'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--paper)]'
+                  ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-xs border border-[var(--line)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               )}
             >
               <Users className="w-3.5 h-3.5" />
               <span>Players</span>
               <span className={cn(
-                'px-1.5 py-0.2 rounded-full text-[10px] font-black tabular-nums border border-[var(--ink)]',
-                activeTab === 'players' ? 'bg-[var(--coral)] text-[var(--ink)]' : 'bg-[var(--paper)] text-[var(--text-secondary)]'
+                'px-1.5 py-0.5 rounded-full text-[10px] font-bold tabular-nums',
+                activeTab === 'players' ? 'bg-[var(--accent-soft)] text-[var(--accent-primary)]' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'
               )}>
                 {players.length}
               </span>
@@ -161,17 +161,17 @@ export const PlayersPage: React.FC = () => {
               type="button"
               onClick={() => handleTabChange('locations')}
               className={cn(
-                'relative flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold font-display uppercase tracking-wider transition-all duration-200 cursor-pointer select-none',
+                'relative flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer select-none',
                 activeTab === 'locations'
-                  ? 'bg-[var(--ink)] text-[var(--cream)] shadow-[2px_2px_0_var(--coral)]'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--paper)]'
+                  ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-xs border border-[var(--line)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               )}
             >
               <MapPin className="w-3.5 h-3.5" />
               <span>Venues</span>
               <span className={cn(
-                'px-1.5 py-0.2 rounded-full text-[10px] font-black tabular-nums border border-[var(--ink)]',
-                activeTab === 'locations' ? 'bg-[var(--coral)] text-[var(--ink)]' : 'bg-[var(--paper)] text-[var(--text-secondary)]'
+                'px-1.5 py-0.5 rounded-full text-[10px] font-bold tabular-nums',
+                activeTab === 'locations' ? 'bg-[var(--accent-soft)] text-[var(--accent-primary)]' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'
               )}>
                 {locations.length}
               </span>

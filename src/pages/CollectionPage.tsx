@@ -136,8 +136,8 @@ export const CollectionPage: React.FC = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-display font-black text-2xl sm:text-4xl text-[var(--text-primary)] uppercase tracking-tight">
-              Tabletop <span className="font-serif italic lowercase font-normal text-3xl sm:text-5xl">vault</span>
+            <h1 className="font-display font-bold text-2xl sm:text-4xl text-[var(--text-primary)] tracking-tight">
+              Tabletop Vault
             </h1>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium tabular-nums mt-0.5">
               Showing {visibleGames.length < filteredGames.length ? `${visibleGames.length} of ` : ''}{filteredGames.length} curated games in your archive

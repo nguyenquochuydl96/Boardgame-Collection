@@ -323,8 +323,8 @@ export const SessionsPage: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-display font-black text-2xl sm:text-4xl text-[var(--text-primary)] uppercase tracking-tight">
-              Play Sessions <span className="font-serif italic lowercase font-normal text-3xl sm:text-5xl">history</span>
+            <h1 className="font-display font-bold text-2xl sm:text-4xl text-[var(--text-primary)] tracking-tight">
+              Play Sessions History
             </h1>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium tabular-nums mt-0.5">
               {sessions.length.toLocaleString()} tabletop sessions logged with friends

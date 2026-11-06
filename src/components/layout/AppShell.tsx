@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { motion } from 'motion/react';
 import {
   Dices,
   Plus,
@@ -8,7 +7,8 @@ import {
   Settings,
   Cloud,
   CloudCheck,
-  Sparkles,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
@@ -42,29 +42,23 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [showBGGModal, setShowBGGModal] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
 
-  const currentTheme = useThemeStore((s) => s.theme);
-  const isFitlo = currentTheme === 'fitlo' || currentTheme === 'fitlo-dark';
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const isDark = theme === 'fitlo-dark';
 
   const isSyncEnabled = useSyncStore((s) => s.isEnabled);
   const autoSync = useSyncStore((s) => s.autoSync);
   const syncStatus = useSyncStore((s) => s.syncStatus);
-  const gamesCount = useGameStore((s) => s.games.length);
-  const sessionsCount = useSessionStore((s) => s.sessions.length);
+  const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
 
-  // Check 1-click mobile import parameters and setup sync listeners
+  // Sync on startup once URL parameters are parsed
   useEffect(() => {
-    const importedFromUrl = checkUrlSyncParameters();
-    if (importedFromUrl) {
-      setShowSyncModal(true);
-    } else if (isSyncEnabled && autoSync) {
-      pullVaultFromCloud('replace');
+    checkUrlSyncParameters();
+    if (useSyncStore.getState().isEnabled) {
+      pullVaultFromCloud().catch(() => {});
+      startVaultRealtimeSubscription();
     }
-
-    const unsubscribeRealtime = startVaultRealtimeSubscription();
-    return () => {
-      unsubscribeRealtime();
-    };
-  }, [isSyncEnabled, autoSync]);
+  }, []);
 
   // Debounced auto-push when stores change locally
   useEffect(() => {
@@ -102,86 +96,35 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-base)] text-[var(--text-primary)] transition-colors duration-300 relative selection:bg-[var(--coral)] selection:text-[var(--ink)]">
-      {/* Film Grain Texture Overlay for authentic printed editorial feel */}
-      <div className="raye-grain" aria-hidden="true" />
-
-      {/* Signature Rayé Running Marquee Ticker */}
-      <header className="z-40 bg-[var(--ink)] text-[var(--cream)] border-b-[1.5px] border-[var(--ink)] raye-marquee overflow-hidden py-1.5 text-xs font-bold tracking-wider uppercase select-none">
-        <div className="raye-marquee-track flex items-center gap-8 px-4">
-          <span className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-[var(--coral)] animate-ping" />
-            <span>{isFitlo ? 'FITLO × TABLETOP ARCHIVE' : 'RAYÉ × TABLETOP ARCHIVE'}</span>
-          </span>
-          <span className="text-[var(--coral)]">•</span>
-          <span>{gamesCount} BOARD GAMES CURATED</span>
-          <span className="text-[var(--coral)]">•</span>
-          <span>{sessionsCount} PLAY SESSIONS LOGGED</span>
-          <span className="text-[var(--coral)]">•</span>
-          <span className="text-[var(--butter)] font-serif italic lowercase tracking-normal text-sm">
-            {isFitlo ? 'sleek scandinavian precision & game night victories' : 'slow, sunny afternoons & tabletop battles'}
-          </span>
-          <span className="text-[var(--coral)]">•</span>
-          <span>REALTIME SUPABASE CLOUD SYNCED</span>
-          <span className="text-[var(--coral)]">•</span>
-          <span>ROLL FOR INITIATIVE</span>
-          <span className="text-[var(--coral)]">•</span>
-
-          {/* Repeat set for seamless infinite loop */}
-          <span className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-[var(--coral)] animate-ping" />
-            <span>{isFitlo ? 'FITLO × TABLETOP ARCHIVE' : 'RAYÉ × TABLETOP ARCHIVE'}</span>
-          </span>
-          <span className="text-[var(--coral)]">•</span>
-          <span>{gamesCount} BOARD GAMES CURATED</span>
-          <span className="text-[var(--coral)]">•</span>
-          <span>{sessionsCount} PLAY SESSIONS LOGGED</span>
-          <span className="text-[var(--coral)]">•</span>
-          <span className="text-[var(--butter)] font-serif italic lowercase tracking-normal text-sm">
-            slow, sunny afternoons & tabletop battles
-          </span>
-          <span className="text-[var(--coral)]">•</span>
-          <span>REALTIME SUPABASE CLOUD SYNCED</span>
-          <span className="text-[var(--coral)]">•</span>
-          <span>ROLL FOR INITIATIVE</span>
-          <span className="text-[var(--coral)]">•</span>
-        </div>
-      </header>
-
+    <div className="min-h-screen flex flex-col bg-[var(--bg-base)] text-[var(--text-primary)] transition-colors duration-300 relative">
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Desktop Sidebar Navigation */}
         <aside
           aria-label="Sidebar navigation"
-          className="hidden lg:flex lg:w-72 lg:flex-col lg:fixed lg:top-8 lg:bottom-0 z-30 bg-[var(--bg-card)] border-r-[1.5px] border-[var(--ink)] shadow-[4px_0_0_var(--ink)]"
+          className="hidden lg:flex lg:w-72 lg:flex-col lg:fixed lg:top-0 lg:bottom-0 z-30 bg-[var(--bg-card)] border-r border-[var(--line)] shadow-xs"
         >
           {/* Logo Header */}
-          <div className="flex items-center justify-between px-6 h-20 border-b-[1.5px] border-[var(--ink)] bg-[var(--coral)] text-[var(--ink)]">
+          <div className="flex items-center justify-between px-6 h-18 border-b border-[var(--line)] bg-[var(--bg-card)]">
             <Link
               to="/"
               className="flex items-center gap-3 group focus:outline-none"
             >
-              <div className="w-10 h-10 rounded-xl bg-[var(--butter)] border-[1.5px] border-[var(--ink)] shadow-[2px_2px_0_var(--ink)] flex items-center justify-center group-hover:rotate-6 transition-transform">
-                <Dices className="w-5 h-5 text-[var(--ink)]" />
+              <div className="w-9 h-9 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-ink)] shadow-md shadow-[var(--accent-primary)]/25 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Dices className="w-5 h-5 text-current" />
               </div>
               <div className="flex flex-col">
-                {isFitlo ? (
-                  <span className="font-display font-black text-xl tracking-tight uppercase leading-none">
-                    Fitlo <span className="font-sans font-medium text-lg lowercase opacity-90">vault</span>
-                  </span>
-                ) : (
-                  <span className="font-display font-black text-xl tracking-tighter uppercase leading-none">
-                    Rayé <span className="font-serif italic lowercase font-normal text-2xl">vault</span>
-                  </span>
-                )}
-                <span className="text-[10px] font-bold tracking-widest uppercase opacity-80 mt-0.5">
-                  Curated Tabletop
+                <span className="font-display font-bold text-lg tracking-tight leading-none text-[var(--text-primary)]">
+                  BoardGame <span className="text-[var(--accent-primary)] font-extrabold">Vault</span>
+                </span>
+                <span className="text-[10px] font-semibold text-[var(--text-muted)] tracking-wider uppercase mt-1">
+                  Tabletop Archive
                 </span>
               </div>
             </Link>
           </div>
 
-          {/* Navigation Links with Rayé wipe effect */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          {/* Navigation Links */}
+          <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const active = isTabActive(item.to);
@@ -191,21 +134,21 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                   key={item.to}
                   to={item.to}
                   className={cn(
-                    'group relative flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-bold font-display uppercase tracking-wide transition-all duration-200 border-[1.5px]',
+                    'group relative flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold tracking-wide transition-all duration-200 select-none',
                     active
-                      ? 'bg-[var(--ink)] text-[var(--cream)] border-[var(--ink)] shadow-[3px_3px_0_var(--coral)] translate-x-1'
-                      : 'bg-transparent text-[var(--text-secondary)] border-transparent hover:border-[var(--ink)] hover:bg-[var(--paper)] hover:text-[var(--text-primary)] hover:shadow-[2px_2px_0_var(--ink)]'
+                      ? 'bg-[var(--accent-primary)] text-[var(--accent-ink)] shadow-sm shadow-[var(--accent-primary)]/20'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
                   )}
                 >
                   <Icon
                     className={cn(
-                      'w-5 h-5 shrink-0 transition-transform group-hover:scale-110',
-                      active ? 'text-[var(--coral)]' : 'text-[var(--text-secondary)]'
+                      'w-5 h-5 shrink-0 transition-transform group-hover:scale-105',
+                      active ? 'text-[var(--accent-ink)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-primary)]'
                     )}
                   />
                   <span className="flex-1">{item.label}</span>
                   {active && (
-                    <span className="w-2 h-2 rounded-full bg-[var(--butter)] border border-[var(--ink)]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-ink)]" />
                   )}
                 </NavLink>
               );
@@ -213,7 +156,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           </nav>
 
           {/* Sidebar Footer Controls */}
-          <div className="p-4 border-t-[1.5px] border-[var(--ink)] bg-[var(--bg-surface)] space-y-2.5">
+          <div className="p-4 border-t border-[var(--line)] bg-[var(--bg-card)] space-y-2.5">
             <ThemeSelector />
 
             <Link to="/sessions/new" className="block">
@@ -237,73 +180,97 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 'w-full justify-center text-xs transition-colors',
                 isSyncEnabled
                   ? syncStatus === 'error'
-                    ? 'bg-rose-100 text-rose-800'
-                    : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
-                  : ''
+                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                  : 'text-[var(--text-secondary)]'
               )}
               onClick={() => setShowSyncModal(true)}
             >
               {isSyncEnabled ? (
-                <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
+                <>
+                  <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>
+                    {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Sync Error' : 'Cloud Synced'}
+                  </span>
+                  {lastSyncedAt && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-1.5" />
+                  )}
+                </>
               ) : (
-                <Cloud className="w-3.5 h-3.5 mr-1.5 text-[var(--coral)]" />
-              )}
-              <span>{isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}</span>
-              {isSyncEnabled && syncStatus === 'syncing' && (
-                <span className="w-2 h-2 rounded-full bg-[var(--coral)] animate-ping ml-1" />
+                <>
+                  <Cloud className="w-3.5 h-3.5 mr-1.5 text-[var(--text-muted)]" />
+                  <span>Setup Cloud Sync</span>
+                </>
               )}
             </Button>
 
-            {/* BGG Config Button */}
-            <div className="flex items-center justify-between pt-1">
-              <button
-                type="button"
-                onClick={() => setShowBGGModal(true)}
-                className="flex items-center gap-1.5 text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-                aria-label="Configure BoardGameGeek account sync"
-              >
-                <Settings className="w-3.5 h-3.5" />
-                <span>BGG Sync</span>
-              </button>
+            {/* BGG Configuration Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-center text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              onClick={() => setShowBGGModal(true)}
+            >
+              <Settings className="w-3.5 h-3.5 mr-1.5" />
+              <span>BGG Settings</span>
+            </Button>
+
+            {/* Powered by BGG badge */}
+            <div className="pt-2 border-t border-[var(--line)]">
               <PoweredByBGG />
             </div>
+
+            {/* PWA Install Button */}
+            {!isInstalled && deferredPrompt && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-center text-xs text-[var(--accent-primary)] border-[var(--accent-primary)]/30 hover:bg-[var(--accent-soft)]"
+                onClick={() => setShowInstallModal(true)}
+              >
+                Install Mobile App
+              </Button>
+            )}
           </div>
         </aside>
 
         {/* Mobile Top Header */}
-        <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[var(--coral)] text-[var(--ink)] border-b-[1.5px] border-[var(--ink)] shadow-[0_2px_0_var(--ink)]">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[var(--butter)] border border-[var(--ink)] flex items-center justify-center shadow-[1.5px_1.5px_0_var(--ink)]">
-              <Dices className="w-4 h-4 text-[var(--ink)]" />
+        <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[var(--bg-card)]/90 backdrop-blur-md text-[var(--text-primary)] border-b border-[var(--line)] shadow-xs">
+          <Link to="/" className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-ink)] flex items-center justify-center shadow-xs">
+              <Dices className="w-4 h-4 text-current" />
             </div>
-            {isFitlo ? (
-              <span className="font-display font-black text-lg tracking-tight uppercase leading-none">
-                Fitlo <span className="font-sans font-medium text-base lowercase opacity-90">vault</span>
-              </span>
-            ) : (
-              <span className="font-display font-black text-lg tracking-tight uppercase">
-                Rayé <span className="font-serif italic lowercase font-normal text-xl">vault</span>
-              </span>
-            )}
+            <span className="font-display font-bold text-base tracking-tight text-[var(--text-primary)]">
+              BoardGame <span className="text-[var(--accent-primary)] font-extrabold">Vault</span>
+            </span>
           </Link>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={toggleTheme}
+              className="p-2 rounded-xl bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+              title={isDark ? 'Switch to Light' : 'Switch to Dark'}
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
+            <button
+              type="button"
               onClick={() => setShowSyncModal(true)}
-              className="p-1.5 rounded-full bg-[var(--cream)] border border-[var(--ink)] text-[var(--ink)] shadow-[1.5px_1.5px_0_var(--ink)] cursor-pointer"
+              className="p-2 rounded-xl bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               title="Cloud Sync"
             >
               {isSyncEnabled ? (
-                <CloudCheck className="w-4 h-4 text-emerald-600" />
+                <CloudCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               ) : (
-                <Cloud className="w-4 h-4 text-[var(--coral-deep)]" />
+                <Cloud className="w-4 h-4 text-[var(--text-muted)]" />
               )}
             </button>
 
             <Link
               to="/sessions/new"
-              className="w-8 h-8 rounded-full bg-[var(--teal)] text-[var(--cream)] border border-[var(--ink)] flex items-center justify-center shadow-[1.5px_1.5px_0_var(--ink)]"
+              className="w-8 h-8 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-ink)] flex items-center justify-center shadow-xs"
               title="New Session"
             >
               <Plus className="w-4 h-4" />
@@ -338,3 +305,5 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     </div>
   );
 };
+
+export default AppShell;

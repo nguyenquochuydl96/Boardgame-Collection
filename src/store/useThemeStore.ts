@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type AppTheme = 'fitlo' | 'fitlo-dark' | 'raye' | 'noir';
+export type AppTheme = 'fitlo' | 'fitlo-dark';
 
 export interface ThemeConfig {
   id: AppTheme;
@@ -20,7 +20,7 @@ export const AVAILABLE_THEMES: ThemeConfig[] = [
   {
     id: 'fitlo',
     name: 'Fitlo Nordic',
-    tagline: 'Nordic spruce teal, warm stone & porcelain minimalist (codeandchill.store/templates/fitlo)',
+    tagline: 'Nordic spruce teal, warm stone & porcelain minimalist',
     colors: {
       bg: '#f7f6f2',
       surface: '#fdfdfb',
@@ -41,30 +41,6 @@ export const AVAILABLE_THEMES: ThemeConfig[] = [
     },
     icon: '🌿',
   },
-  {
-    id: 'raye',
-    name: 'Rayé Signature',
-    tagline: 'Warm cream, bold coral & vintage pine teal editorial',
-    colors: {
-      bg: '#fbf6ee',
-      surface: '#fffdf8',
-      accent: '#ff6b4a',
-      secondary: '#0e4f4b',
-    },
-    icon: '☀️',
-  },
-  {
-    id: 'noir',
-    name: 'Rayé Noir',
-    tagline: 'Deep charcoal velvet, sunset coral & warm butter',
-    colors: {
-      bg: '#14110e',
-      surface: '#1f1a16',
-      accent: '#ff6b4a',
-      secondary: '#ffd66b',
-    },
-    icon: '🌙',
-  },
 ];
 
 interface ThemeStore {
@@ -76,7 +52,7 @@ interface ThemeStore {
 function applyThemeToDOM(theme: AppTheme) {
   if (typeof document !== 'undefined') {
     document.documentElement.setAttribute('data-theme', theme);
-    if (theme === 'noir' || theme === 'fitlo-dark') {
+    if (theme === 'fitlo-dark') {
       document.documentElement.classList.add('dark');
       document.documentElement.classList.remove('light');
     } else {
@@ -89,26 +65,22 @@ function applyThemeToDOM(theme: AppTheme) {
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
-      theme: 'fitlo', // Default to Fitlo Nordic!
+      theme: 'fitlo',
       setTheme: (newTheme) => {
         applyThemeToDOM(newTheme);
         set({ theme: newTheme });
       },
       toggleTheme: () => {
         const current = get().theme;
-        let next: AppTheme = 'fitlo';
-        if (current === 'fitlo') next = 'fitlo-dark';
-        else if (current === 'fitlo-dark') next = 'raye';
-        else if (current === 'raye') next = 'noir';
-        else next = 'fitlo';
+        const next: AppTheme = current === 'fitlo' ? 'fitlo-dark' : 'fitlo';
         applyThemeToDOM(next);
         set({ theme: next });
       },
     }),
     {
-      name: 'bg-vault-theme-pref-v3',
+      name: 'bg-vault-fitlo-theme-v4',
       onRehydrateStorage: () => (state) => {
-        if (state) {
+        if (state && (state.theme === 'fitlo' || state.theme === 'fitlo-dark')) {
           applyThemeToDOM(state.theme);
         } else {
           applyThemeToDOM('fitlo');
@@ -121,11 +93,11 @@ export const useThemeStore = create<ThemeStore>()(
 // Apply on initial script evaluation
 if (typeof window !== 'undefined') {
   try {
-    const saved = localStorage.getItem('bg-vault-theme-pref-v3');
+    const saved = localStorage.getItem('bg-vault-fitlo-theme-v4');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed?.state?.theme) {
-        applyThemeToDOM(parsed.state.theme);
+      if (parsed?.state?.theme === 'fitlo-dark') {
+        applyThemeToDOM('fitlo-dark');
       } else {
         applyThemeToDOM('fitlo');
       }

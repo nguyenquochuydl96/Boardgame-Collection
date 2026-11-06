@@ -118,20 +118,20 @@ export const HomePage: React.FC = () => {
         {/* Rayé Signature Editorial Hero Banner */}
         <motion.section
           variants={fadeUpItem}
-          className="relative rounded-2xl overflow-hidden p-6 sm:p-8 lg:p-10 bg-[var(--coral)] text-[var(--ink)] border-2 border-[var(--ink)] shadow-[var(--shadow-brutal-lg)]"
+          className="relative rounded-3xl overflow-hidden p-6 sm:p-8 lg:p-10 bg-[image:var(--gradient-hero)] text-white border border-[var(--line-2)] shadow-lg"
         >
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="space-y-3 max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--butter)] text-[var(--ink)] border border-[var(--ink)] text-xs font-black uppercase tracking-wider font-display shadow-[1.5px_1.5px_0_var(--ink)]">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Curated by Huy & Gaming Group</span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-white border border-white/20 text-xs font-bold uppercase tracking-wider font-display shadow-xs backdrop-blur-xs">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Curated by Huy &amp; Gaming Group</span>
               </div>
 
-              <h1 className="font-display font-black text-3xl sm:text-5xl lg:text-6xl tracking-tighter uppercase leading-[0.95]">
-                Tabletop <span className="font-serif italic lowercase font-normal">archive</span>
+              <h1 className="font-display font-black text-3xl sm:text-5xl lg:text-6xl tracking-tight leading-[0.98]">
+                Tabletop Vault Archive
               </h1>
 
-              <p className="text-base sm:text-lg font-medium text-[var(--ink)]/90 leading-snug">
+              <p className="text-base sm:text-lg font-medium text-white/90 leading-snug">
                 Track every box on your shelf, log friendly tabletop rivalries, and sync smoothly across desktop and mobile.
               </p>
             </div>
@@ -142,7 +142,7 @@ export const HomePage: React.FC = () => {
                   variant="butter"
                   size="lg"
                   withArrowDot
-                  className="font-extrabold text-base"
+                  className="font-bold text-base shadow-md"
                 >
                   <Play className="w-4 h-4 fill-current mr-1" />
                   New Session
@@ -150,9 +150,9 @@ export const HomePage: React.FC = () => {
               </Link>
               <Link to="/collection/add">
                 <Button
-                  variant="secondary"
+                  variant="outline"
                   size="lg"
-                  className="font-bold text-base"
+                  className="font-bold text-base bg-white/15 text-white border-white/25 hover:bg-white/25 shadow-xs"
                 >
                   <Plus className="w-4 h-4 mr-1" />
                   Add Game
@@ -210,8 +210,8 @@ export const HomePage: React.FC = () => {
         <motion.section variants={fadeUpItem} className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-display font-black text-xl sm:text-2xl text-[var(--text-primary)] uppercase tracking-tight">
-                Recently <span className="font-serif italic lowercase font-normal text-2xl sm:text-3xl">played</span>
+              <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--text-primary)] tracking-tight">
+                Recently Played
               </h2>
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium">
                 Your last 5 tabletop game sessions
@@ -219,7 +219,7 @@ export const HomePage: React.FC = () => {
             </div>
             <Link
               to="/sessions"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--paper)] border border-[var(--ink)] text-xs font-bold font-display uppercase tracking-wider text-[var(--text-primary)] hover:bg-[var(--coral)] transition-colors shadow-[1.5px_1.5px_0_var(--ink)]"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--line-2)] text-xs font-semibold text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] transition-colors shadow-xs"
             >
               <span>View All</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -293,8 +293,8 @@ export const HomePage: React.FC = () => {
           <Card className="lg:col-span-7 p-6 space-y-5 flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-display font-black text-xl text-[var(--text-primary)] uppercase tracking-tight">
-                  Most Played <span className="font-serif italic lowercase font-normal text-2xl">games</span>
+                <h2 className="font-display font-bold text-xl text-[var(--text-primary)] tracking-tight">
+                  Most Played Games
                 </h2>
                 <p className="text-xs text-[var(--text-secondary)] font-medium">
                   Top 5 titles hitting the table most often
@@ -302,7 +302,7 @@ export const HomePage: React.FC = () => {
               </div>
               <Link
                 to="/stats"
-                className="text-xs font-bold font-display uppercase tracking-wider text-[var(--coral)] hover:underline"
+                className="text-xs font-semibold text-[var(--accent-primary)] hover:underline"
               >
                 Analytics →
               </Link>
@@ -312,8 +312,8 @@ export const HomePage: React.FC = () => {
 
           <Card className="lg:col-span-5 p-6 flex flex-col justify-between space-y-5">
             <div className="space-y-1">
-              <h2 className="font-display font-black text-xl text-[var(--text-primary)] uppercase tracking-tight">
-                Shelf <span className="font-serif italic lowercase font-normal text-2xl">status</span>
+              <h2 className="font-display font-bold text-xl text-[var(--text-primary)] tracking-tight">
+                Shelf Status
               </h2>
               <p className="text-xs text-[var(--text-secondary)] font-medium">
                 Inventory status breakdown across your vault
