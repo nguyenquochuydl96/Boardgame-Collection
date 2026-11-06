@@ -8,6 +8,7 @@ export interface ScoringCategory {
 
 export interface GameScoringTemplate {
   gameNameKeyword: string;
+  aliases?: string[];
   displayName: string;
   categories: ScoringCategory[];
 }
@@ -298,18 +299,89 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
     ],
   },
 
-  // 19. Great Western Trail
+  // 19. Great Western Trail: Second Edition (11 Categories from Official Score Pad)
   {
     gameNameKeyword: 'great western trail',
-    displayName: 'Great Western Trail',
+    aliases: ['gwt'],
+    displayName: 'Great Western Trail: Second Edition',
     categories: [
-      { id: 'cash', name: 'Cash (1 pt per $5)', icon: '💵', multiplier: 1 },
-      { id: 'buildings', name: 'Built Buildings', icon: '🏠', multiplier: 1 },
-      { id: 'cities', name: 'Delivered Cities', icon: '🚂', multiplier: 1 },
-      { id: 'train_stations', name: 'Train Stations Claimed', icon: '🚉', multiplier: 1 },
-      { id: 'hazards', name: 'Hazards Cleared', icon: '⚠️', multiplier: 1 },
-      { id: 'cattle_cards', name: 'Purchased Cattle Cards', icon: '🐄', multiplier: 1 },
-      { id: 'objective_cards', name: 'Objective Cards', icon: '🎯', multiplier: 1 },
+      {
+        id: 'cash',
+        name: 'Money (1 VP per $5)',
+        description: '1 VP for every $5 in cash remaining at game end (leftover < $5 scores 0)',
+        icon: '💵',
+        multiplier: 1,
+      },
+      {
+        id: 'buildings',
+        name: 'Private Buildings',
+        description: 'Total victory points printed on your placed private building tiles',
+        icon: '🏠',
+        multiplier: 1,
+      },
+      {
+        id: 'cities',
+        name: 'Delivered Cities',
+        description: 'VPs on city crests with your player discs (Kansas City can be -6 VP)',
+        icon: '🏙️',
+        multiplier: 1,
+      },
+      {
+        id: 'train_stations',
+        name: 'Train Stations',
+        description: 'VPs printed next to train stations where you placed your station discs',
+        icon: '🚉',
+        multiplier: 1,
+      },
+      {
+        id: 'hazards',
+        name: 'Hazard Tiles Cleared',
+        description: 'VPs on hazard tiles collected (rockslides, floods, droughts, teepees)',
+        icon: '⚠️',
+        multiplier: 1,
+      },
+      {
+        id: 'cattle_cards',
+        name: 'Cattle Cards Owned',
+        description: 'Total VP printed on all cattle cards in your hand, draw deck, and discard pile',
+        icon: '🐄',
+        multiplier: 1,
+      },
+      {
+        id: 'objective_cards',
+        name: 'Objective Cards',
+        description: 'Positive VPs for fulfilled objectives minus negative points for unfulfilled ones',
+        icon: '🎯',
+        multiplier: 1,
+      },
+      {
+        id: 'station_masters',
+        name: 'Station Master Tiles',
+        description: 'VPs earned from requirements & bonuses on your collected Station Master tiles',
+        icon: '🎖️',
+        multiplier: 1,
+      },
+      {
+        id: 'advanced_workers',
+        name: 'Advanced Workers (4 VP each)',
+        description: '4 VP for each worker positioned on spaces 5 or 6 in any row on your player board',
+        icon: '👷',
+        multiplier: 1,
+      },
+      {
+        id: 'cleared_board',
+        name: 'Cleared Board Space (3 VP)',
+        description: 'Flat 3 VP if you cleared the disc from the 3-VP space on your player board',
+        icon: '🛡️',
+        multiplier: 1,
+      },
+      {
+        id: 'job_market',
+        name: 'Job Market Token (2 VP)',
+        description: 'Score 2 VP if you are holding the Job Market token at the end of the game',
+        icon: '🪙',
+        multiplier: 1,
+      },
     ],
   },
 
@@ -456,10 +528,13 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
 export function getScoringTemplateForGame(gameName?: string): GameScoringTemplate {
   if (!gameName) return PRESET_SCORING_TEMPLATES[PRESET_SCORING_TEMPLATES.length - 1];
 
-  const lower = gameName.toLowerCase();
-  const match = PRESET_SCORING_TEMPLATES.find((t) =>
-    t.gameNameKeyword !== 'generic' && lower.includes(t.gameNameKeyword)
-  );
+  const lower = gameName.toLowerCase().trim();
+  const match = PRESET_SCORING_TEMPLATES.find((t) => {
+    if (t.gameNameKeyword === 'generic') return false;
+    if (lower.includes(t.gameNameKeyword)) return true;
+    if (t.aliases?.some((alias) => lower === alias || lower.includes(alias))) return true;
+    return false;
+  });
 
   return (
     match || {

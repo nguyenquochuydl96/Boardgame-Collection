@@ -252,3 +252,72 @@ test('getScoringTemplateForGame resolves official Natera template correctly', as
   assert.ok(template.categories.some((c) => c.id === 'specialist_cards'));
   assert.ok(template.categories.some((c) => c.id === 'exploration_cards'));
 });
+
+test('getScoringTemplateForGame resolves official Great Western Trail: Second Edition template with 11 categories', async () => {
+  const { getScoringTemplateForGame } = await import('./scoringPresets');
+  
+  // Both full title and alias GWT match
+  const templateFull = getScoringTemplateForGame('Great Western Trail: Second Edition');
+  const templateAlias = getScoringTemplateForGame('GWT');
+
+  assert.equal(templateFull.displayName, 'Great Western Trail: Second Edition');
+  assert.equal(templateAlias.displayName, 'Great Western Trail: Second Edition');
+  assert.equal(templateFull.categories.length, 11);
+
+  // Verify the exact 11 rows from official score pad
+  const categoryIds = templateFull.categories.map((c) => c.id);
+  assert.deepEqual(categoryIds, [
+    'cash',
+    'buildings',
+    'cities',
+    'train_stations',
+    'hazards',
+    'cattle_cards',
+    'objective_cards',
+    'station_masters',
+    'advanced_workers',
+    'cleared_board',
+    'job_market',
+  ]);
+
+  // Verify calculating the exact match from user photo (Yellow: 158, Grey: 61)
+  const yellowScores: Record<string, number> = {
+    cash: 3,
+    buildings: 31,
+    cities: 36,
+    train_stations: 28,
+    hazards: 11,
+    cattle_cards: 16,
+    objective_cards: 13,
+    station_masters: 3,
+    advanced_workers: 12,
+    cleared_board: 3,
+    job_market: 2,
+  };
+
+  const greyScores: Record<string, number> = {
+    cash: 2,
+    buildings: 3,
+    cities: 8,
+    train_stations: 7,
+    hazards: 11,
+    cattle_cards: 13,
+    objective_cards: 8,
+    station_masters: 9,
+    advanced_workers: 0,
+    cleared_board: 0,
+    job_market: 0,
+  };
+
+  const yellowTotal = templateFull.categories.reduce(
+    (acc, cat) => acc + (yellowScores[cat.id] ?? 0) * (cat.multiplier ?? 1),
+    0
+  );
+  const greyTotal = templateFull.categories.reduce(
+    (acc, cat) => acc + (greyScores[cat.id] ?? 0) * (cat.multiplier ?? 1),
+    0
+  );
+
+  assert.equal(yellowTotal, 158);
+  assert.equal(greyTotal, 61);
+});

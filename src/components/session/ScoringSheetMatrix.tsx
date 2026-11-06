@@ -25,6 +25,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
   onScoresUpdate,
 }) => {
   const [categories, setCategories] = useState<ScoringCategory[]>(initialCategories);
+  const [rawCellValues, setRawCellValues] = useState<Record<string, Record<string, string>>>({});
   const [breakdowns, setBreakdowns] = useState<Record<string, Record<string, number>>>(
     () => {
       const initial: Record<string, Record<string, number>> = {};
@@ -68,16 +69,42 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
     onScoresUpdate(playerTotals, breakdowns);
   }, [playerTotals, breakdowns]);
 
-  // Handle cell value change
+  // Handle cell value change (supports negative numbers e.g. -6 for Kansas City)
   const handleCellChange = (playerId: string, categoryId: string, valStr: string) => {
-    const val = valStr.trim() === '' ? 0 : Number(valStr);
+    // Only allow numbers, minus sign, and empty string
+    if (valStr !== '' && valStr !== '-' && !/^-?\d*$/.test(valStr)) {
+      return;
+    }
+
+    setRawCellValues((prev) => ({
+      ...prev,
+      [playerId]: {
+        ...(prev[playerId] || {}),
+        [categoryId]: valStr,
+      },
+    }));
+
+    const trimmed = valStr.trim();
+    let val = 0;
+    if (trimmed !== '' && trimmed !== '-' && !isNaN(Number(trimmed))) {
+      val = Number(trimmed);
+    }
+
     setBreakdowns((prev) => ({
       ...prev,
       [playerId]: {
         ...(prev[playerId] || {}),
-        [categoryId]: isNaN(val) ? 0 : val,
+        [categoryId]: val,
       },
     }));
+  };
+
+  const handleCellBlur = (playerId: string, categoryId: string) => {
+    setRawCellValues((prev) => {
+      const updated = { ...(prev[playerId] || {}) };
+      delete updated[categoryId];
+      return { ...prev, [playerId]: updated };
+    });
   };
 
   // Add custom category
@@ -177,18 +204,26 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
 
                   {players.map((p) => {
                     const rawVal = breakdowns[p.id]?.[cat.id];
-                    const displayVal = rawVal !== undefined && rawVal !== 0 ? String(rawVal) : '';
+                    const userTyping = rawCellValues[p.id]?.[cat.id];
+                    const displayVal =
+                      userTyping !== undefined
+                        ? userTyping
+                        : rawVal !== undefined && rawVal !== 0
+                        ? String(rawVal)
+                        : '';
 
                     return (
                       <td key={p.id} className="py-2 px-2 text-center">
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           placeholder="0"
                           value={displayVal}
                           onChange={(e) => handleCellChange(p.id, cat.id, e.target.value)}
+                          onBlur={() => handleCellBlur(p.id, cat.id)}
                           className={cn(
                             'w-20 mx-auto px-2 py-1.5 rounded-lg text-center font-mono font-bold text-xs bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)]',
-                            isPenalty && 'text-rose-400'
+                            (isPenalty || (rawVal !== undefined && rawVal < 0)) && 'text-rose-400'
                           )}
                         />
                       </td>
