@@ -2,24 +2,24 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* =========================================================================
-   FITLO DESIGN SYSTEM — AUTHENTIC TOKENS & TYPOGRAPHY
-   Lisbon & Nordic editorial aesthetic with high-precision micro-interactions
+   HEO'S BOARD GAME COLLECTION — DESIGN SYSTEM & TOKENS
+   Modern Lisbon & Nordic aesthetic with flawless Vietnamese typography
    ========================================================================= */
 
 :root {
-  /* Typography */
-  --font-display: "Urbanist", system-ui, -apple-system, sans-serif;
-  --font-sans: "Urbanist", system-ui, -apple-system, sans-serif;
+  /* Typography — Plus Jakarta Sans & Be Vietnam Pro with native Vietnamese diacritics */
+  --font-display: "Plus Jakarta Sans", "Be Vietnam Pro", system-ui, -apple-system, sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Be Vietnam Pro", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  /* Fitlo Geometry & Radii */
+  /* Geometry & Radii */
   --r-sm: 10px;
   --r-md: 14px;
   --r-lg: 20px;
   --r-xl: 26px;
   --ease: cubic-bezier(.22, 1, .36, 1);
 
-  /* Light Theme (Fitlo Natural Stone & Deep Spruce) */
+  /* Light Theme (Fitlo Natural Stone & Deep Forest Spruce) */
   --bg: #f7f6f2;
   --bg-base: #f7f6f2;
   --bg-surface: #fdfdfb;
@@ -30,16 +30,16 @@
   --card-3: #e5e4de;
 
   --ink: #161a19;
-  --ink-2: #353b3a;
-  --muted: #5f6665;
+  --ink-2: #2e3534;
+  --muted: #565e5c;
   --text-primary: #161a19;
-  --text-secondary: #5f6665;
-  --text-muted: #8b9492;
+  --text-secondary: #565e5c;
+  --text-muted: #788280;
 
-  --line: rgba(22, 26, 25, 0.08);
-  --line-2: rgba(22, 26, 25, 0.15);
-  --border-subtle: rgba(22, 26, 25, 0.09);
-  --border-glow: rgba(11, 122, 115, 0.35);
+  --line: rgba(22, 26, 25, 0.10);
+  --line-2: rgba(22, 26, 25, 0.18);
+  --border-subtle: rgba(22, 26, 25, 0.10);
+  --border-glow: rgba(11, 122, 115, 0.38);
 
   --accent: #0b7a73;
   --accent-primary: #0b7a73;
@@ -48,41 +48,41 @@
   --accent-glow: rgba(11, 122, 115, 0.22);
   --accent-ink: #ffffff;
   --accent-hi: #08665f;
-  --accent-soft: rgba(11, 122, 115, 0.10);
+  --accent-soft: rgba(11, 122, 115, 0.12);
   --accent-text: #08665f;
 
   --sig: #0b7a73;
   --sig-text: #08665f;
-  --sig-soft: rgba(11, 122, 115, 0.11);
+  --sig-soft: rgba(11, 122, 115, 0.12);
   --data: #0b7a73;
 
-  --accent-pink: #d94e34;
-  --accent-cyan: #197c89;
-  --accent-green: #1e7548;
-  --accent-orange: #e2603a;
+  --accent-pink: #c93b2a;
+  --accent-cyan: #127582;
+  --accent-green: #196f42;
+  --accent-orange: #d95328;
 
-  --good: #1e7548;
-  --warn: #8a5600;
-  --bad: #b42318;
-  --info: #2c5d87;
-  --good-soft: rgba(30, 117, 72, 0.11);
-  --warn-soft: rgba(214, 150, 20, 0.17);
-  --bad-soft: rgba(180, 35, 24, 0.09);
-  --info-soft: rgba(44, 93, 135, 0.10);
+  --good: #196f42;
+  --warn: #855300;
+  --bad: #b32116;
+  --info: #25567f;
+  --good-soft: rgba(25, 111, 66, 0.12);
+  --warn-soft: rgba(199, 137, 10, 0.16);
+  --bad-soft: rgba(179, 33, 22, 0.10);
+  --info-soft: rgba(37, 86, 127, 0.12);
 
-  /* Fitlo signature pastel KPI tiles */
-  --tile-1: #ffe2d1;  /* Soft apricot */
+  /* Fitlo pastel KPI tiles (high contrast in light mode) */
+  --tile-1: #ffe4d4;  /* Apricot peach */
   --tile-2: #d8ecee;  /* Ice mint */
-  --tile-3: #fbeaa8;  /* Warm butter cream */
-  --tile-4: #e9e8e3;  /* Warm linen stone */
+  --tile-3: #fceba7;  /* Warm butter */
+  --tile-4: #ebeae3;  /* Warm stone */
   --tile-ink: #161a19;
-  --tile-muted: rgba(22, 26, 25, 0.66);
+  --tile-muted: rgba(22, 26, 25, 0.72);
 
   --gradient-hero: linear-gradient(135deg, #0b7a73 0%, #08665f 50%, #054843 100%);
   --gradient-card: linear-gradient(145deg, #fdfdfb, #f0efea);
-  --shimmer: linear-gradient(90deg, transparent, rgba(22, 26, 25, 0.04), transparent);
-  --shadow: 0 1px 2px rgba(22, 26, 25, 0.04), 0 10px 26px -18px rgba(22, 26, 25, 0.22);
-  --shadow-lg: 0 2px 6px rgba(22, 26, 25, 0.07), 0 28px 60px -24px rgba(22, 26, 25, 0.32);
+  --shimmer: linear-gradient(90deg, transparent, rgba(22, 26, 25, 0.05), transparent);
+  --shadow: 0 1px 2px rgba(22, 26, 25, 0.05), 0 10px 26px -18px rgba(22, 26, 25, 0.22);
+  --shadow-lg: 0 2px 6px rgba(22, 26, 25, 0.08), 0 28px 60px -24px rgba(22, 26, 25, 0.30);
   color-scheme: light;
 }
 
@@ -98,31 +98,31 @@
   --card-2: #151a19;
   --card-3: #262c2b;
 
-  --ink: #eef1f0;
-  --ink-2: #d1d6d5;
-  --muted: #9fa8a6;
-  --text-primary: #eef1f0;
-  --text-secondary: #9fa8a6;
+  --ink: #f3f6f5;
+  --ink-2: #d3d8d6;
+  --muted: #9aa4a2;
+  --text-primary: #f3f6f5;
+  --text-secondary: #9aa4a2;
   --text-muted: #6b7573;
 
-  --line: rgba(238, 241, 240, 0.08);
-  --line-2: rgba(238, 241, 240, 0.16);
-  --border-subtle: rgba(238, 241, 240, 0.08);
-  --border-glow: rgba(60, 194, 181, 0.40);
+  --line: rgba(243, 246, 245, 0.08);
+  --line-2: rgba(243, 246, 245, 0.18);
+  --border-subtle: rgba(243, 246, 245, 0.09);
+  --border-glow: rgba(60, 194, 181, 0.45);
 
   --accent: #3cc2b5;
   --accent-primary: #3cc2b5;
   --accent-secondary: #5fd3c7;
   --accent-neon: #3cc2b5;
-  --accent-glow: rgba(60, 194, 181, 0.25);
+  --accent-glow: rgba(60, 194, 181, 0.28);
   --accent-ink: #05201d;
   --accent-hi: #5fd3c7;
-  --accent-soft: rgba(60, 194, 181, 0.13);
+  --accent-soft: rgba(60, 194, 181, 0.15);
   --accent-text: #6fd6cb;
 
   --sig: #3cc2b5;
   --sig-text: #6fd6cb;
-  --sig-soft: rgba(60, 194, 181, 0.15);
+  --sig-soft: rgba(60, 194, 181, 0.16);
   --data: #3cc2b5;
 
   --accent-pink: #f4826b;
@@ -134,29 +134,29 @@
   --warn: #e8b85e;
   --bad: #f38a7e;
   --info: #8fb9e0;
-  --good-soft: rgba(111, 203, 149, 0.14);
-  --warn-soft: rgba(232, 184, 94, 0.14);
-  --bad-soft: rgba(243, 138, 126, 0.14);
-  --info-soft: rgba(143, 185, 224, 0.13);
+  --good-soft: rgba(111, 203, 149, 0.16);
+  --warn-soft: rgba(232, 184, 94, 0.16);
+  --bad-soft: rgba(243, 138, 126, 0.16);
+  --info-soft: rgba(143, 185, 224, 0.15);
 
   --tile-1: #3a2a21;
   --tile-2: #1b2f30;
   --tile-3: #353019;
   --tile-4: #222726;
-  --tile-ink: #eef1f0;
-  --tile-muted: rgba(238, 241, 240, 0.68);
+  --tile-ink: #f3f6f5;
+  --tile-muted: rgba(243, 246, 245, 0.72);
 
   --gradient-hero: linear-gradient(135deg, #1b3834 0%, #132b28 50%, #0d1e1c 100%);
   --gradient-card: linear-gradient(145deg, #262c2b, #191e1d);
   --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 30px -16px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.38), 0 30px 70px -24px rgba(0, 0, 0, 0.8);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 30px -16px rgba(0, 0, 0, 0.65);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.42), 0 30px 70px -24px rgba(0, 0, 0, 0.85);
   color-scheme: dark;
 }
 
 @theme {
-  --font-display: "Urbanist", system-ui, sans-serif;
-  --font-sans: "Urbanist", system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Be Vietnam Pro", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Be Vietnam Pro", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
 
@@ -173,13 +173,13 @@
 
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
     text-wrap: balance;
   }
 }
 
 /* =========================================================================
-   FITLO COMPONENT UTILITIES & MICRO-INTERACTIONS
+   COMPONENTS & UTILITIES
    ========================================================================= */
 
 /* Brand mark badge */
@@ -187,7 +187,7 @@
   background: var(--accent);
   color: var(--accent-ink);
   box-shadow: 0 8px 16px -10px var(--accent);
-  border-radius: 11px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
   flex: none;
@@ -197,7 +197,7 @@
   transform: scale(1.05);
 }
 
-/* Authentic Fitlo Card */
+/* Authentic Card */
 .fitlo-card {
   background: var(--card);
   border-radius: var(--r-lg);

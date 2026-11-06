@@ -844,8 +844,8 @@ export const SessionDetailPage: React.FC = () => {
                           className={cn(
                             'px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer',
                             p.isFirstPlayer
-                              ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
-                              : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)]'
+                              ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)]'
+                              : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]'
                           )}
                         >
                           First

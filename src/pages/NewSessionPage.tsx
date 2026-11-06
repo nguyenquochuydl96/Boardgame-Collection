@@ -489,7 +489,7 @@ export const NewSessionPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <Link
             to="/sessions"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[#94a3b8] hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Sessions
@@ -702,10 +702,10 @@ export const NewSessionPage: React.FC = () => {
                           )}
                         </div>
                         <div className="p-3">
-                          <p className="font-display font-bold text-sm text-white truncate">
+                          <p className="font-display font-bold text-sm text-[var(--ink)] truncate">
                             {game.name}
                           </p>
-                          <p className="text-xs text-[#94a3b8] tabular-nums">
+                          <p className="text-xs text-[var(--muted)] tabular-nums">
                             {game.minPlayers}–{game.maxPlayers}p · {game.playingTime}m
                           </p>
                         </div>
@@ -1126,8 +1126,8 @@ export const NewSessionPage: React.FC = () => {
                             className={cn(
                               'px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors cursor-pointer',
                               firstPlayerMethod === m
-                                ? 'bg-amber-500/25 border-amber-400 text-amber-300'
-                                : 'bg-[var(--bg-surface)] border-white/10 text-[var(--text-secondary)] hover:text-white'
+                                ? 'bg-amber-500/25 border-amber-400 text-amber-700 dark:text-amber-300'
+                                : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                             )}
                           >
                             {FIRST_PLAYER_METHOD_LABELS[m]}
@@ -1162,39 +1162,39 @@ export const NewSessionPage: React.FC = () => {
               <Card className="p-6 sm:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
+                    <h1 className="font-display font-extrabold text-2xl text-[var(--ink)]">
                       Step 5 — Scores &amp; Scoring Sheet
                     </h1>
-                    <p className="text-sm text-[var(--text-secondary)]">
+                    <p className="text-sm text-[var(--muted)]">
                       Automatically calculate category scores and crown table champions
                     </p>
                   </div>
 
-                  <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] cursor-pointer">
+                  <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[var(--card-2)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] cursor-pointer">
                     <input
                       type="checkbox"
                       checked={lowScoreWins}
                       onChange={(e) => setLowScoreWins(e.target.checked)}
-                      className="rounded border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--accent-primary)]"
+                      className="rounded border-[var(--line)] bg-[var(--card)] text-[var(--accent)]"
                     />
                     Lowest score wins
                   </label>
                 </div>
 
                 {/* Mode Selector Tabs */}
-                <div className="flex flex-wrap items-center gap-2 p-1.5 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-2xl w-fit">
+                <div className="flex flex-wrap items-center gap-2 p-1.5 bg-[var(--card-2)] border border-[var(--line)] rounded-2xl w-fit">
                   <button
                     type="button"
                     onClick={() => setScoringMode('detailed')}
                     className={cn(
                       'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2',
                       scoringMode === 'detailed'
-                        ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                        ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
+                        : 'text-[var(--muted)] hover:text-[var(--ink)]'
                     )}
                   >
                     <span>📊 Scoring Sheet:</span>
-                    <span className="text-[var(--accent-neon)] font-extrabold">{scoringTemplate.displayName}</span>
+                    <span className="font-extrabold">{scoringTemplate.displayName}</span>
                   </button>
                   <button
                     type="button"
@@ -1202,8 +1202,8 @@ export const NewSessionPage: React.FC = () => {
                     className={cn(
                       'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
                       scoringMode === 'quick'
-                        ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                        ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
+                        : 'text-[var(--muted)] hover:text-[var(--ink)]'
                     )}
                   >
                     <span>⚡ Quick Total Entry</span>
@@ -1346,12 +1346,12 @@ export const NewSessionPage: React.FC = () => {
                         className="w-16 h-20 rounded-xl object-cover shrink-0"
                       />
                       <div className="space-y-1">
-                        <h2 className="font-display font-extrabold text-xl text-white">
+                        <h2 className="font-display font-extrabold text-xl text-[var(--ink)]">
                           {selectedGame.name}
                         </h2>
-                        <p className="text-xs text-[#94a3b8]">
+                        <p className="text-xs text-[var(--muted)]">
                           {location || 'Home Table'} · First turn:{' '}
-                          <strong className="text-white">
+                          <strong className="text-[var(--ink)]">
                             {allAvailablePlayers.find(
                               (p) => p.id === firstPlayerId
                             )?.name || activeSessionPlayers[0]?.name}

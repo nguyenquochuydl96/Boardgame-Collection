@@ -126,7 +126,7 @@ export const AddGamePage: React.FC = () => {
         <div className="flex items-center justify-between">
           <Link
             to="/collection"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[#94a3b8] hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Collection
@@ -135,10 +135,10 @@ export const AddGamePage: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-white">
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--ink)]">
               Add Game to Vault
             </h1>
-            <p className="text-sm text-[#94a3b8]">
+            <p className="text-sm text-[var(--muted)]">
               Import box details from BoardGameGeek or enter a custom title manually
             </p>
           </div>
@@ -149,7 +149,7 @@ export const AddGamePage: React.FC = () => {
         <div
           role="tablist"
           aria-label="Add game mode"
-          className="inline-flex p-1.5 rounded-2xl bg-[#16162a] border border-white/10"
+          className="inline-flex p-1.5 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]"
         >
           <button
             role="tab"
@@ -159,8 +159,8 @@ export const AddGamePage: React.FC = () => {
             className={cn(
               'min-h-[42px] px-5 py-2 rounded-xl text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer',
               activeTab === 'bgg'
-                ? 'bg-[image:var(--gradient-hero)] text-white shadow-lg'
-                : 'text-[#94a3b8] hover:text-white'
+                ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
+                : 'text-[var(--muted)] hover:text-[var(--ink)]'
             )}
           >
             <Sparkles className="w-4 h-4" />
@@ -177,8 +177,8 @@ export const AddGamePage: React.FC = () => {
             className={cn(
               'min-h-[42px] px-5 py-2 rounded-xl text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer',
               activeTab === 'manual'
-                ? 'bg-[image:var(--gradient-hero)] text-white shadow-lg'
-                : 'text-[#94a3b8] hover:text-white'
+                ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
+                : 'text-[var(--muted)] hover:text-[var(--ink)]'
             )}
           >
             <PenLine className="w-4 h-4" />
@@ -264,22 +264,22 @@ export const AddGamePage: React.FC = () => {
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <p className="font-display font-bold text-sm text-white truncate group-hover:text-[#a78bfa]">
+                          <p className="font-display font-bold text-sm text-[var(--ink)] truncate group-hover:text-[var(--accent)]">
                             {item.name}
                           </p>
                           {isPicked && !isFetchingThis && (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                           )}
                           {isFetchingThis && (
-                            <Loader2 className="w-3.5 h-3.5 text-[#22d3ee] animate-spin shrink-0" />
+                            <Loader2 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 animate-spin shrink-0" />
                           )}
                         </div>
                         {item.yearPublished && (
-                          <p className="text-xs text-[#94a3b8] tabular-nums mt-0.5">
+                          <p className="text-xs text-[var(--muted)] tabular-nums mt-0.5">
                             {item.yearPublished}
                           </p>
                         )}
-                        <span className="text-[11px] text-[#22d3ee] font-semibold block mt-1">
+                        <span className="text-[11px] text-cyan-600 dark:text-cyan-400 font-semibold block mt-1">
                           {isFetchingThis ? 'Importing...' : isPicked ? '✓ Selected' : 'Select Game'}
                         </span>
                       </div>
@@ -292,10 +292,10 @@ export const AddGamePage: React.FC = () => {
         )}
 
         {/* Form Card (pre-filled or manual) */}
-        <Card className="p-6">
+        <Card className="p-6 bg-[var(--card)] border border-[var(--line)]">
           <form onSubmit={handleSubmit} className="space-y-6">
             {formError && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold">
+              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-semibold">
                 {formError}
               </div>
             )}
@@ -342,10 +342,10 @@ export const AddGamePage: React.FC = () => {
 
               {/* Cover Art Preview */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
                   Cover Image Preview
                 </label>
-                <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[#16162a] border border-white/10 flex items-center justify-center p-2 relative">
+                <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[var(--card-2)] border border-[var(--line)] flex items-center justify-center p-2 relative">
                   {thumbnail ? (
                     <img
                       src={thumbnail}
@@ -353,8 +353,8 @@ export const AddGamePage: React.FC = () => {
                       className="w-full h-full object-cover rounded-xl"
                     />
                   ) : (
-                    <div className="text-center p-4 text-xs text-[#475569]">
-                      <Sparkles className="w-6 h-6 mx-auto mb-1 text-[#7c3aed]/50" />
+                    <div className="text-center p-4 text-xs text-[var(--muted)]">
+                      <Sparkles className="w-6 h-6 mx-auto mb-1 text-[var(--accent)]/50" />
                       Cover art will auto-generate on save
                     </div>
                   )}
@@ -363,9 +363,9 @@ export const AddGamePage: React.FC = () => {
             </div>
 
             {/* Ownership Status & Finance */}
-            <div className="space-y-4 pt-2 border-t border-white/10">
+            <div className="space-y-4 pt-2 border-t border-[var(--line)]">
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
                   Ownership Status
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
@@ -390,11 +390,11 @@ export const AddGamePage: React.FC = () => {
                         className={cn(
                           'p-2.5 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer',
                           isSelected
-                            ? 'bg-white/15 border-white/40 text-white shadow-lg'
-                            : 'bg-[#16162a] border-white/5 text-[#94a3b8] hover:text-white'
+                            ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)] shadow-md'
+                            : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                         )}
                       >
-                        <span className={cn('block font-extrabold', cfg.color)}>
+                        <span className={cn('block font-extrabold', isSelected ? 'text-[var(--accent-ink)]' : cfg.color)}>
                           {cfg.label}
                         </span>
                       </button>

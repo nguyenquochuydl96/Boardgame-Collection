@@ -114,7 +114,7 @@ export const HomePage: React.FC = () => {
         animate="visible"
         className="space-y-8"
       >
-        {/* Fitlo Editorial Hero Banner */}
+        {/* Fitlo Editorial Hero Banner with Clean High-Contrast Action Buttons */}
         <motion.section
           variants={fadeUpItem}
           className="relative rounded-[24px] overflow-hidden p-6 sm:p-8 lg:p-10 bg-[image:var(--gradient-hero)] shadow-xl shadow-[var(--accent)]/15 border border-white/15 text-white"
@@ -124,16 +124,13 @@ export const HomePage: React.FC = () => {
             aria-hidden="true"
           />
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="space-y-2 max-w-2xl">
-              <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-teal-100/90">
-                Curated by Heo & Gaming Group · Tabletop Archive
+            <div className="space-y-1.5 max-w-2xl">
+              <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-teal-200">
+                Curated by Heo
               </p>
               <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight">
-                My Boardgame Collection
+                Heo's Board Game Collection
               </h1>
-              <p className="text-sm sm:text-base text-white/90 leading-relaxed font-medium">
-                Track every box on your shelf, spin the wheel on game night, and relive every victory across your tabletop group.
-              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -141,9 +138,9 @@ export const HomePage: React.FC = () => {
                 <Button
                   variant="secondary"
                   size="lg"
-                  className="bg-white/15 hover:bg-white/25 text-white shadow-none font-bold"
+                  className="bg-white/20 hover:bg-white/30 text-white border border-white/25 shadow-sm font-bold"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-5 h-5 text-white" />
                   Add Game
                 </Button>
               </Link>
@@ -151,9 +148,9 @@ export const HomePage: React.FC = () => {
                 <Button
                   variant="secondary"
                   size="lg"
-                  className="bg-white text-[var(--ink)] hover:bg-white/90 font-extrabold shadow-lg"
+                  className="bg-white text-slate-950 hover:bg-slate-100 font-extrabold shadow-lg"
                 >
-                  <Play className="w-4 h-4 fill-current" />
+                  <Play className="w-4 h-4 fill-slate-950 text-slate-950" />
                   New Session
                 </Button>
               </Link>
@@ -259,7 +256,7 @@ export const HomePage: React.FC = () => {
                         <h3 className="font-display font-bold text-base text-[var(--ink)] truncate group-hover:text-[var(--accent)] transition-colors">
                           {session.gameName}
                         </h3>
-                        <p className="text-xs text-[var(--muted)] inline-flex items-center gap-1 mt-1 tabular-nums font-medium">
+                        <p className="text-xs text-[var(--muted)] inline-flex items-center gap-1 mt-1 tabular-nums font-semibold">
                           <Calendar className="w-3 h-3 text-[var(--accent)]" />
                           {formatDate(session.datePlayed)}
                           {session.durationMinutes
@@ -270,12 +267,12 @@ export const HomePage: React.FC = () => {
 
                       {winner && (
                         <div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center justify-between text-xs">
-                          <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold truncate">
+                          <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold truncate">
                             <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
                             {winner.playerName}
                           </span>
                           {typeof winner.score === 'number' && (
-                            <span className="font-mono font-bold text-[var(--ink)] tabular-nums">
+                            <span className="font-mono font-extrabold text-[var(--ink)] tabular-nums">
                               {winner.score} pts
                             </span>
                           )}
@@ -330,7 +327,7 @@ export const HomePage: React.FC = () => {
                 className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 font-semibold transition-colors">Owned</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 font-bold transition-colors">Owned</span>
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-emerald-600 dark:text-emerald-400 mt-1">
@@ -343,7 +340,7 @@ export const HomePage: React.FC = () => {
                 className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-amber-600 dark:group-hover:text-amber-400 font-semibold transition-colors">Rented</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-amber-600 dark:group-hover:text-amber-400 font-bold transition-colors">Rented</span>
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-amber-600 dark:text-amber-400 mt-1">
@@ -356,7 +353,7 @@ export const HomePage: React.FC = () => {
                 className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-orange-600 dark:group-hover:text-orange-400 font-semibold transition-colors">Lent Out</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-orange-600 dark:group-hover:text-orange-400 font-bold transition-colors">Lent Out</span>
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-orange-600 dark:text-orange-400 mt-1">
@@ -369,7 +366,7 @@ export const HomePage: React.FC = () => {
                 className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-cyan-600 dark:group-hover:text-cyan-400 font-semibold transition-colors">Borrowed</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-cyan-600 dark:group-hover:text-cyan-400 font-bold transition-colors">Borrowed</span>
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-cyan-600 dark:text-cyan-400 mt-1">
@@ -382,7 +379,7 @@ export const HomePage: React.FC = () => {
                 className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-rose-600 dark:group-hover:text-rose-400 font-semibold transition-colors">Sold Archive</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-rose-600 dark:group-hover:text-rose-400 font-bold transition-colors">Sold Archive</span>
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-rose-600 dark:text-rose-400 mt-1">
@@ -395,7 +392,7 @@ export const HomePage: React.FC = () => {
                 className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-[var(--accent)] font-semibold transition-colors">Wishlist</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-[var(--accent)] font-bold transition-colors">Wishlist</span>
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-[var(--accent)] mt-1">

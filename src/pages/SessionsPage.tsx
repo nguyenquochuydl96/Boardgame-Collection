@@ -376,8 +376,8 @@ export const SessionsPage: React.FC = () => {
                 className={cn(
                   'px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border select-none',
                   selectedPlayerIds.length > 0
-                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
+                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-700 dark:text-amber-300'
+                    : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
               >
                 <Users className="w-3.5 h-3.5" />
@@ -398,8 +398,8 @@ export const SessionsPage: React.FC = () => {
                 className={cn(
                   'px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border select-none',
                   selectedGameIds.length > 0
-                    ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
+                    ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
               >
                 <Gamepad2 className="w-3.5 h-3.5" />
@@ -420,8 +420,8 @@ export const SessionsPage: React.FC = () => {
                 className={cn(
                   'px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border select-none',
                   selectedYears.length > 0 || selectedMonths.length > 0
-                    ? 'bg-sky-500/20 border-sky-500/50 text-sky-300'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
+                    ? 'bg-sky-500/20 border-sky-500/50 text-sky-700 dark:text-sky-300'
+                    : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
               >
                 <Calendar className="w-3.5 h-3.5" />
@@ -439,8 +439,8 @@ export const SessionsPage: React.FC = () => {
                 className={cn(
                   'px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border select-none',
                   isFilterPanelOpen
-                    ? 'bg-[var(--accent-primary)] text-white border-transparent'
-                    : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-transparent'
+                    : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
                 title="Toggle advanced filter drawer"
               >
@@ -457,17 +457,17 @@ export const SessionsPage: React.FC = () => {
 
           {/* EXPANDABLE MULTI-SELECT FILTER DRAWER */}
           {isFilterPanelOpen && (
-            <div className="pt-3 border-t border-[var(--border-subtle)] space-y-4 animate-in fade-in duration-200">
+            <div className="pt-3 border-t border-[var(--line)] space-y-4 animate-in fade-in duration-200">
               {/* Tab Navigation */}
-              <div className="flex p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] gap-1">
+              <div className="flex p-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)] gap-1">
                 <button
                   type="button"
                   onClick={() => setActiveFilterTab('players')}
                   className={cn(
                     'flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none',
                     activeFilterTab === 'players'
-                      ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                      : 'text-[var(--text-secondary)] hover:text-white'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)]'
                   )}
                 >
                   <Users className="w-3.5 h-3.5" />
@@ -479,8 +479,8 @@ export const SessionsPage: React.FC = () => {
                   className={cn(
                     'flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none',
                     activeFilterTab === 'games'
-                      ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                      : 'text-[var(--text-secondary)] hover:text-white'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)]'
                   )}
                 >
                   <Gamepad2 className="w-3.5 h-3.5" />
@@ -492,8 +492,8 @@ export const SessionsPage: React.FC = () => {
                   className={cn(
                     'flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none',
                     activeFilterTab === 'time'
-                      ? 'bg-[var(--accent-primary)] text-white shadow-md'
-                      : 'text-[var(--text-secondary)] hover:text-white'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)]'
                   )}
                 >
                   <Calendar className="w-3.5 h-3.5" />
@@ -503,12 +503,12 @@ export const SessionsPage: React.FC = () => {
 
               {/* TAB 1: MULTI-PLAYER FILTER */}
               {activeFilterTab === 'players' && (
-                <div className="space-y-3 bg-[var(--bg-surface)]/60 p-3.5 rounded-xl border border-[var(--border-subtle)]">
+                <div className="space-y-3 bg-[var(--card)] p-3.5 rounded-xl border border-[var(--line)]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     {/* Match Mode Toggle */}
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-[var(--text-secondary)] font-medium">Match mode:</span>
-                      <div className="flex p-0.5 rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+                      <span className="text-xs text-[var(--muted)] font-medium">Match mode:</span>
+                      <div className="flex p-0.5 rounded-lg bg-[var(--card-2)] border border-[var(--line)]">
                         <button
                           type="button"
                           onClick={() => setPlayerMatchMode('or')}
@@ -516,7 +516,7 @@ export const SessionsPage: React.FC = () => {
                             'px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer',
                             playerMatchMode === 'or'
                               ? 'bg-amber-500 text-slate-950 shadow-sm'
-                              : 'text-[var(--text-secondary)] hover:text-white'
+                              : 'text-[var(--muted)] hover:text-[var(--ink)]'
                           )}
                           title="Sessions with any of the selected players"
                         >
@@ -529,7 +529,7 @@ export const SessionsPage: React.FC = () => {
                             'px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer',
                             playerMatchMode === 'and'
                               ? 'bg-amber-500 text-slate-950 shadow-sm'
-                              : 'text-[var(--text-secondary)] hover:text-white'
+                              : 'text-[var(--muted)] hover:text-[var(--ink)]'
                           )}
                           title="Sessions where all selected players played together"
                         >
@@ -543,15 +543,15 @@ export const SessionsPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedPlayerIds(players.map((p) => p.id))}
-                        className="text-[var(--accent-neon)] font-bold hover:underline cursor-pointer"
+                        className="text-[var(--accent)] font-bold hover:underline cursor-pointer"
                       >
                         Select All ({players.length})
                       </button>
-                      <span className="text-[var(--text-muted)]">|</span>
+                      <span className="text-[var(--muted)]">|</span>
                       <button
                         type="button"
                         onClick={() => setSelectedPlayerIds([])}
-                        className="text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
+                        className="text-[var(--muted)] hover:text-[var(--ink)] hover:underline cursor-pointer"
                       >
                         Clear All
                       </button>
@@ -577,20 +577,20 @@ export const SessionsPage: React.FC = () => {
                           className={cn(
                             'p-2 rounded-xl border flex items-center justify-between gap-2 transition-all cursor-pointer select-none text-left',
                             isSelected
-                              ? 'bg-amber-500/15 border-amber-500/50 text-white shadow-sm'
-                              : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
+                              ? 'bg-amber-500/15 border-amber-500/50 text-[var(--ink)] shadow-sm'
+                              : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
                           )}
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <PlayerAvatar player={p} size="sm" />
-                            <span className="text-xs font-bold truncate">{p.name}</span>
+                            <span className="text-xs font-bold truncate text-[var(--ink)]">{p.name}</span>
                           </div>
                           <div
                             className={cn(
                               'w-4 h-4 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold',
                               isSelected
                                 ? 'bg-amber-500 text-slate-950'
-                                : 'border border-[var(--border-subtle)]'
+                                : 'border border-[var(--line)]'
                             )}
                           >
                             {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
@@ -604,32 +604,32 @@ export const SessionsPage: React.FC = () => {
 
               {/* TAB 2: MULTI-GAME FILTER */}
               {activeFilterTab === 'games' && (
-                <div className="space-y-3 bg-[var(--bg-surface)]/60 p-3.5 rounded-xl border border-[var(--border-subtle)]">
+                <div className="space-y-3 bg-[var(--card)] p-3.5 rounded-xl border border-[var(--line)]">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <span className="text-xs text-[var(--text-secondary)]">
+                    <span className="text-xs text-[var(--muted)]">
                       Select one or more played games:
                     </span>
                     <div className="flex items-center gap-2 text-xs">
                       <button
                         type="button"
                         onClick={() => setSelectedGameIds(gamesWithPlays.slice(0, 10).map((g) => g.id))}
-                        className="text-emerald-400 font-bold hover:underline cursor-pointer"
+                        className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
                       >
                         Top 10 Popular
                       </button>
-                      <span className="text-[var(--text-muted)]">|</span>
+                      <span className="text-[var(--muted)]">|</span>
                       <button
                         type="button"
                         onClick={() => setSelectedGameIds(gamesWithPlays.map((g) => g.id))}
-                        className="text-[var(--accent-neon)] font-bold hover:underline cursor-pointer"
+                        className="text-[var(--accent)] font-bold hover:underline cursor-pointer"
                       >
                         Select All ({gamesWithPlays.length})
                       </button>
-                      <span className="text-[var(--text-muted)]">|</span>
+                      <span className="text-[var(--muted)]">|</span>
                       <button
                         type="button"
                         onClick={() => setSelectedGameIds([])}
-                        className="text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
+                        className="text-[var(--muted)] hover:text-[var(--ink)] hover:underline cursor-pointer"
                       >
                         Clear All
                       </button>
@@ -655,8 +655,8 @@ export const SessionsPage: React.FC = () => {
                           className={cn(
                             'p-2 rounded-xl border flex items-center justify-between gap-2.5 transition-all cursor-pointer select-none text-left',
                             isSelected
-                              ? 'bg-emerald-500/15 border-emerald-500/50 text-white shadow-sm'
-                              : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
+                              ? 'bg-emerald-500/15 border-emerald-500/50 text-[var(--ink)] shadow-sm'
+                              : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
                           )}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
@@ -664,16 +664,16 @@ export const SessionsPage: React.FC = () => {
                               <img
                                 src={g.thumbnail}
                                 alt={g.name}
-                                className="w-8 h-8 rounded-lg object-cover bg-slate-900 shrink-0 border border-white/10"
+                                className="w-8 h-8 rounded-lg object-cover bg-slate-900 shrink-0 border border-[var(--line)]"
                               />
                             ) : (
-                              <div className="w-8 h-8 rounded-lg bg-[var(--bg-surface)] flex items-center justify-center text-sm shrink-0">
+                              <div className="w-8 h-8 rounded-lg bg-[var(--card-3)] flex items-center justify-center text-sm shrink-0">
                                 🎲
                               </div>
                             )}
                             <div className="min-w-0">
-                              <h4 className="text-xs font-bold truncate">{g.name}</h4>
-                              <p className="text-[10px] text-[var(--text-muted)] tabular-nums">
+                              <h4 className="text-xs font-bold truncate text-[var(--ink)]">{g.name}</h4>
+                              <p className="text-[10px] text-[var(--muted)] tabular-nums">
                                 {g.plays} {g.plays === 1 ? 'play' : 'plays'}
                               </p>
                             </div>
@@ -683,7 +683,7 @@ export const SessionsPage: React.FC = () => {
                               'w-4 h-4 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold',
                               isSelected
                                 ? 'bg-emerald-500 text-slate-950'
-                                : 'border border-[var(--border-subtle)]'
+                                : 'border border-[var(--line)]'
                             )}
                           >
                             {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
@@ -697,24 +697,24 @@ export const SessionsPage: React.FC = () => {
 
               {/* TAB 3: MULTI-YEAR & MULTI-MONTH FILTER */}
               {activeFilterTab === 'time' && (
-                <div className="space-y-4 bg-[var(--bg-surface)]/60 p-3.5 rounded-xl border border-[var(--border-subtle)]">
+                <div className="space-y-4 bg-[var(--card)] p-3.5 rounded-xl border border-[var(--line)]">
                   {/* Years Section */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-[var(--text-primary)]">Filter by Year:</span>
+                      <span className="font-bold text-[var(--ink)]">Filter by Year:</span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setSelectedYears([...availableYears])}
-                          className="text-sky-400 font-bold hover:underline cursor-pointer"
+                          className="text-sky-600 dark:text-sky-400 font-bold hover:underline cursor-pointer"
                         >
                           All Years
                         </button>
-                        <span className="text-[var(--text-muted)]">|</span>
+                        <span className="text-[var(--muted)]">|</span>
                         <button
                           type="button"
                           onClick={() => setSelectedYears([])}
-                          className="text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
+                          className="text-[var(--muted)] hover:text-[var(--ink)] hover:underline cursor-pointer"
                         >
                           Clear Years
                         </button>
@@ -733,7 +733,7 @@ export const SessionsPage: React.FC = () => {
                               'px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer border select-none',
                               isSelected
                                 ? 'bg-sky-500 text-slate-950 border-sky-400 shadow-sm'
-                                : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
+                                : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                             )}
                           >
                             Year {yr}
@@ -744,22 +744,22 @@ export const SessionsPage: React.FC = () => {
                   </div>
 
                   {/* Months Section */}
-                  <div className="space-y-2 pt-3 border-t border-[var(--border-subtle)]">
+                  <div className="space-y-2 pt-3 border-t border-[var(--line)]">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-[var(--text-primary)]">Filter by Month:</span>
+                      <span className="font-bold text-[var(--ink)]">Filter by Month:</span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setSelectedMonths([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])}
-                          className="text-sky-400 font-bold hover:underline cursor-pointer"
+                          className="text-sky-600 dark:text-sky-400 font-bold hover:underline cursor-pointer"
                         >
                           All 12 Months
                         </button>
-                        <span className="text-[var(--text-muted)]">|</span>
+                        <span className="text-[var(--muted)]">|</span>
                         <button
                           type="button"
                           onClick={() => setSelectedMonths([])}
-                          className="text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
+                          className="text-[var(--muted)] hover:text-[var(--ink)] hover:underline cursor-pointer"
                         >
                           Clear Months
                         </button>
@@ -779,7 +779,7 @@ export const SessionsPage: React.FC = () => {
                               'py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border select-none text-center',
                               isSelected
                                 ? 'bg-sky-500 text-slate-950 border-sky-400 font-bold shadow-sm'
-                                : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white'
+                                : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                             )}
                           >
                             {mName}
@@ -795,9 +795,9 @@ export const SessionsPage: React.FC = () => {
 
           {/* ACTIVE FILTER CHIPS & SUMMARY BAR */}
           {(searchQuery || activeFiltersCount > 0) && (
-            <div className="pt-2 border-t border-[var(--border-subtle)] space-y-2">
+            <div className="pt-2 border-t border-[var(--line)] space-y-2">
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] font-medium text-[var(--text-muted)] mr-1">
+                <span className="text-[11px] font-medium text-[var(--muted)] mr-1">
                   Filtering:
                 </span>
 
@@ -806,7 +806,7 @@ export const SessionsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setPlayerMatchMode((m) => (m === 'or' ? 'and' : 'or'))}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 cursor-pointer"
                     title="Toggle between Together (AND) and Any (OR)"
                   >
                     <span>Match: {playerMatchMode === 'and' ? 'Together (AND)' : 'Any (OR)'}</span>
@@ -820,13 +820,13 @@ export const SessionsPage: React.FC = () => {
                   return (
                     <span
                       key={pid}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30"
                     >
                       <span>👥 {p ? p.name : 'Player'}</span>
                       <button
                         type="button"
                         onClick={() => togglePlayer(pid)}
-                        className="hover:text-white ml-0.5 cursor-pointer"
+                        className="hover:text-[var(--ink)] ml-0.5 cursor-pointer"
                         title="Remove player filter"
                       >
                         <X className="w-3 h-3" />
@@ -841,13 +841,13 @@ export const SessionsPage: React.FC = () => {
                   return (
                     <span
                       key={gid}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
                     >
                       <span>🎲 {g ? g.name : 'Game'}</span>
                       <button
                         type="button"
                         onClick={() => toggleGame(gid)}
-                        className="hover:text-white ml-0.5 cursor-pointer"
+                        className="hover:text-[var(--ink)] ml-0.5 cursor-pointer"
                         title="Remove game filter"
                       >
                         <X className="w-3 h-3" />
@@ -860,13 +860,13 @@ export const SessionsPage: React.FC = () => {
                 {selectedYears.map((yr) => (
                   <span
                     key={yr}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30"
                   >
                     <span>📅 {yr}</span>
                     <button
                       type="button"
                       onClick={() => toggleYear(yr)}
-                      className="hover:text-white ml-0.5 cursor-pointer"
+                      className="hover:text-[var(--ink)] ml-0.5 cursor-pointer"
                       title="Remove year filter"
                     >
                       <X className="w-3 h-3" />
@@ -878,13 +878,13 @@ export const SessionsPage: React.FC = () => {
                 {selectedMonths.map((mNum) => (
                   <span
                     key={mNum}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-sky-500/15 text-sky-300 border border-sky-500/30"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30"
                   >
                     <span>🗓️ {MONTH_NAMES[mNum - 1]}</span>
                     <button
                       type="button"
                       onClick={() => toggleMonth(mNum)}
-                      className="hover:text-white ml-0.5 cursor-pointer"
+                      className="hover:text-[var(--ink)] ml-0.5 cursor-pointer"
                       title="Remove month filter"
                     >
                       <X className="w-3 h-3" />
@@ -896,15 +896,15 @@ export const SessionsPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleResetFilters}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-400 hover:text-rose-300 hover:underline cursor-pointer ml-auto"
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:text-rose-500 hover:underline cursor-pointer ml-auto"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>Clear all filters</span>
                 </button>
               </div>
 
-              <div className="text-xs text-[var(--text-secondary)]">
-                Showing <strong className="text-white font-bold">{filteredSessions.length}</strong> of {sessions.length} sessions
+              <div className="text-xs text-[var(--muted)]">
+                Showing <strong className="text-[var(--ink)] font-bold">{filteredSessions.length}</strong> of {sessions.length} sessions
               </div>
             </div>
           )}
@@ -915,12 +915,12 @@ export const SessionsPage: React.FC = () => {
           <div className="space-y-8">
             {groupedByMonth.map((group) => (
               <section key={group.monthLabel} className="space-y-3">
-                <div className="sticky top-14 lg:top-0 z-20 py-2 px-3.5 rounded-xl bg-[var(--bg-surface)]/95 backdrop-blur-md border border-[var(--border-subtle)] inline-flex items-center gap-2 shadow-sm">
-                  <Calendar className="w-4 h-4 text-[var(--accent-neon)]" />
-                  <h2 className="font-display font-bold text-sm text-[var(--text-primary)]">
+                <div className="sticky top-14 lg:top-0 z-20 py-2 px-3.5 rounded-xl bg-[var(--card)]/95 backdrop-blur-md border border-[var(--line)] inline-flex items-center gap-2 shadow-sm">
+                  <Calendar className="w-4 h-4 text-[var(--accent)]" />
+                  <h2 className="font-display font-bold text-sm text-[var(--ink)]">
                     {group.monthLabel}
                   </h2>
-                  <span className="text-xs font-mono text-[var(--text-secondary)] tabular-nums">
+                  <span className="text-xs font-mono text-[var(--muted)] tabular-nums">
                     ({group.items.length})
                   </span>
                 </div>
@@ -996,7 +996,7 @@ export const SessionsPage: React.FC = () => {
         <Link
           to="/sessions/new"
           aria-label="New Session"
-          className="fixed right-5 bottom-20 lg:bottom-8 z-30 min-h-[52px] px-5 rounded-2xl bg-[image:var(--gradient-hero)] text-white font-display font-bold text-sm shadow-xl shadow-[var(--accent-glow)] inline-flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform"
+          className="fixed right-5 bottom-20 lg:bottom-8 z-30 min-h-[52px] px-5 rounded-2xl bg-[var(--accent)] text-[var(--accent-ink)] font-display font-extrabold text-sm shadow-xl shadow-[var(--accent)]/20 inline-flex items-center gap-2 hover:scale-105 active:scale-95 transition-transform"
         >
           <Plus className="w-5 h-5" />
           <span>New Session</span>

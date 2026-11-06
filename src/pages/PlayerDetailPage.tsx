@@ -279,10 +279,10 @@ export const PlayerDetailPage: React.FC = () => {
           <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-400 mx-auto flex items-center justify-center text-3xl">
             👤
           </div>
-          <h1 className="font-display font-bold text-2xl text-white">
+          <h1 className="font-display font-bold text-2xl text-[var(--ink)]">
             Player Not Found
           </h1>
-          <p className="text-sm text-[var(--text-secondary)]">
+          <p className="text-sm text-[var(--muted)]">
             This player profile does not exist or has been deleted.
           </p>
           <Link to="/players">
@@ -300,7 +300,7 @@ export const PlayerDetailPage: React.FC = () => {
         <div className="flex items-center justify-between gap-3">
           <Link
             to="/players"
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--text-secondary)] hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Players Roster</span>
@@ -311,7 +311,7 @@ export const PlayerDetailPage: React.FC = () => {
               variant="secondary"
               size="sm"
               onClick={() => setIsEditModalOpen(true)}
-              className="border-amber-500/40 text-amber-300 hover:bg-amber-500/10 shadow-sm"
+              className="border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 shadow-sm"
             >
               <Edit3 className="w-4 h-4 mr-1.5" />
               Edit Profile
@@ -324,7 +324,7 @@ export const PlayerDetailPage: React.FC = () => {
         </div>
 
         {/* HERO PROFILE CARD */}
-        <Card className="p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden border-2 border-[var(--border-subtle)]">
+        <Card className="p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative overflow-hidden bg-[var(--card)] border border-[var(--line)]">
           {/* Subtle signature color background glow */}
           <div
             style={{
@@ -346,11 +346,11 @@ export const PlayerDetailPage: React.FC = () => {
 
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-white">
+                <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--ink)]">
                   {player.name}
                 </h1>
                 {player.nickname && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                     "{player.nickname}"
                   </span>
                 )}
@@ -358,10 +358,10 @@ export const PlayerDetailPage: React.FC = () => {
 
               {/* Play Style Badge */}
               {playStyleInfo && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs font-bold text-white shadow-sm">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)] text-xs font-bold text-[var(--ink)] shadow-sm">
                   <span className="text-base">{playStyleInfo.emoji}</span>
-                  <span className="text-amber-300">{playStyleInfo.label}</span>
-                  <span className="text-[var(--text-muted)] font-normal hidden sm:inline">
+                  <span className="text-amber-700 dark:text-amber-300">{playStyleInfo.label}</span>
+                  <span className="text-[var(--muted)] font-normal hidden sm:inline">
                     · {playStyleInfo.tagline}
                   </span>
                 </div>
@@ -369,14 +369,14 @@ export const PlayerDetailPage: React.FC = () => {
 
               {/* Bio / Quote */}
               {player.bio && (
-                <p className="text-xs sm:text-sm text-[var(--text-secondary)] italic flex items-center gap-1.5 max-w-md">
-                  <Quote className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <p className="text-xs sm:text-sm text-[var(--muted)] italic flex items-center gap-1.5 max-w-md">
+                  <Quote className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 shrink-0" />
                   <span>"{player.bio}"</span>
                 </p>
               )}
 
-              <p className="text-xs text-[var(--text-muted)] inline-flex items-center gap-1.5 pt-0.5">
-                <Calendar className="w-3.5 h-3.5 text-purple-400" />
+              <p className="text-xs text-[var(--muted)] inline-flex items-center gap-1.5 pt-0.5">
+                <Calendar className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
                 Member since {formatDate(player.createdAt)}
               </p>
             </div>
@@ -385,36 +385,36 @@ export const PlayerDetailPage: React.FC = () => {
           {/* 5 INTERACTIVE QUICK STAT BADGES */}
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 w-full lg:w-auto tabular-nums">
             {/* 1. Total Plays */}
-            <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[95px]">
-              <span className="text-[11px] text-[var(--text-secondary)] block">Total Plays</span>
-              <p className="font-display font-extrabold text-xl text-white mt-0.5">
+            <div className="p-3 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] text-center min-w-[95px]">
+              <span className="text-[11px] text-[var(--muted)] block">Total Plays</span>
+              <p className="font-display font-extrabold text-xl text-[var(--ink)] mt-0.5">
                 {totalPlays}
               </p>
             </div>
 
             {/* 2. Win Rate */}
-            <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[95px]">
-              <span className="text-[11px] text-[var(--text-secondary)] block">Win Rate</span>
-              <p className="font-display font-extrabold text-xl text-emerald-400 mt-0.5">
+            <div className="p-3 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] text-center min-w-[95px]">
+              <span className="text-[11px] text-[var(--muted)] block">Win Rate</span>
+              <p className="font-display font-extrabold text-xl text-emerald-700 dark:text-emerald-400 mt-0.5">
                 {overallWinRate}%
               </p>
-              <span className="text-[10px] text-[var(--text-muted)]">({totalWins} wins)</span>
+              <span className="text-[10px] text-[var(--muted)]">({totalWins} wins)</span>
             </div>
 
             {/* 3. Win Streak (Clickable) */}
             <div
               onClick={() => setActiveStreakType('win')}
-              className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-amber-500/30 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/15 text-center min-w-[105px] cursor-pointer transition-all select-none group"
+              className="p-3 rounded-2xl bg-[var(--card-2)] border border-amber-500/30 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/15 text-center min-w-[105px] cursor-pointer transition-all select-none group"
               title="Click to view winning streak history"
             >
-              <div className="flex items-center justify-center gap-1 text-[11px] text-amber-400 font-bold group-hover:text-amber-300">
-                <Flame className="w-3.5 h-3.5 fill-current text-orange-400" />
+              <div className="flex items-center justify-center gap-1 text-[11px] text-amber-700 dark:text-amber-400 font-bold group-hover:text-amber-600 dark:group-hover:text-amber-300">
+                <Flame className="w-3.5 h-3.5 fill-current text-orange-500 dark:text-orange-400" />
                 <span>Win Streak</span>
               </div>
-              <p className="font-display font-black text-xl text-white mt-0.5 group-hover:text-amber-300 transition-colors">
+              <p className="font-display font-black text-xl text-[var(--ink)] mt-0.5 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
                 {streaks.longestWinStreak.count}W
               </p>
-              <span className="text-[10px] text-amber-400/90 group-hover:underline flex items-center justify-center gap-0.5 mt-0.5 font-medium">
+              <span className="text-[10px] text-amber-700 dark:text-amber-400/90 group-hover:underline flex items-center justify-center gap-0.5 mt-0.5 font-medium">
                 Details <ChevronRight className="w-2.5 h-2.5" />
               </span>
             </div>
@@ -422,38 +422,38 @@ export const PlayerDetailPage: React.FC = () => {
             {/* 4. Loss Streak (Clickable) */}
             <div
               onClick={() => setActiveStreakType('loss')}
-              className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-rose-500/30 hover:border-rose-400 hover:shadow-lg hover:shadow-rose-500/15 text-center min-w-[105px] cursor-pointer transition-all select-none group"
+              className="p-3 rounded-2xl bg-[var(--card-2)] border border-rose-500/30 hover:border-rose-400 hover:shadow-lg hover:shadow-rose-500/15 text-center min-w-[105px] cursor-pointer transition-all select-none group"
               title="Click to view losing streak history"
             >
-              <div className="flex items-center justify-center gap-1 text-[11px] text-rose-400 font-bold group-hover:text-rose-300">
-                <CloudRain className="w-3.5 h-3.5 text-rose-400" />
+              <div className="flex items-center justify-center gap-1 text-[11px] text-rose-700 dark:text-rose-400 font-bold group-hover:text-rose-600 dark:group-hover:text-rose-300">
+                <CloudRain className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
                 <span>Loss Streak</span>
               </div>
-              <p className="font-display font-black text-xl text-white mt-0.5 group-hover:text-rose-300 transition-colors">
+              <p className="font-display font-black text-xl text-[var(--ink)] mt-0.5 group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors">
                 {streaks.longestLossStreak.count}L
               </p>
-              <span className="text-[10px] text-rose-400/90 group-hover:underline flex items-center justify-center gap-0.5 mt-0.5 font-medium">
+              <span className="text-[10px] text-rose-700 dark:text-rose-400/90 group-hover:underline flex items-center justify-center gap-0.5 mt-0.5 font-medium">
                 Details <ChevronRight className="w-2.5 h-2.5" />
               </span>
             </div>
 
             {/* 5. Nemesis / Total Wins */}
             {rivalInfo && rivalInfo.player ? (
-              <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-purple-500/30 text-center min-w-[105px]">
-                <span className="text-[11px] text-purple-300 block flex items-center justify-center gap-1">
+              <div className="p-3 rounded-2xl bg-[var(--card-2)] border border-purple-500/30 text-center min-w-[105px]">
+                <span className="text-[11px] text-purple-700 dark:text-purple-300 block flex items-center justify-center gap-1">
                   <Swords className="w-3 h-3" /> Top Nemesis
                 </span>
-                <p className="font-display font-bold text-xs text-white truncate mt-1">
+                <p className="font-display font-bold text-xs text-[var(--ink)] truncate mt-1">
                   {rivalInfo.player.name}
                 </p>
-                <span className="text-[10px] text-amber-300 font-mono">
+                <span className="text-[10px] text-amber-700 dark:text-amber-300 font-mono">
                   {rivalInfo.playerWins} - {rivalInfo.rivalWins}
                 </span>
               </div>
             ) : (
-              <div className="p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center min-w-[95px]">
-                <span className="text-[11px] text-[var(--text-secondary)] block">Total Wins</span>
-                <p className="font-display font-extrabold text-xl text-amber-400 mt-0.5">
+              <div className="p-3 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] text-center min-w-[95px]">
+                <span className="text-[11px] text-[var(--muted)] block">Total Wins</span>
+                <p className="font-display font-extrabold text-xl text-amber-700 dark:text-amber-400 mt-0.5">
                   {totalWins}
                 </p>
               </div>
@@ -464,15 +464,15 @@ export const PlayerDetailPage: React.FC = () => {
         {/* 3 GAME IDENTITIES: FAVORITE, SIGNATURE, NEMESIS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* 1. FAVORITE GAME */}
-          <Card className="p-5 flex flex-col justify-between space-y-4 border-amber-500/30 bg-gradient-to-b from-amber-500/10 via-[var(--bg-surface)] to-[var(--bg-surface)]">
+          <Card className="p-5 flex flex-col justify-between space-y-4 border border-amber-500/30 bg-gradient-to-b from-amber-500/10 via-[var(--card)] to-[var(--card)]">
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-400">
+                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-400">
                   <Heart className="w-4 h-4 fill-current" />
                   Favorite Game
                 </span>
                 {favoriteGame?.isPinned && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                     Pinned
                   </span>
                 )}
@@ -494,29 +494,29 @@ export const PlayerDetailPage: React.FC = () => {
                   <div className="min-w-0 flex-1">
                     <Link
                       to={`/collection/${favoriteGame.gameId}`}
-                      className="font-display font-bold text-base text-white hover:text-amber-300 transition-colors truncate block"
+                      className="font-display font-bold text-base text-[var(--ink)] hover:text-amber-600 dark:hover:text-amber-300 transition-colors truncate block"
                     >
                       {favoriteGame.gameName}
                     </Link>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5 tabular-nums">
-                      Played <strong className="text-white">{favoriteGame.plays} {favoriteGame.plays === 1 ? 'play' : 'plays'}</strong> · Won{' '}
-                      <strong className="text-emerald-400">{favoriteGame.winRate}%</strong>
+                    <p className="text-xs text-[var(--muted)] mt-0.5 tabular-nums">
+                      Played <strong className="text-[var(--ink)]">{favoriteGame.plays} {favoriteGame.plays === 1 ? 'play' : 'plays'}</strong> · Won{' '}
+                      <strong className="text-emerald-700 dark:text-emerald-400">{favoriteGame.winRate}%</strong>
                     </p>
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-[var(--text-muted)] py-4">
+                <p className="text-xs text-[var(--muted)] py-4">
                   No game plays logged yet to determine favorite game.
                 </p>
               )}
             </div>
 
-            <div className="text-[11px] text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-2.5 flex items-center justify-between">
+            <div className="text-[11px] text-[var(--muted)] border-t border-[var(--line)] pt-2.5 flex items-center justify-between">
               <span>{favoriteGame?.isPinned ? 'Manually pinned favorite' : 'Most played game'}</span>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
-                className="text-amber-400 hover:underline cursor-pointer"
+                className="text-amber-700 dark:text-amber-400 font-bold hover:underline cursor-pointer"
               >
                 Change game →
               </button>
@@ -524,15 +524,15 @@ export const PlayerDetailPage: React.FC = () => {
           </Card>
 
           {/* 2. SIGNATURE / STRONGEST GAME */}
-          <Card className="p-5 flex flex-col justify-between space-y-4 border-emerald-500/30 bg-gradient-to-b from-emerald-500/10 via-[var(--bg-surface)] to-[var(--bg-surface)]">
+          <Card className="p-5 flex flex-col justify-between space-y-4 border border-emerald-500/30 bg-gradient-to-b from-emerald-500/10 via-[var(--card)] to-[var(--card)]">
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-400">
+                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                   <Trophy className="w-4 h-4" />
                   Signature Game
                 </span>
                 {signatureGame?.isPinned && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
                     Pinned
                   </span>
                 )}
@@ -554,34 +554,34 @@ export const PlayerDetailPage: React.FC = () => {
                   <div className="min-w-0 flex-1">
                     <Link
                       to={`/collection/${signatureGame.gameId}`}
-                      className="font-display font-bold text-base text-white hover:text-emerald-300 transition-colors truncate block"
+                      className="font-display font-bold text-base text-[var(--ink)] hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors truncate block"
                     >
                       {signatureGame.gameName}
                     </Link>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5 tabular-nums">
-                      Win rate: <strong className="text-emerald-400 font-bold">{signatureGame.winRate}%</strong>{' '}
+                    <p className="text-xs text-[var(--muted)] mt-0.5 tabular-nums">
+                      Win rate: <strong className="text-emerald-700 dark:text-emerald-400 font-bold">{signatureGame.winRate}%</strong>{' '}
                       ({signatureGame.wins}/{signatureGame.plays} plays)
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="py-4 px-3 text-center rounded-xl bg-[var(--bg-elevated)]/40 border border-white/5 space-y-1">
-                  <p className="text-xs text-[var(--text-secondary)] font-medium">
+                <div className="py-4 px-3 text-center rounded-xl bg-[var(--card-2)] border border-[var(--line)] space-y-1">
+                  <p className="text-xs text-[var(--muted)] font-medium">
                     Not enough data yet (minimum 5 plays required)
                   </p>
-                  <p className="text-[11px] text-[var(--text-muted)]">
+                  <p className="text-[11px] text-[var(--muted)]">
                     Requires at least 5 sessions to avoid playtest bias, or you can manually pin your specialty game.
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="text-[11px] text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-2.5 flex items-center justify-between">
+            <div className="text-[11px] text-[var(--muted)] border-t border-[var(--line)] pt-2.5 flex items-center justify-between">
               <span>{signatureGame?.isPinned ? 'Manually pinned specialty' : 'Highest win rate (≥ 5 plays)'}</span>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
-                className="text-emerald-400 hover:underline cursor-pointer"
+                className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
               >
                 Pin specialty →
               </button>
@@ -589,15 +589,15 @@ export const PlayerDetailPage: React.FC = () => {
           </Card>
 
           {/* 3. NEMESIS / WEAKNESS GAME */}
-          <Card className="p-5 flex flex-col justify-between space-y-4 border-rose-500/30 bg-gradient-to-b from-rose-500/10 via-[var(--bg-surface)] to-[var(--bg-surface)]">
+          <Card className="p-5 flex flex-col justify-between space-y-4 border border-rose-500/30 bg-gradient-to-b from-rose-500/10 via-[var(--card)] to-[var(--card)]">
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-rose-400">
+                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-rose-700 dark:text-rose-400">
                   <Skull className="w-4 h-4" />
                   Nemesis Game (Kryptonite)
                 </span>
                 {nemesisGame?.isPinned && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">
                     Pinned
                   </span>
                 )}
@@ -619,33 +619,33 @@ export const PlayerDetailPage: React.FC = () => {
                   <div className="min-w-0 flex-1">
                     <Link
                       to={`/collection/${nemesisGame.gameId}`}
-                      className="font-display font-bold text-base text-white hover:text-rose-300 transition-colors truncate block"
+                      className="font-display font-bold text-base text-[var(--ink)] hover:text-rose-600 dark:hover:text-rose-300 transition-colors truncate block"
                     >
                       {nemesisGame.gameName}
                     </Link>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5 tabular-nums">
+                    <p className="text-xs text-[var(--muted)] mt-0.5 tabular-nums">
                       Win rate: {nemesisGame.winRate}% ({nemesisGame.wins}/{nemesisGame.plays} plays) · Time for revenge!
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="py-4 px-3 text-center rounded-xl bg-[var(--bg-elevated)]/40 border border-white/5 space-y-1">
-                  <p className="text-xs text-[var(--text-secondary)] font-medium">
+                <div className="py-4 px-3 text-center rounded-xl bg-[var(--card-2)] border border-[var(--line)] space-y-1">
+                  <p className="text-xs text-[var(--muted)] font-medium">
                     No nemesis game detected (≥ 5 plays)
                   </p>
-                  <p className="text-[11px] text-[var(--text-muted)]">
+                  <p className="text-[11px] text-[var(--muted)]">
                     No game played 5+ times has a low win rate (≤ 40%), or you can manually pin your toughest game.
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="text-[11px] text-[var(--text-muted)] border-t border-[var(--border-subtle)] pt-2.5 flex items-center justify-between">
+            <div className="text-[11px] text-[var(--muted)] border-t border-[var(--line)] pt-2.5 flex items-center justify-between">
               <span>{nemesisGame?.isPinned ? 'Manually pinned nemesis' : 'Lowest win rate (≥ 5 plays)'}</span>
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
-                className="text-rose-400 hover:underline cursor-pointer"
+                className="text-rose-700 dark:text-rose-400 font-bold hover:underline cursor-pointer"
               >
                 Pin nemesis →
               </button>
@@ -654,13 +654,13 @@ export const PlayerDetailPage: React.FC = () => {
         </div>
 
         {/* PER-GAME BREAKDOWN TABLE WITH SEARCH & SORT */}
-        <Card className="p-6 space-y-4">
+        <Card className="p-6 space-y-4 bg-[var(--card)] border border-[var(--line)]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h2 className="font-display font-bold text-lg text-white">
+              <h2 className="font-display font-bold text-lg text-[var(--ink)]">
                 Detailed Per-Game Performance
               </h2>
-              <p className="text-xs text-[var(--text-secondary)]">
+              <p className="text-xs text-[var(--muted)]">
                 Competed across {perGameStats.length} different boardgame titles
               </p>
             </div>
@@ -670,7 +670,7 @@ export const PlayerDetailPage: React.FC = () => {
                 placeholder="Search played games..."
                 value={breakdownSearch}
                 onChange={(e) => setBreakdownSearch(e.target.value)}
-                leftIcon={<Search className="w-3.5 h-3.5 text-[var(--text-secondary)]" />}
+                leftIcon={<Search className="w-3.5 h-3.5 text-[var(--muted)]" />}
                 className="text-xs py-1.5 w-44 sm:w-56"
               />
 
@@ -678,7 +678,7 @@ export const PlayerDetailPage: React.FC = () => {
                 aria-label="Sort games list"
                 value={breakdownSort}
                 onChange={(e) => setBreakdownSort(e.target.value as any)}
-                className="px-2.5 py-1.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-white cursor-pointer focus:outline-none"
+                className="px-2.5 py-1.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] text-xs text-[var(--ink)] cursor-pointer focus:outline-none"
               >
                 <option value="plays">Most Plays</option>
                 <option value="winRate">Highest Win Rate</option>
@@ -693,7 +693,7 @@ export const PlayerDetailPage: React.FC = () => {
               {filteredBreakdown.map((item) => (
                 <div
                   key={item.gameId}
-                  className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors group"
+                  className="p-3 rounded-xl bg-[var(--card-2)] border border-[var(--line)] hover:border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors group"
                 >
                   <Link
                     to={`/collection/${item.gameId}`}
@@ -703,19 +703,19 @@ export const PlayerDetailPage: React.FC = () => {
                       <img
                         src={item.thumbnail}
                         alt={item.gameName}
-                        className="w-10 h-10 rounded-lg object-cover bg-slate-900 border border-white/10 shrink-0"
+                        className="w-10 h-10 rounded-lg object-cover bg-slate-900 border border-[var(--line)] shrink-0"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-lg shrink-0">
+                      <div className="w-10 h-10 rounded-lg bg-[var(--card-3)] flex items-center justify-center text-lg shrink-0">
                         🎲
                       </div>
                     )}
 
                     <div className="min-w-0">
-                      <h4 className="font-display font-bold text-sm text-white group-hover:text-amber-300 transition-colors truncate">
+                      <h4 className="font-display font-bold text-sm text-[var(--ink)] group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors truncate">
                         {item.gameName}
                       </h4>
-                      <p className="text-[11px] text-[var(--text-muted)] tabular-nums">
+                      <p className="text-[11px] text-[var(--muted)] tabular-nums">
                         {item.plays} {item.plays === 1 ? 'play' : 'plays'} · {item.wins} {item.wins === 1 ? 'win' : 'wins'}
                       </p>
                     </div>
@@ -724,16 +724,16 @@ export const PlayerDetailPage: React.FC = () => {
                   {/* Win Rate Progress Bar */}
                   <div className="flex items-center gap-3 sm:w-48 shrink-0">
                     <div className="flex-1">
-                      <div className="w-full h-2 rounded-full bg-[var(--bg-elevated)] overflow-hidden">
+                      <div className="w-full h-2 rounded-full bg-[var(--card-3)] overflow-hidden">
                         <div
                           style={{ width: `${item.winRate}%` }}
                           className={cn(
                             'h-full rounded-full transition-all duration-500',
                             item.winRate >= 50
-                              ? 'bg-emerald-400'
+                              ? 'bg-emerald-500'
                               : item.winRate >= 30
-                              ? 'bg-amber-400'
-                              : 'bg-rose-400'
+                              ? 'bg-amber-500'
+                              : 'bg-rose-500'
                           )}
                         />
                       </div>
@@ -742,10 +742,10 @@ export const PlayerDetailPage: React.FC = () => {
                       className={cn(
                         'text-xs font-mono font-bold w-12 text-right',
                         item.winRate >= 50
-                          ? 'text-emerald-400'
+                          ? 'text-emerald-700 dark:text-emerald-400'
                           : item.winRate >= 30
-                          ? 'text-amber-400'
-                          : 'text-rose-400'
+                          ? 'text-amber-700 dark:text-amber-400'
+                          : 'text-rose-700 dark:text-rose-400'
                       )}
                     >
                       {item.winRate}%
@@ -755,7 +755,7 @@ export const PlayerDetailPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-xs text-[var(--text-muted)]">
+            <div className="text-center py-8 text-xs text-[var(--muted)]">
               No games match your search query.
             </div>
           )}
@@ -764,7 +764,7 @@ export const PlayerDetailPage: React.FC = () => {
         {/* RECENT SESSIONS */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-display font-bold text-xl text-white">
+            <h2 className="font-display font-bold text-xl text-[var(--ink)]">
               Recent Sessions (Last 5 Plays)
             </h2>
             <Link

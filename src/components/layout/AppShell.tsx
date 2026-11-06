@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { motion } from 'motion/react';
 import {
   Dices,
   Plus,
@@ -11,6 +10,7 @@ import {
   CloudCheck,
   Sun,
   Moon,
+  Sparkles,
 } from 'lucide-react';
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
@@ -129,17 +129,32 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         aria-label="Sidebar navigation"
         className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30 bg-[var(--bg)] border-r border-[var(--line)]"
       >
-        <div className="flex items-center gap-3 px-6 h-20 border-b border-[var(--line)]">
+        {/* Brand Header */}
+        <div className="flex items-center gap-3 px-5 h-20 border-b border-[var(--line)]">
           <Link
             to="/"
-            className="flex items-center gap-3 group focus:outline-none"
+            className="flex items-center gap-3 group focus:outline-none min-w-0"
           >
-            <div className="w-9 h-9 rounded-[11px] bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-md shadow-[var(--accent)]/20 group-hover:scale-105 transition-transform duration-200">
-              <Dices className="w-5 h-5 text-current" />
+            {/* Distinctive stylized logo badge */}
+            <div className="relative w-10 h-10 rounded-[13px] bg-gradient-to-br from-[#0b7a73] via-[#08665f] to-[#043d39] dark:from-[#3cc2b5] dark:via-[#2ea69a] dark:to-[#175d56] flex items-center justify-center text-white dark:text-[#05201d] shadow-md shadow-[var(--accent)]/20 group-hover:scale-105 transition-transform duration-200 shrink-0 ring-2 ring-white/10 dark:ring-black/20">
+              <Dices className="w-5 h-5 text-current drop-shadow-sm" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 border-2 border-[var(--bg)] flex items-center justify-center">
+                <Sparkles className="w-2 h-2 text-slate-950" />
+              </div>
             </div>
-            <span className="font-display font-extrabold text-xl tracking-tight text-[var(--ink)] whitespace-nowrap">
-              BoardGame Vault
-            </span>
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="font-display font-black text-sm tracking-tight text-[var(--accent)] uppercase">
+                  Heo's
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)]">
+                  Vault
+                </span>
+              </div>
+              <span className="font-display font-extrabold text-sm tracking-tight text-[var(--ink)] truncate leading-tight">
+                Board Game Collection
+              </span>
+            </div>
           </Link>
         </div>
 
@@ -173,20 +188,20 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
         {/* Sidebar Footer Controls */}
         <div className="p-4 border-t border-[var(--line)] space-y-2.5">
-          {/* Fitlo Theme Mode Toggle */}
+          {/* Fitlo Theme Mode Toggle (High Contrast) */}
           <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] text-xs font-semibold text-[var(--ink-2)]">
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 font-bold text-[var(--ink)]">
               {themeMode === 'light' ? (
                 <Sun className="w-3.5 h-3.5 text-amber-600" />
               ) : (
                 <Moon className="w-3.5 h-3.5 text-teal-400" />
               )}
-              <span>{themeMode === 'light' ? 'Fitlo Light' : 'Fitlo Dark'}</span>
+              <span>{themeMode === 'light' ? 'Light Mode' : 'Dark Mode'}</span>
             </span>
             <button
               type="button"
               onClick={toggleTheme}
-              className="px-2.5 py-1 rounded-lg bg-[var(--card)] text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--line-2)] hover:bg-[var(--card-3)] transition-colors cursor-pointer text-xs font-bold"
+              className="px-2.5 py-1 rounded-lg bg-[var(--card)] text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--line-2)] hover:bg-[var(--card-3)] transition-colors cursor-pointer text-xs font-extrabold"
             >
               Switch
             </button>
@@ -210,17 +225,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             variant="ghost"
             size="sm"
             className={cn(
-              'w-full justify-center text-xs transition-colors',
+              'w-full justify-center text-xs transition-colors font-semibold',
               isSyncEnabled
                 ? syncStatus === 'error'
-                  ? 'text-rose-500 bg-rose-500/10'
-                  : 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                  ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
+                  : 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10'
                 : 'text-[var(--muted)] hover:text-[var(--ink)]'
             )}
             onClick={() => setShowSyncModal(true)}
           >
             {isSyncEnabled ? (
-              <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-500" />
+              <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
             ) : (
               <Cloud className="w-3.5 h-3.5 mr-1.5 text-cyan-600 dark:text-cyan-400" />
             )}
@@ -233,7 +248,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-center text-xs text-[var(--muted)] hover:text-[var(--ink)]"
+            className="w-full justify-center text-xs text-[var(--muted)] hover:text-[var(--ink)] font-semibold"
             onClick={() => setShowBGGModal(true)}
           >
             <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722]" />
@@ -263,13 +278,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       <header className="lg:hidden sticky top-0 z-30 h-14 pt-[env(safe-area-inset-top)] px-3 sm:px-4 flex items-center justify-between gap-2 bg-[var(--bg)]/90 backdrop-blur-xl border-b border-[var(--line)]">
         <Link
           to="/"
-          className="font-display font-bold text-sm sm:text-base tracking-tight text-[var(--ink)] whitespace-nowrap shrink-0 flex items-center gap-2"
+          className="font-display font-bold text-sm tracking-tight text-[var(--ink)] whitespace-nowrap shrink-0 flex items-center gap-2"
         >
-          <span className="w-7 h-7 rounded-lg bg-[var(--accent)] text-[var(--accent-ink)] inline-flex items-center justify-center shrink-0 shadow-sm">
+          <span className="w-7 h-7 rounded-[9px] bg-[var(--accent)] text-[var(--accent-ink)] inline-flex items-center justify-center shrink-0 shadow-sm">
             <Dices className="w-4 h-4 text-current" />
           </span>
-          <span className="hidden xs:inline">BoardGame Vault</span>
-          <span className="xs:hidden">Vault</span>
+          <div className="flex flex-col">
+            <span className="font-extrabold text-xs leading-none text-[var(--ink)]">Heo's Collection</span>
+            <span className="text-[9px] font-bold text-[var(--accent-text)] uppercase tracking-tight">Board Games</span>
+          </div>
         </Link>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -291,10 +308,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <button
               type="button"
               onClick={() => setShowInstallModal(true)}
-              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold inline-flex items-center gap-1 transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
-              title="Install BoardGame Vault on your mobile home screen"
+              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold inline-flex items-center gap-1 transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
+              title="Install on your mobile home screen"
             >
-              <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
+              <Smartphone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Install</span>
             </button>
           )}
@@ -308,13 +325,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               isSyncEnabled
                 ? syncStatus === 'error'
                   ? 'text-rose-500 bg-rose-500/10'
-                  : 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                  : 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/10'
                 : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
             )}
             title={isSyncEnabled ? 'Cloud Synced' : 'Connect Cloud Sync'}
           >
             {isSyncEnabled ? (
-              <CloudCheck className="w-4 h-4 text-emerald-500" />
+              <CloudCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             ) : (
               <Cloud className="w-4 h-4" />
             )}
@@ -334,7 +351,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
           <Link
             to="/sessions/new"
-            className="min-h-[34px] sm:min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-[var(--accent)] text-xs font-semibold text-[var(--accent-ink)] inline-flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0 active:scale-95 transition-transform"
+            className="min-h-[34px] sm:min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-[var(--accent)] text-xs font-bold text-[var(--accent-ink)] inline-flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0 active:scale-95 transition-transform"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span className="hidden xs:inline">New Session</span>

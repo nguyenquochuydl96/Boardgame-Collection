@@ -173,7 +173,7 @@ export const PickerPage: React.FC = () => {
           </div>
 
           {/* Mode Switcher with sliding spring pill */}
-          <div className="flex p-1.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-fit">
+          <div className="flex p-1.5 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] w-fit">
             <button
               type="button"
               onClick={() => {
@@ -183,18 +183,18 @@ export const PickerPage: React.FC = () => {
               className={cn(
                 'relative px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 select-none',
                 mode === 'first_player'
-                  ? 'text-white'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'text-[var(--accent-ink)]'
+                  : 'text-[var(--muted)] hover:text-[var(--ink)]'
               )}
             >
               {mode === 'first_player' && (
                 <motion.span
                   layoutId="picker-mode-pill"
-                  className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] shadow-md -z-10"
+                  className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md -z-10"
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
-              <Crown className="w-4 h-4 text-amber-400 relative z-10" />
+              <Crown className="w-4 h-4 text-amber-500 dark:text-amber-400 relative z-10" />
               <span className="relative z-10">Determine First Player</span>
             </button>
             <button
@@ -206,18 +206,18 @@ export const PickerPage: React.FC = () => {
               className={cn(
                 'relative px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 select-none',
                 mode === 'what_to_play'
-                  ? 'text-white'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'text-[var(--accent-ink)]'
+                  : 'text-[var(--muted)] hover:text-[var(--ink)]'
               )}
             >
               {mode === 'what_to_play' && (
                 <motion.span
                   layoutId="picker-mode-pill"
-                  className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] shadow-md -z-10"
+                  className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md -z-10"
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
-              <Dices className="w-4 h-4 text-[var(--accent-neon)] relative z-10" />
+              <Dices className="w-4 h-4 text-[var(--accent)] relative z-10" />
               <span className="relative z-10">What to Play Tonight?</span>
             </button>
           </div>
@@ -325,14 +325,14 @@ export const PickerPage: React.FC = () => {
                       />
                     )}
                     <div className="min-w-0">
-                      <div className="text-[10px] font-mono text-amber-300 font-bold uppercase tracking-wider">
+                      <div className="text-[10px] font-mono text-amber-700 dark:text-amber-300 font-bold uppercase tracking-wider">
                         {mode === 'first_player' ? '👑 First Player' : '🎯 Game Tonight'}
                       </div>
-                      <h4 className="font-display font-extrabold text-sm sm:text-base text-white truncate">
+                      <h4 className="font-display font-extrabold text-sm sm:text-base text-[var(--ink)] truncate">
                         {chosenResult.name}
                       </h4>
                       {chosenResult.subtitle && (
-                        <p className="text-[11px] text-[#cbd5e1] truncate">{chosenResult.subtitle}</p>
+                        <p className="text-[11px] text-[var(--muted)] truncate">{chosenResult.subtitle}</p>
                       )}
                     </div>
                   </div>
@@ -354,16 +354,16 @@ export const PickerPage: React.FC = () => {
           </Card>
 
           {/* RIGHT: POOL SELECTOR & FILTERS (5 COLS) */}
-          <Card className="lg:col-span-5 p-5 space-y-4">
+          <Card className="lg:col-span-5 p-5 space-y-4 bg-[var(--card)] border border-[var(--line)]">
             {mode === 'first_player' ? (
               /* --- FIRST PLAYER POOL --- */
               <div className="space-y-4">
-                <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
                   <div>
-                    <h3 className="font-bold text-sm text-[var(--text-primary)]">
+                    <h3 className="font-bold text-sm text-[var(--ink)]">
                       Players at Table ({playerItems.length}/{allPlayers.length + guestPlayers.length})
                     </h3>
-                    <p className="text-[11px] text-[var(--text-secondary)]">
+                    <p className="text-[11px] text-[var(--muted)]">
                       Select everyone attending game night
                     </p>
                   </div>
@@ -371,15 +371,15 @@ export const PickerPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setActivePlayerIds(allPlayers.map((p) => p.id))}
-                      className="text-[11px] text-[var(--accent-neon)] font-bold hover:underline cursor-pointer"
+                      className="text-[11px] text-[var(--accent)] font-bold hover:underline cursor-pointer"
                     >
                       Select All
                     </button>
-                    <span className="text-xs text-[var(--text-muted)]">|</span>
+                    <span className="text-xs text-[var(--muted)]">|</span>
                     <button
                       type="button"
                       onClick={() => setActivePlayerIds([])}
-                      className="text-[11px] text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
+                      className="text-[11px] text-[var(--muted)] hover:text-[var(--ink)] hover:underline cursor-pointer"
                     >
                       Deselect All
                     </button>
@@ -469,15 +469,15 @@ export const PickerPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={selectAllGames}
-                      className="text-[11px] text-[var(--accent-neon)] font-bold hover:underline cursor-pointer"
+                      className="text-[11px] text-[var(--accent)] font-bold hover:underline cursor-pointer"
                     >
                       Select All
                     </button>
-                    <span className="text-xs text-[var(--text-muted)]">|</span>
+                    <span className="text-xs text-[var(--muted)]">|</span>
                     <button
                       type="button"
                       onClick={deselectAllGames}
-                      className="text-[11px] text-[var(--text-secondary)] hover:text-white hover:underline cursor-pointer"
+                      className="text-[11px] text-[var(--muted)] hover:text-[var(--ink)] hover:underline cursor-pointer"
                     >
                       Deselect All
                     </button>
@@ -496,7 +496,7 @@ export const PickerPage: React.FC = () => {
 
                   {/* Status Filter */}
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Vault:</span>
+                    <span className="text-[10px] text-[var(--muted)] font-bold shrink-0">Vault:</span>
                     {[
                       { id: 'own', label: 'Owned' },
                       { id: 'rented', label: 'Rented' },
@@ -528,7 +528,7 @@ export const PickerPage: React.FC = () => {
                             'px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer',
                             isSelected
                               ? 'bg-amber-500 text-slate-950 border-amber-500 font-extrabold shadow-sm'
-                              : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-white/20'
+                              : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--line-2)] hover:text-[var(--ink)]'
                           )}
                         >
                           {st.label}
@@ -539,7 +539,7 @@ export const PickerPage: React.FC = () => {
 
                   {/* Player Count Filter */}
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Players:</span>
+                    <span className="text-[10px] text-[var(--muted)] font-bold shrink-0">Players:</span>
                     {(['all', '2', '3', '4', '5+'] as const).map((cnt) => (
                       <button
                         key={cnt}
@@ -548,8 +548,8 @@ export const PickerPage: React.FC = () => {
                         className={cn(
                           'px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer',
                           playerCountFilter === cnt
-                            ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
-                            : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)]'
+                            ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)]'
+                            : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]'
                         )}
                       >
                         {cnt === 'all' ? 'All' : `${cnt} players`}
@@ -559,7 +559,7 @@ export const PickerPage: React.FC = () => {
 
                   {/* Duration Filter */}
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-[var(--text-muted)] font-bold shrink-0">Duration:</span>
+                    <span className="text-[10px] text-[var(--muted)] font-bold shrink-0">Duration:</span>
                     {(['all', 'short', 'medium', 'long'] as const).map((dur) => (
                       <button
                         key={dur}
@@ -568,8 +568,8 @@ export const PickerPage: React.FC = () => {
                         className={cn(
                           'px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer',
                           durationFilter === dur
-                            ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
-                            : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)]'
+                            ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)]'
+                            : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]'
                         )}
                       >
                         {dur === 'all'
