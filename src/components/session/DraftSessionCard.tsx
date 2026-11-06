@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
 import {
   Play,
   Trash2,
@@ -23,19 +22,11 @@ export interface DraftSessionCardProps {
   onDiscard: () => void;
 }
 
-export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
-  draft,
-  onDiscard,
-}) => {
-  const games = useGameStore((s) => s.games);
-  const registeredPlayers = usePlayerStore((s) => s.players);
-  const [isConfirmingDiscard, setIsConfirmingDiscard] = useState(false);
-
-  const game = games.find((g) => g.id === draft.gameId);
-  const gameName = game?.name || 'Board Game Session';
-  const gameThumbnail = game?.thumbnail || game?.image;
-
-  // Live timer calculation
+/**
+ * Isolated timer display that ticks every second without forcing
+ * the entire parent card or its participant lists to re-render.
+ */
+const DraftTimerDisplay: React.FC<{ draft: SessionDraft }> = ({ draft }) => {
   const [currentElapsedSec, setCurrentElapsedSec] = useState(() => {
     if (draft.isTimerRunning && draft.sessionStartTime) {
       const ms = Date.now() - draft.sessionStartTime - (draft.pausedDurationMs || 0);
@@ -59,21 +50,47 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
     return () => clearInterval(interval);
   }, [draft.isTimerRunning, draft.sessionStartTime, draft.pausedDurationMs]);
 
-  const formatTimer = (totalSec: number) => {
-    const hours = Math.floor(totalSec / 3600);
-    const mins = Math.floor((totalSec % 3600) / 60);
-    const secs = totalSec % 60;
-    if (hours > 0) {
-      return `${hours}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
-    }
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
+  const hours = Math.floor(currentElapsedSec / 3600);
+  const mins = Math.floor((currentElapsedSec % 3600) / 60);
+  const secs = currentElapsedSec % 60;
+  const timeText = hours > 0
+    ? `${hours}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`
+    : `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+  return (
+    <span className="inline-flex items-center gap-1 font-mono font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-lg border border-amber-500/30">
+      {draft.isTimerRunning ? (
+        <Clock className="w-3.5 h-3.5 text-amber-400" />
+      ) : (
+        <Pause className="w-3.5 h-3.5 text-amber-400" />
+      )}
+      <span>{timeText}</span>
+      <span className="text-[10px] font-normal text-amber-400/80">
+        {draft.isTimerRunning ? '(Running)' : '(Paused)'}
+      </span>
+    </span>
+  );
+};
+
+const DraftSessionCardComponent: React.FC<DraftSessionCardProps> = ({
+  draft,
+  onDiscard,
+}) => {
+  const games = useGameStore((s) => s.games);
+  const registeredPlayers = usePlayerStore((s) => s.players);
+  const [isConfirmingDiscard, setIsConfirmingDiscard] = useState(false);
+
+  const game = useMemo(() => games.find((g) => g.id === draft.gameId), [games, draft.gameId]);
+  const gameName = game?.name || 'Board Game Session';
+  const gameThumbnail = game?.thumbnail || game?.image;
 
   // Resolve participating players
-  const allAvailablePlayers = [...registeredPlayers, ...(draft.oneOffPlayers || [])];
-  const participants = (draft.selectedPlayerIds || [])
-    .map((id) => allAvailablePlayers.find((p) => p.id === id))
-    .filter(Boolean) as Player[];
+  const participants = useMemo(() => {
+    const allAvailablePlayers = [...registeredPlayers, ...(draft.oneOffPlayers || [])];
+    return (draft.selectedPlayerIds || [])
+      .map((id) => allAvailablePlayers.find((p) => p.id === id))
+      .filter(Boolean) as Player[];
+  }, [registeredPlayers, draft.oneOffPlayers, draft.selectedPlayerIds]);
 
   // Step label
   const getStepLabel = (step: number) => {
@@ -96,15 +113,7 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="relative rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-amber-500/15 via-[var(--bg-card)] to-amber-500/10 p-4 sm:p-5 shadow-xl shadow-amber-500/10 overflow-hidden"
-    >
-      {/* Background ambient glow effect */}
-      <div className="absolute -top-16 -right-16 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
-
+    <div className="relative rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-amber-500/15 via-[var(--bg-card)] to-amber-500/10 p-4 sm:p-5 shadow-xl shadow-amber-500/10 overflow-hidden animate-in fade-in duration-200">
       {/* Top Banner Row */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-amber-500/25">
         <div className="flex items-center gap-2">
@@ -151,17 +160,7 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
             </h3>
 
             <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-secondary)] font-medium">
-              <span className="inline-flex items-center gap-1 font-mono font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-lg border border-amber-500/30">
-                {draft.isTimerRunning ? (
-                  <Clock className="w-3.5 h-3.5 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
-                ) : (
-                  <Pause className="w-3.5 h-3.5 text-amber-400" />
-                )}
-                {formatTimer(currentElapsedSec)}
-                <span className="text-[10px] font-normal text-amber-400/80">
-                  {draft.isTimerRunning ? '(Running)' : '(Paused)'}
-                </span>
-              </span>
+              <DraftTimerDisplay draft={draft} />
 
               {draft.location && (
                 <span className="inline-flex items-center gap-1">
@@ -216,9 +215,9 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
         </div>
       </div>
 
-      {/* Discard Confirmation Dialog */}
+      {/* Discard Confirmation Dialog (high contrast, zero GPU blur) */}
       {isConfirmingDiscard && (
-        <div className="absolute inset-0 bg-[var(--bg-card)]/95 backdrop-blur-md p-4 flex flex-col justify-center items-center text-center space-y-3 z-30 animate-in fade-in duration-150 border-2 border-rose-500/50 rounded-2xl">
+        <div className="absolute inset-0 bg-[var(--card)]/98 p-4 flex flex-col justify-center items-center text-center space-y-3 z-30 animate-in fade-in duration-150 border-2 border-rose-500/50 rounded-2xl">
           <AlertCircle className="w-8 h-8 text-rose-400" />
           <div>
             <h4 className="font-bold text-sm text-[var(--text-primary)]">
@@ -249,6 +248,9 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
           </div>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 };
+
+export const DraftSessionCard = memo(DraftSessionCardComponent);
+export default DraftSessionCard;

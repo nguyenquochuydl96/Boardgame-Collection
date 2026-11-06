@@ -50,7 +50,7 @@ const GameThumbBox: React.FC<{
   alt: string;
   fallbackIcon: React.ReactNode;
   fallbackBg?: string;
-}> = ({ src, alt, fallbackIcon, fallbackBg = 'bg-[var(--card-3)]' }) => {
+}> = React.memo(({ src, alt, fallbackIcon, fallbackBg = 'bg-[var(--card-3)]' }) => {
   const [hasError, setHasError] = useState(false);
 
   return (
@@ -76,7 +76,7 @@ const GameThumbBox: React.FC<{
       )}
     </div>
   );
-};
+});
 
 type StatsTab = 'overview' | 'years' | 'locations' | 'by_player' | 'by_game';
 

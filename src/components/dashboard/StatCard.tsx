@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 import { AnimatedNumber } from '../ui/AnimatedNumber';
@@ -18,7 +18,7 @@ export interface StatCardProps {
   tileIndex?: 1 | 2 | 3 | 4;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({
+const StatCardComponent: React.FC<StatCardProps> = ({
   label,
   value,
   suffix = '',
@@ -90,4 +90,5 @@ export const StatCard: React.FC<StatCardProps> = ({
   return cardContent;
 };
 
+export const StatCard = memo(StatCardComponent);
 export default StatCard;

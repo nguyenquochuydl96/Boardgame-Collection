@@ -76,6 +76,30 @@ const AppStartupGuard: React.FC = () => {
   return null;
 };
 
+// Preload the most frequent tabs during browser idle time to achieve 0ms tab switching
+const IdleRoutePreloader: React.FC = () => {
+  useEffect(() => {
+    const preload = () => {
+      import('./pages/CollectionPage');
+      import('./pages/SessionsPage');
+      import('./pages/StatsPage');
+      import('./pages/PlayersPage');
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handle = (window as any).requestIdleCallback(preload, { timeout: 2500 });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return () => (window as any).cancelIdleCallback(handle);
+    } else {
+      const timeout = setTimeout(preload, 1500);
+      return () => clearTimeout(timeout);
+    }
+  }, []);
+
+  return null;
+};
+
 const AnimatedRoutes: React.FC = () => {
   return (
     <Suspense fallback={<PageFallback />}>
@@ -103,6 +127,7 @@ export function App() {
     <HashRouter>
       <ErrorBoundary>
         <AppStartupGuard />
+        <IdleRoutePreloader />
         <AppShell>
           <AnimatedRoutes />
         </AppShell>

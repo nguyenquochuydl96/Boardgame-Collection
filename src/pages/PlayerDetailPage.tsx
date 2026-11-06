@@ -56,10 +56,7 @@ export const PlayerDetailPage: React.FC = () => {
     if (!player) return [];
     return allSessions
       .filter((s) => s.players?.some((p) => p.playerId === player.id))
-      .sort(
-        (a, b) =>
-          new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime()
-      );
+      .sort((a, b) => (b.datePlayed || '').localeCompare(a.datePlayed || ''));
   }, [allSessions, player?.id]);
 
   const totalPlays = playerSessions.length;

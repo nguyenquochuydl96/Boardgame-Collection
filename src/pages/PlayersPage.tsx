@@ -145,6 +145,49 @@ export const PlayersPage: React.FC = () => {
     };
   }, [locations, sessions]);
 
+  // Precomputed per-venue metrics in a single O(S) pass to eliminate heavy calculations inside LocationCard
+  const venueMetricsMap = useMemo(() => {
+    const map = new Map<
+      string,
+      { count: number; gameCounts: Record<string, { count: number; name: string }>; lastDate?: string }
+    >();
+    for (const s of sessions) {
+      if (!s.location || !s.location.trim()) continue;
+      const key = s.location.trim().toLowerCase();
+      let entry = map.get(key);
+      if (!entry) {
+        entry = { count: 0, gameCounts: {}, lastDate: undefined };
+        map.set(key, entry);
+      }
+      entry.count += 1;
+      const gId = s.gameId || s.gameName || 'unknown';
+      if (!entry.gameCounts[gId]) {
+        entry.gameCounts[gId] = { count: 0, name: s.gameName || 'Board Game' };
+      }
+      entry.gameCounts[gId].count += 1;
+      if (!entry.lastDate || (s.datePlayed && s.datePlayed > entry.lastDate)) {
+        entry.lastDate = s.datePlayed;
+      }
+    }
+
+    const result: Record<string, { sessionCount: number; topGame?: { name: string; count: number }; lastPlayedDate?: string }> = {};
+    for (const loc of locations) {
+      const key = loc.name.trim().toLowerCase();
+      const entry = map.get(key);
+      if (entry) {
+        const topGame = Object.values(entry.gameCounts).sort((a, b) => b.count - a.count)[0];
+        result[loc.id] = {
+          sessionCount: entry.count,
+          topGame,
+          lastPlayedDate: entry.lastDate,
+        };
+      } else {
+        result[loc.id] = { sessionCount: 0 };
+      }
+    }
+    return result;
+  }, [sessions, locations]);
+
   return (
     <PageTransition>
       <div className="space-y-6">
@@ -534,7 +577,7 @@ export const PlayersPage: React.FC = () => {
                   <LocationCard
                     key={loc.id}
                     location={loc}
-                    sessions={sessions}
+                    metrics={venueMetricsMap[loc.id]}
                     onEdit={(targetLoc) => {
                       setEditingLocation(targetLoc);
                       setIsLocationModalOpen(true);

@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
 import {
   MapPin,
   Star,
@@ -12,62 +11,41 @@ import {
   ExternalLink,
   Info,
 } from 'lucide-react';
-import { GameLocation, PlaySession } from '../../types';
+import { GameLocation } from '../../types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { formatDate } from '../../lib/utils';
 import { cn } from '../ui/cn';
 
+export interface LocationMetrics {
+  sessionCount: number;
+  topGame?: { name: string; count: number };
+  lastPlayedDate?: string;
+}
+
 export interface LocationCardProps {
   location: GameLocation;
-  sessions: PlaySession[];
+  metrics?: LocationMetrics;
   onEdit: (location: GameLocation) => void;
   onDelete: (id: string) => void;
   onSetDefault: (id: string) => void;
 }
 
-export const LocationCard: React.FC<LocationCardProps> = ({
+const LocationCardComponent: React.FC<LocationCardProps> = ({
   location,
-  sessions,
+  metrics,
   onEdit,
   onDelete,
   onSetDefault,
 }) => {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
-  // Match sessions played at this location (case-insensitive fuzzy/exact match)
-  const locNameLower = location.name.trim().toLowerCase();
-  const matchedSessions = sessions.filter(
-    (s) => s.location && s.location.trim().toLowerCase() === locNameLower
-  );
-
-  const sessionCount = matchedSessions.length;
-
-  // Calculate most played game at this location
-  const gameCounts = matchedSessions.reduce<Record<string, { count: number; name: string }>>(
-    (acc, s) => {
-      const gId = s.gameId || s.gameName;
-      if (!acc[gId]) {
-        acc[gId] = { count: 0, name: s.gameName };
-      }
-      acc[gId].count += 1;
-      return acc;
-    },
-    {}
-  );
-
-  const topGame = Object.values(gameCounts).sort((a, b) => b.count - a.count)[0];
-
-  const lastSession = [...matchedSessions].sort(
-    (a, b) => new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime()
-  )[0];
+  const sessionCount = metrics?.sessionCount || 0;
+  const topGame = metrics?.topGame;
+  const lastPlayedDate = metrics?.lastPlayedDate;
 
   return (
-    <motion.div
-      whileHover={{ y: -3, scale: 1.01 }}
-      transition={{ duration: 0.2 }}
-      className="h-full"
-    >
+    <div className="h-full transition-transform duration-200 hover:-translate-y-1 active:scale-[0.99]">
       <Card
         className={cn(
           'p-5 flex flex-col justify-between gap-4 h-full relative transition-all border-2 group',
@@ -166,14 +144,14 @@ export const LocationCard: React.FC<LocationCardProps> = ({
             </div>
           </div>
 
-          {lastSession && (
+          {lastPlayedDate && (
             <p className="text-[11px] text-[var(--text-muted)] flex items-center justify-between px-1">
               <span className="inline-flex items-center gap-1">
                 <Calendar className="w-3 h-3 text-[var(--accent-primary)]" />
                 Last played:
               </span>
               <span className="font-semibold text-[var(--text-secondary)]">
-                {formatDate(lastSession.datePlayed)}
+                {formatDate(lastPlayedDate)}
               </span>
             </p>
           )}
@@ -196,7 +174,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({
 
         {/* Delete Confirmation Popup */}
         {isConfirmingDelete && (
-          <div className="absolute inset-0 bg-[var(--bg-card)]/95 backdrop-blur-md rounded-2xl p-4 flex flex-col justify-center items-center text-center space-y-3 z-20 border-2 border-rose-500/50 animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute inset-0 bg-[var(--card)]/98 rounded-2xl p-4 flex flex-col justify-center items-center text-center space-y-3 z-20 border-2 border-rose-500/50 animate-in fade-in zoom-in-95 duration-150">
             <p className="text-xs font-bold text-[var(--text-primary)]">
               Confirm venue deletion:
             </p>
@@ -230,6 +208,9 @@ export const LocationCard: React.FC<LocationCardProps> = ({
           </div>
         )}
       </Card>
-    </motion.div>
+    </div>
   );
 };
+
+export const LocationCard = memo(LocationCardComponent);
+export default LocationCard;

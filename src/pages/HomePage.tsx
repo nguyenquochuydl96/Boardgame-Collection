@@ -119,7 +119,7 @@ export const HomePage: React.FC = () => {
           className="relative rounded-[24px] overflow-hidden p-6 sm:p-8 lg:p-10 bg-[image:var(--gradient-hero)] shadow-xl shadow-[var(--accent)]/15 border border-white/15 text-white"
         >
           <div
-            className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none"
+            className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.12)_0%,transparent_70%)] pointer-events-none"
             aria-hidden="true"
           />
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">

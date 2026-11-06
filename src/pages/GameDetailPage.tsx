@@ -81,16 +81,18 @@ export const GameDetailPage: React.FC = () => {
     );
   }
 
-  const gameSessions = allSessions
-    .filter((s) => s.gameId === game.id)
-    .sort(
-      (a, b) =>
-        new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime()
-    );
+  const gameSessions = React.useMemo(() => {
+    return allSessions
+      .filter((s) => s.gameId === game.id)
+      .sort((a, b) => (b.datePlayed || '').localeCompare(a.datePlayed || ''));
+  }, [allSessions, game.id]);
 
-  const stats = calculateGameStats(gameSessions);
+  const stats = React.useMemo(() => calculateGameStats(gameSessions), [gameSessions]);
 
-  const playersById = Object.fromEntries(players.map((p) => [p.id, p]));
+  const playersById = React.useMemo(
+    () => Object.fromEntries(players.map((p) => [p.id, p])),
+    [players]
+  );
 
   const handleSaveNotes = () => {
     updateGame(game.id, { notes: notesDraft });
