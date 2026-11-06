@@ -1,5 +1,4 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 
 export interface MiniBarItem {
@@ -23,7 +22,7 @@ const FITLO_BAR_COLORS = [
   '#b42318',
 ];
 
-export const MiniBarChart: React.FC<MiniBarChartProps> = ({
+export const MiniBarChart: React.FC<MiniBarChartProps> = memo(({
   items,
   unit = 'plays',
 }) => {
@@ -54,12 +53,9 @@ export const MiniBarChart: React.FC<MiniBarChartProps> = ({
               </span>
             </div>
             <div className="h-2.5 w-full rounded-full bg-[var(--card-3)] overflow-hidden shadow-[inset_0_0_0_1px_var(--line)]">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${widthPercent}%` }}
-                transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.22, 1, 0.36, 1] }}
-                style={{ backgroundColor: barColor }}
-                className="h-full rounded-full"
+              <div
+                style={{ width: `${widthPercent}%`, backgroundColor: barColor }}
+                className="h-full rounded-full transition-all duration-500 ease-out"
               />
             </div>
           </div>
@@ -75,6 +71,6 @@ export const MiniBarChart: React.FC<MiniBarChartProps> = ({
       })}
     </div>
   );
-};
+});
 
 export default MiniBarChart;

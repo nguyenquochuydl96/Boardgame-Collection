@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect, Suspense } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { motion } from 'motion/react';
 import {
   Search,
   LayoutGrid,
@@ -198,23 +197,16 @@ export const CollectionPage: React.FC = () => {
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
                 className={cn(
-                  'relative isolate min-h-[38px] px-3.5 py-1.5 rounded-[12px] text-xs font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-2 select-none',
+                  'min-h-[38px] px-3.5 py-1.5 rounded-[12px] text-xs font-bold shrink-0 transition-all duration-150 cursor-pointer flex items-center gap-2 select-none active:scale-95',
                   isActive
-                    ? 'text-[var(--accent-ink)] font-black'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-sm'
                     : 'bg-[var(--card)] text-[var(--ink-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:bg-[var(--card-2)] hover:text-[var(--ink)]'
                 )}
               >
-                {isActive && (
-                  <motion.span
-                    layoutId="collection-tab-pill"
-                    className="absolute inset-0 rounded-[12px] bg-[var(--accent)] shadow-sm pointer-events-none"
-                    transition={{ type: 'spring', stiffness: 450, damping: 30 }}
-                  />
-                )}
-                <span className="relative z-10">{tab.label}</span>
+                <span>{tab.label}</span>
                 <span
                   className={cn(
-                    'relative z-10 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums font-bold',
+                    'px-1.5 py-0.5 rounded-full text-[10px] tabular-nums font-bold',
                     isActive ? 'bg-black/20 text-white' : 'bg-[var(--card-3)] text-[var(--ink-2)]'
                   )}
                 >
@@ -253,47 +245,33 @@ export const CollectionPage: React.FC = () => {
               </select>
             </div>
 
-            {/* View Mode Switcher with sliding spring pill */}
+            {/* View Mode Switcher */}
             <div className="p-1 rounded-[12px] bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line)] flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={cn(
-                  'relative isolate p-2 rounded-[9px] transition-colors cursor-pointer select-none',
+                  'p-2 rounded-[9px] transition-all duration-150 cursor-pointer select-none active:scale-95',
                   viewMode === 'grid'
-                    ? 'text-[var(--accent-ink)] font-black'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-xs'
                     : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
                 )}
                 aria-label="Grid view"
               >
-                {viewMode === 'grid' && (
-                  <motion.span
-                    layoutId="collection-view-pill"
-                    className="absolute inset-0 rounded-[9px] bg-[var(--accent)] shadow-xs pointer-events-none z-0"
-                    transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-                  />
-                )}
-                <LayoutGrid className="w-4 h-4 relative z-10" />
+                <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
                 className={cn(
-                  'relative isolate p-2 rounded-[9px] transition-colors cursor-pointer select-none',
+                  'p-2 rounded-[9px] transition-all duration-150 cursor-pointer select-none active:scale-95',
                   viewMode === 'list'
-                    ? 'text-[var(--accent-ink)] font-black'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-xs'
                     : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
                 )}
                 aria-label="List view"
               >
-                {viewMode === 'list' && (
-                  <motion.span
-                    layoutId="collection-view-pill"
-                    className="absolute inset-0 rounded-[9px] bg-[var(--accent)] shadow-xs pointer-events-none z-0"
-                    transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-                  />
-                )}
-                <List className="w-4 h-4 relative z-10" />
+                <List className="w-4 h-4" />
               </button>
             </div>
           </div>

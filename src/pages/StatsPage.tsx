@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
 import {
   Trophy,
   Clock,
@@ -522,21 +521,14 @@ export const StatsPage: React.FC = () => {
                 type="button"
                 onClick={() => setActiveTab(tab.id as StatsTab)}
                 className={cn(
-                  'relative isolate min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap shrink-0 select-none',
+                  'min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 select-none active:scale-95',
                   isActive
-                    ? 'text-[var(--accent-ink)] font-black'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-sm'
                     : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
                 )}
               >
-                {isActive && (
-                  <motion.span
-                    layoutId="stats-nav-pill"
-                    className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-sm pointer-events-none z-0"
-                    transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-                  />
-                )}
-                <Icon className={cn('w-4 h-4 shrink-0 relative z-10', isActive ? 'text-current' : tab.iconColor)} />
-                <span className="relative z-10">{tab.label}</span>
+                <Icon className={cn('w-4 h-4 shrink-0', isActive ? 'text-current' : tab.iconColor)} />
+                <span>{tab.label}</span>
               </button>
             );
           })}
@@ -1041,20 +1033,13 @@ export const StatsPage: React.FC = () => {
                 type="button"
                 onClick={() => setSelectedYear('all')}
                 className={cn(
-                  'relative isolate px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none',
+                  'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer select-none active:scale-95',
                   selectedYear === 'all'
-                    ? 'text-[var(--accent-ink)] font-black'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-sm'
                     : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-3)]'
                 )}
               >
-                {selectedYear === 'all' && (
-                  <motion.span
-                    layoutId="stats-year-pill"
-                    className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md pointer-events-none z-0"
-                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                  />
-                )}
-                <span className="relative z-10">All Years</span>
+                <span>All Years</span>
               </button>
               {availableYears.map((yr) => (
                 <button
@@ -1062,20 +1047,13 @@ export const StatsPage: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedYear(yr)}
                   className={cn(
-                    'relative isolate px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none',
+                    'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer select-none active:scale-95',
                     selectedYear === yr
-                      ? 'text-[var(--accent-ink)] font-black'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-sm'
                       : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-3)]'
                   )}
                 >
-                  {selectedYear === yr && (
-                    <motion.span
-                      layoutId="stats-year-pill"
-                      className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md pointer-events-none z-0"
-                      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                    />
-                  )}
-                  <span className="relative z-10">{yr}</span>
+                  <span>{yr}</span>
                 </button>
               ))}
             </div>

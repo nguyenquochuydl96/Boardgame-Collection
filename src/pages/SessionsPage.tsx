@@ -912,7 +912,7 @@ export const SessionsPage: React.FC = () => {
           <div className="space-y-8">
             {groupedByMonth.map((group) => (
               <section key={group.monthLabel} className="space-y-3">
-                <div className="sticky top-14 lg:top-0 z-20 py-2 px-3.5 rounded-xl bg-[var(--card)]/95 backdrop-blur-md border border-[var(--line)] inline-flex items-center gap-2 shadow-sm">
+                <div className="sticky top-14 lg:top-0 z-20 py-2 px-3.5 rounded-xl bg-[var(--card)] border border-[var(--line)] inline-flex items-center gap-2 shadow-sm">
                   <Calendar className="w-4 h-4 text-[var(--accent)]" />
                   <h2 className="font-display font-bold text-sm text-[var(--ink)]">
                     {group.monthLabel}

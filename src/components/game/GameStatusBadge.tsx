@@ -1,5 +1,4 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { memo } from 'react';
 import { GameStatus } from '../../types';
 import { STATUS_CONFIG } from '../../lib/utils';
 import { cn } from '../ui/cn';
@@ -9,31 +8,27 @@ export interface GameStatusBadgeProps {
   className?: string;
 }
 
-export const GameStatusBadge: React.FC<GameStatusBadgeProps> = ({
+export const GameStatusBadge: React.FC<GameStatusBadgeProps> = memo(({
   status,
   className,
 }) => {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.own;
 
   return (
-    <motion.span
-      key={status}
-      initial={{ opacity: 0.7, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.25 }}
+    <span
       style={{
         backgroundColor: cfg.bg,
         borderColor: cfg.border,
         color: cfg.color,
       }}
       className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap shrink-0 backdrop-blur-md transition-colors duration-300',
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap shrink-0 transition-colors duration-200',
         className
       )}
     >
       {cfg.label}
-    </motion.span>
+    </span>
   );
-};
+});
 
 export default GameStatusBadge;

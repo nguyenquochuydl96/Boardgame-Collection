@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
 import {
   Dices,
   Gamepad2,
@@ -22,15 +21,6 @@ import { useSessionStore } from '../store/useSessionStore';
 import { formatDate, formatDuration, getCollectionTotalValue } from '../lib/utils';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
 import { SessionDraft } from '../types';
-
-const fadeUpItem = {
-  hidden: { opacity: 0, y: 4 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.12, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
-  },
-};
 
 export const HomePage: React.FC = () => {
   const games = useGameStore((s) => s.games);
@@ -98,7 +88,7 @@ export const HomePage: React.FC = () => {
     }
 
     const recent = [...sessions]
-      .sort((a, b) => new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime())
+      .sort((a, b) => (b.datePlayed || '').localeCompare(a.datePlayed || ''))
       .slice(0, 5);
 
     const top = Array.from(playMap.values())

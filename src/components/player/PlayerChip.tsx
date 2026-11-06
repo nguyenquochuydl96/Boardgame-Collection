@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { Check, Crown } from 'lucide-react';
 import { Player } from '../../types';
 import { PlayerAvatar } from './PlayerAvatar';
@@ -77,17 +76,17 @@ export const PlayerChip: React.FC<PlayerChipProps> = ({
 
   if (onClick) {
     return (
-      <motion.button
+      <button
         type="button"
         onClick={onClick}
-        whileHover={{ scale: 1.04, y: -1 }}
-        whileTap={{ scale: 0.95 }}
-        transition={{ type: 'spring', stiffness: 420, damping: 25 }}
         style={sharedStyle}
-        className={cn(sharedClasses, 'cursor-pointer hover:border-[var(--border-glow)]')}
+        className={cn(
+          sharedClasses,
+          'cursor-pointer hover:border-[var(--border-glow)] hover:scale-[1.03] active:scale-[0.96] transition-transform duration-150'
+        )}
       >
         {content}
-      </motion.button>
+      </button>
     );
   }
 

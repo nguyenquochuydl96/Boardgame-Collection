@@ -165,7 +165,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
             <GameStatusBadge status={game.status} />
             <div className="flex items-center gap-1.5">
               {game.bggRating && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-xs font-bold text-amber-400 tabular-nums border border-white/10 shadow-sm">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/85 text-xs font-bold text-amber-400 tabular-nums border border-white/15 shadow-sm">
                   <Star className="w-3 h-3 fill-amber-400" />
                   {game.bggRating.toFixed(1)}
                 </span>
@@ -178,7 +178,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
                     e.stopPropagation();
                     onEdit(game);
                   }}
-                  className="p-1.5 rounded-lg bg-black/70 hover:bg-black/95 backdrop-blur-md text-white/80 hover:text-white border border-white/15 transition-colors shadow-sm cursor-pointer"
+                  className="p-1.5 rounded-lg bg-black/85 hover:bg-black text-white/90 hover:text-white border border-white/20 transition-colors shadow-sm cursor-pointer"
                   title="Quick Edit Game"
                   aria-label={`Quick Edit ${game.name}`}
                 >
@@ -189,7 +189,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
           </div>
 
           {/* Hover Play Count Overlay */}
-          <div className="absolute inset-0 z-15 flex items-center justify-center bg-black/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+          <div className="absolute inset-0 z-15 flex items-center justify-center bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
             <div className="px-4 py-2 rounded-xl bg-[var(--accent)] text-[var(--accent-ink)] font-display font-bold text-sm shadow-xl flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-200">
               <Play className="w-4 h-4 fill-current" />
               <span>

@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { cn } from './cn';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -45,20 +44,17 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     return (
-      <motion.button
+      <button
         ref={ref}
         type={type}
-        whileHover={{ scale: disabled || isLoading ? 1 : 1.015 }}
-        whileTap={{ scale: disabled || isLoading ? 1 : 0.96 }}
-        transition={{ type: 'spring', stiffness: 450, damping: 25 }}
         disabled={disabled || isLoading}
         className={cn(
-          'inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-all duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-45 disabled:cursor-not-allowed select-none',
+          'inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-transform duration-150 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-45 disabled:cursor-not-allowed select-none hover:scale-[1.015] active:scale-[0.96]',
           variants[variant],
           sizes[size],
           className
         )}
-        {...(props as React.ComponentPropsWithoutRef<typeof motion.button>)}
+        {...props}
       >
         {isLoading && (
           <svg
@@ -84,7 +80,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </svg>
         )}
         {children}
-      </motion.button>
+      </button>
     );
   }
 );
