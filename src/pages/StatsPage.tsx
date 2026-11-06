@@ -40,6 +40,7 @@ import {
   calculateLongestWinStreak,
   calculatePlayerStreaks,
   StreakData,
+  GameStatsSummary,
   formatDate,
   formatDuration,
 } from '../lib/utils';
@@ -277,8 +278,9 @@ export const StatsPage: React.FC = () => {
     return Math.round(mins / 60);
   }, [overviewSessions]);
 
-  // Winning streaks per player
+  // Winning streaks per player (only computed when on overview tab)
   const playerStreaks = useMemo(() => {
+    if (activeTab !== 'overview') return [];
     return players
       .map((p) => ({
         player: p,
@@ -286,39 +288,46 @@ export const StatsPage: React.FC = () => {
       }))
       .filter((x) => x.streak > 0)
       .sort((a, b) => b.streak - a.streak);
-  }, [players, overviewSessions]);
+  }, [players, overviewSessions, activeTab]);
 
-  // Monthly play frequency (grouped chronologically)
+  // Monthly play frequency (grouped chronologically, fast string slice instead of toLocaleDateString)
   const monthlyFrequency = useMemo(() => {
+    if (activeTab !== 'overview') return [];
     const monthCounts = new Map<string, number>();
     const sortedChron = [...overviewSessions].sort(
-      (a, b) => new Date(a.datePlayed).getTime() - new Date(b.datePlayed).getTime()
+      (a, b) => (a.datePlayed || '').localeCompare(b.datePlayed || '')
     );
     for (const s of sortedChron) {
-      const d = new Date(s.datePlayed);
-      if (!isNaN(d.getTime())) {
-        const label = d.toLocaleDateString('vi-VN', {
-          month: 'short',
-          year: '2-digit',
-        });
-        monthCounts.set(label, (monthCounts.get(label) || 0) + 1);
-      }
+      if (!s.datePlayed || s.datePlayed.length < 7) continue;
+      const y = s.datePlayed.slice(2, 4);
+      const m = parseInt(s.datePlayed.slice(5, 7), 10);
+      const label = `M${m}/${y}`;
+      monthCounts.set(label, (monthCounts.get(label) || 0) + 1);
     }
     return Array.from(monthCounts.entries()).map(([month, count]) => ({
       month,
       count,
     }));
-  }, [overviewSessions]);
+  }, [overviewSessions, activeTab]);
 
   const maxMonthCount = Math.max(...monthlyFrequency.map((m) => m.count), 1);
 
-  // --- 2. YEAR IN REVIEW METRICS ---
+  // --- 2. YEAR IN REVIEW METRICS (only computed when on years tab) ---
   const yearFilteredSessions = useMemo(() => {
+    if (activeTab !== 'years') return [];
     if (selectedYear === 'all') return sessions;
     return sessions.filter((s) => s.datePlayed && s.datePlayed.startsWith(selectedYear));
-  }, [sessions, selectedYear]);
+  }, [sessions, selectedYear, activeTab]);
 
   const yearStats = useMemo(() => {
+    if (activeTab !== 'years') {
+      return {
+        totalSessions: 0,
+        hours: 0,
+        topGames: [],
+        topWinners: [],
+      };
+    }
     const totalSessions = yearFilteredSessions.length;
     const totalMinutes = yearFilteredSessions.reduce((sum, s) => sum + (s.durationMinutes || 60), 0);
     const hours = Math.round(totalMinutes / 60);
@@ -360,10 +369,11 @@ export const StatsPage: React.FC = () => {
       topGames,
       topWinners,
     };
-  }, [yearFilteredSessions]);
+  }, [yearFilteredSessions, activeTab]);
 
-  // --- 3. LOCATION & VENUE STATS ---
+  // --- 3. LOCATION & VENUE STATS (only computed when on locations tab) ---
   const locationStats = useMemo(() => {
+    if (activeTab !== 'locations') return [];
     const map = new Map<string, { count: number; playerWins: Map<string, number> }>();
 
     sessions.forEach((s) => {
@@ -401,10 +411,11 @@ export const StatsPage: React.FC = () => {
         };
       })
       .sort((a, b) => b.count - a.count);
-  }, [sessions, players]);
+  }, [sessions, players, activeTab]);
 
-  // --- 4. PLAYER LEADERBOARD & HEAD-TO-HEAD ---
+  // --- 4. PLAYER LEADERBOARD & HEAD-TO-HEAD (only computed when on by_player tab) ---
   const playerLeaderboard = useMemo(() => {
+    if (activeTab !== 'by_player') return [];
     const statsMap = new Map<string, { player: Player; plays: number; wins: number }>();
 
     players.forEach((p) => {
@@ -430,7 +441,7 @@ export const StatsPage: React.FC = () => {
         winRate: Math.round((x.wins / x.plays) * 100),
       }))
       .sort((a, b) => b.plays - a.plays);
-  }, [players, sessions]);
+  }, [players, sessions, activeTab]);
 
   // Head-to-Head calculation
   const activeComparisonPlayers = useMemo(
@@ -439,8 +450,13 @@ export const StatsPage: React.FC = () => {
   );
 
   const headToHead = useMemo(
-    () => calculateHeadToHead(activeComparisonPlayers, sessions),
-    [activeComparisonPlayers, sessions]
+    () => {
+      if (activeTab !== 'by_player') {
+        return { sharedSessionsCount: 0, playerStats: [], perGameBreakdown: [] };
+      }
+      return calculateHeadToHead(activeComparisonPlayers, sessions);
+    },
+    [activeComparisonPlayers, sessions, activeTab]
   );
 
   const togglePlayerSelection = (id: string) => {
@@ -449,15 +465,21 @@ export const StatsPage: React.FC = () => {
     );
   };
 
-  // --- 5. BY GAME STATS ---
+  // --- 5. BY GAME STATS (only computed when on by_game tab) ---
   const activeGame = games.find((g) => g.id === selectedGameId) || games[0];
   const activeGameSessions = useMemo(
-    () => (activeGame ? sessions.filter((s) => s.gameId === activeGame.id) : []),
-    [sessions, activeGame]
+    () => (activeTab === 'by_game' && activeGame ? sessions.filter((s) => s.gameId === activeGame.id) : []),
+    [sessions, activeGame, activeTab]
   );
-  const activeGameStats = useMemo(
-    () => calculateGameStats(activeGameSessions),
-    [activeGameSessions]
+  const activeGameStats: GameStatsSummary = useMemo(
+    () => (activeTab === 'by_game' ? calculateGameStats(activeGameSessions) : {
+      totalPlays: 0,
+      averageDuration: 0,
+      highestScore: null,
+      lowestScore: null,
+      playerWinRates: [],
+    }),
+    [activeGameSessions, activeTab]
   );
 
   return (

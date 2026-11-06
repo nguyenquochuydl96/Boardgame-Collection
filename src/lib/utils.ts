@@ -380,10 +380,7 @@ export function calculatePlayerStreaks(
 ): PlayerStreakDetails {
   const sorted = [...sessions]
     .filter((s) => s.players?.some((p) => p.playerId === playerId))
-    .sort(
-      (a, b) =>
-        new Date(a.datePlayed).getTime() - new Date(b.datePlayed).getTime()
-    );
+    .sort((a, b) => (a.datePlayed || '').localeCompare(b.datePlayed || ''));
 
   let curWins: PlaySession[] = [];
   let maxWins: PlaySession[] = [];

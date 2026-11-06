@@ -123,11 +123,8 @@ export const CollectionPage: React.FC = () => {
         if (sortBy === 'bggRating') return (b.bggRating || 0) - (a.bggRating || 0);
         if (sortBy === 'purchasePrice')
           return (b.purchasePrice || 0) - (a.purchasePrice || 0);
-        // Default: addedDate descending
-        return (
-          new Date(b.addedDate || 0).getTime() -
-          new Date(a.addedDate || 0).getTime()
-        );
+        // Default: addedDate descending (fast ISO string comparison)
+        return (b.addedDate || '').localeCompare(a.addedDate || '');
       });
   }, [games, activeFilter, searchQuery, sortBy]);
 

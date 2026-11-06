@@ -102,6 +102,31 @@ export const PlayersPage: React.FC = () => {
     );
   }, [locations, locationSearch]);
 
+  // Precompute player stats in a single pass O(S) to avoid heavy re-filtering on mobile
+  const playerStatsMap = useMemo(() => {
+    const stats: Record<string, { totalGames: number; wins: number; winRate: number }> = {};
+    for (const p of players) {
+      stats[p.id] = { totalGames: 0, wins: 0, winRate: 0 };
+    }
+    for (const s of sessions) {
+      if (!s.players) continue;
+      for (const p of s.players) {
+        if (!stats[p.playerId]) {
+          stats[p.playerId] = { totalGames: 0, wins: 0, winRate: 0 };
+        }
+        stats[p.playerId].totalGames += 1;
+        if (p.isWinner || s.winnerId === p.playerId) {
+          stats[p.playerId].wins += 1;
+        }
+      }
+    }
+    for (const id in stats) {
+      const entry = stats[id];
+      entry.winRate = entry.totalGames > 0 ? Math.round((entry.wins / entry.totalGames) * 100) : 0;
+    }
+    return stats;
+  }, [players, sessions]);
+
   // Location summary statistics
   const locationStats = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -265,25 +290,17 @@ export const PlayersPage: React.FC = () => {
             {players.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {players.map((player) => {
-                  const playerSessions = sessions.filter((s) =>
-                    s.players?.some((p) => p.playerId === player.id)
-                  );
-                  const totalGames = playerSessions.length;
-                  const wins = playerSessions.filter((s) => {
-                    const entry = s.players?.find((p) => p.playerId === player.id);
-                    return Boolean(entry?.isWinner || s.winnerId === player.id);
-                  }).length;
-                  const winRate =
-                    totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
+                  const pStat = playerStatsMap[player.id] || { totalGames: 0, wins: 0, winRate: 0 };
+                  const totalGames = pStat.totalGames;
+                  const winRate = pStat.winRate;
 
                   const isSelectedForCompare = selectedCompareIds.includes(player.id);
                   const playStyleInfo = getPlayStyleInfo(player.playStyle);
 
                   return (
-                    <motion.div
+                    <div
                       key={player.id}
-                      whileHover={{ scale: 1.02, y: -3 }}
-                      transition={{ duration: 0.2 }}
+                      className="transition-transform duration-200 hover:-translate-y-1 active:scale-[0.99] h-full"
                     >
                       <Card
                         className={cn(
@@ -405,7 +422,7 @@ export const PlayersPage: React.FC = () => {
                           <span>→</span>
                         </Link>
                       </Card>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>

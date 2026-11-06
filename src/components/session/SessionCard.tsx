@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
 import { Calendar, Clock, MapPin, Crown, ChevronRight, Dices, Check } from 'lucide-react';
 import { PlaySession, Player } from '../../types';
 import { formatDate, formatDuration } from '../../lib/utils';
@@ -11,7 +10,7 @@ export interface SessionCardProps {
   playersById?: Record<string, Player>;
 }
 
-export const SessionCard: React.FC<SessionCardProps> = ({
+export const SessionCard: React.FC<SessionCardProps> = memo(({
   session,
   playersById = {},
 }) => {
@@ -22,11 +21,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({
   );
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.01, x: 3 }}
-      whileTap={{ scale: 0.985 }}
-      transition={{ type: 'spring', stiffness: 420, damping: 26 }}
-    >
+    <div className="transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.99]">
       <Link
         to={`/sessions/${session.id}`}
         className="flex items-center gap-4 p-4 rounded-[18px] bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line),var(--shadow)] hover:shadow-lg transition-all duration-200 group"
@@ -127,8 +122,8 @@ export const SessionCard: React.FC<SessionCardProps> = ({
 
         <ChevronRight className="w-5 h-5 text-[var(--muted)] group-hover:text-[var(--accent)] group-hover:translate-x-0.5 transition-all shrink-0" />
       </Link>
-    </motion.div>
+    </div>
   );
-};
+});
 
 export default SessionCard;

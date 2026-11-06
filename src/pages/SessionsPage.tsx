@@ -148,19 +148,19 @@ export const SessionsPage: React.FC = () => {
       .sort((a, b) => b.plays - a.plays || a.name.localeCompare(b.name));
   }, [sessions, games]);
 
-  // Available years from session history
+  // Available years from session history (optimized O(S) string slicing without Date instantiations)
   const availableYears = useMemo(() => {
     const years = new Set<string>();
     for (const s of sessions) {
-      if (s.datePlayed) {
-        const y = new Date(s.datePlayed).getFullYear();
-        if (!isNaN(y)) years.add(String(y));
+      if (s.datePlayed && s.datePlayed.length >= 4) {
+        const y = s.datePlayed.slice(0, 4);
+        if (!isNaN(Number(y))) years.add(y);
       }
     }
-    return Array.from(years).sort((a, b) => Number(b) - Number(a));
+    return Array.from(years).sort().reverse();
   }, [sessions]);
 
-  // Filtered & Sorted Sessions
+  // Filtered & Sorted Sessions (zero Date allocation sort & filter)
   const filteredSessions = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
@@ -200,15 +200,15 @@ export const SessionsPage: React.FC = () => {
 
         // 4. Multi-Year Filter
         if (selectedYears.length > 0) {
-          const y = String(new Date(s.datePlayed).getFullYear());
-          if (!selectedYears.includes(y)) {
+          const y = s.datePlayed?.slice(0, 4);
+          if (!y || !selectedYears.includes(y)) {
             return false;
           }
         }
 
         // 5. Multi-Month Filter (1 to 12)
         if (selectedMonths.length > 0) {
-          const m = new Date(s.datePlayed).getMonth() + 1;
+          const m = s.datePlayed && s.datePlayed.length >= 7 ? parseInt(s.datePlayed.slice(5, 7), 10) : 0;
           if (!selectedMonths.includes(m)) {
             return false;
           }
@@ -216,10 +216,7 @@ export const SessionsPage: React.FC = () => {
 
         return true;
       })
-      .sort(
-        (a, b) =>
-          new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime()
-      );
+      .sort((a, b) => (b.datePlayed || '').localeCompare(a.datePlayed || ''));
   }, [
     sessions,
     searchQuery,
