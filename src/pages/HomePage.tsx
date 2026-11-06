@@ -29,17 +29,18 @@ const staggerContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.08,
+      staggerChildren: 0.03,
+      delayChildren: 0.01,
     },
   },
 };
 
 const fadeUpItem = {
-  hidden: { opacity: 0, y: 14 },
+  hidden: { opacity: 0, y: 6 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    transition: { duration: 0.16, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   },
 };
 

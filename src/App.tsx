@@ -3,22 +3,51 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect } from 'react';
-import { HashRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
-import { AnimatePresence } from 'motion/react';
+import React, { useEffect, Suspense } from 'react';
+import { HashRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
-import { HomePage } from './pages/HomePage';
-import { CollectionPage } from './pages/CollectionPage';
-import { GameDetailPage } from './pages/GameDetailPage';
-import { AddGamePage } from './pages/AddGamePage';
-import { SessionsPage } from './pages/SessionsPage';
-import { NewSessionPage } from './pages/NewSessionPage';
-import { SessionDetailPage } from './pages/SessionDetailPage';
-import { PlayersPage } from './pages/PlayersPage';
-import { PlayerDetailPage } from './pages/PlayerDetailPage';
-import { StatsPage } from './pages/StatsPage';
-import { PickerPage } from './pages/PickerPage';
+
+// Code-splitting routes for fast initial loading, instant tab switching, and low memory usage
+const HomePage = React.lazy(() =>
+  import('./pages/HomePage').then((m) => ({ default: m.HomePage }))
+);
+const CollectionPage = React.lazy(() =>
+  import('./pages/CollectionPage').then((m) => ({ default: m.CollectionPage }))
+);
+const GameDetailPage = React.lazy(() =>
+  import('./pages/GameDetailPage').then((m) => ({ default: m.GameDetailPage }))
+);
+const AddGamePage = React.lazy(() =>
+  import('./pages/AddGamePage').then((m) => ({ default: m.AddGamePage }))
+);
+const SessionsPage = React.lazy(() =>
+  import('./pages/SessionsPage').then((m) => ({ default: m.SessionsPage }))
+);
+const NewSessionPage = React.lazy(() =>
+  import('./pages/NewSessionPage').then((m) => ({ default: m.NewSessionPage }))
+);
+const SessionDetailPage = React.lazy(() =>
+  import('./pages/SessionDetailPage').then((m) => ({ default: m.SessionDetailPage }))
+);
+const PlayersPage = React.lazy(() =>
+  import('./pages/PlayersPage').then((m) => ({ default: m.PlayersPage }))
+);
+const PlayerDetailPage = React.lazy(() =>
+  import('./pages/PlayerDetailPage').then((m) => ({ default: m.PlayerDetailPage }))
+);
+const StatsPage = React.lazy(() =>
+  import('./pages/StatsPage').then((m) => ({ default: m.StatsPage }))
+);
+const PickerPage = React.lazy(() =>
+  import('./pages/PickerPage').then((m) => ({ default: m.PickerPage }))
+);
+
+const PageFallback: React.FC = () => (
+  <div className="w-full min-h-[50vh] flex items-center justify-center p-8">
+    <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin opacity-50" />
+  </div>
+);
 
 // Ensures that upon fresh entry into the app, it always defaults to Home ('/')
 const AppStartupGuard: React.FC = () => {
@@ -48,11 +77,9 @@ const AppStartupGuard: React.FC = () => {
 };
 
 const AnimatedRoutes: React.FC = () => {
-  const location = useLocation();
-
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+    <Suspense fallback={<PageFallback />}>
+      <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/collection" element={<CollectionPage />} />
         <Route path="/collection/add" element={<AddGamePage />} />
@@ -67,7 +94,7 @@ const AnimatedRoutes: React.FC = () => {
         <Route path="/tools" element={<PickerPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </AnimatePresence>
+    </Suspense>
   );
 };
 

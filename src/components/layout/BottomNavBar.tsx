@@ -16,7 +16,7 @@ export const BottomNavBar: React.FC = () => {
   const location = useLocation();
 
   const isTabActive = (path: string) => {
-    if (path === '/') return location.pathname === '';
+    if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
   };
 
