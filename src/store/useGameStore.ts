@@ -174,6 +174,33 @@ export const useGameStore = create<GameStore>()(
     }),
     {
       name: 'bg-vault-games-v2',
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        const bggIronClays =
+          'https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__large/img/PWhlasf_TqRSxwf605lU_lDOh-4=/fit-in/1024x1024/filters:no_upscale():strip_icc()/pic9719419.png';
+        const bggIronClaysThumb =
+          'https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__thumb/img/hP92m4b4s44y5qV5s4XhP75v1e4=/fit-in/200x150/filters:strip_icc()/pic9719419.png';
+
+        let changed = false;
+        const nextGames = state.games.map((g) => {
+          if (
+            g.name.toLowerCase().includes('iron clay') &&
+            (!g.image || g.image.startsWith('data:image/svg'))
+          ) {
+            changed = true;
+            return {
+              ...g,
+              image: bggIronClays,
+              thumbnail: bggIronClaysThumb,
+            };
+          }
+          return g;
+        });
+
+        if (changed) {
+          state.games = nextGames;
+        }
+      },
     }
   )
 );

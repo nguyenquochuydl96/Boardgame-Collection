@@ -31,6 +31,7 @@ import {
   formatVND,
   formatNumberInput,
   parseNumberInput,
+  getGameCoverImage,
   STATUS_CONFIG,
 } from '../lib/utils';
 import { GameStatus } from '../types';
@@ -164,7 +165,7 @@ export const GameDetailPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-12 items-stretch">
             <div className="md:col-span-4 relative aspect-[4/3] md:aspect-auto bg-[var(--card-2)]">
               <img
-                src={game.image || game.thumbnail}
+                src={getGameCoverImage(game)}
                 alt={game.name}
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"

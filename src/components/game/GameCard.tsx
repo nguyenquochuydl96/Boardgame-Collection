@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Users, Clock, Star, Play, Dices, Edit3 } from 'lucide-react';
 import { BoardGame } from '../../types';
 import { GameStatusBadge } from './GameStatusBadge';
-import { formatVND } from '../../lib/utils';
+import { formatVND, getGameCoverImage } from '../../lib/utils';
 
 export interface GameCardProps {
   game: BoardGame;
@@ -36,7 +36,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
             )}
             {!imageError ? (
               <img
-                src={game.thumbnail || game.image}
+                src={getGameCoverImage(game)}
                 alt={game.name}
                 loading="lazy"
                 decoding="async"
@@ -139,7 +139,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
           )}
           {!imageError ? (
             <img
-              src={game.image || game.thumbnail}
+              src={getGameCoverImage(game)}
               alt={game.name}
               loading="lazy"
               decoding="async"

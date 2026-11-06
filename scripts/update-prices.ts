@@ -101,12 +101,8 @@ async function run() {
       updatedCount++;
     } else {
       if (entry.name === 'Iron Clays 200') {
-        const cover = createGameCoverDataUri(
-          'Iron Clays 200',
-          'Gaming Counters · Roxley',
-          ['#1e293b', '#334155', '#e2e8f0'],
-          'hex'
-        );
+        const cover =
+          'https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__large/img/PWhlasf_TqRSxwf605lU_lDOh-4=/fit-in/1024x1024/filters:no_upscale():strip_icc()/pic9719419.png';
         const newGame = {
           id: 'custom-iron-clays-200',
           bggId: 'custom-iron-clays-200',

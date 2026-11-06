@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BoardGame, GameStatus } from '../../types';
-import { STATUS_CONFIG, formatNumberInput, parseNumberInput } from '../../lib/utils';
+import { STATUS_CONFIG, formatNumberInput, parseNumberInput, getGameCoverImage } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { cn } from '../ui/cn';
@@ -166,9 +166,9 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
           <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--line)] shrink-0">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-12 h-14 rounded-xl overflow-hidden bg-[var(--card-2)] shrink-0 border border-[var(--line)]">
-                {game.thumbnail || game.image ? (
+                {getGameCoverImage(game) ? (
                   <img
-                    src={game.thumbnail || game.image}
+                    src={getGameCoverImage(game)}
                     alt={game.name}
                     className="w-full h-full object-cover"
                   />

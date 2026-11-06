@@ -85,7 +85,7 @@ export const PoweredByBGG: React.FC<PoweredByBGGProps> = ({
     return (
       <footer
         className={cn(
-          'w-full pt-8 pb-4 border-t border-[var(--border-subtle)] text-center space-y-2 mt-8 select-none',
+          'w-full pt-6 pb-2 text-center select-none',
           className
         )}
       >
@@ -102,9 +102,6 @@ export const PoweredByBGG: React.FC<PoweredByBGGProps> = ({
             <ExternalLink className="w-3 h-3 opacity-75" />
           </a>
         </div>
-        <p className="text-[11px] text-[var(--text-muted)] max-w-md mx-auto">
-          BoardGame Vault leverages the official BGG XML API for metadata, rankings, and collection sync.
-        </p>
       </footer>
     );
   }

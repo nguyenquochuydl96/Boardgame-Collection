@@ -49,10 +49,25 @@ export function formatDate(isoDate?: string): string {
   const d = new Date(isoDate);
   if (Number.isNaN(d.getTime())) return isoDate;
   return d.toLocaleDateString('en-US', {
-    year: 'numeric',
     month: 'short',
     day: 'numeric',
+    year: 'numeric',
   });
+}
+
+/**
+ * Returns the best image URL for a boardgame, automatically upgrading known placeholders
+ */
+export function getGameCoverImage(game?: Partial<BoardGame> | null): string {
+  if (!game) return '';
+  if (
+    game.name &&
+    game.name.toLowerCase().includes('iron clay') &&
+    (!game.image || game.image.startsWith('data:image/svg'))
+  ) {
+    return 'https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__large/img/PWhlasf_TqRSxwf605lU_lDOh-4=/fit-in/1024x1024/filters:no_upscale():strip_icc()/pic9719419.png';
+  }
+  return game.image || game.thumbnail || '';
 }
 
 export function formatMonthYear(isoDate: string): string {
