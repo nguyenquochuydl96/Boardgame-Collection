@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { cn } from './cn';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline' | 'dark';
   size?: 'sm' | 'md' | 'lg' | 'icon';
   isLoading?: boolean;
 }
@@ -24,34 +24,36 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
       primary:
-        'bg-[image:var(--gradient-hero)] text-white shadow-lg shadow-[var(--accent-glow)] hover:shadow-xl hover:shadow-[var(--accent-glow)] border border-white/20',
+        'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md shadow-[var(--accent)]/20 hover:brightness-105 active:brightness-95 border-0 font-bold',
       secondary:
-        'bg-[var(--bg-elevated)] text-[var(--text-primary)] hover:brightness-110 border border-[var(--border-subtle)] hover:border-[var(--border-glow)]',
+        'bg-[var(--card)] text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--line-2)] hover:bg-[var(--card-2)] active:bg-[var(--card-3)] font-semibold',
+      dark:
+        'bg-[var(--ink)] text-[var(--bg)] hover:opacity-90 active:opacity-100 font-bold',
       outline:
-        'bg-transparent text-[var(--text-primary)] border border-[var(--border-glow)] hover:bg-[var(--accent-glow)] hover:border-[var(--accent-neon)]',
+        'bg-transparent text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--line-2)] hover:bg-[var(--card-2)] font-semibold',
       ghost:
-        'bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 border border-transparent',
+        'bg-transparent text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] border-0 font-medium',
       danger:
-        'bg-rose-500/15 text-rose-300 border border-rose-500/35 hover:bg-rose-500/25',
+        'bg-[var(--bad-soft)] text-[var(--bad)] hover:brightness-95 border-0 font-semibold',
     };
 
     const sizes: Record<NonNullable<ButtonProps['size']>, string> = {
-      sm: 'min-h-[38px] px-3.5 py-1.5 text-xs font-semibold rounded-xl gap-1.5',
-      md: 'min-h-[44px] px-4 py-2.5 text-sm font-semibold rounded-xl gap-2',
-      lg: 'min-h-[50px] px-6 py-3 text-base font-bold rounded-2xl gap-2.5',
-      icon: 'min-h-[44px] min-w-[44px] p-2.5 rounded-xl justify-center',
+      sm: 'min-h-[34px] px-3 py-1.5 text-xs font-semibold rounded-xl gap-1.5',
+      md: 'min-h-[42px] px-4 py-2 text-sm font-semibold rounded-xl gap-2',
+      lg: 'min-h-[48px] px-6 py-2.5 text-base font-bold rounded-2xl gap-2.5',
+      icon: 'min-h-[42px] min-w-[42px] p-2 rounded-xl justify-center',
     };
 
     return (
       <motion.button
         ref={ref}
         type={type}
-        whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
+        whileHover={{ scale: disabled || isLoading ? 1 : 1.015 }}
         whileTap={{ scale: disabled || isLoading ? 1 : 0.96 }}
         transition={{ type: 'spring', stiffness: 450, damping: 25 }}
         disabled={disabled || isLoading}
         className={cn(
-          'inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-all duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] disabled:opacity-50 disabled:cursor-not-allowed select-none',
+          'inline-flex items-center justify-center whitespace-nowrap shrink-0 transition-all duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-45 disabled:cursor-not-allowed select-none',
           variants[variant],
           sizes[size],
           className

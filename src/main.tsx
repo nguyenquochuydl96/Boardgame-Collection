@@ -2,14 +2,21 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Aggressively clear all legacy theme preferences, attributes and stale caches on boot
+// Initialize Fitlo design system theme mode (default to light or saved preference)
 try {
+  // Clear obsolete old cache keys from other legacy experiments
   localStorage.removeItem('bg-vault-fitlo-theme-v4');
   localStorage.removeItem('bg-vault-theme-pref-v3');
   localStorage.removeItem('bg-vault-theme-pref');
   localStorage.removeItem('bg-vault-theme');
-  document.documentElement.removeAttribute('data-theme');
-  document.body?.removeAttribute('data-theme');
+
+  const savedMode = localStorage.getItem('bg-vault-theme-mode') || 'light';
+  document.documentElement.setAttribute('data-theme', savedMode);
+  if (savedMode === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
 } catch {}
 
 // Invalidate legacy service worker caches and ensure immediate updates

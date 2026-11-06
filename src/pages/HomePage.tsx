@@ -22,7 +22,6 @@ import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { formatDate, formatDuration, getCollectionTotalValue } from '../lib/utils';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
-import { TiltCard } from '../components/ui/TiltCard';
 import { SessionDraft } from '../types';
 
 const staggerContainer = {
@@ -30,17 +29,17 @@ const staggerContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
+      staggerChildren: 0.08,
     },
   },
 };
 
 const fadeUpItem = {
-  hidden: { opacity: 0, y: 16 },
+  hidden: { opacity: 0, y: 14 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.35, ease: 'easeOut' as const },
+    transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
   },
 };
 
@@ -115,10 +114,10 @@ export const HomePage: React.FC = () => {
         animate="visible"
         className="space-y-8"
       >
-        {/* Full-Width Hero Banner */}
+        {/* Fitlo Editorial Hero Banner */}
         <motion.section
           variants={fadeUpItem}
-          className="relative rounded-3xl overflow-hidden p-6 sm:p-8 lg:p-10 bg-[image:var(--gradient-hero)] shadow-2xl shadow-[var(--accent-glow)] border border-white/15"
+          className="relative rounded-[24px] overflow-hidden p-6 sm:p-8 lg:p-10 bg-[image:var(--gradient-hero)] shadow-xl shadow-[var(--accent)]/15 border border-white/15 text-white"
         >
           <div
             className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none"
@@ -126,13 +125,13 @@ export const HomePage: React.FC = () => {
           />
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="space-y-2 max-w-2xl">
-              <p className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-sky-200">
+              <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-teal-100/90">
                 Curated by Heo & Gaming Group · Tabletop Archive
               </p>
               <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight">
                 My Boardgame Collection
               </h1>
-              <p className="text-sm sm:text-base text-white/85 leading-relaxed">
+              <p className="text-sm sm:text-base text-white/90 leading-relaxed font-medium">
                 Track every box on your shelf, spin the wheel on game night, and relive every victory across your tabletop group.
               </p>
             </div>
@@ -142,7 +141,7 @@ export const HomePage: React.FC = () => {
                 <Button
                   variant="secondary"
                   size="lg"
-                  className="bg-slate-950/75 hover:bg-slate-950 text-white border-white/25"
+                  className="bg-white/15 hover:bg-white/25 text-white shadow-none font-bold"
                 >
                   <Plus className="w-5 h-5" />
                   Add Game
@@ -152,9 +151,9 @@ export const HomePage: React.FC = () => {
                 <Button
                   variant="secondary"
                   size="lg"
-                  className="bg-white text-slate-950 hover:bg-slate-100 border-white font-extrabold shadow-xl"
+                  className="bg-white text-[var(--ink)] hover:bg-white/90 font-extrabold shadow-lg"
                 >
-                  <Play className="w-4 h-4 fill-slate-950" />
+                  <Play className="w-4 h-4 fill-current" />
                   New Session
                 </Button>
               </Link>
@@ -169,7 +168,7 @@ export const HomePage: React.FC = () => {
           </motion.section>
         )}
 
-        {/* Animated Stat Cards Grid (Clickable to target analytics/collection) */}
+        {/* Fitlo Signature Pastel KPI Tiles Grid */}
         <motion.section
           variants={fadeUpItem}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
@@ -178,35 +177,35 @@ export const HomePage: React.FC = () => {
             label="Total Games Owned"
             value={ownedGamesCount}
             icon={<Dices className="w-5 h-5" />}
-            accentColor="var(--accent-primary)"
             subtitle={`${games.length} total in vault`}
             href="/collection?status=own"
+            tileIndex={1}
           />
           <StatCard
             label="Sessions Played"
             value={totalSessionsCount}
             icon={<Gamepad2 className="w-5 h-5" />}
-            accentColor="var(--accent-secondary)"
             subtitle="All-time tabletop logs"
             href="/sessions"
+            tileIndex={2}
           />
           <StatCard
             label="Hours Played"
             value={totalHoursPlayed}
             suffix="h"
             icon={<Clock className="w-5 h-5" />}
-            accentColor="var(--accent-green)"
             subtitle={`${totalMinutesPlayed} minutes at the table`}
             href="/stats"
+            tileIndex={3}
           />
           <StatCard
             label="Collection Value"
             value={totalCollectionValue}
             isCurrencyVND
             icon={<Wallet className="w-5 h-5" />}
-            accentColor="var(--accent-pink)"
             subtitle="Active shelf valuation"
             href="/collection"
+            tileIndex={4}
           />
         </motion.section>
 
@@ -214,16 +213,16 @@ export const HomePage: React.FC = () => {
         <motion.section variants={fadeUpItem} className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-display font-bold text-xl sm:text-2xl text-white">
+              <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--ink)]">
                 Recently Played
               </h2>
-              <p className="text-xs sm:text-sm text-[#94a3b8]">
+              <p className="text-xs sm:text-sm text-[var(--muted)] font-medium">
                 Your last 5 tabletop game nights
               </p>
             </div>
             <Link
               to="/sessions"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--accent-neon)] hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--accent)] hover:underline transition-colors"
             >
               View All
               <ArrowRight className="w-4 h-4" />
@@ -238,31 +237,30 @@ export const HomePage: React.FC = () => {
               return (
                 <motion.div
                   key={session.id}
-                  whileHover={{ scale: 1.025, y: -3 }}
+                  whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                   className="snap-start shrink-0"
                 >
                   <Link
                     to={`/sessions/${session.id}`}
-                    className="block w-72 sm:w-80 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] hover:border-[var(--border-glow)] hover:shadow-xl hover:shadow-[var(--accent-glow)] p-4 transition-all duration-300 group flex gap-3.5"
+                    className="block w-72 sm:w-80 rounded-[18px] bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line),var(--shadow)] hover:shadow-lg p-3.5 transition-all duration-200 group flex gap-3.5"
                   >
-                    <div className="relative w-20 h-26 rounded-xl overflow-hidden bg-[var(--bg-elevated)] shrink-0 shadow-md">
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/40 to-transparent z-10" />
+                    <div className="relative w-20 h-24 rounded-[12px] overflow-hidden bg-[var(--card-2)] shrink-0 shadow-sm shadow-[inset_0_0_0_1px_var(--line)]">
                       <img
                         src={session.gameThumbnail}
                         alt={session.gameName}
                         referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
                       <div>
-                        <h3 className="font-display font-bold text-base text-[var(--text-primary)] truncate group-hover:text-[var(--accent-neon)] transition-colors">
+                        <h3 className="font-display font-bold text-base text-[var(--ink)] truncate group-hover:text-[var(--accent)] transition-colors">
                           {session.gameName}
                         </h3>
-                        <p className="text-xs text-[var(--text-secondary)] inline-flex items-center gap-1 mt-1 tabular-nums">
-                          <Calendar className="w-3 h-3 text-[#22d3ee]" />
+                        <p className="text-xs text-[var(--muted)] inline-flex items-center gap-1 mt-1 tabular-nums font-medium">
+                          <Calendar className="w-3 h-3 text-[var(--accent)]" />
                           {formatDate(session.datePlayed)}
                           {session.durationMinutes
                             ? ` · ${formatDuration(session.durationMinutes)}`
@@ -271,13 +269,13 @@ export const HomePage: React.FC = () => {
                       </div>
 
                       {winner && (
-                        <div className="mt-2 pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
-                          <span className="inline-flex items-center gap-1 text-amber-300 font-semibold truncate">
-                            <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                        <div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center justify-between text-xs">
+                          <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold truncate">
+                            <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
                             {winner.playerName}
                           </span>
                           {typeof winner.score === 'number' && (
-                            <span className="font-mono font-bold text-[var(--text-primary)] tabular-nums">
+                            <span className="font-mono font-bold text-[var(--ink)] tabular-nums">
                               {winner.score} pts
                             </span>
                           )}
@@ -296,19 +294,19 @@ export const HomePage: React.FC = () => {
           variants={fadeUpItem}
           className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"
         >
-          <Card className="lg:col-span-7 p-6 space-y-5 flex flex-col justify-between">
+          <Card className="lg:col-span-7 p-6 space-y-5 flex flex-col justify-between rounded-[20px]">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-display font-bold text-xl text-white">
+                <h2 className="font-display font-bold text-xl text-[var(--ink)]">
                   Most Played Games
                 </h2>
-                <p className="text-xs text-[#94a3b8]">
+                <p className="text-xs text-[var(--muted)] font-medium">
                   Top 5 boardgames hitting the table
                 </p>
               </div>
               <Link
                 to="/stats"
-                className="text-xs font-semibold text-[var(--accent-neon)] hover:text-white transition-colors"
+                className="text-xs font-bold text-[var(--accent)] hover:underline transition-colors"
               >
                 Full Analytics →
               </Link>
@@ -316,12 +314,12 @@ export const HomePage: React.FC = () => {
             <MiniBarChart items={topPlayedGames} unit="plays" />
           </Card>
 
-          <Card className="lg:col-span-5 p-6 flex flex-col justify-between space-y-5">
+          <Card className="lg:col-span-5 p-6 flex flex-col justify-between space-y-5 rounded-[20px]">
             <div className="space-y-1">
-              <h2 className="font-display font-bold text-xl text-white">
+              <h2 className="font-display font-bold text-xl text-[var(--ink)]">
                 Shelf Status Breakdown
               </h2>
-              <p className="text-xs text-[#94a3b8]">
+              <p className="text-xs text-[var(--muted)] font-medium">
                 Inventory status across your vault
               </p>
             </div>
@@ -329,78 +327,78 @@ export const HomePage: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 tabular-nums">
               <Link
                 to="/collection?status=own"
-                className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-emerald-400/60 hover:shadow-lg transition-all group cursor-pointer block"
+                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-emerald-400 font-semibold transition-colors">Owned</span>
-                  <span className="text-xs text-[var(--text-muted)] group-hover:text-emerald-400">→</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 font-semibold transition-colors">Owned</span>
+                  <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
-                <div className="font-display font-extrabold text-2xl text-emerald-400 mt-1">
+                <div className="font-display font-extrabold text-2xl text-emerald-600 dark:text-emerald-400 mt-1">
                   <AnimatedNumber value={games.filter((g) => g.status === 'own').length} />
                 </div>
               </Link>
 
               <Link
                 to="/collection?status=rented"
-                className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-amber-400/60 hover:shadow-lg transition-all group cursor-pointer block"
+                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-amber-400 font-semibold transition-colors">Rented / Cafe</span>
-                  <span className="text-xs text-[var(--text-muted)] group-hover:text-amber-400">→</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-amber-600 dark:group-hover:text-amber-400 font-semibold transition-colors">Rented</span>
+                  <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
-                <div className="font-display font-extrabold text-2xl text-amber-400 mt-1">
+                <div className="font-display font-extrabold text-2xl text-amber-600 dark:text-amber-400 mt-1">
                   <AnimatedNumber value={games.filter((g) => g.status === 'rented').length} />
                 </div>
               </Link>
 
               <Link
                 to="/collection?status=lent_out"
-                className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-orange-400/60 hover:shadow-lg transition-all group cursor-pointer block"
+                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-orange-400 font-semibold transition-colors">Lent Out</span>
-                  <span className="text-xs text-[var(--text-muted)] group-hover:text-orange-400">→</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-orange-600 dark:group-hover:text-orange-400 font-semibold transition-colors">Lent Out</span>
+                  <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
-                <div className="font-display font-extrabold text-2xl text-orange-400 mt-1">
+                <div className="font-display font-extrabold text-2xl text-orange-600 dark:text-orange-400 mt-1">
                   <AnimatedNumber value={games.filter((g) => g.status === 'lent_out').length} />
                 </div>
               </Link>
 
               <Link
                 to="/collection?status=borrowed"
-                className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-cyan-400/60 hover:shadow-lg transition-all group cursor-pointer block"
+                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-cyan-400 font-semibold transition-colors">Borrowed</span>
-                  <span className="text-xs text-[var(--text-muted)] group-hover:text-cyan-400">→</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-cyan-600 dark:group-hover:text-cyan-400 font-semibold transition-colors">Borrowed</span>
+                  <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
-                <div className="font-display font-extrabold text-2xl text-cyan-400 mt-1">
+                <div className="font-display font-extrabold text-2xl text-cyan-600 dark:text-cyan-400 mt-1">
                   <AnimatedNumber value={games.filter((g) => g.status === 'borrowed').length} />
                 </div>
               </Link>
 
               <Link
                 to="/collection?status=sold"
-                className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-pink-400/60 hover:shadow-lg transition-all group cursor-pointer block"
+                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-pink-400 font-semibold transition-colors">Sold Archive</span>
-                  <span className="text-xs text-[var(--text-muted)] group-hover:text-pink-400">→</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-rose-600 dark:group-hover:text-rose-400 font-semibold transition-colors">Sold Archive</span>
+                  <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
-                <div className="font-display font-extrabold text-2xl text-pink-400 mt-1">
+                <div className="font-display font-extrabold text-2xl text-rose-600 dark:text-rose-400 mt-1">
                   <AnimatedNumber value={games.filter((g) => g.status === 'sold').length} />
                 </div>
               </Link>
 
               <Link
                 to="/collection?status=wishlist"
-                className="p-3.5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--accent-neon)] hover:shadow-lg transition-all group cursor-pointer block"
+                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)] group-hover:text-[var(--accent-neon)] font-semibold transition-colors">Wishlist</span>
-                  <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--accent-neon)]">→</span>
+                  <span className="text-xs text-[var(--ink-2)] group-hover:text-[var(--accent)] font-semibold transition-colors">Wishlist</span>
+                  <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
-                <div className="font-display font-extrabold text-2xl text-[var(--accent-neon)] mt-1">
+                <div className="font-display font-extrabold text-2xl text-[var(--accent)] mt-1">
                   <AnimatedNumber value={games.filter((g) => g.status === 'wishlist').length} />
                 </div>
               </Link>

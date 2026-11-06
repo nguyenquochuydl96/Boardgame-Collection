@@ -9,6 +9,8 @@ import {
   Smartphone,
   Cloud,
   CloudCheck,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
@@ -39,6 +41,30 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showBGGModal, setShowBGGModal] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
+
+  // Theme mode toggle: Fitlo Light & Fitlo Dark
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bg-vault-theme-mode');
+      if (saved === 'dark' || saved === 'light') return saved;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
+  });
+
+  const toggleTheme = () => {
+    const next = themeMode === 'light' ? 'dark' : 'light';
+    setThemeMode(next);
+    try {
+      localStorage.setItem('bg-vault-theme-mode', next);
+      document.documentElement.setAttribute('data-theme', next);
+      if (next === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch {}
+  };
 
   const isSyncEnabled = useSyncStore((s) => s.isEnabled);
   const autoSync = useSyncStore((s) => s.autoSync);
@@ -97,21 +123,21 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--bg-base)] text-[var(--text-primary)] transition-colors duration-300">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--bg)] text-[var(--ink)] transition-colors duration-200">
       {/* Desktop Sidebar Navigation */}
       <aside
         aria-label="Sidebar navigation"
-        className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30 bg-[var(--bg-surface)]/95 backdrop-blur-xl border-r border-[var(--border-subtle)]"
+        className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30 bg-[var(--bg)] border-r border-[var(--line)]"
       >
-        <div className="flex items-center gap-3 px-6 h-20 border-b border-[var(--border-subtle)]">
+        <div className="flex items-center gap-3 px-6 h-20 border-b border-[var(--line)]">
           <Link
             to="/"
             className="flex items-center gap-3 group focus:outline-none"
           >
-            <div className="w-10 h-10 rounded-xl bg-[image:var(--gradient-hero)] flex items-center justify-center shadow-lg shadow-[var(--accent-glow)] group-hover:scale-105 transition-transform">
-              <Dices className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-[11px] bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-md shadow-[var(--accent)]/20 group-hover:scale-105 transition-transform duration-200">
+              <Dices className="w-5 h-5 text-current" />
             </div>
-            <span className="font-display font-extrabold text-xl tracking-tight text-[var(--text-primary)] whitespace-nowrap">
+            <span className="font-display font-extrabold text-xl tracking-tight text-[var(--ink)] whitespace-nowrap">
               BoardGame Vault
             </span>
           </Link>
@@ -127,33 +153,45 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  'relative flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 whitespace-nowrap',
+                  'relative flex items-center gap-3.5 px-4 py-2.5 rounded-[14px] text-sm font-semibold transition-all duration-200 whitespace-nowrap',
                   active
-                    ? 'text-[var(--text-primary)]'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04]'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md shadow-[var(--accent)]/20 font-bold'
+                    : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
                 )}
               >
-                {active && (
-                  <motion.span
-                    layoutId="sidebar-nav-indicator"
-                    className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] opacity-20 border border-[var(--border-glow)]"
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  />
-                )}
                 <Icon
                   className={cn(
-                    'relative z-10 w-5 h-5 shrink-0',
-                    active ? 'text-[var(--accent-neon)]' : 'text-[var(--text-secondary)]'
+                    'w-5 h-5 shrink-0',
+                    active ? 'text-current' : 'text-[var(--muted)]'
                   )}
                 />
-                <span className="relative z-10">{item.label}</span>
+                <span>{item.label}</span>
               </NavLink>
             );
           })}
         </nav>
 
         {/* Sidebar Footer Controls */}
-        <div className="p-4 border-t border-[var(--border-subtle)] space-y-2.5">
+        <div className="p-4 border-t border-[var(--line)] space-y-2.5">
+          {/* Fitlo Theme Mode Toggle */}
+          <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] text-xs font-semibold text-[var(--ink-2)]">
+            <span className="flex items-center gap-2">
+              {themeMode === 'light' ? (
+                <Sun className="w-3.5 h-3.5 text-amber-600" />
+              ) : (
+                <Moon className="w-3.5 h-3.5 text-teal-400" />
+              )}
+              <span>{themeMode === 'light' ? 'Fitlo Light' : 'Fitlo Dark'}</span>
+            </span>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="px-2.5 py-1 rounded-lg bg-[var(--card)] text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--line-2)] hover:bg-[var(--card-3)] transition-colors cursor-pointer text-xs font-bold"
+            >
+              Switch
+            </button>
+          </div>
+
           <Link to="/sessions/new" className="block">
             <Button variant="primary" className="w-full justify-center">
               <Play className="w-4 h-4 fill-current" />
@@ -175,27 +213,27 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               'w-full justify-center text-xs transition-colors',
               isSyncEnabled
                 ? syncStatus === 'error'
-                  ? 'text-rose-300 bg-rose-500/10 border border-rose-500/30'
-                  : 'text-emerald-300 hover:text-emerald-200 bg-emerald-500/10 border border-emerald-500/25'
-                : 'text-[var(--text-secondary)] hover:text-white'
+                  ? 'text-rose-500 bg-rose-500/10'
+                  : 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                : 'text-[var(--muted)] hover:text-[var(--ink)]'
             )}
             onClick={() => setShowSyncModal(true)}
           >
             {isSyncEnabled ? (
-              <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
+              <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-500" />
             ) : (
-              <Cloud className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
+              <Cloud className="w-3.5 h-3.5 mr-1.5 text-cyan-600 dark:text-cyan-400" />
             )}
             <span>{isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}</span>
             {isSyncEnabled && syncStatus === 'syncing' && (
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping ml-1" />
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping ml-1" />
             )}
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-center text-xs text-[var(--text-secondary)] hover:text-white"
+            className="w-full justify-center text-xs text-[var(--muted)] hover:text-[var(--ink)]"
             onClick={() => setShowBGGModal(true)}
           >
             <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722]" />
@@ -211,10 +249,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <Button
               variant="outline"
               size="sm"
-              className="w-full justify-center bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-400 font-bold transition-all shadow-xs"
+              className="w-full justify-center text-xs font-bold"
               onClick={() => setShowInstallModal(true)}
             >
-              <Smartphone className="w-4 h-4 mr-1.5 text-emerald-400" />
+              <Smartphone className="w-4 h-4 mr-1.5 text-emerald-600 dark:text-emerald-400" />
               Install Mobile App
             </Button>
           )}
@@ -222,27 +260,41 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       </aside>
 
       {/* Mobile Top Header */}
-      <header className="lg:hidden sticky top-0 z-30 h-14 pt-[env(safe-area-inset-top)] px-3 sm:px-4 flex items-center justify-between gap-2 bg-[var(--bg-surface)]/90 backdrop-blur-xl border-b border-[var(--border-subtle)]">
+      <header className="lg:hidden sticky top-0 z-30 h-14 pt-[env(safe-area-inset-top)] px-3 sm:px-4 flex items-center justify-between gap-2 bg-[var(--bg)]/90 backdrop-blur-xl border-b border-[var(--line)]">
         <Link
           to="/"
-          className="font-display font-bold text-sm sm:text-base tracking-tight text-[var(--text-primary)] whitespace-nowrap shrink-0 flex items-center gap-2"
+          className="font-display font-bold text-sm sm:text-base tracking-tight text-[var(--ink)] whitespace-nowrap shrink-0 flex items-center gap-2"
         >
-          <span className="w-7 h-7 rounded-lg bg-[image:var(--gradient-hero)] inline-flex items-center justify-center shrink-0 shadow-sm shadow-purple-500/30">
-            <Dices className="w-4 h-4 text-white" />
+          <span className="w-7 h-7 rounded-lg bg-[var(--accent)] text-[var(--accent-ink)] inline-flex items-center justify-center shrink-0 shadow-sm">
+            <Dices className="w-4 h-4 text-current" />
           </span>
           <span className="hidden xs:inline">BoardGame Vault</span>
           <span className="xs:hidden">Vault</span>
         </Link>
 
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Mobile Theme Toggle */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+            title={`Switch to ${themeMode === 'light' ? 'Dark' : 'Light'} Mode`}
+          >
+            {themeMode === 'light' ? (
+              <Moon className="w-4 h-4 text-[var(--ink)]" />
+            ) : (
+              <Sun className="w-4 h-4 text-amber-400" />
+            )}
+          </button>
+
           {!isInstalled && (
             <button
               type="button"
               onClick={() => setShowInstallModal(true)}
-              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 text-xs font-bold inline-flex items-center gap-1 transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
+              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold inline-flex items-center gap-1 transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
               title="Install BoardGame Vault on your mobile home screen"
             >
-              <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+              <Smartphone className="w-3.5 h-3.5 text-emerald-500" />
               <span>Install</span>
             </button>
           )}
@@ -255,14 +307,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               'p-1.5 sm:p-2 rounded-xl transition-colors cursor-pointer relative',
               isSyncEnabled
                 ? syncStatus === 'error'
-                  ? 'text-rose-400 bg-rose-500/10 border border-rose-500/30'
-                  : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30'
-                : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.05]'
+                  ? 'text-rose-500 bg-rose-500/10'
+                  : 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
             )}
             title={isSyncEnabled ? 'Cloud Synced' : 'Connect Cloud Sync'}
           >
             {isSyncEnabled ? (
-              <CloudCheck className="w-4 h-4 text-emerald-400" />
+              <CloudCheck className="w-4 h-4 text-emerald-500" />
             ) : (
               <Cloud className="w-4 h-4" />
             )}
@@ -274,14 +326,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <button
             type="button"
             onClick={() => setShowBGGModal(true)}
-            className="p-1.5 sm:p-2 rounded-xl text-[var(--text-secondary)] hover:text-[#ff7722] hover:bg-white/[0.05] transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-[#ff7722] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
             title="BGG API Settings"
           >
             <Settings className="w-4 h-4" />
           </button>
+
           <Link
             to="/sessions/new"
-            className="min-h-[34px] sm:min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-[image:var(--gradient-hero)] text-xs font-semibold text-white inline-flex items-center gap-1 shadow-md shadow-[var(--accent-glow)] whitespace-nowrap shrink-0 active:scale-95 transition-transform"
+            className="min-h-[34px] sm:min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-[var(--accent)] text-xs font-semibold text-[var(--accent-ink)] inline-flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0 active:scale-95 transition-transform"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span className="hidden xs:inline">New Session</span>

@@ -2,53 +2,259 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* =========================================================================
-   BASE DESIGN TOKENS (UN-THEMED ORIGINAL BASELINE)
+   FITLO DESIGN SYSTEM — AUTHENTIC TOKENS & TYPOGRAPHY
+   Lisbon & Nordic editorial aesthetic with high-precision micro-interactions
    ========================================================================= */
 
 :root {
-  --bg-base: #101216;
-  --bg-surface: #171a22;
-  --bg-elevated: #212530;
-  --bg-card: #1c202a;
-  --accent-primary: #f97316;     /* Sunset Orange */
-  --accent-secondary: #f59e0b;   /* Amber Gold */
-  --accent-neon: #fb923c;
-  --accent-glow: rgba(249, 115, 22, 0.28);
-  --accent-pink: #f43f5e;
-  --accent-cyan: #38bdf8;
-  --accent-green: #22c55e;
-  --accent-orange: #ea580c;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(249, 115, 22, 0.45);
-  --gradient-hero: linear-gradient(135deg, #f97316 0%, #ea580c 45%, #d97706 100%);
-  --gradient-card: linear-gradient(145deg, #212530, #171a22);
-  --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  /* Typography */
+  --font-display: "Urbanist", system-ui, -apple-system, sans-serif;
+  --font-sans: "Urbanist", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Fitlo Geometry & Radii */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 26px;
+  --ease: cubic-bezier(.22, 1, .36, 1);
+
+  /* Light Theme (Fitlo Natural Stone & Deep Spruce) */
+  --bg: #f7f6f2;
+  --bg-base: #f7f6f2;
+  --bg-surface: #fdfdfb;
+  --bg-elevated: #f0efea;
+  --bg-card: #fdfdfb;
+  --card: #fdfdfb;
+  --card-2: #f0efea;
+  --card-3: #e5e4de;
+
+  --ink: #161a19;
+  --ink-2: #353b3a;
+  --muted: #5f6665;
+  --text-primary: #161a19;
+  --text-secondary: #5f6665;
+  --text-muted: #8b9492;
+
+  --line: rgba(22, 26, 25, 0.08);
+  --line-2: rgba(22, 26, 25, 0.15);
+  --border-subtle: rgba(22, 26, 25, 0.09);
+  --border-glow: rgba(11, 122, 115, 0.35);
+
+  --accent: #0b7a73;
+  --accent-primary: #0b7a73;
+  --accent-secondary: #08665f;
+  --accent-neon: #0b7a73;
+  --accent-glow: rgba(11, 122, 115, 0.22);
+  --accent-ink: #ffffff;
+  --accent-hi: #08665f;
+  --accent-soft: rgba(11, 122, 115, 0.10);
+  --accent-text: #08665f;
+
+  --sig: #0b7a73;
+  --sig-text: #08665f;
+  --sig-soft: rgba(11, 122, 115, 0.11);
+  --data: #0b7a73;
+
+  --accent-pink: #d94e34;
+  --accent-cyan: #197c89;
+  --accent-green: #1e7548;
+  --accent-orange: #e2603a;
+
+  --good: #1e7548;
+  --warn: #8a5600;
+  --bad: #b42318;
+  --info: #2c5d87;
+  --good-soft: rgba(30, 117, 72, 0.11);
+  --warn-soft: rgba(214, 150, 20, 0.17);
+  --bad-soft: rgba(180, 35, 24, 0.09);
+  --info-soft: rgba(44, 93, 135, 0.10);
+
+  /* Fitlo signature pastel KPI tiles */
+  --tile-1: #ffe2d1;  /* Soft apricot */
+  --tile-2: #d8ecee;  /* Ice mint */
+  --tile-3: #fbeaa8;  /* Warm butter cream */
+  --tile-4: #e9e8e3;  /* Warm linen stone */
+  --tile-ink: #161a19;
+  --tile-muted: rgba(22, 26, 25, 0.66);
+
+  --gradient-hero: linear-gradient(135deg, #0b7a73 0%, #08665f 50%, #054843 100%);
+  --gradient-card: linear-gradient(145deg, #fdfdfb, #f0efea);
+  --shimmer: linear-gradient(90deg, transparent, rgba(22, 26, 25, 0.04), transparent);
+  --shadow: 0 1px 2px rgba(22, 26, 25, 0.04), 0 10px 26px -18px rgba(22, 26, 25, 0.22);
+  --shadow-lg: 0 2px 6px rgba(22, 26, 25, 0.07), 0 28px 60px -24px rgba(22, 26, 25, 0.32);
+  color-scheme: light;
+}
+
+[data-theme="dark"],
+.dark {
+  /* Dark Theme (Fitlo Deep Obsidian & Electric Mint) */
+  --bg: #111514;
+  --bg-base: #111514;
+  --bg-surface: #191e1d;
+  --bg-elevated: #262c2b;
+  --bg-card: #191e1d;
+  --card: #191e1d;
+  --card-2: #151a19;
+  --card-3: #262c2b;
+
+  --ink: #eef1f0;
+  --ink-2: #d1d6d5;
+  --muted: #9fa8a6;
+  --text-primary: #eef1f0;
+  --text-secondary: #9fa8a6;
+  --text-muted: #6b7573;
+
+  --line: rgba(238, 241, 240, 0.08);
+  --line-2: rgba(238, 241, 240, 0.16);
+  --border-subtle: rgba(238, 241, 240, 0.08);
+  --border-glow: rgba(60, 194, 181, 0.40);
+
+  --accent: #3cc2b5;
+  --accent-primary: #3cc2b5;
+  --accent-secondary: #5fd3c7;
+  --accent-neon: #3cc2b5;
+  --accent-glow: rgba(60, 194, 181, 0.25);
+  --accent-ink: #05201d;
+  --accent-hi: #5fd3c7;
+  --accent-soft: rgba(60, 194, 181, 0.13);
+  --accent-text: #6fd6cb;
+
+  --sig: #3cc2b5;
+  --sig-text: #6fd6cb;
+  --sig-soft: rgba(60, 194, 181, 0.15);
+  --data: #3cc2b5;
+
+  --accent-pink: #f4826b;
+  --accent-cyan: #52c5d4;
+  --accent-green: #6fcb95;
+  --accent-orange: #f08a5d;
+
+  --good: #6fcb95;
+  --warn: #e8b85e;
+  --bad: #f38a7e;
+  --info: #8fb9e0;
+  --good-soft: rgba(111, 203, 149, 0.14);
+  --warn-soft: rgba(232, 184, 94, 0.14);
+  --bad-soft: rgba(243, 138, 126, 0.14);
+  --info-soft: rgba(143, 185, 224, 0.13);
+
+  --tile-1: #3a2a21;
+  --tile-2: #1b2f30;
+  --tile-3: #353019;
+  --tile-4: #222726;
+  --tile-ink: #eef1f0;
+  --tile-muted: rgba(238, 241, 240, 0.68);
+
+  --gradient-hero: linear-gradient(135deg, #1b3834 0%, #132b28 50%, #0d1e1c 100%);
+  --gradient-card: linear-gradient(145deg, #262c2b, #191e1d);
+  --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 30px -16px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.38), 0 30px 70px -24px rgba(0, 0, 0, 0.8);
+  color-scheme: dark;
 }
 
 @theme {
-  --font-display: "Outfit", system-ui, sans-serif;
-  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: "Urbanist", system-ui, sans-serif;
+  --font-sans: "Urbanist", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
 
 @layer base {
   body {
-    background-color: var(--bg-base);
-    color: var(--text-primary);
+    background-color: var(--bg);
+    color: var(--ink);
     font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
+    letter-spacing: -0.025em;
     text-wrap: balance;
   }
 }
 
+/* =========================================================================
+   FITLO COMPONENT UTILITIES & MICRO-INTERACTIONS
+   ========================================================================= */
+
+/* Brand mark badge */
+.fitlo-mark {
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 8px 16px -10px var(--accent);
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  transition: transform 0.25s var(--ease);
+}
+.fitlo-mark:hover {
+  transform: scale(1.05);
+}
+
+/* Authentic Fitlo Card */
+.fitlo-card {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  box-shadow: inset 0 0 0 1px var(--line), var(--shadow);
+  transition: all 0.25s var(--ease);
+}
+.fitlo-card:hover {
+  box-shadow: inset 0 0 0 1px var(--line-2), var(--shadow-lg);
+}
+
+/* Photo container with inset line border and smooth zoom */
+.fitlo-photo {
+  background: var(--card-2);
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 1px var(--line);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Segmented Theme / Tab Toggle */
+.fitlo-seg {
+  background: var(--card-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  border-radius: 99px;
+  padding: 3px;
+  display: inline-flex;
+  position: relative;
+}
+
+/* Breathing live status indicator */
+@keyframes fitloBreathe {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.4);
+  }
+}
+
+.fitlo-live-dot {
+  background: var(--good);
+  border-radius: 50%;
+  position: relative;
+}
+.fitlo-live-dot::after {
+  content: "";
+  background: var(--good);
+  opacity: 0.35;
+  border-radius: 50%;
+  position: absolute;
+  inset: -3px;
+  animation: fitloBreathe 2s ease-in-out infinite;
+}
+
+/* Shimmer sweep animation */
 @keyframes shimmerSweep {
   0% {
     transform: translateX(-100%);
@@ -75,21 +281,21 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Custom sleek scrollbar */
+/* Custom sleek scrollbar matching Fitlo */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-base);
+  background: var(--bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--bg-elevated);
+  background: var(--card-3);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-primary);
+  background: var(--accent);
 }

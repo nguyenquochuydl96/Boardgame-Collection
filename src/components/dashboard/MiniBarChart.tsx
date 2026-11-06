@@ -15,12 +15,12 @@ export interface MiniBarChartProps {
   unit?: string;
 }
 
-const BAR_COLORS = [
-  '#7c3aed',
-  '#2563eb',
-  '#22d3ee',
-  '#10b981',
-  '#ec4899',
+const FITLO_BAR_COLORS = [
+  'var(--accent)',
+  '#1e7548',
+  '#f08a5d',
+  '#2c5d87',
+  '#b42318',
 ];
 
 export const MiniBarChart: React.FC<MiniBarChartProps> = ({
@@ -31,7 +31,7 @@ export const MiniBarChart: React.FC<MiniBarChartProps> = ({
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-[#94a3b8] py-6 text-center">
+      <p className="text-sm text-[var(--muted)] py-6 text-center font-medium">
         No play sessions recorded yet.
       </p>
     );
@@ -41,23 +41,23 @@ export const MiniBarChart: React.FC<MiniBarChartProps> = ({
     <div className="space-y-3.5">
       {items.map((item, idx) => {
         const widthPercent = Math.max(Math.round((item.value / maxVal) * 100), 8);
-        const barColor = item.color || BAR_COLORS[idx % BAR_COLORS.length];
+        const barColor = item.color || FITLO_BAR_COLORS[idx % FITLO_BAR_COLORS.length];
 
         const rowContent = (
           <div className="space-y-1.5 group">
             <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="font-semibold text-[#f1f5f9] group-hover:text-[#a78bfa] transition-colors truncate pr-3">
+              <span className="font-semibold text-[var(--ink)] group-hover:text-[var(--accent)] transition-colors truncate pr-3">
                 {idx + 1}. {item.label}
               </span>
-              <span className="font-mono font-semibold text-[#94a3b8] tabular-nums shrink-0">
+              <span className="font-mono font-bold text-[var(--muted)] tabular-nums shrink-0">
                 {item.value} {unit}
               </span>
             </div>
-            <div className="h-2.5 w-full rounded-full bg-[#16162a] overflow-hidden border border-white/[0.05]">
+            <div className="h-2.5 w-full rounded-full bg-[var(--card-3)] overflow-hidden shadow-[inset_0_0_0_1px_var(--line)]">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${widthPercent}%` }}
-                transition={{ duration: 0.6, delay: idx * 0.08, ease: 'easeOut' }}
+                transition={{ duration: 0.6, delay: idx * 0.08, ease: [0.22, 1, 0.36, 1] }}
                 style={{ backgroundColor: barColor }}
                 className="h-full rounded-full"
               />

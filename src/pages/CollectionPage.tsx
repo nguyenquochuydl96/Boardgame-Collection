@@ -98,31 +98,28 @@ export const CollectionPage: React.FC = () => {
 
   const filteredGames = useMemo(() => {
     return games
-      .filter((game) => {
-        if (activeFilter !== 'all' && game.status !== activeFilter) {
+      .filter((g) => {
+        if (activeFilter !== 'all' && g.status !== activeFilter) {
           return false;
         }
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
-          return (
-            game.name.toLowerCase().includes(q) ||
-            (game.tags && game.tags.some((t) => t.toLowerCase().includes(q)))
-          );
+          const matchName = g.name.toLowerCase().includes(q);
+          const matchTags = g.tags?.some((t) => t.toLowerCase().includes(q));
+          if (!matchName && !matchTags) return false;
         }
         return true;
       })
       .sort((a, b) => {
-        switch (sortBy) {
-          case 'name':
-            return a.name.localeCompare(b.name);
-          case 'bggRating':
-            return (b.bggRating || 0) - (a.bggRating || 0);
-          case 'purchasePrice':
-            return (b.purchasePrice || 0) - (a.purchasePrice || 0);
-          case 'addedDate':
-          default:
-            return (b.addedDate || '').localeCompare(a.addedDate || '');
-        }
+        if (sortBy === 'name') return a.name.localeCompare(b.name);
+        if (sortBy === 'bggRating') return (b.bggRating || 0) - (a.bggRating || 0);
+        if (sortBy === 'purchasePrice')
+          return (b.purchasePrice || 0) - (a.purchasePrice || 0);
+        // Default: addedDate descending
+        return (
+          new Date(b.addedDate || 0).getTime() -
+          new Date(a.addedDate || 0).getTime()
+        );
       });
   }, [games, activeFilter, searchQuery, sortBy]);
 
@@ -136,10 +133,10 @@ export const CollectionPage: React.FC = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)]">
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--ink)]">
               Boardgame Vault
             </h1>
-            <p className="text-sm text-[var(--text-secondary)] tabular-nums">
+            <p className="text-sm text-[var(--muted)] tabular-nums font-medium">
               Showing {visibleGames.length < filteredGames.length ? `${visibleGames.length} of ` : ''}{filteredGames.length} tabletop games in your vault
             </p>
           </div>
@@ -149,13 +146,13 @@ export const CollectionPage: React.FC = () => {
               variant="secondary"
               size="sm"
               onClick={() => setIsWhatToPlayOpen(true)}
-              className="border-amber-500/30 text-amber-300 hover:border-amber-400"
+              className="text-amber-600 dark:text-amber-400 font-semibold"
             >
-              <Sparkles className="w-4 h-4 mr-1 text-amber-400" />
+              <Sparkles className="w-4 h-4 mr-1 text-amber-500" />
               What to Play?
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setIsConfigOpen(true)}>
-              <Settings className="w-4 h-4 mr-1 text-[var(--accent-neon)]" />
+              <Settings className="w-4 h-4 mr-1 text-[var(--accent)]" />
               BGG Sync
             </Button>
             <Button
@@ -167,7 +164,7 @@ export const CollectionPage: React.FC = () => {
               }}
               title="Import collection from ZIP/JSON backup or BGG"
             >
-              <Upload className="w-4 h-4 mr-1 text-[var(--accent-secondary)]" />
+              <Upload className="w-4 h-4 mr-1 text-[var(--accent)]" />
               Import
             </Button>
             <Button
@@ -178,9 +175,9 @@ export const CollectionPage: React.FC = () => {
                 setIsImportOpen(true);
               }}
               title="Backup all collection data to JSON or CSV"
-              className="border-emerald-500/30 text-emerald-300 hover:border-emerald-400"
+              className="text-emerald-600 dark:text-emerald-400 font-semibold"
             >
-              <Download className="w-4 h-4 mr-1 text-emerald-400" />
+              <Download className="w-4 h-4 mr-1 text-emerald-500" />
               Backup &amp; Export
             </Button>
             <Link to="/collection/add">
@@ -192,11 +189,11 @@ export const CollectionPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Status Filter Bar with sliding spring pill */}
+        {/* Status Filter Bar with Fitlo sliding pill */}
         <div
           role="tablist"
           aria-label="Filter collection by status"
-          className="flex items-center gap-2 overflow-x-auto pb-1.5"
+          className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none"
         >
           {FILTER_TABS.map((tab) => {
             const count =
@@ -213,24 +210,24 @@ export const CollectionPage: React.FC = () => {
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
                 className={cn(
-                  'relative min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-2 border select-none',
+                  'relative min-h-[38px] px-3.5 py-1.5 rounded-[12px] text-xs font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-2 select-none',
                   isActive
-                    ? 'text-white border-transparent'
-                    : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[var(--border-glow)] hover:text-[var(--text-primary)]'
+                    ? 'text-[var(--accent-ink)]'
+                    : 'bg-[var(--card)] text-[var(--ink-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:bg-[var(--card-2)] hover:text-[var(--ink)]'
                 )}
               >
                 {isActive && (
                   <motion.span
-                    layoutId="collection-filter-pill"
-                    className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] shadow-lg shadow-[var(--accent-glow)] -z-10"
-                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                    layoutId="collection-tab-pill"
+                    className="absolute inset-0 rounded-[12px] bg-[var(--accent)] shadow-sm pointer-events-none"
+                    transition={{ type: 'spring', stiffness: 450, damping: 30 }}
                   />
                 )}
                 <span className="relative z-10">{tab.label}</span>
                 <span
                   className={cn(
-                    'relative z-10 px-1.5 py-0.5 rounded-md text-[10px] tabular-nums font-semibold',
-                    isActive ? 'bg-white/25 text-white' : 'bg-white/5 text-[var(--text-secondary)]'
+                    'relative z-10 px-1.5 py-0.5 rounded-full text-[10px] tabular-nums font-bold',
+                    isActive ? 'bg-black/20 text-white' : 'bg-[var(--card-3)] text-[var(--ink-2)]'
                   )}
                 >
                   {count}
@@ -247,19 +244,19 @@ export const CollectionPage: React.FC = () => {
               placeholder="Search by title or category..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              leftIcon={<Search className="w-4 h-4 text-[var(--text-secondary)]" />}
+              leftIcon={<Search className="w-4 h-4 text-[var(--muted)]" />}
             />
           </div>
 
           <div className="flex items-center gap-2.5 self-end sm:self-auto">
             {/* Sort Dropdown */}
             <div className="relative inline-flex items-center">
-              <ArrowUpDown className="w-4 h-4 text-[var(--text-secondary)] absolute left-3 pointer-events-none" />
+              <ArrowUpDown className="w-4 h-4 text-[var(--muted)] absolute left-3 pointer-events-none" />
               <select
                 aria-label="Sort collection by"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="min-h-[42px] pl-9 pr-8 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] cursor-pointer appearance-none"
+                className="min-h-[42px] pl-9 pr-8 py-2 rounded-xl bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line-2)] text-xs font-semibold text-[var(--ink)] focus:outline-none focus:shadow-[inset_0_0_0_1.5px_var(--accent)] cursor-pointer appearance-none"
               >
                 <option value="addedDate">Date Added (Newest)</option>
                 <option value="name">Name (A-Z)</option>
@@ -269,23 +266,23 @@ export const CollectionPage: React.FC = () => {
             </div>
 
             {/* View Mode Switcher with sliding spring pill */}
-            <div className="p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] flex items-center gap-1">
+            <div className="p-1 rounded-[12px] bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line)] flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={cn(
-                  'relative p-2 rounded-lg transition-colors cursor-pointer',
+                  'relative p-2 rounded-[9px] transition-colors cursor-pointer',
                   viewMode === 'grid'
-                    ? 'text-white'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    ? 'text-[var(--accent-ink)]'
+                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
                 aria-label="Grid view"
               >
                 {viewMode === 'grid' && (
                   <motion.span
                     layoutId="collection-view-pill"
-                    className="absolute inset-0 rounded-lg bg-[image:var(--gradient-hero)] shadow-md -z-10"
-                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                    className="absolute inset-0 rounded-[9px] bg-[var(--accent)] shadow-xs -z-10"
+                    transition={{ type: 'spring', stiffness: 450, damping: 28 }}
                   />
                 )}
                 <LayoutGrid className="w-4 h-4 relative z-10" />
@@ -294,18 +291,18 @@ export const CollectionPage: React.FC = () => {
                 type="button"
                 onClick={() => setViewMode('list')}
                 className={cn(
-                  'relative p-2 rounded-lg transition-colors cursor-pointer',
+                  'relative p-2 rounded-[9px] transition-colors cursor-pointer',
                   viewMode === 'list'
-                    ? 'text-white'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    ? 'text-[var(--accent-ink)]'
+                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
                 aria-label="List view"
               >
                 {viewMode === 'list' && (
                   <motion.span
                     layoutId="collection-view-pill"
-                    className="absolute inset-0 rounded-lg bg-[image:var(--gradient-hero)] shadow-md -z-10"
-                    transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                    className="absolute inset-0 rounded-[9px] bg-[var(--accent)] shadow-xs -z-10"
+                    transition={{ type: 'spring', stiffness: 450, damping: 28 }}
                   />
                 )}
                 <List className="w-4 h-4 relative z-10" />
@@ -330,7 +327,7 @@ export const CollectionPage: React.FC = () => {
                 <Button
                   variant="secondary"
                   onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
-                  className="px-6 py-2.5 rounded-xl border-[var(--border-subtle)] hover:border-[var(--border-glow)] text-xs font-bold"
+                  className="px-6 py-2 text-xs font-bold"
                 >
                   Load More Games ({filteredGames.length - visibleCount} remaining)
                 </Button>
@@ -339,15 +336,15 @@ export const CollectionPage: React.FC = () => {
           </>
         ) : (
           /* Empty State */
-          <div className="p-12 rounded-3xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-center space-y-4 max-w-md mx-auto my-8">
-            <div className="w-16 h-16 rounded-3xl bg-[image:var(--gradient-hero)] flex items-center justify-center text-3xl mx-auto shadow-xl shadow-[var(--accent-glow)]">
+          <div className="p-12 rounded-[24px] bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line)] text-center space-y-4 max-w-md mx-auto my-8">
+            <div className="w-16 h-16 rounded-[18px] bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center text-3xl mx-auto shadow-md">
               🎲
             </div>
             <div className="space-y-1">
-              <h3 className="font-display font-bold text-lg text-[var(--text-primary)]">
+              <h3 className="font-display font-bold text-lg text-[var(--ink)]">
                 No boardgames found
               </h3>
-              <p className="text-sm text-[var(--text-secondary)]">
+              <p className="text-sm text-[var(--muted)]">
                 {searchQuery || activeFilter !== 'all'
                   ? 'No games match your current filter or search criteria.'
                   : 'Your collection is currently empty. Start adding games to your vault!'}
@@ -383,7 +380,7 @@ export const CollectionPage: React.FC = () => {
         <Link
           to="/collection/add"
           aria-label="Add new boardgame"
-          className="fixed right-5 bottom-20 lg:bottom-8 z-30 w-14 h-14 rounded-2xl bg-[image:var(--gradient-hero)] text-[var(--text-primary)] shadow-xl shadow-[var(--accent-glow)] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
+          className="fixed right-5 bottom-20 lg:bottom-8 z-30 w-14 h-14 rounded-[18px] bg-[var(--accent)] text-[var(--accent-ink)] shadow-xl shadow-[var(--accent)]/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
         >
           <Plus className="w-6 h-6" />
         </Link>

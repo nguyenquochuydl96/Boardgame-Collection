@@ -16,16 +16,16 @@ export const BottomNavBar: React.FC = () => {
   const location = useLocation();
 
   const isTabActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
+    if (path === '/') return location.pathname === '';
     return location.pathname.startsWith(path);
   };
 
   return (
     <nav
       aria-label="Mobile navigation"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-surface)]/95 backdrop-blur-xl border-t border-[var(--border-subtle)] pb-[env(safe-area-inset-bottom)]"
+      className="lg:hidden fixed bottom-[max(10px,env(safe-area-inset-bottom))] left-3 right-3 z-40 max-w-md mx-auto"
     >
-      <div className="grid grid-cols-5 items-center h-16 max-w-lg mx-auto px-1">
+      <div className="bg-[var(--card)]/95 backdrop-blur-xl rounded-[22px] shadow-[inset_0_0_0_1px_var(--line-2),var(--shadow-lg)] p-1.5 grid grid-cols-5 items-center">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = isTabActive(item.to);
@@ -35,24 +35,24 @@ export const BottomNavBar: React.FC = () => {
               key={item.to}
               to={item.to}
               className={cn(
-                'relative flex flex-col items-center justify-center min-h-[48px] min-w-[40px] rounded-xl transition-colors duration-300',
-                active ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                'relative flex flex-col items-center justify-center h-[52px] rounded-[16px] transition-colors duration-200 select-none cursor-pointer',
+                active ? 'text-[var(--accent-ink)] font-bold' : 'text-[var(--muted)] hover:text-[var(--ink)] font-medium'
               )}
             >
               {active && (
                 <motion.span
-                  layoutId="bottom-nav-indicator"
-                  className="absolute inset-x-1 inset-y-1 rounded-xl bg-[var(--accent-glow)] border border-[var(--border-glow)]"
-                  transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  layoutId="fitlo-tabbar-pill"
+                  className="absolute inset-0 rounded-[16px] bg-[var(--accent)] shadow-sm pointer-events-none"
+                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                 />
               )}
               <Icon
                 className={cn(
-                  'relative z-10 w-5 h-5 transition-transform duration-300',
-                  active ? 'text-[var(--accent-neon)] scale-110' : 'text-[var(--text-secondary)]'
+                  'relative z-10 w-[20px] h-[20px] transition-transform duration-200',
+                  active ? 'scale-105' : 'opacity-80'
                 )}
               />
-              <span className="relative z-10 text-[10px] font-semibold mt-0.5 tracking-tight truncate max-w-[50px]">
+              <span className="relative z-10 text-[10px] mt-0.5 tracking-tight truncate max-w-[54px]">
                 {item.label}
               </span>
             </NavLink>
@@ -62,3 +62,5 @@ export const BottomNavBar: React.FC = () => {
     </nav>
   );
 };
+
+export default BottomNavBar;
