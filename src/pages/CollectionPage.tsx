@@ -7,9 +7,7 @@ import {
   List,
   Plus,
   ArrowUpDown,
-  Upload,
-  Download,
-  Settings,
+  ArrowDownUp,
   Sparkles,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
@@ -77,7 +75,7 @@ export const CollectionPage: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
   const [quickEditGame, setQuickEditGame] = useState<BoardGame | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [importModalTab, setImportModalTab] = useState<'file' | 'export' | 'bgg'>('file');
+  const [importModalTab, setImportModalTab] = useState<'import' | 'export'>('import');
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isWhatToPlayOpen, setIsWhatToPlayOpen] = useState(false);
 
@@ -151,34 +149,17 @@ export const CollectionPage: React.FC = () => {
               <Sparkles className="w-4 h-4 mr-1 text-amber-500" />
               What to Play?
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setIsConfigOpen(true)}>
-              <Settings className="w-4 h-4 mr-1 text-[var(--accent)]" />
-              BGG Sync
-            </Button>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => {
-                setImportModalTab('file');
+                setImportModalTab('import');
                 setIsImportOpen(true);
               }}
-              title="Import collection from ZIP/JSON backup or BGG"
+              title="Import or Export collection data"
             >
-              <Upload className="w-4 h-4 mr-1 text-[var(--accent)]" />
-              Import
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setImportModalTab('export');
-                setIsImportOpen(true);
-              }}
-              title="Backup all collection data to JSON or CSV"
-              className="text-emerald-600 dark:text-emerald-400 font-semibold"
-            >
-              <Download className="w-4 h-4 mr-1 text-emerald-500" />
-              Backup &amp; Export
+              <ArrowDownUp className="w-4 h-4 mr-1.5 text-[var(--accent)]" />
+              Import / Export
             </Button>
             <Link to="/collection/add">
               <Button variant="primary">
@@ -363,8 +344,8 @@ export const CollectionPage: React.FC = () => {
                 </Button>
               )}
               <Button variant="secondary" onClick={() => setIsImportOpen(true)}>
-                <Upload className="w-4 h-4 mr-1" />
-                Import File
+                <ArrowDownUp className="w-4 h-4 mr-1 text-[var(--accent)]" />
+                Import / Export
               </Button>
               <Link to="/collection/add">
                 <Button variant="primary">
@@ -376,14 +357,6 @@ export const CollectionPage: React.FC = () => {
           </div>
         )}
 
-        {/* Floating Action Button (FAB) */}
-        <Link
-          to="/collection/add"
-          aria-label="Add new boardgame"
-          className="fixed right-5 bottom-20 lg:bottom-8 z-30 w-14 h-14 rounded-[18px] bg-[var(--accent)] text-[var(--accent-ink)] shadow-xl shadow-[var(--accent)]/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"
-        >
-          <Plus className="w-6 h-6" />
-        </Link>
 
         {/* Modals */}
         <QuickEditGameModal

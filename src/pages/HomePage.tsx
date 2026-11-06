@@ -6,7 +6,6 @@ import {
   Gamepad2,
   Clock,
   Wallet,
-  Plus,
   Play,
   Crown,
   ArrowRight,
@@ -134,24 +133,14 @@ export const HomePage: React.FC = () => {
               </h1>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <Link to="/collection/add">
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="bg-white/20 hover:bg-white/30 text-white border border-white/25 shadow-sm font-bold"
-                >
-                  <Plus className="w-5 h-5 text-white" />
-                  Add Game
-                </Button>
-              </Link>
+            <div className="flex items-center gap-3 shrink-0">
               <Link to="/sessions/new">
                 <Button
                   variant="secondary"
                   size="lg"
                   className="bg-white text-slate-950 hover:bg-slate-100 font-extrabold shadow-lg"
                 >
-                  <Play className="w-4 h-4 fill-slate-950 text-slate-950" />
+                  <Play className="w-4 h-4 fill-slate-950 text-slate-950 mr-1.5" />
                   New Session
                 </Button>
               </Link>

@@ -220,40 +220,44 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             </Button>
           </Link>
 
-          {/* Cloud Sync Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'w-full justify-center text-xs transition-colors font-semibold',
-              isSyncEnabled
-                ? syncStatus === 'error'
-                  ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
-                  : 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10'
-                : 'text-[var(--muted)] hover:text-[var(--ink)]'
-            )}
-            onClick={() => setShowSyncModal(true)}
-          >
-            {isSyncEnabled ? (
-              <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
-            ) : (
-              <Cloud className="w-3.5 h-3.5 mr-1.5 text-cyan-600 dark:text-cyan-400" />
-            )}
-            <span>{isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}</span>
-            {isSyncEnabled && syncStatus === 'syncing' && (
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping ml-1" />
-            )}
-          </Button>
+          {/* Cloud Sync & BGG Settings compact 2-column grid */}
+          <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'justify-center text-xs transition-colors font-semibold px-2',
+                isSyncEnabled
+                  ? syncStatus === 'error'
+                    ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
+                    : 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10'
+                  : 'text-[var(--muted)] hover:text-[var(--ink)]'
+              )}
+              onClick={() => setShowSyncModal(true)}
+              title={isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}
+            >
+              {isSyncEnabled ? (
+                <CloudCheck className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              ) : (
+                <Cloud className="w-3.5 h-3.5 mr-1 text-cyan-600 dark:text-cyan-400 shrink-0" />
+              )}
+              <span className="truncate">{isSyncEnabled ? 'Synced' : 'Cloud'}</span>
+              {isSyncEnabled && syncStatus === 'syncing' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping ml-1 shrink-0" />
+              )}
+            </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-center text-xs text-[var(--muted)] hover:text-[var(--ink)] font-semibold"
-            onClick={() => setShowBGGModal(true)}
-          >
-            <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722]" />
-            BGG Settings
-          </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="justify-center text-xs text-[var(--muted)] hover:text-[var(--ink)] font-semibold px-2"
+              onClick={() => setShowBGGModal(true)}
+              title="BoardGameGeek API Settings"
+            >
+              <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722] shrink-0" />
+              <span className="truncate">BGG</span>
+            </Button>
+          </div>
 
           {/* Official Powered by BGG Badge in Sidebar */}
           <div className="pt-1">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   X,
@@ -80,7 +81,17 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !game) return null;
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const orig = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = orig;
+    };
+  }, [isOpen]);
+
+  if (!isOpen || !game || typeof document === 'undefined') return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,7 +142,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
     'previously_owned',
   ];
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         key="quick-edit-backdrop"
@@ -139,7 +150,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.18 }}
-        className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 cursor-pointer overflow-y-auto"
+        className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 cursor-pointer overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
@@ -148,13 +159,13 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 16 }}
           transition={{ type: 'spring', damping: 26, stiffness: 360 }}
-          className="bg-[#16162a] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-white/10 relative cursor-default text-white my-auto max-h-[92vh] flex flex-col"
+          className="bg-[var(--card)] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-[var(--line)] relative cursor-default text-[var(--ink)] my-auto max-h-[92vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-start justify-between gap-3 pb-3 border-b border-white/10 shrink-0">
+          <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--line)] shrink-0">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-12 h-14 rounded-xl overflow-hidden bg-[#1e1e35] shrink-0 border border-white/10">
+              <div className="w-12 h-14 rounded-xl overflow-hidden bg-[var(--card-2)] shrink-0 border border-[var(--line)]">
                 {game.thumbnail || game.image ? (
                   <img
                     src={game.thumbnail || game.image}
@@ -162,23 +173,23 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-white/40">
+                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[var(--muted)]">
                     🎲
                   </div>
                 )}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-display font-extrabold text-base sm:text-lg text-white truncate">
+                  <h3 className="font-display font-extrabold text-base sm:text-lg text-[var(--ink)] truncate">
                     Quick Edit Game
                   </h3>
                   {isSavedNotice && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
                       <Check className="w-3 h-3" /> Saved!
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-[#94a3b8] truncate">
+                <p className="text-xs text-[var(--muted)] truncate">
                   Edit ownership, pricing, player counts, and notes
                 </p>
               </div>
@@ -187,7 +198,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
             <div className="flex items-center gap-1 shrink-0">
               <Link
                 to={`/collection/${game.id}`}
-                className="p-2 rounded-xl text-[#94a3b8] hover:text-white hover:bg-white/10 transition-colors"
+                className="p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--hover-bg)] transition-colors"
                 title="View Full Game Page"
                 onClick={onClose}
               >
@@ -196,7 +207,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-xl text-[#94a3b8] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                className="p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--hover-bg)] transition-colors cursor-pointer"
                 title="Close"
               >
                 <X className="w-4 h-4" />
@@ -230,7 +241,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
 
             {/* Ownership Status Segmented Selector */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
                 Ownership Status
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
@@ -243,12 +254,12 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
                       type="button"
                       onClick={() => setStatus(st)}
                       style={{
-                        borderColor: active ? cfg.color : 'rgba(255,255,255,0.08)',
-                        backgroundColor: active ? cfg.bg : 'rgba(255,255,255,0.03)',
+                        borderColor: active ? cfg.color : undefined,
+                        backgroundColor: active ? cfg.bg : undefined,
                       }}
                       className={cn(
-                        'p-2 rounded-xl border text-center transition-all cursor-pointer font-bold text-xs select-none',
-                        active ? 'shadow-md scale-[1.02]' : 'hover:border-white/20'
+                        'p-2 rounded-xl border text-center transition-all cursor-pointer font-bold text-xs select-none border-[var(--line)] bg-[var(--card-2)]',
+                        active ? 'shadow-md scale-[1.02]' : 'hover:border-[var(--line-strong)]'
                       )}
                     >
                       <span style={{ color: cfg.color }} className="truncate block">
@@ -262,9 +273,9 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
 
             {/* Conditional Status Helper & Fields */}
             {status === 'rented' && (
-              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200">
-                <p className="font-bold text-amber-300">☕ Rented / Cafe Boardgame</p>
-                <p className="text-[11px] text-amber-200/80 mt-0.5">
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-200">
+                <p className="font-bold text-amber-600 dark:text-amber-300">☕ Rented / Cafe Boardgame</p>
+                <p className="text-[11px] opacity-80 mt-0.5">
                   Played or rented at tabletop cafes. Excluded from personal collection portfolio valuation.
                 </p>
               </div>
@@ -359,7 +370,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
             />
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#94a3b8] flex items-center gap-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
                 <FileText className="w-3.5 h-3.5 text-amber-400" />
                 <span>Notes &amp; Custom Rules</span>
               </label>
@@ -368,16 +379,16 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 placeholder="Custom expansions, card sleeves, favorite variants..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus:border-[var(--border-glow)] focus:ring-2 focus:ring-[var(--accent-glow)] outline-none text-xs text-white placeholder:text-[#94a3b8]/50 resize-none transition-all"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-glow)] outline-none text-xs text-[var(--ink)] placeholder:text-[var(--muted)]/50 resize-none transition-all"
               />
             </div>
 
             {/* Footer Action Bar */}
-            <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-3 shrink-0">
+            <div className="pt-3 border-t border-[var(--line)] flex items-center justify-between gap-3 shrink-0">
               {onDelete ? (
                 isConfirmingDelete ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-rose-400 font-bold">Confirm delete?</span>
+                    <span className="text-xs text-rose-500 font-bold">Confirm delete?</span>
                     <button
                       type="button"
                       onClick={handleDelete}
@@ -388,7 +399,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsConfirmingDelete(false)}
-                      className="px-2 py-1.5 rounded-lg text-xs text-[#94a3b8] hover:text-white"
+                      className="px-2 py-1.5 rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)]"
                     >
                       Cancel
                     </button>
@@ -397,7 +408,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsConfirmingDelete(true)}
-                    className="p-2 rounded-xl text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                    className="p-2 rounded-xl text-rose-500/80 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
                     title="Delete Game from Vault"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -415,7 +426,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
                   variant="primary"
                   size="sm"
                   type="submit"
-                  className="bg-[image:var(--gradient-hero)] text-white font-bold shadow-lg shadow-purple-500/20"
+                  className="bg-[var(--accent)] text-white font-bold shadow-md hover:opacity-90"
                 >
                   <Save className="w-3.5 h-3.5 mr-1.5" />
                   Save Changes
@@ -425,7 +436,8 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
           </form>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

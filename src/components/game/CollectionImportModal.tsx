@@ -11,10 +11,14 @@ import {
   Users,
   Trophy,
   Archive,
+  Download,
+  HardDriveDownload,
+  ArrowDownUp,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { cn } from '../ui/cn';
 import {
   parseImportFile,
   parseBGCatalogZip,
@@ -29,14 +33,13 @@ import { useSessionStore } from '../../store/useSessionStore';
 import { useLocationStore } from '../../store/useLocationStore';
 import { createGameCoverDataUri } from '../../lib/utils';
 import { exportVaultJSON, exportGamesCSV, exportSessionsCSV } from '../../lib/exportVault';
-import { Download, HardDriveDownload } from 'lucide-react';
 import { GameStatus } from '../../types';
 import { PoweredByBGG } from '../ui/PoweredByBGG';
 
 export interface CollectionImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialTab?: 'file' | 'export' | 'bgg';
+  initialTab?: 'import' | 'export' | 'file' | 'bgg';
 }
 
 export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
@@ -54,13 +57,16 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
   const sessions = useSessionStore((s) => s.sessions);
   const locations = useLocationStore((s) => s.locations);
 
-  const [activeTab, setActiveTab] = useState<'file' | 'export' | 'bgg'>(
-    initialTab || 'file'
-  );
+  const resolveTab = (tab?: 'import' | 'export' | 'file' | 'bgg'): 'import' | 'export' => {
+    if (tab === 'export') return 'export';
+    return 'import';
+  };
+
+  const [activeTab, setActiveTab] = useState<'import' | 'export'>(() => resolveTab(initialTab));
 
   React.useEffect(() => {
-    if (isOpen && initialTab) {
-      setActiveTab(initialTab);
+    if (isOpen) {
+      setActiveTab(resolveTab(initialTab));
     }
   }, [isOpen, initialTab]);
   const [bggUsername, setBggUsername] = useState('');
@@ -293,104 +299,141 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Import & Export Collection Data"
+      title="Import & Export Collection"
       maxWidthClass="max-w-2xl"
     >
       <div className="space-y-5 text-sm">
-        {/* Tabs */}
-        <div className="flex p-1 rounded-xl bg-[#16162a] border border-white/10">
+        {/* Unified 2 Tabs Header */}
+        <div className="flex p-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
           <button
             type="button"
-            onClick={() => setActiveTab('file')}
-            className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === 'file'
-                ? 'bg-[image:var(--gradient-hero)] text-white shadow'
-                : 'text-[#94a3b8] hover:text-white'
-            }`}
+            onClick={() => {
+              setActiveTab('import');
+              setError(null);
+              setSuccessMessage(null);
+            }}
+            className={cn(
+              'flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer select-none',
+              activeTab === 'import'
+                ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--hover-bg)]'
+            )}
           >
             <Upload className="w-3.5 h-3.5" />
-            Upload File (.ZIP / .JSON)
+            Import (File / BGG)
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('export')}
-            className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+            onClick={() => {
+              setActiveTab('export');
+              setError(null);
+              setSuccessMessage(null);
+            }}
+            className={cn(
+              'flex-1 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer select-none',
               activeTab === 'export'
-                ? 'bg-[image:var(--gradient-hero)] text-white shadow'
-                : 'text-[#94a3b8] hover:text-white'
-            }`}
+                ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
+                : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--hover-bg)]'
+            )}
           >
             <Download className="w-3.5 h-3.5" />
-            Backup &amp; Export Data
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('bgg')}
-            className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === 'bgg'
-                ? 'bg-[image:var(--gradient-hero)] text-white shadow'
-                : 'text-[#94a3b8] hover:text-white'
-            }`}
-          >
-            <User className="w-3.5 h-3.5" />
-            BGG Sync
+            Export &amp; Backup
           </button>
         </div>
 
-        {/* Tab 1: File Upload Box */}
-        {activeTab === 'file' && !fullBackup && previewItems.length === 0 && (
-          <div className="p-6 rounded-2xl border-2 border-dashed border-white/15 hover:border-[#7c3aed]/50 bg-[#1e1e35]/40 text-center space-y-3 transition-colors">
-            <div className="w-12 h-12 rounded-2xl bg-[#7c3aed]/20 text-[#a78bfa] mx-auto flex items-center justify-center">
-              <Archive className="w-6 h-6" />
+        {/* Tab 1: Import Content */}
+        {activeTab === 'import' && !fullBackup && previewItems.length === 0 && (
+          <div className="space-y-4">
+            {/* File Upload Box */}
+            <div className="p-6 rounded-2xl border-2 border-dashed border-[var(--line-strong)] hover:border-[var(--accent)] bg-[var(--card-2)] text-center space-y-3 transition-colors">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)] mx-auto flex items-center justify-center">
+                <Archive className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="font-bold text-[var(--ink)] text-base">
+                  Drag and drop backup files here
+                </p>
+                <p className="text-xs text-[var(--muted)] mt-1 max-w-md mx-auto">
+                  Supports <strong className="text-[var(--ink)]">.ZIP</strong> or{' '}
+                  <strong className="text-[var(--ink)]">.JSON</strong> backups from BG Catalog (iOS) or BoardGame Vault, and <strong className="text-[var(--ink)]">.CSV</strong> catalogs. Automatically restores games, players, venues, and play sessions!
+                </p>
+              </div>
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".zip,.json,.csv,.txt,application/json,application/zip,text/csv"
+                  onChange={handleFileUpload}
+                  className="sr-only"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={loading}
+                  className="px-5 py-2.5 rounded-xl bg-[var(--accent)] text-[var(--accent-ink)] text-xs font-bold shadow hover:opacity-95 active:scale-95 transition-all inline-flex items-center gap-2 cursor-pointer"
+                >
+                  <Upload className="w-4 h-4" /> Choose File (.zip / .json / .csv)
+                </button>
+              </div>
+              {loading && (
+                <p className="text-xs text-[var(--accent)] animate-pulse font-semibold">
+                  Reading and parsing backup archive...
+                </p>
+              )}
             </div>
-            <div>
-              <p className="font-bold text-white text-base">
-                Drag and drop export files here
-              </p>
-              <p className="text-xs text-[#94a3b8] mt-1 max-w-md mx-auto">
-                Directly supports <strong className="text-white">.ZIP</strong> or{' '}
-                <strong className="text-white">.JSON</strong> backups exported from BG Catalog (iOS) or BoardGame Vault. Automatically imports your games, players, venues, and match histories!
-              </p>
+
+            {/* Divider */}
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-[var(--line)]"></div>
+              <span className="flex-shrink mx-3 text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
+                or sync directly from BoardGameGeek
+              </span>
+              <div className="flex-grow border-t border-[var(--line)]"></div>
             </div>
-            <div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".zip,.json,.csv,.txt,application/json,application/zip,text/csv"
-                onChange={handleFileUpload}
-                className="sr-only"
-                disabled={loading}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={loading}
-                className="px-5 py-2.5 rounded-xl bg-[image:var(--gradient-hero)] text-white text-xs font-bold shadow hover:opacity-95 active:scale-95 transition-all inline-flex items-center gap-2 cursor-pointer"
-              >
-                <Upload className="w-4 h-4" /> Choose File (.zip / .json / .csv)
-              </button>
+
+            {/* BGG Fetch Section */}
+            <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-[var(--muted)] font-medium">
+                  Enter your public BoardGameGeek username to fetch all owned games:
+                </p>
+                <PoweredByBGG variant="inline" />
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder="e.g. your_bgg_username"
+                    value={bggUsername}
+                    onChange={(e) => setBggUsername(e.target.value)}
+                    leftIcon={<Database className="w-4 h-4 text-[var(--accent)]" />}
+                  />
+                </div>
+                <Button
+                  variant="primary"
+                  onClick={handleFetchBGG}
+                  disabled={loading || !bggUsername.trim()}
+                >
+                  {loading ? 'Fetching...' : 'Fetch Games'}
+                </Button>
+              </div>
             </div>
-            {loading && (
-              <p className="text-xs text-[#a78bfa] animate-pulse">
-                Reading and parsing backup archive...
-              </p>
-            )}
           </div>
         )}
 
         {/* FULL BG CATALOG BACKUP PREVIEW CARD */}
         {fullBackup && (
-          <div className="p-5 rounded-2xl bg-[#16162a] border border-[#7c3aed]/40 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+          <div className="p-5 rounded-2xl bg-[var(--card-2)] border border-[var(--accent)] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--line)]">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-[image:var(--gradient-hero)] flex items-center justify-center text-xl shadow-lg shadow-[#7c3aed]/30">
+                <div className="w-10 h-10 rounded-xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center text-xl shadow-md">
                   🎉
                 </div>
                 <div>
-                  <h4 className="font-bold text-white text-sm">
+                  <h4 className="font-bold text-[var(--ink)] text-sm">
                     Complete BG Catalog Backup Detected!
                   </h4>
-                  <p className="text-xs text-[#94a3b8]">
+                  <p className="text-xs text-[var(--muted)]">
                     This export contains your games library, player profiles, locations, and tabletop match history.
                   </p>
                 </div>
@@ -399,48 +442,48 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-3 rounded-xl bg-[#1e1e35] border border-white/5 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-[#22d3ee]">
+              <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)] space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-sky-500 font-bold">
                   <Gamepad2 className="w-4 h-4" />
-                  <span className="font-bold">Board Games</span>
+                  <span>Board Games</span>
                 </div>
-                <p className="text-2xl font-black text-white tabular-nums">
+                <p className="text-2xl font-black text-[var(--ink)] tabular-nums">
                   {fullBackup.summary.gameCount}
                 </p>
-                <p className="text-[10px] text-[#94a3b8]">
+                <p className="text-[10px] text-[var(--muted)]">
                   {fullBackup.summary.ownCount} owned{Boolean(fullBackup.summary.rentedCount) ? ' · ' + fullBackup.summary.rentedCount + ' rented' : ''} · {fullBackup.summary.soldCount} sold
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#1e1e35] border border-white/5 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-[#a78bfa]">
+              <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)] space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-purple-500 font-bold">
                   <Users className="w-4 h-4" />
-                  <span className="font-bold">Players</span>
+                  <span>Players</span>
                 </div>
-                <p className="text-2xl font-black text-white tabular-nums">
+                <p className="text-2xl font-black text-[var(--ink)] tabular-nums">
                   {fullBackup.summary.playerCount}
                 </p>
-                <p className="text-[10px] text-[#94a3b8] truncate">
+                <p className="text-[10px] text-[var(--muted)] truncate">
                   {fullBackup.players.map((p) => p.name).slice(0, 3).join(', ')}...
                 </p>
               </div>
 
-              <div className="p-3 rounded-xl bg-[#1e1e35] border border-white/5 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-[#ec4899]">
+              <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)] space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-rose-500 font-bold">
                   <Trophy className="w-4 h-4" />
-                  <span className="font-bold">Sessions Played</span>
+                  <span>Sessions Played</span>
                 </div>
-                <p className="text-2xl font-black text-white tabular-nums">
+                <p className="text-2xl font-black text-[var(--ink)] tabular-nums">
                   {fullBackup.summary.playCount}
                 </p>
-                <p className="text-[10px] text-[#94a3b8]">With scores &amp; winners</p>
+                <p className="text-[10px] text-[var(--muted)]">With scores &amp; winners</p>
               </div>
             </div>
 
             {/* Options */}
-            <div className="pt-2 border-t border-white/10 space-y-2 text-xs">
-              <p className="font-bold text-white">Import options:</p>
-              <div className="flex flex-wrap gap-4 text-[#94a3b8]">
+            <div className="pt-2 border-t border-[var(--line)] space-y-2 text-xs">
+              <p className="font-bold text-[var(--ink)]">Import options:</p>
+              <div className="flex flex-wrap gap-4 text-[var(--muted)]">
                 <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="checkbox"
@@ -448,7 +491,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                     onChange={(e) =>
                       setImportOptions((o) => ({ ...o, games: e.target.checked }))
                     }
-                    className="rounded text-[#7c3aed]"
+                    className="rounded text-[var(--accent)]"
                   />
                   <span>Import {fullBackup.summary.gameCount} Games</span>
                 </label>
@@ -459,7 +502,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                     onChange={(e) =>
                       setImportOptions((o) => ({ ...o, players: e.target.checked }))
                     }
-                    className="rounded text-[#7c3aed]"
+                    className="rounded text-[var(--accent)]"
                   />
                   <span>Import {fullBackup.summary.playerCount} Players</span>
                 </label>
@@ -470,7 +513,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                     onChange={(e) =>
                       setImportOptions((o) => ({ ...o, sessions: e.target.checked }))
                     }
-                    className="rounded text-[#7c3aed]"
+                    className="rounded text-[var(--accent)]"
                   />
                   <span>Import {fullBackup.summary.playCount} Sessions</span>
                 </label>
@@ -482,7 +525,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                       onChange={(e) =>
                         setImportOptions((o) => ({ ...o, locations: e.target.checked }))
                       }
-                      className="rounded text-[#7c3aed]"
+                      className="rounded text-[var(--accent)]"
                     />
                     <span>Import {fullBackup.locations.length} Locations</span>
                   </label>
@@ -491,7 +534,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+            <div className="flex justify-end gap-2 pt-3 border-t border-[var(--line)]">
               <Button variant="ghost" size="sm" onClick={() => setFullBackup(null)}>
                 Cancel
               </Button>
@@ -507,17 +550,17 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
         {activeTab === 'export' && (
           <div className="space-y-4">
             {/* Full Backup Box */}
-            <div className="p-5 rounded-2xl bg-[#1e1e35]/60 border border-[var(--border-glow)] space-y-4">
+            <div className="p-5 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] space-y-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-[image:var(--gradient-hero)] flex items-center justify-center text-white shadow-lg shadow-[var(--accent-glow)] shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-md shrink-0">
                     <HardDriveDownload className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-display font-bold text-base text-[var(--text-primary)]">
+                    <h3 className="font-display font-bold text-base text-[var(--ink)]">
                       Full Collection Backup (.JSON)
                     </h3>
-                    <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                    <p className="text-xs text-[var(--muted)] mt-0.5">
                       Export a complete archive containing Games, Players, Venues &amp; Session History. Use this to safely backup or migrate across devices.
                     </p>
                   </div>
@@ -525,30 +568,30 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Games</span>
-                  <span className="font-display font-black text-lg text-[var(--text-primary)]">{games.length}</span>
+                <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)]">
+                  <span className="text-xs text-[var(--muted)] block font-medium">Games</span>
+                  <span className="font-display font-black text-lg text-[var(--ink)]">{games.length}</span>
                 </div>
-                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Players</span>
-                  <span className="font-display font-black text-lg text-[var(--accent-neon)]">{players.length}</span>
+                <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)]">
+                  <span className="text-xs text-[var(--muted)] block font-medium">Players</span>
+                  <span className="font-display font-black text-lg text-[var(--accent)]">{players.length}</span>
                 </div>
-                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Sessions</span>
-                  <span className="font-display font-black text-lg text-amber-400">{sessions.length}</span>
+                <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)]">
+                  <span className="text-xs text-[var(--muted)] block font-medium">Sessions</span>
+                  <span className="font-display font-black text-lg text-amber-500">{sessions.length}</span>
                 </div>
-                <div className="p-3 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-                  <span className="text-xs text-[var(--text-secondary)] block font-medium">Venues</span>
-                  <span className="font-display font-black text-lg text-emerald-400">{locations.length}</span>
+                <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)]">
+                  <span className="text-xs text-[var(--muted)] block font-medium">Venues</span>
+                  <span className="font-display font-black text-lg text-emerald-500">{locations.length}</span>
                 </div>
               </div>
 
               <Button
                 variant="primary"
-                className="w-full justify-center py-3 text-sm font-bold shadow-lg shadow-[var(--accent-glow)]"
+                className="w-full justify-center py-3 text-sm font-bold shadow-md"
                 onClick={() => {
                   exportVaultJSON();
-                  setSuccessMessage('BoardGameVault JSON backup downloaded successfully!');
+                  setSuccessMessage('Boardgame Vault JSON backup downloaded successfully!');
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
@@ -557,10 +600,10 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
             </div>
 
             {/* Export CSV for Excel / Sheets */}
-            <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-3">
+            <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] space-y-3">
               <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-emerald-400" />
-                <h4 className="font-bold text-xs uppercase tracking-wider text-[var(--text-secondary)]">
+                <FileText className="w-4 h-4 text-emerald-500" />
+                <h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted)]">
                   Export CSV Spreadsheets (Excel / Google Sheets)
                 </h4>
               </div>
@@ -571,13 +614,13 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                     exportGamesCSV();
                     setSuccessMessage('Exported Games catalog to CSV successfully!');
                   }}
-                  className="p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-white/[0.08] border border-[var(--border-subtle)] text-left flex items-center justify-between group transition-all cursor-pointer"
+                  className="p-3 rounded-xl bg-[var(--card)] hover:bg-[var(--hover-bg)] border border-[var(--line)] text-left flex items-center justify-between group transition-all cursor-pointer"
                 >
                   <div>
-                    <span className="text-xs font-bold text-[var(--text-primary)] block">Export Games Catalog</span>
-                    <span className="text-[11px] text-[var(--text-secondary)]">{games.length} games</span>
+                    <span className="text-xs font-bold text-[var(--ink)] block">Export Games Catalog</span>
+                    <span className="text-[11px] text-[var(--muted)]">{games.length} games</span>
                   </div>
-                  <Download className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-neon)] transition-colors" />
+                  <Download className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
                 </button>
 
                 <button
@@ -586,51 +629,22 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                     exportSessionsCSV();
                     setSuccessMessage('Exported Play Sessions to CSV successfully!');
                   }}
-                  className="p-3 rounded-xl bg-[var(--bg-elevated)] hover:bg-white/[0.08] border border-[var(--border-subtle)] text-left flex items-center justify-between group transition-all cursor-pointer"
+                  className="p-3 rounded-xl bg-[var(--card)] hover:bg-[var(--hover-bg)] border border-[var(--line)] text-left flex items-center justify-between group transition-all cursor-pointer"
                 >
                   <div>
-                    <span className="text-xs font-bold text-[var(--text-primary)] block">Export Session Logs</span>
-                    <span className="text-[11px] text-[var(--text-secondary)]">{sessions.length} sessions</span>
+                    <span className="text-xs font-bold text-[var(--ink)] block">Export Session Logs</span>
+                    <span className="text-[11px] text-[var(--muted)]">{sessions.length} sessions</span>
                   </div>
-                  <Download className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-neon)] transition-colors" />
+                  <Download className="w-4 h-4 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Tab 2: BGG Username */}
-        {activeTab === 'bgg' && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-[#94a3b8]">
-                Enter a public BoardGameGeek username to fetch all games marked "Owned".
-              </p>
-              <PoweredByBGG variant="inline" />
-            </div>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <Input
-                  placeholder="e.g. your_bgg_username"
-                  value={bggUsername}
-                  onChange={(e) => setBggUsername(e.target.value)}
-                  leftIcon={<Database className="w-4 h-4 text-[#22d3ee]" />}
-                />
-              </div>
-              <Button
-                variant="primary"
-                onClick={handleFetchBGG}
-                disabled={loading || !bggUsername.trim()}
-              >
-                {loading ? 'Fetching...' : 'Fetch Games'}
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Error message */}
         {error && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 dark:text-rose-300 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -638,7 +652,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
 
         {/* Success message */}
         {successMessage && (
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between">
+          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 text-xs flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4" />
               <span>{successMessage}</span>
@@ -652,51 +666,52 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
         {/* Simple Game Preview List */}
         {previewItems.length > 0 && (
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs text-[#94a3b8]">
+            <div className="flex items-center justify-between text-xs text-[var(--muted)]">
               <span>
-                Found <strong className="text-white">{previewItems.length}</strong> games (
+                Found <strong className="text-[var(--ink)]">{previewItems.length}</strong> games (
                 {previewItems.filter((i) => i.selected).length} selected)
               </span>
               <button
                 type="button"
                 onClick={toggleAll}
-                className="text-[#a78bfa] hover:underline cursor-pointer"
+                className="text-[var(--accent)] hover:underline cursor-pointer font-bold"
               >
                 {previewItems.every((i) => i.selected) ? 'Deselect All' : 'Select All'}
               </button>
             </div>
 
-            <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1 rounded-xl border border-white/10 p-2 bg-[#121222]">
+            <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1 rounded-xl border border-[var(--line)] p-2 bg-[var(--card)]">
               {previewItems.map((item, idx) => (
                 <div
                   key={idx}
                   onClick={() => toggleItem(idx)}
-                  className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                  className={cn(
+                    'flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors',
                     item.selected
-                      ? 'bg-[#7c3aed]/15 border border-[#7c3aed]/30'
-                      : 'opacity-60 hover:opacity-100'
-                  }`}
+                      ? 'bg-[var(--accent-soft)] border border-[var(--accent)]/40 text-[var(--ink)]'
+                      : 'opacity-60 hover:opacity-100 hover:bg-[var(--hover-bg)]'
+                  )}
                 >
                   <input
                     type="checkbox"
                     checked={item.selected}
                     onChange={() => {}}
-                    className="rounded border-white/20 text-[#7c3aed] focus:ring-[#7c3aed]"
+                    className="rounded border-[var(--line)] text-[var(--accent)] focus:ring-[var(--accent)]"
                   />
                   {item.thumbnail ? (
                     <img
                       src={item.thumbnail}
                       alt={item.name}
-                      className="w-9 h-11 object-cover rounded bg-[#1e1e35]"
+                      className="w-9 h-11 object-cover rounded bg-[var(--card-2)] border border-[var(--line)]"
                     />
                   ) : (
-                    <div className="w-9 h-11 rounded bg-[#1e1e35] flex items-center justify-center text-xs text-[#94a3b8]">
+                    <div className="w-9 h-11 rounded bg-[var(--card-2)] border border-[var(--line)] flex items-center justify-center text-xs text-[var(--muted)]">
                       🎲
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-white text-xs truncate">{item.name}</p>
-                    <p className="text-[11px] text-[#94a3b8]">
+                    <p className="font-bold text-[var(--ink)] text-xs truncate">{item.name}</p>
+                    <p className="text-[11px] text-[var(--muted)]">
                       {item.yearPublished || 'N/A'} · {item.minPlayers}-{item.maxPlayers} players · Status: {item.status}
                     </p>
                   </div>
@@ -704,7 +719,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
               ))}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
+            <div className="flex justify-end gap-2 pt-2 border-t border-[var(--line)]">
               <Button variant="ghost" size="sm" onClick={() => setPreviewItems([])}>
                 Clear
               </Button>
