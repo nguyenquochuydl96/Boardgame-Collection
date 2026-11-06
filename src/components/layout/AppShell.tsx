@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
-import { ThemeSelector } from '../ui/ThemeSelector';
 import { PoweredByBGG } from '../ui/PoweredByBGG';
 import { BGGConfigModal } from '../game/BGGConfigModal';
 import { PwaInstallModal } from '../pwa/PwaInstallModal';
@@ -155,11 +154,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
         {/* Sidebar Footer Controls */}
         <div className="p-4 border-t border-[var(--border-subtle)] space-y-2.5">
-          {/* Theme Selector */}
-          <div className="mb-2">
-            <ThemeSelector />
-          </div>
-
           <Link to="/sessions/new" className="block">
             <Button variant="primary" className="w-full justify-center">
               <Play className="w-4 h-4 fill-current" />
@@ -277,7 +271,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             )}
           </button>
 
-          <ThemeSelector compact />
           <button
             type="button"
             onClick={() => setShowBGGModal(true)}
