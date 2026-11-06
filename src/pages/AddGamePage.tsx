@@ -126,7 +126,7 @@ export const AddGamePage: React.FC = () => {
         <div className="flex items-center justify-between">
           <Link
             to="/collection"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[#94a3b8] hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Collection
@@ -138,7 +138,7 @@ export const AddGamePage: React.FC = () => {
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-white">
               Add Game to Vault
             </h1>
-            <p className="text-sm text-[var(--text-secondary)]">
+            <p className="text-sm text-[#94a3b8]">
               Import box details from BoardGameGeek or enter a custom title manually
             </p>
           </div>
@@ -149,7 +149,7 @@ export const AddGamePage: React.FC = () => {
         <div
           role="tablist"
           aria-label="Add game mode"
-          className="inline-flex p-1.5 rounded-2xl bg-[var(--bg-card)] border border-white/10"
+          className="inline-flex p-1.5 rounded-2xl bg-[#16162a] border border-white/10"
         >
           <button
             role="tab"
@@ -160,7 +160,7 @@ export const AddGamePage: React.FC = () => {
               'min-h-[42px] px-5 py-2 rounded-xl text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer',
               activeTab === 'bgg'
                 ? 'bg-[image:var(--gradient-hero)] text-white shadow-lg'
-                : 'text-[var(--text-secondary)] hover:text-white'
+                : 'text-[#94a3b8] hover:text-white'
             )}
           >
             <Sparkles className="w-4 h-4" />
@@ -178,7 +178,7 @@ export const AddGamePage: React.FC = () => {
               'min-h-[42px] px-5 py-2 rounded-xl text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer',
               activeTab === 'manual'
                 ? 'bg-[image:var(--gradient-hero)] text-white shadow-lg'
-                : 'text-[var(--text-secondary)] hover:text-white'
+                : 'text-[#94a3b8] hover:text-white'
             )}
           >
             <PenLine className="w-4 h-4" />
@@ -191,7 +191,7 @@ export const AddGamePage: React.FC = () => {
           <Card className="p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 pb-1 border-b border-white/5">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[var(--text-secondary)]">Live BGG Catalog Lookup</span>
+                <span className="text-xs font-bold text-[#94a3b8]">Live BGG Catalog Lookup</span>
                 <PoweredByBGG variant="inline" />
               </div>
               <button
@@ -219,7 +219,7 @@ export const AddGamePage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setQuery('')}
-                    className="w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 text-[var(--text-secondary)] hover:text-white flex items-center justify-center transition-colors cursor-pointer text-xs"
+                    className="w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 text-[#94a3b8] hover:text-white flex items-center justify-center transition-colors cursor-pointer text-xs"
                     title="Clear search"
                   >
                     ✕
@@ -235,7 +235,7 @@ export const AddGamePage: React.FC = () => {
                 ))}
               </div>
             ) : results.length === 0 ? (
-              <div className="p-6 text-center text-sm text-[var(--text-secondary)] bg-[var(--bg-card)]/40 rounded-2xl border border-white/5">
+              <div className="p-6 text-center text-sm text-[#94a3b8] bg-[#16162a]/40 rounded-2xl border border-white/5">
                 No matching boardgames found for &quot;{query}&quot;. You can switch to the &quot;Add Manually&quot; tab to enter your custom details.
               </div>
             ) : (
@@ -253,7 +253,7 @@ export const AddGamePage: React.FC = () => {
                         'flex items-center gap-3 p-3 rounded-2xl border text-left transition-all cursor-pointer group',
                         isPicked
                           ? 'bg-[#7c3aed]/25 border-[#7c3aed] ring-2 ring-[#7c3aed]/40'
-                          : 'bg-[var(--paper)]/60 border-white/10 hover:border-[#7c3aed]/40 hover:bg-[var(--paper)]',
+                          : 'bg-[#1e1e35]/60 border-white/10 hover:border-[#7c3aed]/40 hover:bg-[#1e1e35]',
                         isFetchingDetail && !isPicked && 'opacity-60 cursor-not-allowed'
                       )}
                     >
@@ -275,7 +275,7 @@ export const AddGamePage: React.FC = () => {
                           )}
                         </div>
                         {item.yearPublished && (
-                          <p className="text-xs text-[var(--text-secondary)] tabular-nums mt-0.5">
+                          <p className="text-xs text-[#94a3b8] tabular-nums mt-0.5">
                             {item.yearPublished}
                           </p>
                         )}
@@ -342,10 +342,10 @@ export const AddGamePage: React.FC = () => {
 
               {/* Cover Art Preview */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
                   Cover Image Preview
                 </label>
-                <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[var(--bg-card)] border border-white/10 flex items-center justify-center p-2 relative">
+                <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[#16162a] border border-white/10 flex items-center justify-center p-2 relative">
                   {thumbnail ? (
                     <img
                       src={thumbnail}
@@ -365,7 +365,7 @@ export const AddGamePage: React.FC = () => {
             {/* Ownership Status & Finance */}
             <div className="space-y-4 pt-2 border-t border-white/10">
               <div className="space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
                   Ownership Status
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
@@ -391,7 +391,7 @@ export const AddGamePage: React.FC = () => {
                           'p-2.5 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer',
                           isSelected
                             ? 'bg-white/15 border-white/40 text-white shadow-lg'
-                            : 'bg-[var(--bg-card)] border-white/5 text-[var(--text-secondary)] hover:text-white'
+                            : 'bg-[#16162a] border-white/5 text-[#94a3b8] hover:text-white'
                         )}
                       >
                         <span className={cn('block font-extrabold', cfg.color)}>
@@ -462,7 +462,7 @@ export const AddGamePage: React.FC = () => {
               <div className="space-y-1.5">
                 <label
                   htmlFor="game-desc"
-                  className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]"
+                  className="block text-xs font-bold uppercase tracking-wider text-[#94a3b8]"
                 >
                   Description
                 </label>
@@ -472,14 +472,14 @@ export const AddGamePage: React.FC = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Overview of gameplay, theme, or expansion notes..."
-                  className="w-full rounded-xl bg-[var(--bg-card)] border border-white/10 p-3.5 text-sm text-[#f1f5f9] placeholder:text-[#475569] focus:outline-none focus:border-[#7c3aed]"
+                  className="w-full rounded-xl bg-[#16162a] border border-white/10 p-3.5 text-sm text-[#f1f5f9] placeholder:text-[#475569] focus:outline-none focus:border-[#7c3aed]"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label
                   htmlFor="game-notes"
-                  className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]"
+                  className="block text-xs font-bold uppercase tracking-wider text-[#94a3b8]"
                 >
                   Personal Notes
                 </label>
@@ -489,7 +489,7 @@ export const AddGamePage: React.FC = () => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Edition notes, card sleeve count, promos..."
-                  className="w-full rounded-xl bg-[var(--bg-card)] border border-white/10 p-3.5 text-sm text-[#f1f5f9] placeholder:text-[#475569] focus:outline-none focus:border-[#7c3aed]"
+                  className="w-full rounded-xl bg-[#16162a] border border-white/10 p-3.5 text-sm text-[#f1f5f9] placeholder:text-[#475569] focus:outline-none focus:border-[#7c3aed]"
                 />
               </div>
             </div>

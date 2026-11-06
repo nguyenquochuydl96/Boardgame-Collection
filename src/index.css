@@ -2,261 +2,163 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* =========================================================================
-   FITLO DESIGN SYSTEM — Scandinavian Athletic Porcelain & Spruce Teal
-   Upstream Reference: https://codeandchill.store/templates/fitlo
+   THEME PALETTES & DESIGN TOKENS
    ========================================================================= */
 
-/* Fitlo Light (Nordic Spruce Teal & Warm Stone Porcelain) */
+/* Default & Amber: Warm Amber & Coffee (Cozy Tabletop / Warm Sunset) */
 :root,
-[data-theme="fitlo"],
-[data-theme="light"],
-html:not(.dark) {
-  /* Core Fitlo Palette */
-  --bg-base: #f7f6f2;
-  --bg-surface: #f0efea;
-  --bg-elevated: #e5e4de;
-  --bg-card: #fdfdfb;
-  --card-bg: #fdfdfb;
-  --card-2: #f0efea;
-  --card-3: #e5e4de;
-
-  --ink: #161a19;
-  --ink-2: #353b3a;
-  --text-primary: #161a19;
-  --text-secondary: #353b3a;
-  --text-muted: #5f6665;
-  --muted: #5f6665;
-
-  --line: rgba(22, 26, 25, 0.08);
-  --line-2: rgba(22, 26, 25, 0.15);
-  --border-subtle: rgba(22, 26, 25, 0.12);
-  --border-divider: rgba(22, 26, 25, 0.08);
-  --border-glow: #0b7a73;
-
-  /* Accent Colors */
-  --accent-primary: #0b7a73;      /* Nordic Spruce Teal */
-  --accent-hi: #08665f;
-  --accent-ink: #ffffff;
-  --accent-soft: rgba(11, 122, 115, 0.1);
-  --accent-secondary: #e2603a;    /* Warm Terracotta */
-  --accent-glow: rgba(11, 122, 115, 0.18);
-  --good: #1e7548;
-  --warn: #8a5600;
-  --bad: #b42318;
-
-  /* Component Aliases */
-  --coral: #0b7a73;
-  --coral-deep: #08665f;
-  --teal: #0b7a73;
-  --teal-2: #08665f;
-  --butter: #e2603a;
-  --butter-soft: rgba(226, 96, 58, 0.12);
-  --cream: #f7f6f2;
-  --paper: #f0efea;
-
-  /* Fitlo Depth & Shadows */
-  --shadow: 0 1px 2px rgba(22, 26, 25, 0.04), 0 10px 26px -18px rgba(22, 26, 25, 0.22);
-  --shadow-lg: 0 2px 6px rgba(22, 26, 25, 0.07), 0 28px 60px -24px rgba(22, 26, 25, 0.32);
-  --shadow-brutal-xs: 0 1px 2px rgba(22, 26, 25, 0.04), inset 0 0 0 1px rgba(22, 26, 25, 0.1);
-  --shadow-brutal-sm: 0 2px 4px rgba(22, 26, 25, 0.05), inset 0 0 0 1px rgba(22, 26, 25, 0.12);
-  --shadow-brutal: 0 1px 2px rgba(22, 26, 25, 0.04), 0 10px 24px -16px rgba(22, 26, 25, 0.2), inset 0 0 0 1px rgba(22, 26, 25, 0.08);
-  --shadow-brutal-hover: 0 3px 8px rgba(22, 26, 25, 0.06), 0 20px 36px -16px rgba(22, 26, 25, 0.28), inset 0 0 0 1px rgba(22, 26, 25, 0.14);
-  --shadow-brutal-lg: 0 4px 12px rgba(22, 26, 25, 0.07), 0 28px 56px -20px rgba(22, 26, 25, 0.32), inset 0 0 0 1px rgba(22, 26, 25, 0.1);
-  --shadow-brutal-teal: 0 8px 24px -10px rgba(11, 122, 115, 0.4), inset 0 0 0 1px rgba(11, 122, 115, 0.2);
-
-  --radius: 20px;
-  --radius-sm: 12px;
-  --ease-out: cubic-bezier(.22, 1, .36, 1);
-  --gradient-hero: linear-gradient(135deg, #0b7a73 0%, #08665f 100%);
-  --gradient-card: linear-gradient(145deg, #fdfdfb, #f7f6f2);
-  --shimmer: linear-gradient(90deg, transparent, rgba(11, 122, 115, 0.08), transparent);
+[data-theme="amber"] {
+  --bg-base: #101216;
+  --bg-surface: #171a22;
+  --bg-elevated: #212530;
+  --bg-card: #1c202a;
+  --accent-primary: #f97316;     /* Sunset Orange */
+  --accent-secondary: #f59e0b;   /* Amber Gold */
+  --accent-neon: #fb923c;
+  --accent-glow: rgba(249, 115, 22, 0.28);
+  --accent-pink: #f43f5e;
+  --accent-cyan: #38bdf8;
+  --accent-green: #22c55e;
+  --accent-orange: #ea580c;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(249, 115, 22, 0.45);
+  --gradient-hero: linear-gradient(135deg, #f97316 0%, #ea580c 45%, #d97706 100%);
+  --gradient-card: linear-gradient(145deg, #212530, #171a22);
+  --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
 }
 
-/* Fitlo Dark Pine (Deep Obsidian Pine & Electric Mint Glow) */
-[data-theme="fitlo-dark"],
-[data-theme="dark"],
-.dark {
-  --bg-base: #111514;
-  --bg-surface: #151a19;
-  --bg-elevated: #262c2b;
-  --bg-card: #191e1d;
-  --card-bg: #191e1d;
-  --card-2: #151a19;
-  --card-3: #262c2b;
+/* Modern Slate Navy & Radiant Tangerine */
+[data-theme="navy"] {
+  --bg-base: #071526;
+  --bg-surface: #0b1e36;
+  --bg-elevated: #112c4e;
+  --bg-card: #0d2440;
+  --accent-primary: #ff6b00;     /* Radiant Tangerine */
+  --accent-secondary: #2563eb;   /* Royal Navy Blue */
+  --accent-neon: #ff8533;
+  --accent-glow: rgba(255, 107, 0, 0.3);
+  --accent-pink: #ec4899;
+  --accent-cyan: #06b6d4;
+  --accent-green: #10b981;
+  --accent-orange: #f97316;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(255, 107, 0, 0.45);
+  --gradient-hero: linear-gradient(135deg, #ff6b00 0%, #ea580c 45%, #2563eb 100%);
+  --gradient-card: linear-gradient(145deg, #112c4e, #0b1e36);
+  --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
 
-  --ink: #eef1f0;
-  --ink-2: #d1d6d5;
-  --text-primary: #eef1f0;
-  --text-secondary: #d1d6d5;
-  --text-muted: #9fa8a6;
-  --muted: #9fa8a6;
+/* Minimalist Apple/Linear Midnight & Emerald Mint */
+[data-theme="emerald"] {
+  --bg-base: #090d10;
+  --bg-surface: #10161c;
+  --bg-elevated: #172129;
+  --bg-card: #131b22;
+  --accent-primary: #10b981;     /* Fresh Mint */
+  --accent-secondary: #06b6d4;   /* Cyan Teal */
+  --accent-neon: #34d399;
+  --accent-glow: rgba(16, 185, 129, 0.28);
+  --accent-pink: #f43f5e;
+  --accent-cyan: #22d3ee;
+  --accent-green: #10b981;
+  --accent-orange: #f59e0b;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(16, 185, 129, 0.45);
+  --gradient-hero: linear-gradient(135deg, #10b981 0%, #059669 45%, #06b6d4 100%);
+  --gradient-card: linear-gradient(145deg, #172129, #10161c);
+  --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
 
-  --line: rgba(238, 241, 240, 0.08);
-  --line-2: rgba(238, 241, 240, 0.16);
-  --border-subtle: rgba(238, 241, 240, 0.14);
-  --border-divider: rgba(238, 241, 240, 0.08);
-  --border-glow: #3cc2b5;
+/* Warm Canvas & Terracotta (Clean Cozy Light Mode) */
+[data-theme="light"] {
+  --bg-base: #f8f6f0;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1ede2;
+  --bg-card: #ffffff;
+  --accent-primary: #ea580c;     /* Terracotta */
+  --accent-secondary: #d97706;   /* Warm Honey */
+  --accent-neon: #f97316;
+  --accent-glow: rgba(234, 88, 12, 0.22);
+  --accent-pink: #e11d48;
+  --accent-cyan: #0284c7;
+  --accent-green: #16a34a;
+  --accent-orange: #ea580c;
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-glow: rgba(234, 88, 12, 0.35);
+  --gradient-hero: linear-gradient(135deg, #ea580c 0%, #f97316 45%, #d97706 100%);
+  --gradient-card: linear-gradient(145deg, #ffffff, #fbf9f4);
+  --shimmer: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.04), transparent);
+}
 
-  /* Accent Colors */
-  --accent-primary: #3cc2b5;      /* Electric Mint Cyan */
-  --accent-hi: #5fd3c7;
-  --accent-ink: #05201d;
-  --accent-soft: rgba(60, 194, 181, 0.14);
-  --accent-secondary: #f08a5d;    /* Warm Terracotta */
-  --accent-glow: rgba(60, 194, 181, 0.25);
-  --good: #6fcb95;
-  --warn: #e8b85e;
-  --bad: #f38a7e;
-
-  /* Component Aliases */
-  --coral: #3cc2b5;
-  --coral-deep: #5fd3c7;
-  --teal: #3cc2b5;
-  --teal-2: #5fd3c7;
-  --butter: #f08a5d;
-  --butter-soft: rgba(240, 138, 93, 0.16);
-  --cream: #111514;
-  --paper: #151a19;
-
-  /* Shadows */
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -16px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.5), 0 30px 70px -24px rgba(0, 0, 0, 0.85);
-  --shadow-brutal-xs: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(238, 241, 240, 0.1);
-  --shadow-brutal-sm: 0 2px 5px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(238, 241, 240, 0.12);
-  --shadow-brutal: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 30px -16px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(238, 241, 240, 0.1);
-  --shadow-brutal-hover: 0 4px 14px rgba(0, 0, 0, 0.55), 0 24px 48px -18px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(238, 241, 240, 0.18);
-  --shadow-brutal-lg: 0 4px 16px rgba(0, 0, 0, 0.5), 0 30px 70px -24px rgba(0, 0, 0, 0.85), inset 0 0 0 1px rgba(238, 241, 240, 0.12);
-  --shadow-brutal-teal: 0 8px 26px -10px rgba(60, 194, 181, 0.4), inset 0 0 0 1px rgba(60, 194, 181, 0.25);
-
-  --radius: 20px;
-  --radius-sm: 12px;
-  --ease-out: cubic-bezier(.22, 1, .36, 1);
-  --gradient-hero: linear-gradient(135deg, #18423e 0%, #0e2725 100%);
-  --gradient-card: linear-gradient(145deg, #1d2423, #151b1a);
-  --shimmer: linear-gradient(90deg, transparent, rgba(60, 194, 181, 0.08), transparent);
+/* Cyberpunk Violet (Original AI Studio Template) */
+[data-theme="purple"] {
+  --bg-base: #0f0f1a;
+  --bg-surface: #16162a;
+  --bg-elevated: #1e1e35;
+  --bg-card: #1a1a2e;
+  --accent-primary: #7c3aed;     /* Violet */
+  --accent-secondary: #2563eb;   /* Blue */
+  --accent-neon: #a78bfa;
+  --accent-glow: rgba(124, 58, 237, 0.35);
+  --accent-pink: #ec4899;
+  --accent-cyan: #22d3ee;
+  --accent-green: #10b981;
+  --accent-orange: #f97316;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(124, 58, 237, 0.45);
+  --gradient-hero: linear-gradient(135deg, #7c3aed 0%, #2563eb 50%, #0ea5e9 100%);
+  --gradient-card: linear-gradient(145deg, #1e1e35, #16162a);
+  --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
 }
 
 @theme {
-  --font-display: "Urbanist", system-ui, -apple-system, sans-serif;
-  --font-sans: "Urbanist", system-ui, -apple-system, sans-serif;
-  --font-body: "Urbanist", system-ui, -apple-system, sans-serif;
+  --font-display: "Outfit", system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 }
 
 @layer base {
-  * {
-    border-color: var(--border-divider);
-  }
-
-  html {
-    font-family: var(--font-body);
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  }
-
   body {
     background-color: var(--bg-base);
+    background-image:
+      radial-gradient(circle at 12% 8%, var(--accent-glow), transparent 36%),
+      radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.025), transparent 42%);
+    background-attachment: fixed;
     color: var(--text-primary);
-    font-family: var(--font-body);
+    font-family: var(--font-sans);
     min-height: 100vh;
     overflow-x: hidden;
-    transition: background-color 0.3s var(--ease-out), color 0.3s var(--ease-out);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.025em;
     text-wrap: balance;
   }
 }
 
-/* =========================================================================
-   FITLO SIGNATURE ANIMATIONS & MICRO-INTERACTIONS
-   ========================================================================= */
-
-@keyframes breathe-ring {
-  0%, 100% {
-    opacity: 0.4;
-    transform: scale(0.97);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.03);
-  }
-}
-
-@keyframes fitlo-pulse-soft {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.02);
-    opacity: 0.92;
-  }
-}
-
-@keyframes flash {
-  0% { color: var(--accent-primary); }
-  100% { color: inherit; }
-}
-
-.fitlo-breathe {
-  animation: 2.2s ease-in-out infinite breathe-ring;
-}
-
-.fitlo-pulse {
-  animation: 3s cubic-bezier(.22, 1, .36, 1) infinite fitlo-pulse-soft;
-}
-
-.is-flash {
-  animation: flash 1s cubic-bezier(.22, 1, .36, 1);
-}
-
-/* =========================================================================
-   GLOBAL OVERRIDES (ELIMINATES RETRO NEOBRUTALISM & FORCES PURE FITLO)
-   ========================================================================= */
-
-/* Soften all hard brutalist borders */
-[class*="border-[1.5px] border-[var(--ink)]"],
-[class*="border-2 border-[var(--ink)]"],
-[class*="border-[var(--ink)]"] {
-  border-color: var(--line-2) !important;
-}
-
-/* Replace brutal hard-offset box shadows with Fitlo ambient shadows */
-[class*="shadow-[4px_0_0_var(--ink)]"],
-[class*="shadow-[4px_4px_0_var(--ink)]"] {
-  box-shadow: none !important;
-}
-
-[class*="shadow-[2px_2px_0_var(--ink)]"],
-[class*="shadow-[1.5px_1.5px_0_var(--ink)]"],
-[class*="shadow-[1px_1px_0_var(--ink)]"] {
-  box-shadow: var(--shadow) !important;
-}
-
-[class*="shadow-[0_2px_0_var(--ink)]"] {
-  box-shadow: var(--shadow) !important;
-}
-
-[class*="shadow-[0_-2px_0_var(--ink)]"] {
-  box-shadow: var(--shadow-lg) !important;
-}
-
-[class*="shadow-[3px_3px_0_var(--coral)]"],
-[class*="shadow-[2px_2px_0_var(--coral)]"] {
-  box-shadow: 0 4px 14px -3px var(--accent-glow) !important;
-}
-
-[class*="shadow-[8px_8px_0_var(--teal)]"],
-[class*="shadow-[10px_10px_0_var(--teal)]"] {
-  box-shadow: var(--shadow-lg) !important;
-}
-
-/* Shimmer */
 @keyframes shimmerSweep {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .animate-shimmer {
@@ -281,18 +183,23 @@ html:not(.dark) {
   font-variant-numeric: tabular-nums;
 }
 
-/* Clean Fitlo Minimal Scrollbar */
+/* Physical collection box / book elevation */
+.box-physical-shadow {
+  box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+}
+
+/* Custom sleek scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-base);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--line-2);
+  background: var(--bg-elevated);
   border-radius: 9999px;
 }
 

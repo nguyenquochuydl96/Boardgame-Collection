@@ -2,32 +2,29 @@ import React from 'react';
 import { cn } from './cn';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  tone?: 'violet' | 'blue' | 'green' | 'orange' | 'pink' | 'cyan' | 'neutral' | 'butter' | 'coral' | 'teal';
+  tone?: 'violet' | 'blue' | 'green' | 'orange' | 'pink' | 'cyan' | 'neutral';
 }
 
 export const Badge: React.FC<BadgeProps> = ({
   className,
-  tone = 'teal',
+  tone = 'violet',
   children,
   ...props
 }) => {
   const tones: Record<NonNullable<BadgeProps['tone']>, string> = {
-    teal: 'bg-[var(--accent-soft)] text-[var(--accent-primary)] border-[var(--accent-primary)]/20',
-    coral: 'bg-[var(--butter-soft)] text-[var(--accent-secondary)] border-[var(--accent-secondary)]/20',
-    butter: 'bg-[var(--butter-soft)] text-[var(--accent-secondary)] border-[var(--accent-secondary)]/20',
-    green: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    orange: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-    pink: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
-    cyan: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
-    blue: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
-    violet: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
-    neutral: 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--line-2)]',
+    violet: 'bg-[#7c3aed]/20 text-[#a78bfa] border-[#7c3aed]/40',
+    blue: 'bg-[#2563eb]/20 text-sky-300 border-[#2563eb]/40',
+    green: 'bg-[#10b981]/20 text-emerald-300 border-[#10b981]/40',
+    orange: 'bg-[#f97316]/20 text-orange-300 border-[#f97316]/40',
+    pink: 'bg-[#ec4899]/20 text-pink-300 border-[#ec4899]/40',
+    cyan: 'bg-[#22d3ee]/20 text-cyan-300 border-[#22d3ee]/40',
+    neutral: 'bg-slate-800/70 text-[#94a3b8] border-white/10',
   };
 
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide border whitespace-nowrap shrink-0 select-none',
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap shrink-0 transition-colors duration-300',
         tones[tone],
         className
       )}

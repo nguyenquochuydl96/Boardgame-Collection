@@ -16,11 +16,11 @@ export interface MiniBarChartProps {
 }
 
 const BAR_COLORS = [
-  'var(--coral)',
-  'var(--teal)',
-  'var(--butter)',
-  'var(--teal-2)',
-  'var(--coral-deep)',
+  '#7c3aed',
+  '#2563eb',
+  '#22d3ee',
+  '#10b981',
+  '#ec4899',
 ];
 
 export const MiniBarChart: React.FC<MiniBarChartProps> = ({
@@ -31,7 +31,7 @@ export const MiniBarChart: React.FC<MiniBarChartProps> = ({
 
   if (items.length === 0) {
     return (
-      <p className="text-sm text-[var(--text-secondary)] py-6 text-center font-medium">
+      <p className="text-sm text-[#94a3b8] py-6 text-center">
         No play sessions recorded yet.
       </p>
     );
@@ -46,20 +46,20 @@ export const MiniBarChart: React.FC<MiniBarChartProps> = ({
         const rowContent = (
           <div className="space-y-1.5 group">
             <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="font-bold font-display text-[var(--text-primary)] group-hover:text-[var(--coral)] transition-colors truncate pr-3">
+              <span className="font-semibold text-[#f1f5f9] group-hover:text-[#a78bfa] transition-colors truncate pr-3">
                 {idx + 1}. {item.label}
               </span>
-              <span className="font-mono font-bold text-[var(--text-secondary)] tabular-nums shrink-0">
+              <span className="font-mono font-semibold text-[#94a3b8] tabular-nums shrink-0">
                 {item.value} {unit}
               </span>
             </div>
-            <div className="h-3 w-full rounded-full bg-[var(--paper)] overflow-hidden border border-[var(--ink)]">
+            <div className="h-2.5 w-full rounded-full bg-[#16162a] overflow-hidden border border-white/[0.05]">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${widthPercent}%` }}
-                transition={{ duration: 0.7, delay: idx * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.6, delay: idx * 0.08, ease: 'easeOut' }}
                 style={{ backgroundColor: barColor }}
-                className="h-full rounded-full border-r border-[var(--ink)]"
+                className="h-full rounded-full"
               />
             </div>
           </div>

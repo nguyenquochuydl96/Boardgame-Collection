@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
+import { motion } from 'motion/react';
 import {
   Dices,
   Plus,
   Play,
   Settings,
+  Smartphone,
   Cloud,
   CloudCheck,
-  Moon,
-  Sun,
 } from 'lucide-react';
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
@@ -23,7 +23,6 @@ import { useSyncStore } from '../../store/useSyncStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useSessionStore } from '../../store/useSessionStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
-import { useThemeStore } from '../../store/useThemeStore';
 import {
   pullVaultFromCloud,
   pushVaultToCloud,
@@ -42,23 +41,26 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [showBGGModal, setShowBGGModal] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
 
-  const theme = useThemeStore((s) => s.theme);
-  const toggleTheme = useThemeStore((s) => s.toggleTheme);
-  const isDark = theme === 'fitlo-dark';
-
   const isSyncEnabled = useSyncStore((s) => s.isEnabled);
   const autoSync = useSyncStore((s) => s.autoSync);
   const syncStatus = useSyncStore((s) => s.syncStatus);
-  const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
 
-  // Sync on startup once URL parameters are parsed
+  // Check 1-click mobile import parameters and setup sync listeners
   useEffect(() => {
-    checkUrlSyncParameters();
-    if (useSyncStore.getState().isEnabled) {
-      pullVaultFromCloud().catch(() => {});
-      startVaultRealtimeSubscription();
+    const importedFromUrl = checkUrlSyncParameters();
+    if (importedFromUrl) {
+      setShowSyncModal(true);
+    } else if (isSyncEnabled && autoSync) {
+      // Pull latest cloud updates on app launch
+      pullVaultFromCloud('replace');
     }
-  }, []);
+
+    // Subscribe to multi-device Realtime events
+    const unsubscribeRealtime = startVaultRealtimeSubscription();
+    return () => {
+      unsubscribeRealtime();
+    };
+  }, [isSyncEnabled, autoSync]);
 
   // Debounced auto-push when stores change locally
   useEffect(() => {
@@ -96,211 +98,232 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--bg-base)] text-[var(--text-primary)] transition-colors duration-300 relative">
-      <div className="flex-1 flex flex-col lg:flex-row">
-        {/* Desktop Sidebar Navigation */}
-        <aside
-          aria-label="Sidebar navigation"
-          className="hidden lg:flex lg:w-72 lg:flex-col lg:fixed lg:top-0 lg:bottom-0 z-30 bg-[var(--bg-card)] border-r border-[var(--line)] shadow-xs"
-        >
-          {/* Logo Header */}
-          <div className="flex items-center justify-between px-6 h-18 border-b border-[var(--line)] bg-[var(--bg-card)]">
-            <Link
-              to="/"
-              className="flex items-center gap-3 group focus:outline-none"
-            >
-              <div className="w-9 h-9 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-ink)] shadow-md shadow-[var(--accent-primary)]/25 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Dices className="w-5 h-5 text-current" />
-              </div>
-              <div className="flex flex-col">
-                <span className="font-display font-bold text-lg tracking-tight leading-none text-[var(--text-primary)]">
-                  BoardGame <span className="text-[var(--accent-primary)] font-extrabold">Vault</span>
-                </span>
-                <span className="text-[10px] font-semibold text-[var(--text-muted)] tracking-wider uppercase mt-1">
-                  Tabletop Archive
-                </span>
-              </div>
-            </Link>
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--bg-base)] text-[var(--text-primary)] transition-colors duration-300">
+      {/* Desktop Sidebar Navigation */}
+      <aside
+        aria-label="Sidebar navigation"
+        className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30 bg-[var(--bg-surface)]/95 backdrop-blur-xl border-r border-[var(--border-subtle)]"
+      >
+        <div className="flex items-center gap-3 px-6 h-20 border-b border-[var(--border-subtle)]">
+          <Link
+            to="/"
+            className="flex items-center gap-3 group focus:outline-none"
+          >
+            <div className="w-10 h-10 rounded-xl bg-[image:var(--gradient-hero)] flex items-center justify-center shadow-lg shadow-[var(--accent-glow)] group-hover:scale-105 transition-transform">
+              <Dices className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-display font-extrabold text-xl tracking-tight text-[var(--text-primary)] whitespace-nowrap">
+              BoardGame Vault
+            </span>
+          </Link>
+        </div>
+
+        <nav className="flex-1 px-4 py-6 space-y-1.5">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const active = isTabActive(item.to);
+
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  'relative flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 whitespace-nowrap',
+                  active
+                    ? 'text-[var(--text-primary)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04]'
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="sidebar-nav-indicator"
+                    className="absolute inset-0 rounded-xl bg-[image:var(--gradient-hero)] opacity-20 border border-[var(--border-glow)]"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <Icon
+                  className={cn(
+                    'relative z-10 w-5 h-5 shrink-0',
+                    active ? 'text-[var(--accent-neon)]' : 'text-[var(--text-secondary)]'
+                  )}
+                />
+                <span className="relative z-10">{item.label}</span>
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        {/* Sidebar Footer Controls */}
+        <div className="p-4 border-t border-[var(--border-subtle)] space-y-2.5">
+          {/* Theme Selector */}
+          <div className="mb-2">
+            <ThemeSelector />
           </div>
 
-          {/* Navigation Links */}
-          <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const active = isTabActive(item.to);
+          <Link to="/sessions/new" className="block">
+            <Button variant="primary" className="w-full justify-center">
+              <Play className="w-4 h-4 fill-current" />
+              New Session
+            </Button>
+          </Link>
+          <Link to="/collection/add" className="block">
+            <Button variant="secondary" className="w-full justify-center">
+              <Plus className="w-4 h-4" />
+              Add Game
+            </Button>
+          </Link>
 
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={cn(
-                    'group relative flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold tracking-wide transition-all duration-200 select-none',
-                    active
-                      ? 'bg-[var(--accent-primary)] text-[var(--accent-ink)] shadow-sm shadow-[var(--accent-primary)]/20'
-                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      'w-5 h-5 shrink-0 transition-transform group-hover:scale-105',
-                      active ? 'text-[var(--accent-ink)]' : 'text-[var(--text-muted)] group-hover:text-[var(--text-primary)]'
-                    )}
-                  />
-                  <span className="flex-1">{item.label}</span>
-                  {active && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-ink)]" />
-                  )}
-                </NavLink>
-              );
-            })}
-          </nav>
+          {/* Cloud Sync Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              'w-full justify-center text-xs transition-colors',
+              isSyncEnabled
+                ? syncStatus === 'error'
+                  ? 'text-rose-300 bg-rose-500/10 border border-rose-500/30'
+                  : 'text-emerald-300 hover:text-emerald-200 bg-emerald-500/10 border border-emerald-500/25'
+                : 'text-[var(--text-secondary)] hover:text-white'
+            )}
+            onClick={() => setShowSyncModal(true)}
+          >
+            {isSyncEnabled ? (
+              <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
+            ) : (
+              <Cloud className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
+            )}
+            <span>{isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}</span>
+            {isSyncEnabled && syncStatus === 'syncing' && (
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping ml-1" />
+            )}
+          </Button>
 
-          {/* Sidebar Footer Controls */}
-          <div className="p-4 border-t border-[var(--line)] bg-[var(--bg-card)] space-y-2.5">
-            <ThemeSelector />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-center text-xs text-[var(--text-secondary)] hover:text-white"
+            onClick={() => setShowBGGModal(true)}
+          >
+            <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722]" />
+            BGG Settings
+          </Button>
 
-            <Link to="/sessions/new" className="block">
-              <Button variant="primary" size="md" className="w-full justify-center" withArrowDot>
-                <Play className="w-4 h-4 fill-current mr-1" />
-                New Session
-              </Button>
-            </Link>
-            <Link to="/collection/add" className="block">
-              <Button variant="secondary" size="md" className="w-full justify-center">
-                <Plus className="w-4 h-4 mr-1" />
-                Add Game
-              </Button>
-            </Link>
+          {/* Official Powered by BGG Badge in Sidebar */}
+          <div className="pt-1">
+            <PoweredByBGG variant="sidebar" />
+          </div>
 
-            {/* Cloud Sync Button */}
+          {!isInstalled && (
             <Button
               variant="outline"
               size="sm"
-              className={cn(
-                'w-full justify-center text-xs transition-colors',
-                isSyncEnabled
-                  ? syncStatus === 'error'
-                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                  : 'text-[var(--text-secondary)]'
-              )}
-              onClick={() => setShowSyncModal(true)}
+              className="w-full justify-center bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-400 font-bold transition-all shadow-xs"
+              onClick={() => setShowInstallModal(true)}
             >
-              {isSyncEnabled ? (
-                <>
-                  <CloudCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>
-                    {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'error' ? 'Sync Error' : 'Cloud Synced'}
-                  </span>
-                  {lastSyncedAt && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-1.5" />
-                  )}
-                </>
-              ) : (
-                <>
-                  <Cloud className="w-3.5 h-3.5 mr-1.5 text-[var(--text-muted)]" />
-                  <span>Setup Cloud Sync</span>
-                </>
-              )}
+              <Smartphone className="w-4 h-4 mr-1.5 text-emerald-400" />
+              Install Mobile App
             </Button>
+          )}
+        </div>
+      </aside>
 
-            {/* BGG Configuration Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full justify-center text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-              onClick={() => setShowBGGModal(true)}
-            >
-              <Settings className="w-3.5 h-3.5 mr-1.5" />
-              <span>BGG Settings</span>
-            </Button>
-
-            {/* Powered by BGG badge */}
-            <div className="pt-2 border-t border-[var(--line)]">
-              <PoweredByBGG />
-            </div>
-
-            {/* PWA Install Button */}
-            {!isInstalled && deferredPrompt && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-center text-xs text-[var(--accent-primary)] border-[var(--accent-primary)]/30 hover:bg-[var(--accent-soft)]"
-                onClick={() => setShowInstallModal(true)}
-              >
-                Install Mobile App
-              </Button>
-            )}
-          </div>
-        </aside>
-
-        {/* Mobile Top Header */}
-        <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between px-4 h-14 bg-[var(--bg-card)]/90 backdrop-blur-md text-[var(--text-primary)] border-b border-[var(--line)] shadow-xs">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-ink)] flex items-center justify-center shadow-xs">
-              <Dices className="w-4 h-4 text-current" />
-            </div>
-            <span className="font-display font-bold text-base tracking-tight text-[var(--text-primary)]">
-              BoardGame <span className="text-[var(--accent-primary)] font-extrabold">Vault</span>
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="p-2 rounded-xl bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-              title={isDark ? 'Switch to Light' : 'Switch to Dark'}
-            >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowSyncModal(true)}
-              className="p-2 rounded-xl bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-              title="Cloud Sync"
-            >
-              {isSyncEnabled ? (
-                <CloudCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              ) : (
-                <Cloud className="w-4 h-4 text-[var(--text-muted)]" />
-              )}
-            </button>
-
-            <Link
-              to="/sessions/new"
-              className="w-8 h-8 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-ink)] flex items-center justify-center shadow-xs"
-              title="New Session"
-            >
-              <Plus className="w-4 h-4" />
-            </Link>
-          </div>
-        </header>
-
-        {/* Main Content Area */}
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className="flex-1 lg:pl-72 pb-24 lg:pb-12 focus:outline-none"
+      {/* Mobile Top Header */}
+      <header className="lg:hidden sticky top-0 z-30 h-14 pt-[env(safe-area-inset-top)] px-3 sm:px-4 flex items-center justify-between gap-2 bg-[var(--bg-surface)]/90 backdrop-blur-xl border-b border-[var(--border-subtle)]">
+        <Link
+          to="/"
+          className="font-display font-bold text-sm sm:text-base tracking-tight text-[var(--text-primary)] whitespace-nowrap shrink-0 flex items-center gap-2"
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            {children}
-          </div>
-        </main>
-      </div>
+          <span className="w-7 h-7 rounded-lg bg-[image:var(--gradient-hero)] inline-flex items-center justify-center shrink-0 shadow-sm shadow-purple-500/30">
+            <Dices className="w-4 h-4 text-white" />
+          </span>
+          <span className="hidden xs:inline">BoardGame Vault</span>
+          <span className="xs:hidden">Vault</span>
+        </Link>
 
-      {/* Mobile Bottom Navigation Bar */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {!isInstalled && (
+            <button
+              type="button"
+              onClick={() => setShowInstallModal(true)}
+              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-emerald-300 text-xs font-bold inline-flex items-center gap-1 transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
+              title="Install BoardGame Vault on your mobile home screen"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Install</span>
+            </button>
+          )}
+
+          {/* Mobile Cloud Sync Icon */}
+          <button
+            type="button"
+            onClick={() => setShowSyncModal(true)}
+            className={cn(
+              'p-1.5 sm:p-2 rounded-xl transition-colors cursor-pointer relative',
+              isSyncEnabled
+                ? syncStatus === 'error'
+                  ? 'text-rose-400 bg-rose-500/10 border border-rose-500/30'
+                  : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/30'
+                : 'text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.05]'
+            )}
+            title={isSyncEnabled ? 'Cloud Synced' : 'Connect Cloud Sync'}
+          >
+            {isSyncEnabled ? (
+              <CloudCheck className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <Cloud className="w-4 h-4" />
+            )}
+            {isSyncEnabled && syncStatus === 'syncing' && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            )}
+          </button>
+
+          <ThemeSelector compact />
+          <button
+            type="button"
+            onClick={() => setShowBGGModal(true)}
+            className="p-1.5 sm:p-2 rounded-xl text-[var(--text-secondary)] hover:text-[#ff7722] hover:bg-white/[0.05] transition-colors cursor-pointer"
+            title="BGG API Settings"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+          <Link
+            to="/sessions/new"
+            className="min-h-[34px] sm:min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-[image:var(--gradient-hero)] text-xs font-semibold text-white inline-flex items-center gap-1 shadow-md shadow-[var(--accent-glow)] whitespace-nowrap shrink-0 active:scale-95 transition-transform"
+          >
+            <Play className="w-3.5 h-3.5 fill-current" />
+            <span className="hidden xs:inline">New Session</span>
+            <span className="xs:hidden">Play</span>
+          </Link>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="flex-1 lg:pl-64 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+          {children}
+
+          {/* Persistent Compliance Footer */}
+          <PoweredByBGG variant="footer" />
+        </div>
+      </main>
+
       <BottomNavBar />
 
-      {/* Modals */}
-      <CloudSyncModal isOpen={showSyncModal} onClose={() => setShowSyncModal(false)} />
-      <BGGConfigModal isOpen={showBGGModal} onClose={() => setShowBGGModal(false)} />
+      <BGGConfigModal
+        isOpen={showBGGModal}
+        onClose={() => setShowBGGModal(false)}
+      />
+
+      <CloudSyncModal
+        isOpen={showSyncModal}
+        onClose={() => setShowSyncModal(false)}
+      />
+
       <PwaInstallModal
         isOpen={showInstallModal}
         onClose={() => setShowInstallModal(false)}
         deferredPrompt={deferredPrompt}
-        onInstallSuccess={() => install()}
+        onInstallSuccess={() => void install()}
       />
     </div>
   );

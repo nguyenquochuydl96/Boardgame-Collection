@@ -97,25 +97,28 @@ export const DraftSessionCard: React.FC<DraftSessionCardProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -8 }}
+      initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className="relative rounded-xl border-2 border-[var(--ink)] bg-[var(--butter-soft)] text-[var(--ink)] p-4 sm:p-5 shadow-[var(--shadow-brutal)] overflow-hidden"
+      transition={{ duration: 0.3 }}
+      className="relative rounded-2xl border-2 border-amber-400 bg-gradient-to-r from-amber-500/15 via-[var(--bg-card)] to-amber-500/10 p-4 sm:p-5 shadow-xl shadow-amber-500/10 overflow-hidden"
     >
+      {/* Background ambient glow effect */}
+      <div className="absolute -top-16 -right-16 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+
       {/* Top Banner Row */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-[var(--ink)]">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-amber-500/25">
         <div className="flex items-center gap-2">
           <span className="flex h-3 w-3 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--coral)] opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--coral)]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
           </span>
-          <span className="text-xs font-black uppercase tracking-wider text-[var(--ink)] font-display flex items-center gap-1.5">
-            Active Match In Progress
+          <span className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+            🟢 Active Match · In Progress (Draft)
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-0.5 rounded-full bg-[var(--butter)] text-[var(--ink)] text-xs font-black border border-[var(--ink)] uppercase tracking-wider font-display shadow-[1px_1px_0_var(--ink)]">
+          <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-200 text-xs font-bold border border-amber-500/30">
             {getStepLabel(draft.currentStep || 1)}
           </span>
         </div>

@@ -2,9 +2,10 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Purge obsolete theme cache keys from legacy version
+// Clear temporary test theme cache keys so app cleanly boots into original theme
 try {
-  localStorage.removeItem('bg-vault-theme-pref');
+  localStorage.removeItem('bg-vault-fitlo-theme-v4');
+  localStorage.removeItem('bg-vault-theme-pref-v3');
 } catch {}
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
@@ -22,7 +23,9 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
       .then((reg) => {
         reg.update();
       })
-      .catch(() => {});
+      .catch(() => {
+        // Service worker registration optional
+      });
   });
 }
 

@@ -127,33 +127,39 @@ export const PlayersPage: React.FC = () => {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="font-display font-bold text-2xl sm:text-4xl text-[var(--text-primary)] tracking-tight">
+            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)]">
               Players &amp; Venues
             </h1>
-            <p className="text-xs sm:text-sm text-[var(--text-secondary)] font-medium mt-0.5">
+            <p className="text-sm text-[var(--text-secondary)]">
               Manage your tabletop crew, head-to-head records, and favorite game night venues
             </p>
           </div>
 
-          {/* Subtab Navigation Pills with Fitlo styling */}
-          <div className="flex items-center p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--line-2)] shadow-xs">
+          {/* Subtab Navigation Pills */}
+          <div className="flex items-center p-1 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-sm">
             <button
               type="button"
               onClick={() => handleTabChange('players')}
               className={cn(
-                'relative flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer select-none',
+                'relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none',
                 activeTab === 'players'
-                  ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-xs border border-[var(--line)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                  ? 'text-white'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
-              <Users className="w-3.5 h-3.5" />
-              <span>Players</span>
-              <span className={cn(
-                'px-1.5 py-0.5 rounded-full text-[10px] font-bold tabular-nums',
-                activeTab === 'players' ? 'bg-[var(--accent-soft)] text-[var(--accent-primary)]' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'
-              )}>
-                {players.length}
+              {activeTab === 'players' && (
+                <motion.div
+                  layoutId="activeSubtabPill"
+                  className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-md"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-1.5">
+                <Users className="w-4 h-4" />
+                <span>Players</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold">
+                  {players.length}
+                </span>
               </span>
             </button>
 
@@ -161,19 +167,25 @@ export const PlayersPage: React.FC = () => {
               type="button"
               onClick={() => handleTabChange('locations')}
               className={cn(
-                'relative flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200 cursor-pointer select-none',
+                'relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none',
                 activeTab === 'locations'
-                  ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-xs border border-[var(--line)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                  ? 'text-white'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
-              <MapPin className="w-3.5 h-3.5" />
-              <span>Venues</span>
-              <span className={cn(
-                'px-1.5 py-0.5 rounded-full text-[10px] font-bold tabular-nums',
-                activeTab === 'locations' ? 'bg-[var(--accent-soft)] text-[var(--accent-primary)]' : 'bg-[var(--bg-elevated)] text-[var(--text-muted)]'
-              )}>
-                {locations.length}
+              {activeTab === 'locations' && (
+                <motion.div
+                  layoutId="activeSubtabPill"
+                  className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-md"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-1.5">
+                <MapPin className="w-4 h-4" />
+                <span>Venues</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold">
+                  {locations.length}
+                </span>
               </span>
             </button>
           </div>
@@ -183,9 +195,9 @@ export const PlayersPage: React.FC = () => {
         {/* SUBTAB 1: PLAYERS TAB                                   */}
         {/* ======================================================== */}
         {activeTab === 'players' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-in fade-in duration-200">
             {/* Top Action Bar for Players */}
-            <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-[var(--bg-card)] border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)]">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)]">
               <div className="text-xs text-[var(--text-secondary)]">
                 Total of <strong className="text-[var(--text-primary)]">{players.length}</strong> players in your tabletop crew.
               </div>
@@ -275,10 +287,10 @@ export const PlayersPage: React.FC = () => {
                     >
                       <Card
                         className={cn(
-                          'p-5 flex flex-col justify-between gap-4 relative h-full transition-all group border-[1.5px] border-[var(--ink)] shadow-[var(--shadow-brutal-sm)] hover:shadow-[var(--shadow-brutal)]',
+                          'p-5 flex flex-col justify-between gap-4 relative h-full transition-all group border-2',
                           isSelectedForCompare
-                            ? 'border-[var(--coral)] ring-2 ring-[var(--coral)]/40 bg-[var(--butter-soft)]'
-                            : 'bg-[var(--bg-card)]'
+                            ? 'border-[#22d3ee] ring-2 ring-[#22d3ee]/30'
+                            : 'hover:border-amber-400/40'
                         )}
                       >
                         {/* Top Right Actions */}

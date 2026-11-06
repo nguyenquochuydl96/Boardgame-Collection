@@ -158,60 +158,61 @@ export const GameDetailPage: React.FC = () => {
         </div>
 
         {/* Hero Cover Section */}
-        <div className="relative rounded-2xl overflow-hidden border-2 border-[var(--ink)] bg-[var(--bg-card)] shadow-[var(--shadow-brutal-lg)]">
+        <div className="relative rounded-3xl overflow-hidden border border-white/15 bg-[#16162a] shadow-2xl">
           <div className="grid grid-cols-1 md:grid-cols-12 items-stretch">
-            <div className="md:col-span-4 relative aspect-[4/3] md:aspect-auto bg-[var(--paper)] border-b-2 md:border-b-0 md:border-r-2 border-[var(--ink)]">
+            <div className="md:col-span-4 relative aspect-[4/3] md:aspect-auto bg-[#1e1e35]">
               <img
                 src={game.image || game.thumbnail}
                 alt={game.name}
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#16162a] via-transparent to-transparent md:hidden" />
             </div>
 
             <div className="md:col-span-8 p-6 sm:p-8 flex flex-col justify-between space-y-6">
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <GameStatusBadge status={game.status} />
-                  <span className="text-xs text-[var(--text-secondary)] font-bold tabular-nums">
+                  <span className="text-xs text-[#94a3b8] tabular-nums">
                     Published {game.yearPublished}
                   </span>
                   {game.bggRating && (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-[var(--text-primary)] px-2 py-0.5 rounded-full bg-[var(--butter)] border border-[var(--ink)] tabular-nums">
-                      <Star className="w-3.5 h-3.5 fill-[var(--ink)] text-[var(--ink)]" />
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-400 tabular-nums">
+                      <Star className="w-4 h-4 fill-amber-400" />
                       {game.bggRating.toFixed(1)} / 10 BGG
                     </span>
                   )}
                 </div>
 
-                <h1 className="font-display font-black text-3xl sm:text-5xl text-[var(--text-primary)] uppercase tracking-tight">
+                <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-white">
                   {game.name}
                 </h1>
 
-                <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed font-medium">
+                <p className="text-sm sm:text-base text-[#cbd5e1] leading-relaxed">
                   {game.description}
                 </p>
               </div>
 
               {/* Info Row & Primary CTA */}
-              <div className="pt-4 border-t border-[var(--border-divider)] flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-wrap items-center gap-5 text-sm text-[var(--text-primary)] tabular-nums">
-                  <span className="inline-flex items-center gap-2 font-bold">
-                    <Users className="w-4 h-4 text-[var(--coral)]" />
+              <div className="pt-4 border-t border-white/[0.08] flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-5 text-sm text-[#f1f5f9] tabular-nums">
+                  <span className="inline-flex items-center gap-2">
+                    <Users className="w-4 h-4 text-[#a78bfa]" />
                     <strong>
                       {game.minPlayers}–{game.maxPlayers}
                     </strong>{' '}
                     Players
                   </span>
-                  <span className="inline-flex items-center gap-2 font-bold">
-                    <Clock className="w-4 h-4 text-[var(--teal)]" />
+                  <span className="inline-flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#22d3ee]" />
                     <strong>{game.playingTime}</strong> Mins
                   </span>
                 </div>
 
                 <Link to={`/sessions/new?gameId=${game.id}`}>
-                  <Button variant="primary" withArrowDot>
-                    <Play className="w-4 h-4 fill-current mr-1" />
+                  <Button variant="primary">
+                    <Play className="w-4 h-4 fill-current" />
                     Record New Session
                   </Button>
                 </Link>
@@ -226,31 +227,31 @@ export const GameDetailPage: React.FC = () => {
           <div className="lg:col-span-5 space-y-6">
             <Card className="p-6 space-y-4">
               <div className="flex items-center gap-2.5">
-                <Wallet className="w-5 h-5 text-[var(--coral)]" />
-                <h2 className="font-display font-black text-lg text-[var(--text-primary)] uppercase tracking-tight">
-                  Financial &amp; Status Details
+                <Wallet className="w-5 h-5 text-[#ec4899]" />
+                <h2 className="font-display font-bold text-lg text-white">
+                  Financial & Status Details
                 </h2>
               </div>
 
               <div className="grid grid-cols-2 gap-3 tabular-nums">
-                <div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--ink)]">
-                  <span className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-wider">Purchase Price</span>
-                  <p className="font-mono font-bold text-base sm:text-lg text-[var(--text-primary)] mt-1">
+                <div className="p-3.5 rounded-xl bg-[#16162a] border border-white/[0.06]">
+                  <span className="text-xs text-[#94a3b8]">Purchase Price</span>
+                  <p className="font-mono font-bold text-base sm:text-lg text-white mt-1">
                     {formatVND(game.purchasePrice)}
                   </p>
                 </div>
 
                 {game.status === 'sold' ? (
-                  <div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--ink)]">
-                    <span className="text-xs text-[var(--coral)] font-bold uppercase tracking-wider">Sell Price</span>
-                    <p className="font-mono font-bold text-base sm:text-lg text-[var(--coral)] mt-1">
+                  <div className="p-3.5 rounded-xl bg-pink-500/10 border border-pink-500/30">
+                    <span className="text-xs text-pink-300">Sell Price</span>
+                    <p className="font-mono font-bold text-base sm:text-lg text-pink-200 mt-1">
                       {formatVND(game.sellPrice)}
                     </p>
                   </div>
                 ) : (
-                  <div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--ink)]">
-                    <span className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-wider">Added to Vault</span>
-                    <p className="font-bold text-sm text-[var(--text-primary)] mt-1">
+                  <div className="p-3.5 rounded-xl bg-[#16162a] border border-white/[0.06]">
+                    <span className="text-xs text-[#94a3b8]">Added to Vault</span>
+                    <p className="font-semibold text-sm text-white mt-1">
                       {formatDate(game.addedDate)}
                     </p>
                   </div>
@@ -258,13 +259,13 @@ export const GameDetailPage: React.FC = () => {
               </div>
 
               {game.status === 'rented' && (
-                <div className="p-4 rounded-xl bg-[var(--butter-soft)] border border-[var(--ink)] flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-[var(--butter)] text-[var(--ink)] border border-[var(--ink)] shrink-0">
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/35 flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400 shrink-0">
                     <Coffee className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs text-[var(--ink)] font-black uppercase tracking-wider">Rented / Cafe Play</p>
-                    <p className="text-xs text-[var(--ink)]/80 mt-0.5 font-medium">
+                    <p className="text-xs text-amber-300 font-bold">Rented / Cafe Play</p>
+                    <p className="text-xs text-white/80 mt-0.5">
                       Tabletop game played at cafes or rented — excluded from total personal vault valuation.
                     </p>
                   </div>
@@ -272,20 +273,20 @@ export const GameDetailPage: React.FC = () => {
               )}
 
               {game.status === 'lent_out' && (
-                <div className="p-4 rounded-xl bg-[var(--paper)] border border-[var(--ink)] flex items-center justify-between gap-3">
+                <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/35 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <UserCheck className="w-5 h-5 text-[var(--coral)] shrink-0" />
+                    <UserCheck className="w-5 h-5 text-orange-400 shrink-0" />
                     <div>
-                      <p className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-wider">
+                      <p className="text-xs text-orange-300 font-semibold">
                         Currently Lent Out To
                       </p>
-                      <p className="font-display font-black text-base text-[var(--text-primary)]">
+                      <p className="font-display font-bold text-base text-white">
                         {game.lentToName || 'Friend'}
                       </p>
                     </div>
                   </div>
                   {game.lentDate && (
-                    <span className="text-xs text-[var(--text-secondary)] tabular-nums font-bold">
+                    <span className="text-xs text-orange-200 tabular-nums">
                       Since {formatDate(game.lentDate)}
                     </span>
                   )}
@@ -296,11 +297,11 @@ export const GameDetailPage: React.FC = () => {
             {/* Editable My Notes */}
             <Card className="p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="font-display font-black text-lg text-[var(--text-primary)] uppercase tracking-tight">
+                <h2 className="font-display font-bold text-lg text-white">
                   My Notes
                 </h2>
                 {notesSaved && (
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs font-semibold text-emerald-400">
                     Saved!
                   </span>
                 )}
@@ -311,14 +312,14 @@ export const GameDetailPage: React.FC = () => {
                 value={notesDraft}
                 onChange={(e) => setNotesDraft(e.target.value)}
                 placeholder="Sleeve sizes, expansions included, favorite house rules..."
-                className="w-full rounded-xl bg-[var(--paper)] border border-[var(--ink)] p-3.5 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--coral)]"
+                className="w-full rounded-xl bg-[#16162a] border border-white/10 p-3.5 text-sm text-[#f1f5f9] placeholder:text-[#475569] focus:outline-none focus:border-[#7c3aed]"
               />
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={handleSaveNotes}
               >
-                <Save className="w-4 h-4 mr-1" />
+                <Save className="w-4 h-4" />
                 Save Notes
               </Button>
             </Card>
@@ -327,41 +328,41 @@ export const GameDetailPage: React.FC = () => {
           {/* Right Column: Game Stats & Win Rates + Play History */}
           <div className="lg:col-span-7 space-y-6">
             <Card className="p-6 space-y-5">
-              <h2 className="font-display font-black text-lg text-[var(--text-primary)] uppercase tracking-tight">
+              <h2 className="font-display font-bold text-lg text-white">
                 Stats for {game.name}
               </h2>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 tabular-nums">
-                <div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--ink)]">
-                  <span className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-wider">Total Plays</span>
-                  <p className="font-display font-black text-2xl text-[var(--coral)] mt-1">
+                <div className="p-3.5 rounded-xl bg-[#16162a] border border-white/[0.06]">
+                  <span className="text-xs text-[#94a3b8]">Total Plays</span>
+                  <p className="font-display font-extrabold text-2xl text-[#a78bfa] mt-1">
                     {stats.totalPlays}
                   </p>
                 </div>
-                <div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--ink)]">
-                  <span className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-wider">Avg Duration</span>
-                  <p className="font-display font-black text-2xl text-[var(--teal)] mt-1">
+                <div className="p-3.5 rounded-xl bg-[#16162a] border border-white/[0.06]">
+                  <span className="text-xs text-[#94a3b8]">Avg Duration</span>
+                  <p className="font-display font-extrabold text-2xl text-[#22d3ee] mt-1">
                     {formatDuration(stats.averageDuration)}
                   </p>
                 </div>
-                <div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--ink)]">
-                  <span className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-wider">Highest Score</span>
-                  <p className="font-mono font-black text-xl text-[var(--text-primary)] mt-1">
+                <div className="p-3.5 rounded-xl bg-[#16162a] border border-white/[0.06]">
+                  <span className="text-xs text-[#94a3b8]">Highest Score</span>
+                  <p className="font-mono font-extrabold text-xl text-emerald-400 mt-1">
                     {stats.highestScore ? stats.highestScore.score : '—'}
                   </p>
                   {stats.highestScore && (
-                    <span className="text-[11px] text-[var(--text-secondary)] truncate block font-bold">
+                    <span className="text-[11px] text-[#94a3b8] truncate block">
                       {stats.highestScore.playerName}
                     </span>
                   )}
                 </div>
-                <div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--ink)]">
-                  <span className="text-xs text-[var(--text-secondary)] font-bold uppercase tracking-wider">Lowest Score</span>
-                  <p className="font-mono font-black text-xl text-rose-500 mt-1">
+                <div className="p-3.5 rounded-xl bg-[#16162a] border border-white/[0.06]">
+                  <span className="text-xs text-[#94a3b8]">Lowest Score</span>
+                  <p className="font-mono font-extrabold text-xl text-rose-400 mt-1">
                     {stats.lowestScore ? stats.lowestScore.score : '—'}
                   </p>
                   {stats.lowestScore && (
-                    <span className="text-[11px] text-[var(--text-secondary)] truncate block font-bold">
+                    <span className="text-[11px] text-[#94a3b8] truncate block">
                       {stats.lowestScore.playerName}
                     </span>
                   )}
@@ -371,24 +372,24 @@ export const GameDetailPage: React.FC = () => {
               {/* Win rate per player mini list */}
               {stats.playerWinRates.length > 0 && (
                 <div className="space-y-2.5 pt-2">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-[var(--text-secondary)] font-display">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#94a3b8]">
                     Win Rate Per Player
                   </h3>
                   <div className="space-y-2">
                     {stats.playerWinRates.map((pw) => (
                       <div
                         key={pw.playerId}
-                        className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--ink)] text-xs sm:text-sm tabular-nums"
+                        className="flex items-center justify-between p-2.5 rounded-xl bg-[#16162a] border border-white/[0.05] text-xs sm:text-sm tabular-nums"
                       >
-                        <div className="flex items-center gap-2 font-bold text-[var(--text-primary)]">
-                          <Trophy className="w-4 h-4 text-[var(--coral)]" />
+                        <div className="flex items-center gap-2 font-semibold text-white">
+                          <Trophy className="w-4 h-4 text-amber-400" />
                           <span>{pw.playerName}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-[var(--text-secondary)] font-bold">
+                          <span className="text-[#94a3b8]">
                             {pw.wins}W / {pw.plays}G
                           </span>
-                          <span className="font-mono font-black text-[var(--teal)] w-12 text-right">
+                          <span className="font-mono font-bold text-[#10b981] w-12 text-right">
                             {pw.winRate}%
                           </span>
                         </div>
@@ -402,7 +403,7 @@ export const GameDetailPage: React.FC = () => {
             {/* Play History Section */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="font-display font-black text-lg text-[var(--text-primary)] uppercase tracking-tight">
+                <h2 className="font-display font-bold text-lg text-white">
                   Play History ({gameSessions.length})
                 </h2>
                 <Link to={`/sessions/new?gameId=${game.id}`}>
