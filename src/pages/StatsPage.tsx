@@ -22,6 +22,7 @@ import {
   Filter,
   Check,
   RotateCcw,
+  Search,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
@@ -30,6 +31,7 @@ import { PlayerChip } from '../components/player/PlayerChip';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { PlayerLeaderboardSection } from '../components/dashboard/PlayerLeaderboardSection';
 import { StreakDetailModal } from '../components/player/StreakDetailModal';
+import { GameStatusBadge } from '../components/game/GameStatusBadge';
 import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
@@ -44,7 +46,7 @@ import {
   formatDate,
   formatDuration,
 } from '../lib/utils';
-import { Player } from '../types';
+import { Player, GameStatus, PlaySession } from '../types';
 
 const GameThumbBox: React.FC<{
   src?: string;
@@ -78,6 +80,17 @@ const GameThumbBox: React.FC<{
     </div>
   );
 });
+
+const STATUS_FILTER_OPTIONS: Array<{ id: GameStatus | 'all'; label: string }> = [
+  { id: 'all', label: 'Tất Cả' },
+  { id: 'own', label: 'Sở Hữu' },
+  { id: 'rented', label: 'Đang Thuê' },
+  { id: 'borrowed', label: 'Đang Mượn' },
+  { id: 'previously_owned', label: 'Từng Sở Hữu' },
+  { id: 'sold', label: 'Đã Bán' },
+  { id: 'wishlist', label: 'Wishlist' },
+  { id: 'lent_out', label: 'Cho Mượn' },
+];
 
 type StatsTab = 'overview' | 'years' | 'locations' | 'by_player' | 'by_game';
 
@@ -435,12 +448,41 @@ export const StatsPage: React.FC = () => {
     );
   };
 
-  // --- 5. BY GAME STATS (only computed when on by_game tab) ---
-  const activeGame = games.find((g) => g.id === selectedGameId) || games[0];
+  // --- 5. BY GAME STATS (with ownership status filter) ---
+  const [gameStatusFilter, setGameStatusFilter] = useState<GameStatus | 'all'>('all');
+  const [gameSearchQuery, setGameSearchQuery] = useState<string>('');
+
+  const gameStatusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: games.length };
+    games.forEach((g) => {
+      counts[g.status] = (counts[g.status] || 0) + 1;
+    });
+    return counts;
+  }, [games]);
+
+  const filteredGamesByStatus = useMemo(() => {
+    let list = gameStatusFilter === 'all'
+      ? games
+      : games.filter((g) => g.status === gameStatusFilter);
+
+    if (gameSearchQuery.trim()) {
+      const q = gameSearchQuery.toLowerCase().trim();
+      list = list.filter((g) => g.name.toLowerCase().includes(q));
+    }
+    return list;
+  }, [games, gameStatusFilter, gameSearchQuery]);
+
+  const activeGame = useMemo(() => {
+    const match = filteredGamesByStatus.find((g) => g.id === selectedGameId);
+    if (match) return match;
+    return filteredGamesByStatus[0] || games[0];
+  }, [filteredGamesByStatus, selectedGameId, games]);
+
   const activeGameSessions = useMemo(
     () => (activeTab === 'by_game' && activeGame ? sessions.filter((s) => s.gameId === activeGame.id) : []),
     [sessions, activeGame, activeTab]
   );
+
   const activeGameStats: GameStatsSummary = useMemo(
     () => (activeTab === 'by_game' ? calculateGameStats(activeGameSessions) : {
       totalPlays: 0,
@@ -451,6 +493,34 @@ export const StatsPage: React.FC = () => {
     }),
     [activeGameSessions, activeTab]
   );
+
+  const gamesBreakdownList = useMemo(() => {
+    if (activeTab !== 'by_game') return [];
+
+    const gameSessionsMap = new Map<string, PlaySession[]>();
+    sessions.forEach((s) => {
+      const list = gameSessionsMap.get(s.gameId) || [];
+      list.push(s);
+      gameSessionsMap.set(s.gameId, list);
+    });
+
+    return filteredGamesByStatus
+      .map((g) => {
+        const gameSessions = gameSessionsMap.get(g.id) || [];
+        const stats = calculateGameStats(gameSessions);
+        const totalDuration = gameSessions.reduce((acc, s) => acc + (s.durationMinutes || 0), 0);
+
+        return {
+          game: g,
+          totalPlays: stats.totalPlays,
+          totalDuration,
+          averageDuration: stats.averageDuration,
+          highestScore: stats.highestScore,
+          topWinner: stats.playerWinRates[0] || null,
+        };
+      })
+      .sort((a, b) => b.totalPlays - a.totalPlays);
+  }, [filteredGamesByStatus, sessions, activeTab]);
 
   return (
     <PageTransition>
@@ -1317,103 +1387,319 @@ export const StatsPage: React.FC = () => {
         )}
 
         {/* ========================================================= */}
-        {/* TAB 5: BY GAME DEEP DIVE */}
+        {/* TAB 5: BY GAME DEEP DIVE WITH OWNERSHIP STATUS FILTER */}
         {/* ========================================================= */}
-        {activeTab === 'by_game' && activeGame && (
-          <Card className="p-6 sm:p-8 space-y-6 bg-[var(--card)] border border-[var(--line)]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--line)] pb-5">
-              <div className="flex items-center gap-4">
-                <img
-                  src={activeGame.thumbnail || activeGame.image}
-                  alt={activeGame.name}
-                  referrerPolicy="no-referrer"
-                  className="w-16 h-20 rounded-xl object-cover border border-[var(--line)]"
-                />
-                <div>
-                  <h2 className="font-display font-extrabold text-2xl text-[var(--ink)]">
-                    {activeGame.name}
-                  </h2>
-                  <p className="text-xs text-[var(--muted)]">
-                    Select any board game to inspect high score records, average playtime, and top winners
-                  </p>
+        {activeTab === 'by_game' && (
+          <div className="space-y-6">
+            {/* OWNERSHIP STATUS FILTER PILLS & SEARCH */}
+            <Card className="p-4 sm:p-5 space-y-3.5 bg-[var(--card)] border border-[var(--line)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-emerald-500" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                    Lọc Theo Trạng Thái Sở Hữu:
+                  </span>
                 </div>
-              </div>
-
-              <select
-                aria-label="Select board game to view analytics"
-                value={selectedGameId}
-                onChange={(e) => setSelectedGameId(e.target.value)}
-                className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--card-2)] border border-[var(--line-2)] text-sm font-semibold text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
-              >
-                {games.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 tabular-nums">
-              <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
-                <span className="text-xs text-[var(--muted)] font-semibold">Total Plays Logged</span>
-                <p className="font-display font-black text-2xl text-[var(--accent)] mt-1">
-                  {activeGameStats.totalPlays}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
-                <span className="text-xs text-[var(--muted)] font-semibold">Average Duration</span>
-                <p className="font-display font-black text-2xl text-cyan-700 dark:text-cyan-400 mt-1">
-                  {formatDuration(activeGameStats.averageDuration)}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
-                <span className="text-xs text-[var(--muted)] font-semibold">High Score Record</span>
-                <p className="font-mono font-black text-2xl text-emerald-700 dark:text-emerald-400 mt-1">
-                  {activeGameStats.highestScore ? activeGameStats.highestScore.score : '—'}
-                </p>
-                {activeGameStats.highestScore && (
-                  <span className="text-xs text-[var(--muted)]">
-                    by {activeGameStats.highestScore.playerName}
-                  </span>
-                )}
-              </div>
-
-              <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
-                <span className="text-xs text-[var(--muted)] font-semibold">Champion (Most Wins)</span>
-                <p className="font-display font-bold text-base text-amber-600 dark:text-amber-400 mt-1 truncate">
-                  {activeGameStats.playerWinRates[0]?.playerName || '—'}
-                </p>
-                {activeGameStats.playerWinRates[0] && (
-                  <span className="text-xs text-[var(--muted)]">
-                    {activeGameStats.playerWinRates[0].winRate}% win rate
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Win rates for this game */}
-            {activeGameStats.playerWinRates.length > 0 && (
-              <div className="space-y-3 pt-3 border-t border-[var(--line)]">
-                <h3 className="font-bold text-sm text-[var(--ink)]">Player Performance in this Game</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {activeGameStats.playerWinRates.map((pw) => (
-                    <div
-                      key={pw.playerName}
-                      className="p-3 rounded-xl bg-[var(--card-2)] border border-[var(--line)] flex items-center justify-between"
+                <div className="relative sm:w-64">
+                  <Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Tìm tên game..."
+                    value={gameSearchQuery}
+                    onChange={(e) => setGameSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--accent)]"
+                  />
+                  {gameSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setGameSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
                     >
-                      <span className="font-bold text-xs text-[var(--ink)]">{pw.playerName}</span>
-                      <div className="text-xs font-mono">
-                        <span className="text-amber-600 dark:text-amber-400 font-bold">{pw.wins} wins</span>
-                        <span className="text-[var(--muted)] ml-2">({pw.winRate}%)</span>
-                      </div>
-                    </div>
-                  ))}
+                      ✕
+                    </button>
+                  )}
                 </div>
+              </div>
+
+              {/* Status Filter Buttons */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                {STATUS_FILTER_OPTIONS.map((opt) => {
+                  const count = gameStatusCounts[opt.id] ?? 0;
+                  if (count === 0 && opt.id !== 'all' && opt.id !== 'own') return null;
+                  const isSelected = gameStatusFilter === opt.id;
+
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setGameStatusFilter(opt.id);
+                        const matching = opt.id === 'all' ? games : games.filter((g) => g.status === opt.id);
+                        if (matching.length > 0 && !matching.some((g) => g.id === selectedGameId)) {
+                          setSelectedGameId(matching[0].id);
+                        }
+                      }}
+                      className={cn(
+                        'px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-all cursor-pointer select-none border',
+                        isSelected
+                          ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)] shadow-sm'
+                          : 'bg-[var(--card-2)] text-[var(--ink-2)] border-[var(--line)] hover:bg-[var(--card-3)] hover:text-[var(--ink)]'
+                      )}
+                    >
+                      <span>{opt.label}</span>
+                      <span
+                        className={cn(
+                          'text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold',
+                          isSelected
+                            ? 'bg-black/20 text-current'
+                            : 'bg-[var(--card-3)] text-[var(--muted)]'
+                        )}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Card>
+
+            {/* GAME DEEP DIVE CARD */}
+            {activeGame ? (
+              <Card className="p-6 sm:p-8 space-y-6 bg-[var(--card)] border border-[var(--line)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--line)] pb-5">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <img
+                      src={activeGame.thumbnail || activeGame.image}
+                      alt={activeGame.name}
+                      referrerPolicy="no-referrer"
+                      className="w-16 h-20 rounded-xl object-cover border border-[var(--line)] shrink-0 shadow-md"
+                    />
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="font-display font-extrabold text-xl sm:text-2xl text-[var(--ink)] truncate">
+                          {activeGame.name}
+                        </h2>
+                        <GameStatusBadge status={activeGame.status} />
+                        {activeGame.yearPublished && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-md bg-[var(--card-2)] border border-[var(--line)] text-[var(--muted)] font-mono font-bold">
+                            {activeGame.yearPublished}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[var(--muted)] line-clamp-1">
+                        {activeGame.minPlayers}-{activeGame.maxPlayers} người chơi · {activeGame.playingTime} phút/ván
+                      </p>
+                    </div>
+                  </div>
+
+                  <select
+                    aria-label="Select board game to view analytics"
+                    value={activeGame.id}
+                    onChange={(e) => setSelectedGameId(e.target.value)}
+                    className="min-h-[44px] px-4 py-2 rounded-xl bg-[var(--card-2)] border border-[var(--line-2)] text-sm font-semibold text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] cursor-pointer sm:max-w-xs shrink-0"
+                  >
+                    {filteredGamesByStatus.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 tabular-nums">
+                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
+                    <span className="text-xs text-[var(--muted)] font-semibold">Tổng Số Ván Đã Chơi</span>
+                    <p className="font-display font-black text-2xl text-[var(--accent)] mt-1">
+                      {activeGameStats.totalPlays} ván
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
+                    <span className="text-xs text-[var(--muted)] font-semibold">Thời Gian Trung Bình</span>
+                    <p className="font-display font-black text-2xl text-cyan-700 dark:text-cyan-400 mt-1">
+                      {formatDuration(activeGameStats.averageDuration)}
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
+                    <span className="text-xs text-[var(--muted)] font-semibold">Kỷ Lục Điểm Cao Nhất</span>
+                    <p className="font-mono font-black text-2xl text-emerald-700 dark:text-emerald-400 mt-1">
+                      {activeGameStats.highestScore ? `${activeGameStats.highestScore.score}đ` : '—'}
+                    </p>
+                    {activeGameStats.highestScore && (
+                      <span className="text-xs text-[var(--muted)] truncate block">
+                        bởi {activeGameStats.highestScore.playerName}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
+                    <span className="text-xs text-[var(--muted)] font-semibold">Quán Quân (Thắng Nhiều Nhất)</span>
+                    <p className="font-display font-bold text-base text-amber-600 dark:text-amber-400 mt-1 truncate">
+                      {activeGameStats.playerWinRates[0]?.playerName || '—'}
+                    </p>
+                    {activeGameStats.playerWinRates[0] && (
+                      <span className="text-xs text-[var(--muted)]">
+                        {activeGameStats.playerWinRates[0].wins} thắng ({activeGameStats.playerWinRates[0].winRate}%)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Win rates for this game */}
+                {activeGameStats.playerWinRates.length > 0 && (
+                  <div className="space-y-3 pt-3 border-t border-[var(--line)]">
+                    <h3 className="font-bold text-sm text-[var(--ink)]">Hiệu Suất Của Người Chơi Trong Game Này</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {activeGameStats.playerWinRates.map((pw) => (
+                        <div
+                          key={pw.playerName}
+                          className="p-3 rounded-xl bg-[var(--card-2)] border border-[var(--line)] flex items-center justify-between"
+                        >
+                          <span className="font-bold text-xs text-[var(--ink)]">{pw.playerName}</span>
+                          <div className="text-xs font-mono">
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">{pw.wins} thắng</span>
+                            <span className="text-[var(--muted)] ml-2">({pw.winRate}%)</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            ) : (
+              <div className="p-8 text-center bg-[var(--card-2)] rounded-2xl border border-[var(--line)] text-sm text-[var(--muted)]">
+                Không tìm thấy game nào phù hợp với bộ lọc trạng thái sở hữu hiện tại.
               </div>
             )}
-          </Card>
+
+            {/* ALL GAMES BREAKDOWN TABLE FOR CURRENT STATUS */}
+            {gamesBreakdownList.length > 0 && (
+              <Card className="p-6 space-y-4 bg-[var(--card)] border border-[var(--line)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-display font-bold text-lg text-[var(--ink)] flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-emerald-500" />
+                      <span>
+                        Bảng Thống Kê Tổng Quan ({gamesBreakdownList.length} game)
+                      </span>
+                    </h3>
+                    <p className="text-xs text-[var(--muted)]">
+                      {gameStatusFilter === 'all'
+                        ? 'Danh sách toàn bộ các game trong kho sắp xếp theo số lượt chơi nhiều nhất'
+                        : `Danh sách các game có trạng thái "${STATUS_FILTER_OPTIONS.find((o) => o.id === gameStatusFilter)?.label || gameStatusFilter}" sắp xếp theo số lượt chơi`}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border border-[var(--line)]">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-[var(--card-2)] border-b border-[var(--line)] text-[var(--muted)]">
+                      <tr>
+                        <th className="py-3 px-4 font-bold">Tựa Game</th>
+                        <th className="py-3 px-3 font-bold text-center">Trạng Thái</th>
+                        <th className="py-3 px-3 font-bold text-right">Lượt Chơi</th>
+                        <th className="py-3 px-3 font-bold text-right">Tổng Thời Gian</th>
+                        <th className="py-3 px-3 font-bold text-right">Kỷ Lục Điểm</th>
+                        <th className="py-3 px-3 font-bold text-right">Quán Quân</th>
+                        <th className="py-3 px-4 font-bold text-center">Hành Động</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--line)] tabular-nums bg-[var(--card)]">
+                      {gamesBreakdownList.map((item) => {
+                        const isSelected = activeGame && item.game.id === activeGame.id;
+                        return (
+                          <tr
+                            key={item.game.id}
+                            onClick={() => setSelectedGameId(item.game.id)}
+                            className={cn(
+                              'hover:bg-[var(--card-2)]/60 transition-colors cursor-pointer',
+                              isSelected && 'bg-[var(--accent)]/10 font-medium'
+                            )}
+                          >
+                            <td className="py-3 px-4 font-display font-bold text-[var(--ink)]">
+                              <div className="flex items-center gap-3">
+                                <img
+                                  src={item.game.thumbnail || item.game.image}
+                                  alt={item.game.name}
+                                  referrerPolicy="no-referrer"
+                                  className="w-8 h-10 rounded-lg object-cover shrink-0 border border-[var(--line)] shadow-sm"
+                                />
+                                <div className="min-w-0">
+                                  <span className="font-bold text-sm block truncate text-[var(--ink)]">
+                                    {item.game.name}
+                                  </span>
+                                  <span className="text-[10px] text-[var(--muted)] font-normal font-sans">
+                                    {item.game.minPlayers} - {item.game.maxPlayers} người · {item.game.playingTime}p
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <GameStatusBadge status={item.game.status} />
+                            </td>
+                            <td className="py-3 px-3 text-right font-mono font-bold text-sm">
+                              <span className={item.totalPlays > 0 ? 'text-[var(--accent)] font-black' : 'text-[var(--muted)]'}>
+                                {item.totalPlays} ván
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-right font-mono text-xs text-[var(--ink-2)]">
+                              {item.totalDuration > 0 ? formatDuration(item.totalDuration) : '—'}
+                            </td>
+                            <td className="py-3 px-3 text-right font-mono text-xs">
+                              {item.highestScore ? (
+                                <div>
+                                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                    {item.highestScore.score}đ
+                                  </span>
+                                  <span className="text-[10px] text-[var(--muted)] block truncate max-w-[100px] ml-auto">
+                                    {item.highestScore.playerName}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[var(--muted)]">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-right font-mono text-xs">
+                              {item.topWinner ? (
+                                <div>
+                                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                                    {item.topWinner.playerName}
+                                  </span>
+                                  <span className="text-[10px] text-[var(--muted)] block">
+                                    {item.topWinner.wins} thắng ({item.topWinner.winRate}%)
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-[var(--muted)]">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedGameId(item.game.id);
+                                }}
+                                className={cn(
+                                  'px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
+                                  isSelected
+                                    ? 'bg-[var(--accent)] text-[var(--accent-ink)]'
+                                    : 'bg-[var(--card-2)] text-[var(--ink-2)] hover:bg-[var(--card-3)] hover:text-[var(--ink)]'
+                                )}
+                              >
+                                {isSelected ? 'Đang Xem' : 'Xem'}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+          </div>
         )}
 
         {/* Player Streak Detail Modal */}
