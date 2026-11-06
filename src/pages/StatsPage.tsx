@@ -45,6 +45,7 @@ import {
   GameStatsSummary,
   formatDate,
   formatDuration,
+  formatRecordTimeAgo,
 } from '../lib/utils';
 import { Player, GameStatus, PlaySession } from '../types';
 
@@ -516,7 +517,9 @@ export const StatsPage: React.FC = () => {
           totalDuration,
           averageDuration: stats.averageDuration,
           highestScore: stats.highestScore,
-          topWinner: stats.playerWinRates[0] || null,
+          lowestScore: stats.lowestScore,
+          topWinner: stats.mostWinsPlayer || stats.playerWinRates[0] || null,
+          topLoser: stats.mostLossesPlayer || null,
         };
       })
       .sort((a, b) => b.totalPlays - a.totalPlays);
@@ -1506,42 +1509,130 @@ export const StatsPage: React.FC = () => {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 tabular-nums">
-                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
-                    <span className="text-xs text-[var(--muted)] font-semibold">Tổng Số Ván Đã Chơi</span>
-                    <p className="font-display font-black text-2xl text-[var(--accent)] mt-1">
-                      {activeGameStats.totalPlays} ván
-                    </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 tabular-nums">
+                  {/* 1. TOTAL PLAYS */}
+                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                    <div>
+                      <span className="text-[11px] text-[var(--muted)] font-bold uppercase tracking-wider">Tổng Số Ván</span>
+                      <p className="font-display font-black text-2xl text-[var(--accent)] mt-1">
+                        {activeGameStats.totalPlays} ván
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-[var(--muted)] mt-1">
+                      {activeGameSessions.length} session đã log
+                    </span>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
-                    <span className="text-xs text-[var(--muted)] font-semibold">Thời Gian Trung Bình</span>
-                    <p className="font-display font-black text-2xl text-cyan-700 dark:text-cyan-400 mt-1">
-                      {formatDuration(activeGameStats.averageDuration)}
-                    </p>
+                  {/* 2. AVERAGE DURATION */}
+                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                    <div>
+                      <span className="text-[11px] text-[var(--muted)] font-bold uppercase tracking-wider">Thời Lượng TB</span>
+                      <p className="font-display font-black text-2xl text-cyan-700 dark:text-cyan-400 mt-1">
+                        {formatDuration(activeGameStats.averageDuration)}
+                      </p>
+                    </div>
+                    <span className="text-[10px] text-[var(--muted)] mt-1">
+                      Chuẩn nhịp chơi của hội
+                    </span>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
-                    <span className="text-xs text-[var(--muted)] font-semibold">Kỷ Lục Điểm Cao Nhất</span>
-                    <p className="font-mono font-black text-2xl text-emerald-700 dark:text-emerald-400 mt-1">
-                      {activeGameStats.highestScore ? `${activeGameStats.highestScore.score}đ` : '—'}
-                    </p>
-                    {activeGameStats.highestScore && (
-                      <span className="text-xs text-[var(--muted)] truncate block">
-                        bởi {activeGameStats.highestScore.playerName}
+                  {/* 3. HIGHEST SCORE RECORD */}
+                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                    <div>
+                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                        <span>🏆</span> Cao Nhất
                       </span>
+                      <p className="font-mono font-black text-2xl text-emerald-600 dark:text-emerald-400 mt-1">
+                        {activeGameStats.highestScore ? `${activeGameStats.highestScore.score}đ` : '—'}
+                      </p>
+                    </div>
+                    {activeGameStats.highestScore ? (
+                      <div className="mt-1 space-y-0.5">
+                        <span className="text-xs font-bold text-[var(--ink)] block truncate">
+                          {activeGameStats.highestScore.playerName}
+                        </span>
+                        <span className="text-[10px] text-[var(--muted)] block truncate">
+                          {formatRecordTimeAgo(activeGameStats.highestScore.date)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-[var(--muted)]">Chưa có điểm</span>
                     )}
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
-                    <span className="text-xs text-[var(--muted)] font-semibold">Quán Quân (Thắng Nhiều Nhất)</span>
-                    <p className="font-display font-bold text-base text-amber-600 dark:text-amber-400 mt-1 truncate">
-                      {activeGameStats.playerWinRates[0]?.playerName || '—'}
-                    </p>
-                    {activeGameStats.playerWinRates[0] && (
-                      <span className="text-xs text-[var(--muted)]">
-                        {activeGameStats.playerWinRates[0].wins} thắng ({activeGameStats.playerWinRates[0].winRate}%)
+                  {/* 4. LOWEST SCORE RECORD */}
+                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                    <div>
+                      <span className="text-[11px] text-rose-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                        <span>📉</span> Thấp Nhất
                       </span>
+                      <p className="font-mono font-black text-2xl text-rose-500 mt-1">
+                        {activeGameStats.lowestScore ? `${activeGameStats.lowestScore.score}đ` : '—'}
+                      </p>
+                    </div>
+                    {activeGameStats.lowestScore ? (
+                      <div className="mt-1 space-y-0.5">
+                        <span className="text-xs font-bold text-[var(--ink)] block truncate">
+                          {activeGameStats.lowestScore.playerName}
+                        </span>
+                        <span className="text-[10px] text-[var(--muted)] block truncate">
+                          {formatRecordTimeAgo(activeGameStats.lowestScore.date)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-[var(--muted)]">Chưa có điểm</span>
+                    )}
+                  </div>
+
+                  {/* 5. CHAMPION (MOST WINS) */}
+                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                    <div>
+                      <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                        <span>👑</span> Thắng Nhiều Nhất
+                      </span>
+                      <p className="font-display font-bold text-base text-amber-600 dark:text-amber-400 mt-1 truncate">
+                        {activeGameStats.mostWinsPlayer?.playerName || activeGameStats.playerWinRates[0]?.playerName || '—'}
+                      </p>
+                    </div>
+                    {activeGameStats.mostWinsPlayer || activeGameStats.playerWinRates[0] ? (
+                      <div className="mt-1 space-y-0.5">
+                        <span className="text-xs font-mono font-bold text-[var(--ink)] block">
+                          {(activeGameStats.mostWinsPlayer || activeGameStats.playerWinRates[0])?.wins} thắng ({(activeGameStats.mostWinsPlayer || activeGameStats.playerWinRates[0])?.winRate}%)
+                        </span>
+                        {(activeGameStats.mostWinsPlayer || activeGameStats.playerWinRates[0])?.lastWonDate && (
+                          <span className="text-[10px] text-[var(--muted)] block truncate">
+                            Thắng: {formatRecordTimeAgo((activeGameStats.mostWinsPlayer || activeGameStats.playerWinRates[0])?.lastWonDate)}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-[var(--muted)]">Chưa có trận thắng</span>
+                    )}
+                  </div>
+
+                  {/* 6. MOST LOSSES PLAYER */}
+                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                    <div>
+                      <span className="text-[11px] text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                        <span>🥄</span> Thua Nhiều Nhất
+                      </span>
+                      <p className="font-display font-bold text-base text-rose-600 dark:text-rose-400 mt-1 truncate">
+                        {activeGameStats.mostLossesPlayer?.playerName || '—'}
+                      </p>
+                    </div>
+                    {activeGameStats.mostLossesPlayer ? (
+                      <div className="mt-1 space-y-0.5">
+                        <span className="text-xs font-mono font-bold text-[var(--ink)] block">
+                          {activeGameStats.mostLossesPlayer.losses} thua / {activeGameStats.mostLossesPlayer.plays} ván ({activeGameStats.mostLossesPlayer.lossRate}%)
+                        </span>
+                        {activeGameStats.mostLossesPlayer.lastPlayedDate && (
+                          <span className="text-[10px] text-[var(--muted)] block truncate">
+                            Gần nhất: {formatRecordTimeAgo(activeGameStats.mostLossesPlayer.lastPlayedDate)}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-[var(--muted)]">Chưa có trận thua</span>
                     )}
                   </div>
                 </div>
@@ -1600,8 +1691,10 @@ export const StatsPage: React.FC = () => {
                         <th className="py-3 px-3 font-bold text-center">Trạng Thái</th>
                         <th className="py-3 px-3 font-bold text-right">Lượt Chơi</th>
                         <th className="py-3 px-3 font-bold text-right">Tổng Thời Gian</th>
-                        <th className="py-3 px-3 font-bold text-right">Kỷ Lục Điểm</th>
-                        <th className="py-3 px-3 font-bold text-right">Quán Quân</th>
+                        <th className="py-3 px-3 font-bold text-right">Điểm Cao Nhất</th>
+                        <th className="py-3 px-3 font-bold text-right">Điểm Thấp Nhất</th>
+                        <th className="py-3 px-3 font-bold text-right">Thắng Nhiều Nhất</th>
+                        <th className="py-3 px-3 font-bold text-right">Thua Nhiều Nhất</th>
                         <th className="py-3 px-4 font-bold text-center">Hành Động</th>
                       </tr>
                     </thead>
@@ -1652,9 +1745,33 @@ export const StatsPage: React.FC = () => {
                                   <span className="font-bold text-emerald-600 dark:text-emerald-400">
                                     {item.highestScore.score}đ
                                   </span>
-                                  <span className="text-[10px] text-[var(--muted)] block truncate max-w-[100px] ml-auto">
+                                  <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
                                     {item.highestScore.playerName}
                                   </span>
+                                  {item.highestScore.date && (
+                                    <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={formatRecordTimeAgo(item.highestScore.date)}>
+                                      {formatRecordTimeAgo(item.highestScore.date)}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-[var(--muted)]">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-right font-mono text-xs">
+                              {item.lowestScore ? (
+                                <div>
+                                  <span className="font-bold text-rose-500">
+                                    {item.lowestScore.score}đ
+                                  </span>
+                                  <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
+                                    {item.lowestScore.playerName}
+                                  </span>
+                                  {item.lowestScore.date && (
+                                    <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={formatRecordTimeAgo(item.lowestScore.date)}>
+                                      {formatRecordTimeAgo(item.lowestScore.date)}
+                                    </span>
+                                  )}
                                 </div>
                               ) : (
                                 <span className="text-[var(--muted)]">—</span>
@@ -1663,12 +1780,36 @@ export const StatsPage: React.FC = () => {
                             <td className="py-3 px-3 text-right font-mono text-xs">
                               {item.topWinner ? (
                                 <div>
-                                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                                  <span className="font-bold text-amber-600 dark:text-amber-400 block truncate max-w-[120px] ml-auto">
                                     {item.topWinner.playerName}
                                   </span>
                                   <span className="text-[10px] text-[var(--muted)] block">
                                     {item.topWinner.wins} thắng ({item.topWinner.winRate}%)
                                   </span>
+                                  {item.topWinner.lastWonDate && (
+                                    <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={`Thắng: ${formatRecordTimeAgo(item.topWinner.lastWonDate)}`}>
+                                      {formatRecordTimeAgo(item.topWinner.lastWonDate)}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-[var(--muted)]">—</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-right font-mono text-xs">
+                              {item.topLoser ? (
+                                <div>
+                                  <span className="font-bold text-rose-600 dark:text-rose-400 block truncate max-w-[120px] ml-auto">
+                                    {item.topLoser.playerName}
+                                  </span>
+                                  <span className="text-[10px] text-[var(--muted)] block">
+                                    {item.topLoser.losses} thua ({item.topLoser.lossRate}%)
+                                  </span>
+                                  {item.topLoser.lastPlayedDate && (
+                                    <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={`Gần nhất: ${formatRecordTimeAgo(item.topLoser.lastPlayedDate)}`}>
+                                      {formatRecordTimeAgo(item.topLoser.lastPlayedDate)}
+                                    </span>
+                                  )}
                                 </div>
                               ) : (
                                 <span className="text-[var(--muted)]">—</span>

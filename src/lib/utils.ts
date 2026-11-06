@@ -296,18 +296,75 @@ export function createGameCoverDataUri(
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
+export interface GameScoreRecord {
+  score: number;
+  playerName: string;
+  date?: string;
+  sessionId?: string;
+}
+
+export interface PlayerWinRate {
+  playerId: string;
+  playerName: string;
+  plays: number;
+  wins: number;
+  winRate: number;
+  lastWonDate?: string;
+}
+
+export interface PlayerLossRecord {
+  playerId: string;
+  playerName: string;
+  plays: number;
+  losses: number;
+  lossRate: number;
+  wins: number;
+  lowestScore?: number;
+  lastPlayedDate?: string;
+}
+
 export interface GameStatsSummary {
   totalPlays: number;
   averageDuration: number;
-  highestScore: { score: number; playerName: string } | null;
-  lowestScore: { score: number; playerName: string } | null;
-  playerWinRates: Array<{
-    playerId: string;
-    playerName: string;
-    plays: number;
-    wins: number;
-    winRate: number;
-  }>;
+  highestScore: GameScoreRecord | null;
+  lowestScore: GameScoreRecord | null;
+  playerWinRates: PlayerWinRate[];
+  mostWinsPlayer?: PlayerWinRate | null;
+  mostLossesPlayer?: PlayerLossRecord | null;
+}
+
+/**
+ * Formats a record date with relative time distance (e.g. "15/09/2026 (2 tháng trước)")
+ */
+export function formatRecordTimeAgo(isoDate?: string): string {
+  if (!isoDate) return '';
+  const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return isoDate;
+
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const dateStr = `${day}/${month}/${year}`;
+
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 0) return `${dateStr} (Hôm nay)`;
+  if (diffDays === 1) return `${dateStr} (Hôm qua)`;
+  if (diffDays < 30) return `${dateStr} (${diffDays} ngày trước)`;
+
+  const diffMonths = Math.floor(diffDays / 30.4375);
+  if (diffMonths < 12) {
+    return `${dateStr} (${diffMonths} tháng trước)`;
+  }
+
+  const diffYears = Math.floor(diffDays / 365.25);
+  const remMonths = Math.floor((diffDays % 365.25) / 30.4375);
+  if (remMonths > 0) {
+    return `${dateStr} (${diffYears} năm ${remMonths} tháng trước)`;
+  }
+  return `${dateStr} (${diffYears} năm trước)`;
 }
 
 export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
@@ -319,6 +376,8 @@ export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
       highestScore: null,
       lowestScore: null,
       playerWinRates: [],
+      mostWinsPlayer: null,
+      mostLossesPlayer: null,
     };
   }
 
@@ -330,22 +389,47 @@ export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
       ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
       : 0;
 
-  let highestScore: { score: number; playerName: string } | null = null;
-  let lowestScore: { score: number; playerName: string } | null = null;
+  let highestScore: GameScoreRecord | null = null;
+  let lowestScore: GameScoreRecord | null = null;
 
   const playerMap = new Map<
     string,
-    { playerId: string; playerName: string; plays: number; wins: number }
+    {
+      playerId: string;
+      playerName: string;
+      plays: number;
+      wins: number;
+      losses: number;
+      lowestScore?: number;
+      lastWonDate?: string;
+      lastPlayedDate?: string;
+    }
   >();
 
-  for (const session of sessions) {
+  // Chronological sort to accurately track lastWonDate / lastPlayedDate
+  const chrono = [...sessions].sort(
+    (a, b) => new Date(a.datePlayed).getTime() - new Date(b.datePlayed).getTime()
+  );
+
+  for (const session of chrono) {
+    const sDate = session.datePlayed;
     for (const p of (session.players || [])) {
       if (typeof p.score === 'number' && !Number.isNaN(p.score)) {
         if (!highestScore || p.score > highestScore.score) {
-          highestScore = { score: p.score, playerName: p.playerName };
+          highestScore = {
+            score: p.score,
+            playerName: p.playerName,
+            date: sDate,
+            sessionId: session.id,
+          };
         }
         if (!lowestScore || p.score < lowestScore.score) {
-          lowestScore = { score: p.score, playerName: p.playerName };
+          lowestScore = {
+            score: p.score,
+            playerName: p.playerName,
+            date: sDate,
+            sessionId: session.id,
+          };
         }
       }
 
@@ -354,21 +438,80 @@ export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
         playerName: p.playerName,
         plays: 0,
         wins: 0,
+        losses: 0,
+        lowestScore: undefined,
+        lastWonDate: undefined,
+        lastPlayedDate: undefined,
       };
+
       existing.plays += 1;
-      if (p.isWinner || session.winnerId === p.playerId) {
+      existing.lastPlayedDate = sDate || existing.lastPlayedDate;
+
+      const isWin = p.isWinner || session.winnerId === p.playerId;
+      if (isWin) {
         existing.wins += 1;
+        existing.lastWonDate = sDate || existing.lastWonDate;
+      } else {
+        existing.losses += 1;
       }
+
+      if (typeof p.score === 'number' && !Number.isNaN(p.score)) {
+        existing.lowestScore =
+          existing.lowestScore === undefined
+            ? p.score
+            : Math.min(existing.lowestScore, p.score);
+      }
+
       playerMap.set(p.playerId, existing);
     }
   }
 
-  const playerWinRates = Array.from(playerMap.values())
+  const playerWinRates: PlayerWinRate[] = Array.from(playerMap.values())
     .map((item) => ({
-      ...item,
+      playerId: item.playerId,
+      playerName: item.playerName,
+      plays: item.plays,
+      wins: item.wins,
       winRate: item.plays > 0 ? Math.round((item.wins / item.plays) * 100) : 0,
+      lastWonDate: item.lastWonDate,
     }))
     .sort((a, b) => b.winRate - a.winRate || b.wins - a.wins);
+
+  // Most Wins Player
+  const mostWinsPlayer: PlayerWinRate | null =
+    Array.from(playerMap.values())
+      .map((item) => ({
+        playerId: item.playerId,
+        playerName: item.playerName,
+        plays: item.plays,
+        wins: item.wins,
+        winRate: item.plays > 0 ? Math.round((item.wins / item.plays) * 100) : 0,
+        lastWonDate: item.lastWonDate,
+      }))
+      .sort((a, b) => b.wins - a.wins || b.winRate - a.winRate || b.plays - a.plays)[0] || null;
+
+  // Most Losses Player:
+  // Tie-break rules:
+  // 1. Số trận thua (losses) nhiều hơn
+  // 2. Nếu bằng trận thua -> ai chơi nhiều hơn (plays)
+  // 3. Nếu bằng nữa -> ai có điểm thấp nhất trong game đó thấp hơn
+  const mostLossesPlayer: PlayerLossRecord | null =
+    Array.from(playerMap.values())
+      .map((item) => ({
+        playerId: item.playerId,
+        playerName: item.playerName,
+        plays: item.plays,
+        losses: item.losses,
+        lossRate: item.plays > 0 ? Math.round((item.losses / item.plays) * 100) : 0,
+        wins: item.wins,
+        lowestScore: item.lowestScore,
+        lastPlayedDate: item.lastPlayedDate,
+      }))
+      .sort((a, b) => {
+        if (b.losses !== a.losses) return b.losses - a.losses;
+        if (b.plays !== a.plays) return b.plays - a.plays;
+        return (a.lowestScore ?? 0) - (b.lowestScore ?? 0);
+      })[0] || null;
 
   return {
     totalPlays,
@@ -376,6 +519,8 @@ export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
     highestScore,
     lowestScore,
     playerWinRates,
+    mostWinsPlayer,
+    mostLossesPlayer,
   };
 }
 

@@ -77,10 +77,70 @@ test('calculateGameStats computes plays, average duration, score records, and wi
   const stats = calculateGameStats(sampleSessions);
   assert.equal(stats.totalPlays, 2);
   assert.equal(stats.averageDuration, 70);
-  assert.deepEqual(stats.highestScore, { score: 102, playerName: 'Linh' });
-  assert.deepEqual(stats.lowestScore, { score: 78, playerName: 'Huy' });
+  assert.deepEqual(stats.highestScore, {
+    score: 102,
+    playerName: 'Linh',
+    date: '2026-10-05T10:00:00.000Z',
+    sessionId: 's2',
+  });
+  assert.deepEqual(stats.lowestScore, {
+    score: 78,
+    playerName: 'Huy',
+    date: '2026-10-05T10:00:00.000Z',
+    sessionId: 's2',
+  });
   assert.equal(stats.playerWinRates.length, 2);
   assert.equal(stats.playerWinRates[0].winRate, 50);
+  assert.equal(stats.mostWinsPlayer?.playerName, 'Huy');
+  assert.equal(stats.mostLossesPlayer?.playerName, 'Huy');
+});
+
+test('calculateGameStats accurately breaks ties for mostLossesPlayer', async () => {
+  const { calculateGameStats } = await import('./utils');
+  const sessions: PlaySession[] = [
+    {
+      id: 's1',
+      gameId: 'g1',
+      gameName: 'Test Game',
+      gameThumbnail: '',
+      datePlayed: '2026-01-01T10:00:00.000Z',
+      firstPlayerMethod: 'manual',
+      winnerId: 'winner',
+      players: [
+        { playerId: 'winner', playerName: 'Winner', isWinner: true, score: 50 },
+        { playerId: 'p1', playerName: 'Player 1', isWinner: false, score: 30 },
+        { playerId: 'p2', playerName: 'Player 2', isWinner: false, score: 20 },
+      ],
+      createdAt: '2026-01-01T11:00:00.000Z',
+    },
+    {
+      id: 's2',
+      gameId: 'g1',
+      gameName: 'Test Game',
+      gameThumbnail: '',
+      datePlayed: '2026-01-02T10:00:00.000Z',
+      firstPlayerMethod: 'manual',
+      winnerId: 'winner',
+      players: [
+        { playerId: 'winner', playerName: 'Winner', isWinner: true, score: 60 },
+        { playerId: 'p1', playerName: 'Player 1', isWinner: false, score: 40 },
+        { playerId: 'p2', playerName: 'Player 2', isWinner: false, score: 25 },
+      ],
+      createdAt: '2026-01-02T11:00:00.000Z',
+    },
+  ];
+
+  const stats = calculateGameStats(sessions);
+  // Both p1 and p2 have 2 losses and 2 plays. p2 has lower lowestScore (20 vs 30).
+  assert.equal(stats.mostLossesPlayer?.playerName, 'Player 2');
+  assert.equal(stats.mostLossesPlayer?.losses, 2);
+});
+
+test('formatRecordTimeAgo formats dates and relative time in Vietnamese accurately', async () => {
+  const { formatRecordTimeAgo } = await import('./utils');
+  const result = formatRecordTimeAgo('2025-05-10T10:00:00.000Z');
+  assert.ok(result.includes('10/05/2025'));
+  assert.ok(result.includes('trước'));
 });
 
 test('calculateLongestWinStreak tracks consecutive chronological wins accurately', () => {
