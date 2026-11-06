@@ -28,6 +28,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { PlayerChip } from '../components/player/PlayerChip';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
+import { PlayerLeaderboardSection } from '../components/dashboard/PlayerLeaderboardSection';
 import { StreakDetailModal } from '../components/player/StreakDetailModal';
 import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
@@ -411,36 +412,6 @@ export const StatsPage: React.FC = () => {
       })
       .sort((a, b) => b.count - a.count);
   }, [sessions, players, activeTab]);
-
-  // --- 4. PLAYER LEADERBOARD & HEAD-TO-HEAD (only computed when on by_player tab) ---
-  const playerLeaderboard = useMemo(() => {
-    if (activeTab !== 'by_player') return [];
-    const statsMap = new Map<string, { player: Player; plays: number; wins: number }>();
-
-    players.forEach((p) => {
-      statsMap.set(p.id, { player: p, plays: 0, wins: 0 });
-    });
-
-    sessions.forEach((s) => {
-      s.players.forEach((p) => {
-        const entry = statsMap.get(p.playerId);
-        if (entry) {
-          entry.plays += 1;
-          if (p.isWinner || s.winnerId === p.playerId) {
-            entry.wins += 1;
-          }
-        }
-      });
-    });
-
-    return Array.from(statsMap.values())
-      .filter((x) => x.plays > 0)
-      .map((x) => ({
-        ...x,
-        winRate: Math.round((x.wins / x.plays) * 100),
-      }))
-      .sort((a, b) => b.plays - a.plays);
-  }, [players, sessions, activeTab]);
 
   // Head-to-Head calculation
   const activeComparisonPlayers = useMemo(
@@ -1205,63 +1176,8 @@ export const StatsPage: React.FC = () => {
         {/* ========================================================= */}
         {activeTab === 'by_player' && (
           <div className="space-y-6">
-            {/* ALL-TIME PLAYER LEADERBOARD TABLE */}
-            <Card className="p-6 space-y-4 bg-[var(--card)] border border-[var(--line)]">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-display font-bold text-xl text-[var(--ink)] flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-amber-500 dark:text-amber-400" />
-                    <span>All-Time Player Leaderboard</span>
-                  </h2>
-                  <p className="text-xs text-[var(--muted)]">
-                    Rankings by total sessions logged and win rates across all tabletop games
-                  </p>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto rounded-2xl border border-[var(--line)]">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-[var(--card-2)] border-b border-[var(--line)] text-[var(--muted)]">
-                    <tr>
-                      <th className="py-3 px-4 font-bold">Rank</th>
-                      <th className="py-3 px-4 font-bold">Player</th>
-                      <th className="py-3 px-3 font-bold text-right">Plays</th>
-                      <th className="py-3 px-3 font-bold text-right">Wins</th>
-                      <th className="py-3 px-3 font-bold text-right">Win Rate (%)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--line)] tabular-nums bg-[var(--card)]">
-                    {playerLeaderboard.map((item, idx) => (
-                      <tr key={item.player.id} className="hover:bg-[var(--card-2)]/50 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-[var(--muted)]">
-                          {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`}
-                        </td>
-                        <td className="py-3 px-4 font-display font-bold text-[var(--ink)]">
-                          <div className="flex items-center gap-2.5">
-                            <PlayerAvatar player={item.player} size="sm" />
-                            <span>{item.player.name}</span>
-                            {idx === 0 && item.winRate > 0 && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                                👑 Top Win Rate ({item.winRate}%)
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-3 px-3 text-right font-mono font-bold text-[var(--ink)]">
-                          {item.plays} plays
-                        </td>
-                        <td className="py-3 px-3 text-right font-mono font-bold text-amber-600 dark:text-amber-400">
-                          {item.wins}
-                        </td>
-                        <td className="py-3 px-3 text-right font-mono font-black text-emerald-700 dark:text-emerald-400">
-                          {item.winRate}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+            {/* MULTI-DIMENSIONAL PLAYER LEADERBOARDS (POSITIVE & NEGATIVE) */}
+            <PlayerLeaderboardSection players={players} sessions={sessions} />
 
             {/* HEAD-TO-HEAD COMPARISON SECTION */}
             <Card className="p-6 space-y-6 bg-[var(--card)] border border-[var(--line)]">
