@@ -47,7 +47,7 @@ export const BGGSearchModal: React.FC<BGGSearchModalProps> = ({
           leftIcon={<Search className="w-4 h-4" />}
           rightIcon={
             isLoading ? (
-              <div className="flex items-center gap-1.5 text-xs text-[#a78bfa]">
+              <div className="flex items-center gap-1.5 text-xs text-[var(--accent)] font-semibold">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span className="hidden sm:inline text-[11px] font-mono">BGG...</span>
               </div>
@@ -55,7 +55,7 @@ export const BGGSearchModal: React.FC<BGGSearchModalProps> = ({
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                className="w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 text-[#94a3b8] hover:text-white flex items-center justify-center transition-colors cursor-pointer text-xs"
+                className="w-5 h-5 rounded-full bg-[var(--card-3)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer text-xs"
                 title="Clear search"
               >
                 ✕
@@ -72,7 +72,7 @@ export const BGGSearchModal: React.FC<BGGSearchModalProps> = ({
             ))}
           </div>
         ) : results.length === 0 ? (
-          <div className="p-8 text-center text-sm text-[#94a3b8] bg-[#16162a]/40 rounded-xl border border-white/5">
+          <div className="p-8 text-center text-sm text-[var(--muted)] bg-[var(--card-2)] rounded-xl border border-[var(--line)]">
             No matching boardgames found for &quot;{query}&quot;.
           </div>
         ) : (
@@ -85,7 +85,7 @@ export const BGGSearchModal: React.FC<BGGSearchModalProps> = ({
                   type="button"
                   disabled={isFetchingDetail}
                   onClick={() => void handlePick(item.bggId)}
-                  className="flex items-center gap-3 p-2.5 rounded-xl bg-[#1e1e35]/80 hover:bg-[#7c3aed]/20 border border-white/10 hover:border-[#7c3aed]/50 text-left transition-all cursor-pointer group disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="flex items-center gap-3 p-2.5 rounded-xl bg-[var(--card-2)] hover:bg-[var(--accent)]/15 border border-[var(--line)] hover:border-[var(--accent)] text-left transition-all cursor-pointer group disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <BGGCardThumbnail
                     src={item.thumbnail || item.image}
@@ -94,19 +94,19 @@ export const BGGSearchModal: React.FC<BGGSearchModalProps> = ({
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <p className="font-display font-bold text-sm text-[#f1f5f9] truncate group-hover:text-[#a78bfa]">
+                      <p className="font-display font-bold text-sm text-[var(--ink)] truncate group-hover:text-[var(--accent)]">
                         {item.name}
                       </p>
                       {isThisPicking && (
-                        <Loader2 className="w-3.5 h-3.5 text-[#22d3ee] animate-spin shrink-0" />
+                        <Loader2 className="w-3.5 h-3.5 text-[var(--accent)] animate-spin shrink-0" />
                       )}
                     </div>
                     {item.yearPublished && (
-                      <p className="text-xs text-[#94a3b8] tabular-nums mt-0.5">
+                      <p className="text-xs text-[var(--muted)] tabular-nums mt-0.5">
                         Published {item.yearPublished}
                       </p>
                     )}
-                    <span className="inline-flex items-center gap-1 text-[11px] text-[#22d3ee] mt-1 font-medium">
+                    <span className="inline-flex items-center gap-1 text-[11px] text-[var(--accent)] mt-1 font-bold">
                       {isThisPicking ? (
                         'Importing BGG details...'
                       ) : (

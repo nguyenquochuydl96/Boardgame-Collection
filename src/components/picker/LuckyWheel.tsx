@@ -150,7 +150,7 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
         <motion.div
           animate={controls}
           style={{ rotate: 0 }}
-          className="relative w-full h-full rounded-full overflow-hidden shadow-2xl bg-[#16162a]"
+          className="relative w-full h-full rounded-full overflow-hidden shadow-2xl bg-[var(--card)]"
         >
           <svg
             className="w-full h-full"

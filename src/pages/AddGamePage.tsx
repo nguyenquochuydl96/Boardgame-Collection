@@ -235,7 +235,7 @@ export const AddGamePage: React.FC = () => {
                 ))}
               </div>
             ) : results.length === 0 ? (
-              <div className="p-6 text-center text-sm text-[#94a3b8] bg-[#16162a]/40 rounded-2xl border border-white/5">
+              <div className="p-6 text-center text-sm text-[var(--muted)] bg-[var(--card-2)] rounded-2xl border border-[var(--line)]">
                 No matching boardgames found for &quot;{query}&quot;. You can switch to the &quot;Add Manually&quot; tab to enter your custom details.
               </div>
             ) : (
@@ -252,8 +252,8 @@ export const AddGamePage: React.FC = () => {
                       className={cn(
                         'flex items-center gap-3 p-3 rounded-2xl border text-left transition-all cursor-pointer group',
                         isPicked
-                          ? 'bg-[#7c3aed]/25 border-[#7c3aed] ring-2 ring-[#7c3aed]/40'
-                          : 'bg-[#1e1e35]/60 border-white/10 hover:border-[#7c3aed]/40 hover:bg-[#1e1e35]',
+                          ? 'bg-[var(--accent)]/20 border-[var(--accent)] ring-2 ring-[var(--accent)]/40'
+                          : 'bg-[var(--card-2)] border-[var(--line)] hover:border-[var(--accent)]/50 hover:bg-[var(--card)]',
                         isFetchingDetail && !isPicked && 'opacity-60 cursor-not-allowed'
                       )}
                     >
@@ -442,7 +442,7 @@ export const AddGamePage: React.FC = () => {
 
               {/* Lent-out Fields */}
               {status === 'lent_out' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[#7c3aed]/10 border border-[#7c3aed]/30">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[var(--accent)]/10 border border-[var(--accent)]/30">
                   <Input
                     label="Lent to (Borrower Name)"
                     placeholder="e.g. Alex, Sam"
@@ -460,11 +460,11 @@ export const AddGamePage: React.FC = () => {
             </div>
 
             {/* Description & Notes */}
-            <div className="space-y-4 pt-2 border-t border-white/10">
+            <div className="space-y-4 pt-2 border-t border-[var(--line)]">
               <div className="space-y-1.5">
                 <label
                   htmlFor="game-desc"
-                  className="block text-xs font-bold uppercase tracking-wider text-[#94a3b8]"
+                  className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]"
                 >
                   Description
                 </label>
@@ -474,14 +474,14 @@ export const AddGamePage: React.FC = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Overview of gameplay, theme, or expansion notes..."
-                  className="w-full rounded-xl bg-[#16162a] border border-white/10 p-3.5 text-sm text-[#f1f5f9] placeholder:text-[#475569] focus:outline-none focus:border-[#7c3aed]"
+                  className="w-full rounded-xl bg-[var(--card)] border border-[var(--line)] p-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <label
                   htmlFor="game-notes"
-                  className="block text-xs font-bold uppercase tracking-wider text-[#94a3b8]"
+                  className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]"
                 >
                   Personal Notes
                 </label>
@@ -491,7 +491,7 @@ export const AddGamePage: React.FC = () => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Edition notes, card sleeve count, promos..."
-                  className="w-full rounded-xl bg-[#16162a] border border-white/10 p-3.5 text-sm text-[#f1f5f9] placeholder:text-[#475569] focus:outline-none focus:border-[#7c3aed]"
+                  className="w-full rounded-xl bg-[var(--card)] border border-[var(--line)] p-3.5 text-sm text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
             </div>

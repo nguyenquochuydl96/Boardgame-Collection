@@ -22,8 +22,8 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
       className={cn(
         'flex items-center justify-between gap-3 p-3.5 rounded-2xl border transition-all duration-200',
         playerScore.isWinner
-          ? 'bg-amber-500/10 border-amber-500/40 shadow-md shadow-amber-500/5'
-          : 'bg-[#16162a] border-white/[0.08]'
+          ? 'bg-amber-500/15 border-amber-500/45 shadow-md shadow-amber-500/10'
+          : 'bg-[var(--card)] border-[var(--line)]'
       )}
     >
       <div className="flex items-center gap-3 min-w-0">
@@ -33,11 +33,11 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
           size="md"
         />
         <div className="min-w-0">
-          <p className="font-display font-bold text-sm sm:text-base text-[#f1f5f9] truncate">
+          <p className="font-display font-bold text-sm sm:text-base text-[var(--ink)] truncate">
             {playerScore.playerName}
           </p>
           {playerScore.rank && (
-            <p className="text-xs text-[#94a3b8] tabular-nums">
+            <p className="text-xs text-[var(--muted)] tabular-nums">
               Rank #{playerScore.rank}
             </p>
           )}
@@ -62,7 +62,7 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
                 }
               }
             }}
-            className="w-full min-h-[42px] px-3 py-1.5 rounded-xl bg-[#1e1e35] border border-white/15 text-right font-mono font-bold text-base text-[#f1f5f9] tabular-nums focus:outline-none focus:border-[#7c3aed]"
+            className="w-full min-h-[42px] px-3 py-1.5 rounded-xl bg-[var(--card-2)] border border-[var(--line-2)] text-right font-mono font-bold text-base text-[var(--ink)] tabular-nums focus:outline-none focus:border-[var(--accent)]"
           />
         </div>
 
@@ -71,10 +71,10 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
           onClick={() => onToggleWinner(playerScore.playerId)}
           aria-label={`Mark ${playerScore.playerName} as winner`}
           className={cn(
-            'min-h-[42px] min-w-[42px] px-3 rounded-xl border inline-flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer',
+            'min-h-[42px] min-w-[42px] px-3 rounded-xl border inline-flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer select-none',
             playerScore.isWinner
-              ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/25'
-              : 'bg-[#1e1e35] text-[#94a3b8] border-white/10 hover:text-white hover:border-white/25'
+              ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/25 font-black'
+              : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
           )}
         >
           <Crown

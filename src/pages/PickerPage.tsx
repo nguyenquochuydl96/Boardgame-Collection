@@ -181,16 +181,16 @@ export const PickerPage: React.FC = () => {
                 setChosenResult(null);
               }}
               className={cn(
-                'relative px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 select-none',
+                'relative isolate px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 select-none',
                 mode === 'first_player'
-                  ? 'text-[var(--accent-ink)]'
-                  : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                  ? 'text-[var(--accent-ink)] font-black'
+                  : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
               )}
             >
               {mode === 'first_player' && (
                 <motion.span
                   layoutId="picker-mode-pill"
-                  className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md -z-10"
+                  className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md pointer-events-none z-0"
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
@@ -204,16 +204,16 @@ export const PickerPage: React.FC = () => {
                 setChosenResult(null);
               }}
               className={cn(
-                'relative px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 select-none',
+                'relative isolate px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 select-none',
                 mode === 'what_to_play'
-                  ? 'text-[var(--accent-ink)]'
-                  : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                  ? 'text-[var(--accent-ink)] font-black'
+                  : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
               )}
             >
               {mode === 'what_to_play' && (
                 <motion.span
                   layoutId="picker-mode-pill"
-                  className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md -z-10"
+                  className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md pointer-events-none z-0"
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
@@ -235,16 +235,16 @@ export const PickerPage: React.FC = () => {
               type="button"
               onClick={() => setAnimStyle('wheel')}
               className={cn(
-                'relative px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 select-none',
+                'relative isolate px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 select-none',
                 animStyle === 'wheel'
-                  ? 'text-amber-300'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'text-amber-900 dark:text-amber-200 font-extrabold'
+                  : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
             >
               {animStyle === 'wheel' && (
                 <motion.span
                   layoutId="picker-anim-pill"
-                  className="absolute inset-0 rounded-lg bg-amber-500/25 border border-amber-500/50 -z-10 shadow-sm"
+                  className="absolute inset-0 rounded-lg bg-amber-500/25 border border-amber-500/50 pointer-events-none z-0 shadow-sm"
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
@@ -254,16 +254,16 @@ export const PickerPage: React.FC = () => {
               type="button"
               onClick={() => setAnimStyle('card_shuffle')}
               className={cn(
-                'relative px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 select-none',
+                'relative isolate px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 select-none',
                 animStyle === 'card_shuffle'
-                  ? 'text-amber-300'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'text-amber-900 dark:text-amber-200 font-extrabold'
+                  : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
             >
               {animStyle === 'card_shuffle' && (
                 <motion.span
                   layoutId="picker-anim-pill"
-                  className="absolute inset-0 rounded-lg bg-amber-500/25 border border-amber-500/50 -z-10 shadow-sm"
+                  className="absolute inset-0 rounded-lg bg-amber-500/25 border border-amber-500/50 pointer-events-none z-0 shadow-sm"
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}

@@ -119,8 +119,8 @@ export const RandomPlayerWheel: React.FC<RandomPlayerWheelProps> = ({
 
   if (players.length === 0) {
     return (
-      <div className="p-8 text-center rounded-2xl bg-[#16162a] border border-white/10">
-        <p className="text-sm text-[#94a3b8]">
+      <div className="p-8 text-center rounded-2xl bg-[var(--card)] border border-[var(--line)]">
+        <p className="text-sm text-[var(--muted)]">
           Please select at least 1 player in Step 3 before spinning the wheel.
         </p>
       </div>
@@ -162,7 +162,7 @@ export const RandomPlayerWheel: React.FC<RandomPlayerWheelProps> = ({
             <path
               d="M17 34L3 6C1.8 3.6 3.5 1 6.2 1H27.8C30.5 1 32.2 3.6 31 6L17 34Z"
               fill="#f8fafc"
-              stroke="#7c3aed"
+              stroke="var(--accent)"
               strokeWidth="3"
             />
           </svg>
@@ -172,7 +172,7 @@ export const RandomPlayerWheel: React.FC<RandomPlayerWheelProps> = ({
         <motion.div
           animate={controls}
           style={{ rotate: 0 }}
-          className="relative w-full h-full rounded-full p-2 bg-[#16162a] border-4 border-white/15 shadow-2xl"
+          className="relative w-full h-full rounded-full p-2 bg-[var(--card)] border-4 border-[var(--line-2)] shadow-2xl"
         >
           <svg
             viewBox="0 0 300 300"
@@ -288,12 +288,12 @@ export const RandomPlayerWheel: React.FC<RandomPlayerWheelProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.3 }}
-            className="px-6 py-4 rounded-2xl bg-gradient-to-r from-[#7c3aed]/25 via-[#2563eb]/25 to-[#22d3ee]/25 border border-[#a78bfa]/50 text-center shadow-lg shadow-[#7c3aed]/15"
+            className="px-6 py-4 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-center shadow-lg"
           >
-            <p className="font-display font-extrabold text-xl sm:text-2xl text-white">
+            <p className="font-display font-extrabold text-xl sm:text-2xl text-[var(--ink)]">
               🎉 {selectedPlayer.name} goes first!
             </p>
-            <p className="text-xs text-[#cbd5e1] mt-1">
+            <p className="text-xs text-[var(--muted)] mt-1 font-medium">
               Ready to kick off the first turn
             </p>
           </motion.div>

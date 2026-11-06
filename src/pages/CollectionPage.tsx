@@ -191,9 +191,9 @@ export const CollectionPage: React.FC = () => {
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
                 className={cn(
-                  'relative min-h-[38px] px-3.5 py-1.5 rounded-[12px] text-xs font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-2 select-none',
+                  'relative isolate min-h-[38px] px-3.5 py-1.5 rounded-[12px] text-xs font-bold shrink-0 transition-colors cursor-pointer flex items-center gap-2 select-none',
                   isActive
-                    ? 'text-[var(--accent-ink)]'
+                    ? 'text-[var(--accent-ink)] font-black'
                     : 'bg-[var(--card)] text-[var(--ink-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:bg-[var(--card-2)] hover:text-[var(--ink)]'
                 )}
               >
@@ -252,17 +252,17 @@ export const CollectionPage: React.FC = () => {
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={cn(
-                  'relative p-2 rounded-[9px] transition-colors cursor-pointer',
+                  'relative isolate p-2 rounded-[9px] transition-colors cursor-pointer select-none',
                   viewMode === 'grid'
-                    ? 'text-[var(--accent-ink)]'
-                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                    ? 'text-[var(--accent-ink)] font-black'
+                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
                 )}
                 aria-label="Grid view"
               >
                 {viewMode === 'grid' && (
                   <motion.span
                     layoutId="collection-view-pill"
-                    className="absolute inset-0 rounded-[9px] bg-[var(--accent)] shadow-xs -z-10"
+                    className="absolute inset-0 rounded-[9px] bg-[var(--accent)] shadow-xs pointer-events-none z-0"
                     transition={{ type: 'spring', stiffness: 450, damping: 28 }}
                   />
                 )}
@@ -272,17 +272,17 @@ export const CollectionPage: React.FC = () => {
                 type="button"
                 onClick={() => setViewMode('list')}
                 className={cn(
-                  'relative p-2 rounded-[9px] transition-colors cursor-pointer',
+                  'relative isolate p-2 rounded-[9px] transition-colors cursor-pointer select-none',
                   viewMode === 'list'
-                    ? 'text-[var(--accent-ink)]'
-                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                    ? 'text-[var(--accent-ink)] font-black'
+                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
                 )}
                 aria-label="List view"
               >
                 {viewMode === 'list' && (
                   <motion.span
                     layoutId="collection-view-pill"
-                    className="absolute inset-0 rounded-[9px] bg-[var(--accent)] shadow-xs -z-10"
+                    className="absolute inset-0 rounded-[9px] bg-[var(--accent)] shadow-xs pointer-events-none z-0"
                     transition={{ type: 'spring', stiffness: 450, damping: 28 }}
                   />
                 )}

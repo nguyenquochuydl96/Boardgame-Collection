@@ -126,9 +126,9 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
               placeholder="Leave empty if using built-in catalog..."
               value={proxyUrl}
               onChange={(e) => setProxyUrl(e.target.value)}
-              leftIcon={<Globe className="w-4 h-4 text-[#7c3aed]" />}
+              leftIcon={<Globe className="w-4 h-4 text-[var(--accent)]" />}
             />
-            <p className="text-[11px] text-[var(--text-muted)] mt-1.5 pl-1">
+            <p className="text-[11px] text-[var(--muted)] mt-1.5 pl-1">
               💡 <em>Optional:</em> Standard browsers enforce CORS policies on direct BGG XML API calls. Leaving this blank automatically falls back to our embedded high-speed catalog.
             </p>
           </div>
@@ -140,9 +140,9 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
               type="password"
               value={apiToken}
               onChange={(e) => setApiToken(e.target.value)}
-              leftIcon={<Key className="w-4 h-4 text-[#a78bfa]" />}
+              leftIcon={<Key className="w-4 h-4 text-[var(--accent)]" />}
             />
-            <p className="text-[11px] text-[#a78bfa] mt-1.5 pl-1 font-medium">
+            <p className="text-[11px] text-[var(--muted)] mt-1.5 pl-1 font-medium">
               🔑 Access token granted under your approved BGG XML API application.
             </p>
           </div>
@@ -152,8 +152,8 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
           <div
             className={`p-3.5 rounded-xl border flex items-start gap-2.5 ${
               testResult.success
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
             }`}
           >
             {testResult.success ? (
@@ -165,8 +165,8 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
           </div>
         )}
 
-        <div className="p-4 rounded-2xl bg-[#1e1e35]/60 border border-white/10 space-y-2 text-xs text-[#94a3b8]">
-          <p className="font-bold text-white flex items-center gap-1.5">
+        <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] space-y-2 text-xs text-[var(--muted)]">
+          <p className="font-bold text-[var(--ink)] flex items-center gap-1.5">
             <ExternalLink className="w-3.5 h-3.5 text-[#ff7722]" /> How to obtain your BGG Access Token:
           </p>
           <ol className="list-decimal list-inside space-y-1.5 pl-1">
@@ -177,7 +177,7 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
                 href="https://boardgamegeek.com/applications"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-mono text-[#ff7722] underline hover:text-white"
+                className="font-mono text-[#ff7722] underline hover:text-[var(--ink)]"
               >
                 boardgamegeek.com/applications
               </a>

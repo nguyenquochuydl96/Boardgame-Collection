@@ -440,16 +440,16 @@ export const StatsPage: React.FC = () => {
                 type="button"
                 onClick={() => setActiveTab(tab.id as StatsTab)}
                 className={cn(
-                  'relative min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap shrink-0 select-none',
+                  'relative isolate min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap shrink-0 select-none',
                   isActive
-                    ? 'text-[var(--accent-ink)]'
-                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                    ? 'text-[var(--accent-ink)] font-black'
+                    : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
                 )}
               >
                 {isActive && (
                   <motion.span
                     layoutId="stats-nav-pill"
-                    className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-sm -z-10"
+                    className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-sm pointer-events-none z-0"
                     transition={{ type: 'spring', stiffness: 450, damping: 28 }}
                   />
                 )}
@@ -931,21 +931,21 @@ export const StatsPage: React.FC = () => {
           <div className="space-y-6">
             {/* Year Selector Tabs with sliding spring pill */}
             <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] w-fit flex-wrap">
-              <span className="text-xs font-bold text-[var(--muted)] px-2">Filter Year:</span>
+              <span className="text-xs font-extrabold text-[var(--ink)] px-2">Filter Year:</span>
               <button
                 type="button"
                 onClick={() => setSelectedYear('all')}
                 className={cn(
-                  'relative px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none',
+                  'relative isolate px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none',
                   selectedYear === 'all'
-                    ? 'text-[var(--accent-ink)]'
-                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                    ? 'text-[var(--accent-ink)] font-black'
+                    : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-3)]'
                 )}
               >
                 {selectedYear === 'all' && (
                   <motion.span
                     layoutId="stats-year-pill"
-                    className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md -z-10"
+                    className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md pointer-events-none z-0"
                     transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                   />
                 )}
@@ -957,16 +957,16 @@ export const StatsPage: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedYear(yr)}
                   className={cn(
-                    'relative px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none',
+                    'relative isolate px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer select-none',
                     selectedYear === yr
-                      ? 'text-[var(--accent-ink)]'
-                      : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                      ? 'text-[var(--accent-ink)] font-black'
+                      : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-3)]'
                   )}
                 >
                   {selectedYear === yr && (
                     <motion.span
                       layoutId="stats-year-pill"
-                      className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md -z-10"
+                      className="absolute inset-0 rounded-xl bg-[var(--accent)] shadow-md pointer-events-none z-0"
                       transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                     />
                   )}

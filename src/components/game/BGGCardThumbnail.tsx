@@ -32,11 +32,11 @@ export const BGGCardThumbnail: React.FC<BGGCardThumbnailProps> = ({
       <div
         className={cn(
           className,
-          'rounded-xl shrink-0 bg-gradient-to-br from-[#7c3aed]/30 via-[#18182e] to-[#ff5100]/25 border border-white/10 flex flex-col items-center justify-center p-1 shadow-inner select-none transition-all group-hover:border-[#ff5100]/40'
+          'rounded-xl shrink-0 bg-[var(--card-2)] border border-[var(--line-2)] flex flex-col items-center justify-center p-1 shadow-inner select-none transition-all group-hover:border-[var(--accent)]'
         )}
         title={name}
       >
-        <span className="font-display font-extrabold text-xs text-white tracking-wider">
+        <span className="font-display font-extrabold text-xs text-[var(--ink)] tracking-wider">
           {initials}
         </span>
         <span className="text-[8px] font-mono uppercase text-[#ff7722] font-bold mt-0.5 tracking-tight">
@@ -50,11 +50,11 @@ export const BGGCardThumbnail: React.FC<BGGCardThumbnailProps> = ({
     <div
       className={cn(
         className,
-        'relative rounded-xl overflow-hidden shrink-0 bg-[#16162a] border border-white/10 shadow-sm'
+        'relative rounded-xl overflow-hidden shrink-0 bg-[var(--card)] border border-[var(--line)] shadow-sm'
       )}
     >
       {!isLoaded && (
-        <div className="absolute inset-0 bg-[#1e1e35] animate-pulse flex items-center justify-center text-[9px] text-[#94a3b8] font-mono">
+        <div className="absolute inset-0 bg-[var(--card-2)] animate-pulse flex items-center justify-center text-[9px] text-[var(--muted)] font-mono">
           {initials}
         </div>
       )}

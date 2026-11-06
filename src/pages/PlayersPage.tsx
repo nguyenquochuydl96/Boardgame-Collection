@@ -141,23 +141,23 @@ export const PlayersPage: React.FC = () => {
               type="button"
               onClick={() => handleTabChange('players')}
               className={cn(
-                'relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none',
+                'relative isolate flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none',
                 activeTab === 'players'
-                  ? 'text-white'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'text-white font-black'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--card-2)]'
               )}
             >
               {activeTab === 'players' && (
                 <motion.div
                   layoutId="activeSubtabPill"
-                  className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-md"
+                  className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-md pointer-events-none z-0"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
               <span className="relative z-10 flex items-center gap-1.5">
                 <Users className="w-4 h-4" />
                 <span>Players</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold">
+                <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold text-white">
                   {players.length}
                 </span>
               </span>
@@ -167,23 +167,23 @@ export const PlayersPage: React.FC = () => {
               type="button"
               onClick={() => handleTabChange('locations')}
               className={cn(
-                'relative flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none',
+                'relative isolate flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none',
                 activeTab === 'locations'
-                  ? 'text-white'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  ? 'text-white font-black'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--card-2)]'
               )}
             >
               {activeTab === 'locations' && (
                 <motion.div
                   layoutId="activeSubtabPill"
-                  className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-md"
+                  className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-md pointer-events-none z-0"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
               )}
               <span className="relative z-10 flex items-center gap-1.5">
                 <MapPin className="w-4 h-4" />
                 <span>Venues</span>
-                <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold">
+                <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold text-white">
                   {locations.length}
                 </span>
               </span>

@@ -471,10 +471,10 @@ export const GameDetailPage: React.FC = () => {
                     setIsStatusOpen(false);
                   }}
                   style={{
-                    borderColor: active ? cfg.color : 'rgba(255,255,255,0.1)',
-                    backgroundColor: active ? cfg.bg : '#1e1e35',
+                    borderColor: active ? cfg.color : 'var(--line)',
+                    backgroundColor: active ? cfg.bg : 'var(--card-2)',
                   }}
-                  className="p-3.5 rounded-xl border text-left transition-all cursor-pointer hover:border-white/30"
+                  className="p-3.5 rounded-xl border text-left transition-all cursor-pointer hover:border-[var(--line-2)]"
                 >
                   <p
                     style={{ color: cfg.color }}

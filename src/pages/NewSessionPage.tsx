@@ -494,7 +494,7 @@ export const NewSessionPage: React.FC = () => {
             <ArrowLeft className="w-4 h-4" />
             Back to Sessions
           </Link>
-          <span className="text-xs font-mono text-[#a78bfa] tabular-nums">
+          <span className="text-xs font-mono text-[var(--accent)] font-bold tabular-nums">
             Step {currentStep} of 6
           </span>
         </div>
@@ -682,13 +682,13 @@ export const NewSessionPage: React.FC = () => {
                         type="button"
                         onClick={() => setSelectedGameId(game.id)}
                         className={cn(
-                          'group relative rounded-2xl overflow-hidden border text-left transition-all cursor-pointer flex flex-col',
+                          'group relative rounded-2xl overflow-hidden border text-left transition-all cursor-pointer flex flex-col select-none',
                           active
-                            ? 'border-[#a78bfa] ring-2 ring-[#7c3aed]/50 bg-[#7c3aed]/20'
-                            : 'border-white/10 bg-[#16162a] hover:border-white/30'
+                            ? 'border-[var(--accent)] ring-2 ring-[var(--accent)]/40 bg-[var(--accent)]/15'
+                            : 'border-[var(--line)] bg-[var(--card)] hover:border-[var(--line-2)] hover:bg-[var(--card-2)]'
                         )}
                       >
-                        <div className="aspect-[4/3] w-full overflow-hidden bg-[#1e1e35] relative">
+                        <div className="aspect-[4/3] w-full overflow-hidden bg-[var(--card-2)] relative">
                           <img
                             src={game.image || game.thumbnail}
                             alt={game.name}
@@ -696,7 +696,7 @@ export const NewSessionPage: React.FC = () => {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                           {active && (
-                            <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[#7c3aed] text-white flex items-center justify-center shadow-lg">
+                            <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-lg">
                               <Check className="w-4 h-4" />
                             </div>
                           )}
@@ -1325,14 +1325,14 @@ export const NewSessionPage: React.FC = () => {
                   <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-6 rounded-3xl bg-gradient-to-br from-[#1e1e35] to-[#16162a] border border-[#7c3aed]/50 shadow-xl space-y-4"
+                    className="p-6 rounded-3xl bg-[var(--card)] border border-[var(--line-2)] shadow-xl space-y-4"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#a78bfa]">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
                         <Sparkles className="w-4 h-4" />
                         Ready to Record Session
                       </span>
-                      <span className="text-xs text-[#94a3b8] tabular-nums">
+                      <span className="text-xs text-[var(--muted)] tabular-nums">
                         {formatDate(datePlayed)} ·{' '}
                         {formatDuration(Number(durationMinutes) || 60)}
                       </span>
@@ -1343,7 +1343,7 @@ export const NewSessionPage: React.FC = () => {
                         src={selectedGame.thumbnail || selectedGame.image}
                         alt={selectedGame.name}
                         referrerPolicy="no-referrer"
-                        className="w-16 h-20 rounded-xl object-cover shrink-0"
+                        className="w-16 h-20 rounded-xl object-cover shrink-0 border border-[var(--line)]"
                       />
                       <div className="space-y-1">
                         <h2 className="font-display font-extrabold text-xl text-[var(--ink)]">
@@ -1360,15 +1360,15 @@ export const NewSessionPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10">
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--line)]">
                       {computedPlayerScores.map((ps) => (
                         <div
                           key={ps.playerId}
                           className={cn(
                             'inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold border',
                             ps.isWinner
-                              ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
-                              : 'bg-[#16162a] border-white/10 text-[#cbd5e1]'
+                              ? 'bg-amber-500/20 border-amber-500/40 text-amber-800 dark:text-amber-300 font-bold'
+                              : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink)]'
                           )}
                         >
                           {ps.isWinner && (
