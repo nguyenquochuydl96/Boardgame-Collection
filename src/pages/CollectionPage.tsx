@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, Suspense } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
@@ -12,16 +12,26 @@ import {
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { GameGrid } from '../components/game/GameGrid';
-import { QuickEditGameModal } from '../components/game/QuickEditGameModal';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { BoardGame, GameStatus } from '../types';
-import { CollectionImportModal } from '../components/game/CollectionImportModal';
-import { BGGConfigModal } from '../components/game/BGGConfigModal';
-import { WhatToPlayModal } from '../components/game/WhatToPlayModal';
+
+// Lazy-load heavy modals so the main collection loads instantly
+const QuickEditGameModal = React.lazy(() =>
+  import('../components/game/QuickEditGameModal').then((m) => ({ default: m.QuickEditGameModal }))
+);
+const CollectionImportModal = React.lazy(() =>
+  import('../components/game/CollectionImportModal').then((m) => ({ default: m.CollectionImportModal }))
+);
+const BGGConfigModal = React.lazy(() =>
+  import('../components/game/BGGConfigModal').then((m) => ({ default: m.BGGConfigModal }))
+);
+const WhatToPlayModal = React.lazy(() =>
+  import('../components/game/WhatToPlayModal').then((m) => ({ default: m.WhatToPlayModal }))
+);
 
 type FilterTab = 'all' | GameStatus;
 type SortOption = 'name' | 'addedDate' | 'bggRating' | 'purchasePrice';
@@ -358,21 +368,37 @@ export const CollectionPage: React.FC = () => {
         )}
 
 
-        {/* Modals */}
-        <QuickEditGameModal
-          game={quickEditGame}
-          isOpen={Boolean(quickEditGame)}
-          onClose={() => setQuickEditGame(null)}
-          onSave={(updated) => updateGame(updated.id, updated)}
-          onDelete={(id) => deleteGame(id)}
-        />
-        <CollectionImportModal
-          isOpen={isImportOpen}
-          onClose={() => setIsImportOpen(false)}
-          initialTab={importModalTab}
-        />
-        <BGGConfigModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
-        <WhatToPlayModal isOpen={isWhatToPlayOpen} onClose={() => setIsWhatToPlayOpen(false)} />
+        {/* Modals - Lazy loaded on-demand */}
+        {quickEditGame && (
+          <Suspense fallback={null}>
+            <QuickEditGameModal
+              game={quickEditGame}
+              isOpen={Boolean(quickEditGame)}
+              onClose={() => setQuickEditGame(null)}
+              onSave={(updated) => updateGame(updated.id, updated)}
+              onDelete={(id) => deleteGame(id)}
+            />
+          </Suspense>
+        )}
+        {isImportOpen && (
+          <Suspense fallback={null}>
+            <CollectionImportModal
+              isOpen={isImportOpen}
+              onClose={() => setIsImportOpen(false)}
+              initialTab={importModalTab}
+            />
+          </Suspense>
+        )}
+        {isConfigOpen && (
+          <Suspense fallback={null}>
+            <BGGConfigModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
+          </Suspense>
+        )}
+        {isWhatToPlayOpen && (
+          <Suspense fallback={null}>
+            <WhatToPlayModal isOpen={isWhatToPlayOpen} onClose={() => setIsWhatToPlayOpen(false)} />
+          </Suspense>
+        )}
       </div>
     </PageTransition>
   );

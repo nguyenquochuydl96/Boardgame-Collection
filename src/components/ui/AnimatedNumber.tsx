@@ -1,5 +1,4 @@
 import React from 'react';
-import { SlidingNumber } from '@animate-ui/react/primitives/texts/sliding-number';
 
 export interface AnimatedNumberProps {
   value: number;
@@ -9,6 +8,10 @@ export interface AnimatedNumberProps {
   thousandSeparator?: string;
 }
 
+/**
+ * High-performance, zero-overhead number display with native tabular-nums.
+ * Eliminates CPU-heavy sliding loops on mobile devices.
+ */
 export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   value,
   className = '',
@@ -16,16 +19,15 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   suffix = '',
   thousandSeparator = ',',
 }) => {
-  const roundedValue = Math.round(value);
+  const rounded = Math.round(value);
+  const formatted = thousandSeparator === '.'
+    ? rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    : rounded.toLocaleString('en-US');
 
   return (
-    <span className={`inline-flex items-center font-mono-tabular tracking-tight ${className}`}>
+    <span className={`inline-flex items-center font-mono tabular-nums tracking-tight ${className}`}>
       {prefix && <span>{prefix}</span>}
-      <SlidingNumber
-        number={roundedValue}
-        thousandSeparator={thousandSeparator}
-        transition={{ stiffness: 280, damping: 26, mass: 0.4 }}
-      />
+      <span>{formatted}</span>
       {suffix && <span>{suffix}</span>}
     </span>
   );

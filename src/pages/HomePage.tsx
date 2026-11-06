@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
@@ -23,23 +23,12 @@ import { formatDate, formatDuration, getCollectionTotalValue } from '../lib/util
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
 import { SessionDraft } from '../types';
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.03,
-      delayChildren: 0.01,
-    },
-  },
-};
-
 const fadeUpItem = {
-  hidden: { opacity: 0, y: 6 },
+  hidden: { opacity: 0, y: 4 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.16, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
+    transition: { duration: 0.12, ease: [0.16, 1, 0.3, 1] as [number, number, number, number] },
   },
 };
 
@@ -69,54 +58,74 @@ export const HomePage: React.FC = () => {
     setActiveDraft(null);
   };
 
-  const ownedGamesCount = games.filter(
-    (g) => g.status === 'own' || g.status === 'lent_out'
-  ).length;
-  const totalSessionsCount = sessions.length;
-  const totalMinutesPlayed = sessions.reduce(
-    (sum, s) => sum + (s.durationMinutes || 0),
-    0
-  );
-  const totalHoursPlayed = Math.round(totalMinutesPlayed / 60);
-  const totalCollectionValue = getCollectionTotalValue(games);
-
-  const recentSessions = [...sessions]
-    .sort(
-      (a, b) =>
-        new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime()
-    )
-    .slice(0, 5);
-
-  const playCountMap = new Map<string, { id: string; label: string; value: number }>();
-  for (const s of sessions) {
-    const existing = playCountMap.get(s.gameId) || {
-      id: s.gameId,
-      label: s.gameName,
-      value: 0,
+  // High-performance memoized calculations across all games and 1400+ sessions
+  const {
+    ownedGamesCount,
+    totalSessionsCount,
+    totalMinutesPlayed,
+    totalHoursPlayed,
+    totalCollectionValue,
+    recentSessions,
+    topPlayedGames,
+    statusCounts,
+  } = useMemo(() => {
+    let ownCount = 0;
+    const statusMap: Record<string, number> = {
+      own: 0,
+      rented: 0,
+      lent_out: 0,
+      borrowed: 0,
+      sold: 0,
+      wishlist: 0,
+      previously_owned: 0,
     };
-    existing.value += 1;
-    playCountMap.set(s.gameId, existing);
-  }
+    for (const g of games) {
+      if (statusMap[g.status] !== undefined) statusMap[g.status]++;
+      if (g.status === 'own' || g.status === 'lent_out') ownCount++;
+    }
 
-  const topPlayedGames = Array.from(playCountMap.values())
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 5)
-    .map((item) => ({
-      ...item,
-      href: `/collection/${item.id}`,
-    }));
+    let totalMinutes = 0;
+    const playMap = new Map<string, { id: string; label: string; value: number }>();
+    for (const s of sessions) {
+      totalMinutes += s.durationMinutes || 0;
+      const existing = playMap.get(s.gameId) || {
+        id: s.gameId,
+        label: s.gameName,
+        value: 0,
+      };
+      existing.value += 1;
+      playMap.set(s.gameId, existing);
+    }
+
+    const recent = [...sessions]
+      .sort((a, b) => new Date(b.datePlayed).getTime() - new Date(a.datePlayed).getTime())
+      .slice(0, 5);
+
+    const top = Array.from(playMap.values())
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5)
+      .map((item) => ({
+        ...item,
+        href: `/collection/${item.id}`,
+      }));
+
+    return {
+      ownedGamesCount: ownCount,
+      totalSessionsCount: sessions.length,
+      totalMinutesPlayed: totalMinutes,
+      totalHoursPlayed: Math.round(totalMinutes / 60),
+      totalCollectionValue: getCollectionTotalValue(games),
+      recentSessions: recent,
+      topPlayedGames: top,
+      statusCounts: statusMap,
+    };
+  }, [games, sessions]);
 
   return (
     <PageTransition>
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="visible"
-        className="space-y-8"
-      >
+      <div className="space-y-8">
         {/* Fitlo Editorial Hero Banner with Clean High-Contrast Action Buttons */}
-        <motion.section
-          variants={fadeUpItem}
+        <section
           className="relative rounded-[24px] overflow-hidden p-6 sm:p-8 lg:p-10 bg-[image:var(--gradient-hero)] shadow-xl shadow-[var(--accent)]/15 border border-white/15 text-white"
         >
           <div
@@ -146,18 +155,17 @@ export const HomePage: React.FC = () => {
               </Link>
             </div>
           </div>
-        </motion.section>
+        </section>
 
         {/* Active Draft Session In Progress Notification */}
         {activeDraft && (
-          <motion.section variants={fadeUpItem}>
+          <section>
             <DraftSessionCard draft={activeDraft} onDiscard={handleDiscardDraft} />
-          </motion.section>
+          </section>
         )}
 
         {/* Fitlo Signature Pastel KPI Tiles Grid */}
-        <motion.section
-          variants={fadeUpItem}
+        <section
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
         >
           <StatCard
@@ -194,10 +202,10 @@ export const HomePage: React.FC = () => {
             href="/collection"
             tileIndex={4}
           />
-        </motion.section>
+        </section>
 
         {/* Recently Played Horizontal Scroll List */}
-        <motion.section variants={fadeUpItem} className="space-y-4">
+        <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--ink)]">
@@ -222,12 +230,9 @@ export const HomePage: React.FC = () => {
                 (p) => p.isWinner || p.playerId === session.winnerId
               );
               return (
-                <motion.div
+                <div
                   key={session.id}
-                  whileHover={{ scale: 1.02, y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                  className="snap-start shrink-0"
+                  className="snap-start shrink-0 transition-transform duration-200 hover:-translate-y-1 active:scale-[0.99]"
                 >
                   <Link
                     to={`/sessions/${session.id}`}
@@ -270,15 +275,14 @@ export const HomePage: React.FC = () => {
                       )}
                     </div>
                   </Link>
-                </motion.div>
+                </div>
               );
             })}
           </div>
-        </motion.section>
+        </section>
 
         {/* Bottom Split: Most Played Bar Chart + Vault Spotlight */}
-        <motion.section
-          variants={fadeUpItem}
+        <section
           className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"
         >
           <Card className="lg:col-span-7 p-6 space-y-5 flex flex-col justify-between rounded-[20px]">
@@ -321,7 +325,7 @@ export const HomePage: React.FC = () => {
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-emerald-600 dark:text-emerald-400 mt-1">
-                  <AnimatedNumber value={games.filter((g) => g.status === 'own').length} />
+                  <AnimatedNumber value={statusCounts.own} />
                 </div>
               </Link>
 
@@ -334,7 +338,7 @@ export const HomePage: React.FC = () => {
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-amber-600 dark:text-amber-400 mt-1">
-                  <AnimatedNumber value={games.filter((g) => g.status === 'rented').length} />
+                  <AnimatedNumber value={statusCounts.rented} />
                 </div>
               </Link>
 
@@ -347,7 +351,7 @@ export const HomePage: React.FC = () => {
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-orange-600 dark:text-orange-400 mt-1">
-                  <AnimatedNumber value={games.filter((g) => g.status === 'lent_out').length} />
+                  <AnimatedNumber value={statusCounts.lent_out} />
                 </div>
               </Link>
 
@@ -360,7 +364,7 @@ export const HomePage: React.FC = () => {
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-cyan-600 dark:text-cyan-400 mt-1">
-                  <AnimatedNumber value={games.filter((g) => g.status === 'borrowed').length} />
+                  <AnimatedNumber value={statusCounts.borrowed} />
                 </div>
               </Link>
 
@@ -373,7 +377,7 @@ export const HomePage: React.FC = () => {
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-rose-600 dark:text-rose-400 mt-1">
-                  <AnimatedNumber value={games.filter((g) => g.status === 'sold').length} />
+                  <AnimatedNumber value={statusCounts.sold} />
                 </div>
               </Link>
 
@@ -386,7 +390,7 @@ export const HomePage: React.FC = () => {
                   <span className="text-xs text-[var(--muted)]">→</span>
                 </div>
                 <div className="font-display font-extrabold text-2xl text-[var(--accent)] mt-1">
-                  <AnimatedNumber value={games.filter((g) => g.status === 'wishlist').length} />
+                  <AnimatedNumber value={statusCounts.wishlist} />
                 </div>
               </Link>
             </div>
@@ -397,8 +401,8 @@ export const HomePage: React.FC = () => {
               </Button>
             </Link>
           </Card>
-        </motion.section>
-      </motion.div>
+        </section>
+      </div>
     </PageTransition>
   );
 };

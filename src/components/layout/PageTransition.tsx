@@ -13,10 +13,9 @@ export const PageTransition: React.FC<PageTransitionProps> = ({
 }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
-      style={{ willChange: 'opacity, transform' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.08, ease: 'easeOut' }}
       className={cn('w-full', className)}
     >
       {children}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import {
   Dices,
@@ -15,9 +15,6 @@ import {
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
 import { PoweredByBGG } from '../ui/PoweredByBGG';
-import { BGGConfigModal } from '../game/BGGConfigModal';
-import { PwaInstallModal } from '../pwa/PwaInstallModal';
-import { CloudSyncModal } from '../sync/CloudSyncModal';
 import { cn } from '../ui/cn';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { useSyncStore } from '../../store/useSyncStore';
@@ -30,6 +27,17 @@ import {
   startVaultRealtimeSubscription,
   checkUrlSyncParameters,
 } from '../../lib/supabaseSync';
+
+// Lazy load modals on-demand to keep core AppShell bundle ultra-lightweight
+const BGGConfigModal = React.lazy(() =>
+  import('../game/BGGConfigModal').then((m) => ({ default: m.BGGConfigModal }))
+);
+const PwaInstallModal = React.lazy(() =>
+  import('../pwa/PwaInstallModal').then((m) => ({ default: m.PwaInstallModal }))
+);
+const CloudSyncModal = React.lazy(() =>
+  import('../sync/CloudSyncModal').then((m) => ({ default: m.CloudSyncModal }))
+);
 
 export interface AppShellProps {
   children: React.ReactNode;
@@ -376,22 +384,35 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       <BottomNavBar />
 
-      <BGGConfigModal
-        isOpen={showBGGModal}
-        onClose={() => setShowBGGModal(false)}
-      />
+      {/* Modals rendered on-demand */}
+      {showBGGModal && (
+        <Suspense fallback={null}>
+          <BGGConfigModal
+            isOpen={showBGGModal}
+            onClose={() => setShowBGGModal(false)}
+          />
+        </Suspense>
+      )}
 
-      <CloudSyncModal
-        isOpen={showSyncModal}
-        onClose={() => setShowSyncModal(false)}
-      />
+      {showSyncModal && (
+        <Suspense fallback={null}>
+          <CloudSyncModal
+            isOpen={showSyncModal}
+            onClose={() => setShowSyncModal(false)}
+          />
+        </Suspense>
+      )}
 
-      <PwaInstallModal
-        isOpen={showInstallModal}
-        onClose={() => setShowInstallModal(false)}
-        deferredPrompt={deferredPrompt}
-        onInstallSuccess={() => void install()}
-      />
+      {showInstallModal && (
+        <Suspense fallback={null}>
+          <PwaInstallModal
+            isOpen={showInstallModal}
+            onClose={() => setShowInstallModal(false)}
+            deferredPrompt={deferredPrompt}
+            onInstallSuccess={() => void install()}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
