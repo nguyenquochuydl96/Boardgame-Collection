@@ -40,6 +40,7 @@ import {
   calculateGameStats,
   calculateHeadToHead,
   calculateLongestWinStreak,
+  calculateMinRequiredPlays,
   calculatePlayerStreaks,
   StreakData,
   GameStatsSummary,
@@ -292,10 +293,19 @@ export const StatsPage: React.FC = () => {
     return Math.round(mins / 60);
   }, [overviewSessions]);
 
-  // Winning streaks per player (only computed when on overview tab)
+  // Winning streaks per player (only computed when on overview tab, filtered by >= 5% plays)
   const playerStreaks = useMemo(() => {
     if (activeTab !== 'overview') return [];
+    const minRequiredPlays = calculateMinRequiredPlays(overviewSessions.length, 0.05);
+    const playerPlaysMap = new Map<string, number>();
+    overviewSessions.forEach((s) => {
+      s.players?.forEach((p) => {
+        playerPlaysMap.set(p.playerId, (playerPlaysMap.get(p.playerId) || 0) + 1);
+      });
+    });
+
     return players
+      .filter((p) => (playerPlaysMap.get(p.id) || 0) >= minRequiredPlays)
       .map((p) => ({
         player: p,
         streak: calculateLongestWinStreak(p.id, overviewSessions),
@@ -1032,7 +1042,9 @@ export const StatsPage: React.FC = () => {
                     <h2 className="font-display font-bold text-lg text-[var(--ink)]">
                       Longest Win Streak
                     </h2>
-                    <p className="text-xs text-[var(--muted)]">Consecutive wins across all games</p>
+                    <p className="text-xs text-[var(--muted)]">
+                      Consecutive wins across all games (≥ 5% sessions played)
+                    </p>
                   </div>
                 </div>
 

@@ -10,6 +10,7 @@ import {
   HeartCrack,
 } from 'lucide-react';
 import { Player, PlaySession } from '../../types';
+import { calculateMinRequiredPlays } from '../../lib/utils';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { Card } from '../ui/Card';
 import { cn } from '../ui/cn';
@@ -76,13 +77,12 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     badgeBg: 'bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300',
     badgeText: '🏆 Hall of Fame',
     tagline: 'Highest Victory Percentage',
-    description: 'Ranked by highest win rate (minimum 5 matches played for fair qualification).',
+    description: 'Ranked by highest victory percentage across all tabletop sessions.',
     metricHeader: 'Win Rate',
     contextHeader: 'Match Record',
     getPrimaryMetric: (st) => `${st.winRate}%`,
     getSecondaryMetric: (st) => `${st.wins} wins / ${st.plays} plays`,
     sortFn: (a, b) => b.winRate - a.winRate || b.wins - a.wins,
-    filterFn: (st) => st.plays >= 5,
   },
   {
     id: 'total_wins',
@@ -100,6 +100,7 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     getPrimaryMetric: (st) => `${st.wins} wins`,
     getSecondaryMetric: (st) => `Win rate: ${st.winRate}% (across ${st.plays} plays)`,
     sortFn: (a, b) => b.wins - a.wins || b.winRate - a.winRate,
+    filterFn: (st) => st.wins > 0,
   },
   {
     id: 'win_streak',
@@ -117,6 +118,7 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     getPrimaryMetric: (st) => `${st.maxWinStreak} games`,
     getSecondaryMetric: (st) => `Current streak: ${st.currentWinStreak} consecutive wins`,
     sortFn: (a, b) => b.maxWinStreak - a.maxWinStreak || b.wins - a.wins,
+    filterFn: (st) => st.maxWinStreak > 0,
   },
   {
     id: 'game_variety',
@@ -134,6 +136,7 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     getPrimaryMetric: (st) => `${st.uniqueGamesCount} games`,
     getSecondaryMetric: (st) => `${st.plays} total plays logged`,
     sortFn: (a, b) => b.uniqueGamesCount - a.uniqueGamesCount || b.plays - a.plays,
+    filterFn: (st) => st.uniqueGamesCount > 0,
   },
 
   // NEGATIVE & SPICY / FUN
@@ -147,13 +150,13 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     badgeBg: 'bg-slate-500/15 border-slate-500/30 text-slate-700 dark:text-slate-300',
     badgeText: '🥈 Runner-Up King',
     tagline: 'Highest 2nd-Place Rate',
-    description: 'Ranked by highest 2nd-place finish rate (minimum 5 matches played for fair qualification).',
+    description: 'Ranked by highest 2nd-place finish rate (silver medals).',
     metricHeader: 'Runner-Up Rate',
     contextHeader: '2nd Places / Total Plays',
     getPrimaryMetric: (st) => `${st.secondRate}%`,
     getSecondaryMetric: (st) => `${st.secondPlaces} times / ${st.plays} plays`,
     sortFn: (a, b) => b.secondRate - a.secondRate || b.secondPlaces - a.secondPlaces || b.plays - a.plays,
-    filterFn: (st) => st.plays >= 5 && st.secondPlaces > 0,
+    filterFn: (st) => st.secondPlaces > 0,
   },
   {
     id: 'wooden_spoon',
@@ -165,13 +168,13 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     badgeBg: 'bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300',
     badgeText: '🥄 Wooden Spoon',
     tagline: 'Highest Last-Place Rate',
-    description: 'Ranked by highest last-place finish rate (minimum 5 matches played for fair qualification).',
+    description: 'Ranked by highest last-place finish rate (anchor of the table).',
     metricHeader: 'Last Place Rate',
     contextHeader: 'Last Places / Total Plays',
     getPrimaryMetric: (st) => `${st.lastRate}%`,
     getSecondaryMetric: (st) => `${st.lastPlaces} times / ${st.plays} plays`,
     sortFn: (a, b) => b.lastRate - a.lastRate || b.lastPlaces - a.lastPlaces || b.plays - a.plays,
-    filterFn: (st) => st.plays >= 5 && st.lastPlaces > 0,
+    filterFn: (st) => st.lastPlaces > 0,
   },
   {
     id: 'cold_streak',
@@ -189,6 +192,7 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     getPrimaryMetric: (st) => `${st.maxColdStreak} games`,
     getSecondaryMetric: (st) => `Current drought: ${st.currentColdStreak} games without a win`,
     sortFn: (a, b) => b.maxColdStreak - a.maxColdStreak || b.plays - a.plays,
+    filterFn: (st) => st.maxColdStreak > 0,
   },
   {
     id: 'heartbreak',
@@ -206,6 +210,7 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     getPrimaryMetric: (st) => `${st.closeLosses} games`,
     getSecondaryMetric: (st) => `${(st.secondPlaces > 0 ? Math.round((st.closeLosses / st.secondPlaces) * 100) : 0)}% of 2nd places (${st.secondPlaces} times)`,
     sortFn: (a, b) => b.closeLosses - a.closeLosses || b.secondPlaces - a.secondPlaces,
+    filterFn: (st) => st.closeLosses > 0,
   },
 ];
 
@@ -218,6 +223,12 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
   ({ players, sessions }) => {
     const [activeGroup, setActiveGroup] = useState<LeaderboardGroup>('all');
     const [activeCriterionId, setActiveCriterionId] = useState<LeaderboardCriterion>('win_rate');
+
+    // Dynamic qualification threshold: player must have played >= 5% of total recorded sessions in the app
+    const minRequiredPlays = useMemo(
+      () => calculateMinRequiredPlays(sessions.length, 0.05),
+      [sessions.length]
+    );
 
     // 1. Compute comprehensive stats for all players from session history
     const allStats = useMemo(() => {
@@ -339,12 +350,13 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
 
     // 4. Sorted ranking list for the active criterion
     const rankedStats = useMemo(() => {
-      let list = allStats;
+      // Base qualification: player must have played at least 5% of total recorded sessions in the app
+      let list = allStats.filter((st) => st.plays >= minRequiredPlays);
       if (activeCriterion.filterFn) {
         list = list.filter(activeCriterion.filterFn);
       }
       return [...list].sort(activeCriterion.sortFn);
-    }, [allStats, activeCriterion]);
+    }, [allStats, minRequiredPlays, activeCriterion]);
 
     const IconComponent = activeCriterion.icon;
     const top1 = rankedStats[0];
@@ -361,7 +373,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               <span>Multi-Dimensional Leaderboards</span>
             </h2>
             <p className="text-xs sm:text-sm text-[var(--muted)] mt-1">
-              Rankings across all dimensions: from hall of fame milestones to fun rivalries
+              Rankings across all dimensions · Qualification: ≥ 5% of all sessions ({minRequiredPlays} {minRequiredPlays === 1 ? 'play' : 'plays'} min)
             </p>
           </div>
 
@@ -475,9 +487,14 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
             <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] block">
               {activeCriterion.tagline}
             </span>
-            <span className="text-xs font-semibold text-[var(--ink-2)]">
-              {rankedStats.length} qualified players
-            </span>
+            <div className="flex items-center sm:justify-end gap-1.5 mt-0.5">
+              <span className="text-xs font-semibold text-[var(--ink-2)]">
+                {rankedStats.length} qualified players
+              </span>
+              <span className="text-[11px] text-[var(--muted)] font-mono">
+                (≥ 5% · min {minRequiredPlays} {minRequiredPlays === 1 ? 'play' : 'plays'})
+              </span>
+            </div>
           </div>
         </div>
 
@@ -565,7 +582,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               {rankedStats.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-sm text-[var(--muted)]">
-                    No players qualified for this leaderboard yet.
+                    No players qualified for this leaderboard yet (requires ≥ 5% of all sessions: min {minRequiredPlays} {minRequiredPlays === 1 ? 'play' : 'plays'}).
                   </td>
                 </tr>
               ) : (

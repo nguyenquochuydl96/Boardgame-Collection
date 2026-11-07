@@ -10,6 +10,7 @@ import {
   calculateHeadToHead,
   getCollectionTotalValue,
   isDraftMatchingCompletedSession,
+  calculateMinRequiredPlays,
 } from './utils';
 import { BoardGame, PlaySession, Player, SessionDraft } from '../types';
 
@@ -443,4 +444,17 @@ test('isDraftMatchingCompletedSession detects when a draft matches a session alr
   // Empty or null draft
   assert.equal(isDraftMatchingCompletedSession(null, completedSessions), false);
   assert.equal(isDraftMatchingCompletedSession({ gameId: null } as any, completedSessions), false);
+});
+
+test('calculateMinRequiredPlays computes dynamic 5% qualification threshold with ceiling', () => {
+  assert.equal(calculateMinRequiredPlays(0), 0);
+  assert.equal(calculateMinRequiredPlays(-5), 0);
+  assert.equal(calculateMinRequiredPlays(1), 1);
+  assert.equal(calculateMinRequiredPlays(10), 1); // 10 * 0.05 = 0.5 -> 1
+  assert.equal(calculateMinRequiredPlays(20), 1); // 20 * 0.05 = 1
+  assert.equal(calculateMinRequiredPlays(21), 2); // 21 * 0.05 = 1.05 -> 2
+  assert.equal(calculateMinRequiredPlays(50), 3); // 50 * 0.05 = 2.5 -> 3
+  assert.equal(calculateMinRequiredPlays(100), 5); // 100 * 0.05 = 5
+  assert.equal(calculateMinRequiredPlays(500), 25); // 500 * 0.05 = 25
+  assert.equal(calculateMinRequiredPlays(1400), 70); // 1400 * 0.05 = 70
 });

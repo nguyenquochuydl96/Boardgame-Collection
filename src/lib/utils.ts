@@ -865,3 +865,12 @@ export function isDraftMatchingCompletedSession(
     return true;
   });
 }
+
+/**
+ * Calculates minimum required plays for leaderboard qualification (default: 5% of all recorded sessions).
+ * Ensures casual guests or inactive players who left the group long ago do not crowd the rankings.
+ */
+export function calculateMinRequiredPlays(totalSessions: number, percentage = 0.05): number {
+  if (!totalSessions || totalSessions <= 0) return 0;
+  return Math.max(1, Math.ceil(totalSessions * percentage));
+}
