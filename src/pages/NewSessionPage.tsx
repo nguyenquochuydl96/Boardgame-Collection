@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -44,6 +44,7 @@ import {
   formatDate,
   formatDuration,
   generateId,
+  isDraftMatchingCompletedSession,
 } from '../lib/utils';
 
 const WIZARD_STEPS = [
@@ -71,6 +72,7 @@ export const NewSessionPage: React.FC = () => {
   const savedPlayers = usePlayerStore((s) => s.players);
   const addPlayerToStore = usePlayerStore((s) => s.addPlayer);
   const addSession = useSessionStore((s) => s.addSession);
+  const sessions = useSessionStore((s) => s.sessions);
   const defaultLocation = useLocationStore(
     (s) => s.locations.find((l) => l.isDefault)?.name || s.locations[0]?.name || ''
   );
@@ -145,6 +147,7 @@ export const NewSessionPage: React.FC = () => {
   const [photos, setPhotos] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const isSubmittedRef = useRef(false);
 
   // Detect and offer restoring previous draft on mount (skip in rematch mode)
   useEffect(() => {
@@ -153,15 +156,32 @@ export const NewSessionPage: React.FC = () => {
       const raw = localStorage.getItem('boardgame_session_draft');
       if (raw) {
         const parsed = JSON.parse(raw) as SessionDraft;
+        // If this draft is invalid or already saved to session history, purge it
+        if (!parsed.gameId || isDraftMatchingCompletedSession(parsed, sessions)) {
+          localStorage.removeItem('boardgame_session_draft');
+          setExistingDraft(null);
+          return;
+        }
         // Offer restoring if draft is less than 36 hours old
-        if (parsed && Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000) {
+        if (parsed && (!parsed.sessionStartTime || Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000)) {
           setExistingDraft(parsed);
         }
       }
     } catch {
       // Ignore parse errors
     }
-  }, [isRematchMode]);
+  }, [isRematchMode, sessions]);
+
+  // Ensure draft is cleared if session has been submitted
+  useEffect(() => {
+    return () => {
+      if (isSubmittedRef.current) {
+        try {
+          localStorage.removeItem('boardgame_session_draft');
+        } catch {}
+      }
+    };
+  }, []);
 
   const handleRestoreDraft = () => {
     if (!existingDraft) return;
@@ -232,7 +252,9 @@ export const NewSessionPage: React.FC = () => {
 
   // Auto-save draft effect to LocalStorage
   useEffect(() => {
-    if (isSaving) return;
+    if (isSaving || isSubmittedRef.current) return;
+    if (!selectedGameId || existingDraft) return;
+
     const draft: SessionDraft = {
       gameId: selectedGameId,
       datePlayed,
@@ -285,6 +307,7 @@ export const NewSessionPage: React.FC = () => {
     notes,
     currentStep,
     isSaving,
+    existingDraft,
   ]);
 
   const selectedGame = useMemo(
@@ -453,8 +476,10 @@ export const NewSessionPage: React.FC = () => {
   };
 
   const handleSaveSession = () => {
-    if (!selectedGame || activeSessionPlayers.length === 0) return;
+    if (!selectedGame || activeSessionPlayers.length === 0 || isSaving || isSubmittedRef.current) return;
+    isSubmittedRef.current = true;
     setIsSaving(true);
+
     try {
       localStorage.removeItem('boardgame_session_draft');
     } catch {}
@@ -462,25 +487,27 @@ export const NewSessionPage: React.FC = () => {
     const winnerEntry =
       computedPlayerScores.find((p) => p.isWinner) || computedPlayerScores[0];
 
-    setTimeout(() => {
-      const created = addSession({
-        status: 'completed',
-        gameId: selectedGame.id,
-        gameName: selectedGame.name,
-        gameThumbnail: selectedGame.thumbnail || selectedGame.image,
-        datePlayed: new Date(datePlayed).toISOString(),
-        location: location.trim() || undefined,
-        durationMinutes: Math.max(5, Number(durationMinutes) || 60),
-        players: computedPlayerScores,
-        winnerId: winnerEntry?.playerId,
-        firstPlayerMethod,
-        firstPlayerId: firstPlayerId || activeSessionPlayers[0]?.id,
-        photos: photos.length > 0 ? photos : undefined,
-        notes: notes.trim() || undefined,
-      });
-      setIsSaving(false);
-      navigate(`/sessions/${created.id}`);
-    }, 300);
+    const created = addSession({
+      status: 'completed',
+      gameId: selectedGame.id,
+      gameName: selectedGame.name,
+      gameThumbnail: selectedGame.thumbnail || selectedGame.image,
+      datePlayed: new Date(datePlayed).toISOString(),
+      location: location.trim() || undefined,
+      durationMinutes: Math.max(5, Number(durationMinutes) || 60),
+      players: computedPlayerScores,
+      winnerId: winnerEntry?.playerId,
+      firstPlayerMethod,
+      firstPlayerId: firstPlayerId || activeSessionPlayers[0]?.id,
+      photos: photos.length > 0 ? photos : undefined,
+      notes: notes.trim() || undefined,
+    });
+
+    try {
+      localStorage.removeItem('boardgame_session_draft');
+    } catch {}
+
+    navigate(`/sessions/${created.id}`, { replace: true });
   };
 
   const formatTimer = (secs: number) => {

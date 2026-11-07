@@ -9,8 +9,9 @@ import {
   calculateLongestWinStreak,
   calculateHeadToHead,
   getCollectionTotalValue,
+  isDraftMatchingCompletedSession,
 } from './utils';
-import { BoardGame, PlaySession, Player } from '../types';
+import { BoardGame, PlaySession, Player, SessionDraft } from '../types';
 
 test('formatNumberInput and parseNumberInput handle commas in price fields', () => {
   assert.equal(formatNumberInput(1800000), '1,800,000');
@@ -380,4 +381,66 @@ test('getScoringTemplateForGame resolves official Great Western Trail: Second Ed
 
   assert.equal(yellowTotal, 158);
   assert.equal(greyTotal, 61);
+});
+
+test('isDraftMatchingCompletedSession detects when a draft matches a session already saved in history', () => {
+  const completedSessions: PlaySession[] = [
+    {
+      id: 'session-101',
+      gameId: 'game-catan',
+      gameName: 'Catan',
+      gameThumbnail: '',
+      datePlayed: '2026-11-07T00:00:00.000Z',
+      createdAt: '2026-11-07T08:30:00.000Z',
+      durationMinutes: 60,
+      firstPlayerMethod: 'manual',
+      players: [
+        { playerId: 'p1', playerName: 'Huy', score: 10, isWinner: true },
+        { playerId: 'p2', playerName: 'Linh', score: 8, isWinner: false },
+      ],
+    },
+  ];
+
+  // Matching draft with same game, same players, same date
+  const matchingDraft = {
+    gameId: 'game-catan',
+    datePlayed: '2026-11-07',
+    selectedPlayerIds: ['p1', 'p2'],
+    durationMinutes: '60',
+    sessionStartTime: new Date('2026-11-07T07:30:00.000Z').getTime(),
+    lastUpdated: '2026-11-07T08:29:00.000Z',
+  } as unknown as SessionDraft;
+
+  assert.equal(isDraftMatchingCompletedSession(matchingDraft, completedSessions), true);
+
+  // Different game draft -> should NOT match
+  const differentGameDraft = {
+    gameId: 'game-azul',
+    datePlayed: '2026-11-07',
+    selectedPlayerIds: ['p1', 'p2'],
+    durationMinutes: '45',
+  } as unknown as SessionDraft;
+  assert.equal(isDraftMatchingCompletedSession(differentGameDraft, completedSessions), false);
+
+  // Different players draft -> should NOT match
+  const differentPlayersDraft = {
+    gameId: 'game-catan',
+    datePlayed: '2026-11-07',
+    selectedPlayerIds: ['p3', 'p4'],
+    durationMinutes: '60',
+  } as unknown as SessionDraft;
+  assert.equal(isDraftMatchingCompletedSession(differentPlayersDraft, completedSessions), false);
+
+  // Different date draft -> should NOT match
+  const differentDateDraft = {
+    gameId: 'game-catan',
+    datePlayed: '2026-11-08',
+    selectedPlayerIds: ['p1', 'p2'],
+    durationMinutes: '60',
+  } as unknown as SessionDraft;
+  assert.equal(isDraftMatchingCompletedSession(differentDateDraft, completedSessions), false);
+
+  // Empty or null draft
+  assert.equal(isDraftMatchingCompletedSession(null, completedSessions), false);
+  assert.equal(isDraftMatchingCompletedSession({ gameId: null } as any, completedSessions), false);
 });

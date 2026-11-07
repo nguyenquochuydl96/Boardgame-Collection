@@ -25,7 +25,7 @@ import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useGameStore } from '../store/useGameStore';
-import { formatMonthYear } from '../lib/utils';
+import { formatMonthYear, isDraftMatchingCompletedSession } from '../lib/utils';
 import { PlaySession, SessionDraft } from '../types';
 import { cn } from '../components/ui/cn';
 
@@ -73,8 +73,18 @@ export const SessionsPage: React.FC = () => {
       const raw = localStorage.getItem('boardgame_session_draft');
       if (raw) {
         const parsed = JSON.parse(raw) as SessionDraft;
-        // Keep draft if younger than 48 hours or has valid timestamps
-        if (parsed && (!parsed.sessionStartTime || Date.now() - parsed.sessionStartTime < 48 * 60 * 60 * 1000)) {
+        // Keep draft if younger than 48 hours and has a valid gameId
+        if (
+          parsed &&
+          parsed.gameId &&
+          (!parsed.sessionStartTime || Date.now() - parsed.sessionStartTime < 48 * 60 * 60 * 1000)
+        ) {
+          // If this draft corresponds to an already completed session in history, purge it
+          if (isDraftMatchingCompletedSession(parsed, sessions)) {
+            localStorage.removeItem('boardgame_session_draft');
+            setActiveDraft(null);
+            return;
+          }
           setActiveDraft(parsed);
           return;
         }
@@ -87,7 +97,7 @@ export const SessionsPage: React.FC = () => {
 
   useEffect(() => {
     loadDraft();
-  }, []);
+  }, [sessions]);
 
   const handleDiscardDraft = () => {
     try {

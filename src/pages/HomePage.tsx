@@ -18,7 +18,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
-import { formatDate, formatDuration, getCollectionTotalValue } from '../lib/utils';
+import { formatDate, formatDuration, getCollectionTotalValue, isDraftMatchingCompletedSession } from '../lib/utils';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
 import { SessionDraft } from '../types';
 
@@ -34,12 +34,26 @@ export const HomePage: React.FC = () => {
       const raw = localStorage.getItem('boardgame_session_draft');
       if (raw) {
         const parsed = JSON.parse(raw) as SessionDraft;
-        if (parsed && Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000) {
+        if (
+          parsed &&
+          parsed.gameId &&
+          (!parsed.sessionStartTime || Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000)
+        ) {
+          // If this draft corresponds to an already completed session, discard it
+          if (isDraftMatchingCompletedSession(parsed, sessions)) {
+            localStorage.removeItem('boardgame_session_draft');
+            setActiveDraft(null);
+            return;
+          }
           setActiveDraft(parsed);
+          return;
         }
       }
-    } catch {}
-  }, []);
+      setActiveDraft(null);
+    } catch {
+      setActiveDraft(null);
+    }
+  }, [sessions]);
 
   const handleDiscardDraft = () => {
     try {

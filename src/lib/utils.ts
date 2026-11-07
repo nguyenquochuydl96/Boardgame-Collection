@@ -1,4 +1,4 @@
-import { BoardGame, GameStatus, PlaySession, Player } from '../types';
+import { BoardGame, GameStatus, PlaySession, Player, SessionDraft } from '../types';
 
 export function generateId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -805,5 +805,59 @@ export function compressImageToDataUrl(file: File, maxDim = 160, quality = 0.82)
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Detects whether an active draft in localStorage has already been saved as a completed session in history.
+ * Helps prevent ghost drafts from lingering after a session is successfully completed.
+ */
+export function isDraftMatchingCompletedSession(
+  draft: SessionDraft | null | undefined,
+  sessions: PlaySession[]
+): boolean {
+  if (!draft || !draft.gameId || !sessions || sessions.length === 0) {
+    return false;
+  }
+
+  return sessions.some((s) => {
+    // 1. Must match the same game
+    if (s.gameId !== draft.gameId) return false;
+
+    // 2. If draft has selected players, verify they match the session players
+    if (draft.selectedPlayerIds && draft.selectedPlayerIds.length > 0) {
+      const sPlayerIds = (s.players || []).map((p) => p.playerId);
+      const isPlayerMatch =
+        draft.selectedPlayerIds.length === sPlayerIds.length &&
+        draft.selectedPlayerIds.every((id) => sPlayerIds.includes(id));
+      if (!isPlayerMatch) return false;
+    }
+
+    // 3. Date check: match on played date (YYYY-MM-DD)
+    if (draft.datePlayed && s.datePlayed) {
+      const draftDate = draft.datePlayed.split('T')[0];
+      const sessionDate = s.datePlayed.split('T')[0];
+      if (draftDate !== sessionDate) return false;
+    }
+
+    // 4. Creation time correlation
+    if (s.createdAt) {
+      const sCreatedAtMs = new Date(s.createdAt).getTime();
+      // If the session was created before the draft timer was even started, it cannot be this draft
+      if (draft.sessionStartTime && sCreatedAtMs < draft.sessionStartTime - 60000) {
+        return false;
+      }
+      // If draft has lastUpdated, check if session was created around that time (within 3 hours)
+      if (draft.lastUpdated) {
+        const draftUpdatedMs = new Date(draft.lastUpdated).getTime();
+        const diffMs = Math.abs(sCreatedAtMs - draftUpdatedMs);
+        if (diffMs <= 3 * 60 * 60 * 1000) {
+          return true;
+        }
+      }
+    }
+
+    // If game, players, and date all match, it's considered already completed
+    return true;
   });
 }
