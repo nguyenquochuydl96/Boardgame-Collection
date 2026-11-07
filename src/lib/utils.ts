@@ -334,7 +334,7 @@ export interface GameStatsSummary {
 }
 
 /**
- * Formats a record date with relative time distance (e.g. "15/09/2026 (2 tháng trước)")
+ * Formats a record date with relative time distance (e.g. "15/09/2026 (2 mos ago)")
  */
 export function formatRecordTimeAgo(isoDate?: string): string {
   if (!isoDate) return '';
@@ -350,21 +350,25 @@ export function formatRecordTimeAgo(isoDate?: string): string {
   const diffMs = now.getTime() - d.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays <= 0) return `${dateStr} (Hôm nay)`;
-  if (diffDays === 1) return `${dateStr} (Hôm qua)`;
-  if (diffDays < 30) return `${dateStr} (${diffDays} ngày trước)`;
+  if (diffDays <= 0) return `${dateStr} (Today)`;
+  if (diffDays === 1) return `${dateStr} (Yesterday)`;
+  if (diffDays < 30) return `${dateStr} (${diffDays}d ago)`;
 
   const diffMonths = Math.floor(diffDays / 30.4375);
+  if (diffMonths === 1) return `${dateStr} (1 mo ago)`;
   if (diffMonths < 12) {
-    return `${dateStr} (${diffMonths} tháng trước)`;
+    return `${dateStr} (${diffMonths} mos ago)`;
   }
 
   const diffYears = Math.floor(diffDays / 365.25);
   const remMonths = Math.floor((diffDays % 365.25) / 30.4375);
-  if (remMonths > 0) {
-    return `${dateStr} (${diffYears} năm ${remMonths} tháng trước)`;
+  if (diffYears === 1 && remMonths > 0) {
+    return `${dateStr} (1y ${remMonths}mo ago)`;
   }
-  return `${dateStr} (${diffYears} năm trước)`;
+  if (remMonths > 0) {
+    return `${dateStr} (${diffYears}y ${remMonths}mo ago)`;
+  }
+  return `${dateStr} (${diffYears}y ago)`;
 }
 
 export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
@@ -492,9 +496,9 @@ export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
 
   // Most Losses Player:
   // Tie-break rules:
-  // 1. Số trận thua (losses) nhiều hơn
-  // 2. Nếu bằng trận thua -> ai chơi nhiều hơn (plays)
-  // 3. Nếu bằng nữa -> ai có điểm thấp nhất trong game đó thấp hơn
+  // 1. More losses
+  // 2. If equal losses -> more total plays
+  // 3. If still equal -> player with lower lowestScore
   const mostLossesPlayer: PlayerLossRecord | null =
     Array.from(playerMap.values())
       .map((item) => ({

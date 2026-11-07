@@ -68,141 +68,141 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
   // POSITIVE
   {
     id: 'win_rate',
-    label: 'Tỷ Lệ Thắng (%)',
-    shortLabel: 'Tỷ Lệ Thắng',
+    label: 'Win Rate (%)',
+    shortLabel: 'Win Rate',
     group: 'positive',
     icon: Trophy,
     iconColor: 'text-amber-500 dark:text-amber-400',
     badgeBg: 'bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-300',
-    badgeText: '🏆 Vinh Danh',
-    tagline: 'Tỷ Lệ Bất Bại Trên Bàn Cờ',
-    description: 'Xếp hạng theo tỷ lệ chiến thắng cao nhất (xét người chơi tham gia từ 5 ván trở lên để đảm bảo công bằng).',
-    metricHeader: 'Tỷ Lệ Thắng',
-    contextHeader: 'Chi Tiết Chiến Tích',
+    badgeText: '🏆 Hall of Fame',
+    tagline: 'Highest Victory Percentage',
+    description: 'Ranked by highest win rate (minimum 5 matches played for fair qualification).',
+    metricHeader: 'Win Rate',
+    contextHeader: 'Match Record',
     getPrimaryMetric: (st) => `${st.winRate}%`,
-    getSecondaryMetric: (st) => `${st.wins} trận thắng / ${st.plays} ván chơi`,
+    getSecondaryMetric: (st) => `${st.wins} wins / ${st.plays} plays`,
     sortFn: (a, b) => b.winRate - a.winRate || b.wins - a.wins,
     filterFn: (st) => st.plays >= 5,
   },
   {
     id: 'total_wins',
-    label: 'Vua Chiến Thắng (Total Wins)',
-    shortLabel: 'Trận Thắng',
+    label: 'Total Victories (Total Wins)',
+    shortLabel: 'Total Wins',
     group: 'positive',
     icon: Crown,
     iconColor: 'text-emerald-500 dark:text-emerald-400',
     badgeBg: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300',
-    badgeText: '👑 Chiến Thần',
-    tagline: 'Thu Hoạch Cúp Vô Địch Nhiều Nhất',
-    description: 'Tổng số trận thắng tuyệt đối trong toàn bộ lịch sử đấu của hội nhóm.',
-    metricHeader: 'Tổng Trận Thắng',
-    contextHeader: 'Tỷ Lệ & Tổng Ván',
-    getPrimaryMetric: (st) => `${st.wins} trận`,
-    getSecondaryMetric: (st) => `Win rate: ${st.winRate}% (trên ${st.plays} ván)`,
+    badgeText: '👑 Champion',
+    tagline: 'Most Trophies Collected',
+    description: 'Total absolute match victories accumulated across all tabletop sessions.',
+    metricHeader: 'Total Wins',
+    contextHeader: 'Win Rate & Plays',
+    getPrimaryMetric: (st) => `${st.wins} wins`,
+    getSecondaryMetric: (st) => `Win rate: ${st.winRate}% (across ${st.plays} plays)`,
     sortFn: (a, b) => b.wins - a.wins || b.winRate - a.winRate,
   },
   {
     id: 'win_streak',
-    label: 'Chuỗi Thắng Kỷ Lục (Win Streak)',
-    shortLabel: 'Chuỗi Thắng',
+    label: 'Record Win Streak',
+    shortLabel: 'Win Streak',
     group: 'positive',
     icon: Flame,
     iconColor: 'text-orange-500 dark:text-orange-400',
     badgeBg: 'bg-orange-500/15 border-orange-500/30 text-orange-700 dark:text-orange-300',
-    badgeText: '🔥 Thừa Thắng Xông Lên',
-    tagline: 'Chuỗi Trận Bất Khả Chiến Bại',
-    description: 'Kỷ lục chuỗi số ván thắng liên tiếp dài nhất từng được người chơi thiết lập.',
-    metricHeader: 'Chuỗi Kỷ Lục',
-    contextHeader: 'Tình Trạng Chuỗi',
-    getPrimaryMetric: (st) => `${st.maxWinStreak} ván`,
-    getSecondaryMetric: (st) => `Chuỗi hiện tại: ${st.currentWinStreak} ván liên tiếp`,
+    badgeText: '🔥 On Fire',
+    tagline: 'Unstoppable Winning Streak',
+    description: 'Longest consecutive match winning streak ever achieved by a player.',
+    metricHeader: 'Record Streak',
+    contextHeader: 'Current Streak Status',
+    getPrimaryMetric: (st) => `${st.maxWinStreak} games`,
+    getSecondaryMetric: (st) => `Current streak: ${st.currentWinStreak} consecutive wins`,
     sortFn: (a, b) => b.maxWinStreak - a.maxWinStreak || b.wins - a.wins,
   },
   {
     id: 'game_variety',
-    label: 'Đa Dạng Tựa Game (Variety)',
-    shortLabel: 'Đa Dạng Game',
+    label: 'Game Explorer (Variety)',
+    shortLabel: 'Variety',
     group: 'positive',
     icon: Gamepad2,
     iconColor: 'text-indigo-500 dark:text-indigo-400',
     badgeBg: 'bg-indigo-500/15 border-indigo-500/30 text-indigo-700 dark:text-indigo-300',
-    badgeText: '🎮 Nhà Thám Hiểm',
-    tagline: 'Chinh Phục Mọi Thể Loại Game',
-    description: 'Số lượng tựa board game khác nhau mà người chơi đã từng trải nghiệm trong bộ sưu tập.',
-    metricHeader: 'Tựa Game Đã Chơi',
-    contextHeader: 'Tổng Số Trận Tham Gia',
-    getPrimaryMetric: (st) => `${st.uniqueGamesCount} game`,
-    getSecondaryMetric: (st) => `Tổng cộng ${st.plays} lượt chơi trên bàn cờ`,
+    badgeText: '🎮 Explorer',
+    tagline: 'Conquering Diverse Board Games',
+    description: 'Number of unique tabletop games played across the collection.',
+    metricHeader: 'Games Played',
+    contextHeader: 'Total Plays Logged',
+    getPrimaryMetric: (st) => `${st.uniqueGamesCount} games`,
+    getSecondaryMetric: (st) => `${st.plays} total plays logged`,
     sortFn: (a, b) => b.uniqueGamesCount - a.uniqueGamesCount || b.plays - a.plays,
   },
 
   // NEGATIVE & SPICY / FUN
   {
     id: 'runner_up',
-    label: 'Thánh Về Nhì (Vua Á Quân)',
-    shortLabel: 'Thánh Về Nhì',
+    label: 'Silver Collector (Most 2nd Places)',
+    shortLabel: 'Runner-Up',
     group: 'negative',
     icon: Medal,
     iconColor: 'text-slate-400 dark:text-slate-300',
     badgeBg: 'bg-slate-500/15 border-slate-500/30 text-slate-700 dark:text-slate-300',
-    badgeText: '🥈 Vua Á Quân',
-    tagline: 'Tiệm Cận Đỉnh Vinh Quang',
-    description: 'Những tay chơi về nhì nhiều nhất, luôn ở rất gần chức vô địch nhưng cúp lại rơi vào tay người khác!',
-    metricHeader: 'Số Lần Về Nhì',
-    contextHeader: 'Tỷ Lệ Về Nhì (%)',
-    getPrimaryMetric: (st) => `${st.secondPlaces} lần`,
-    getSecondaryMetric: (st) => `Chiếm ${st.secondRate}% trên tổng số ${st.plays} ván`,
+    badgeText: '🥈 Runner-Up King',
+    tagline: 'One Step Away From Glory',
+    description: 'Players with the most 2nd-place finishes — agonizingly close to the trophy!',
+    metricHeader: '2nd Places',
+    contextHeader: '2nd Place Rate (%)',
+    getPrimaryMetric: (st) => `${st.secondPlaces} times`,
+    getSecondaryMetric: (st) => `${st.secondRate}% of total ${st.plays} plays`,
     sortFn: (a, b) => b.secondPlaces - a.secondPlaces || b.secondRate - a.secondRate,
   },
   {
     id: 'wooden_spoon',
-    label: 'Đội Đèn (Về Chót Bảng)',
-    shortLabel: 'Đội Đèn (Chót)',
+    label: 'The Wooden Spoon (Last Places)',
+    shortLabel: 'Wooden Spoon',
     group: 'negative',
     icon: Frown,
     iconColor: 'text-rose-500 dark:text-rose-400',
     badgeBg: 'bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300',
-    badgeText: '🥄 Đội Đèn Hội Đồng',
-    tagline: 'Chiến Thần Giữ Vững Đáy Bảng',
-    description: 'Những người chơi giữ vị trí đội đèn (về chót) nhiều nhất để mang lại niềm vui cho cả bàn đấu!',
-    metricHeader: 'Số Lần Về Bét',
-    contextHeader: 'Tỷ Lệ Về Chót (%)',
-    getPrimaryMetric: (st) => `${st.lastPlaces} lần`,
-    getSecondaryMetric: (st) => `Tỷ lệ về bét: ${st.lastRate}% (${st.plays} ván)`,
+    badgeText: '🥄 Wooden Spoon',
+    tagline: 'Steadfast Anchor of the Table',
+    description: 'Players holding down last place the most, bringing joy and easy wins to everyone else!',
+    metricHeader: 'Last Places',
+    contextHeader: 'Last Place Rate (%)',
+    getPrimaryMetric: (st) => `${st.lastPlaces} times`,
+    getSecondaryMetric: (st) => `Last place rate: ${st.lastRate}% (${st.plays} plays)`,
     sortFn: (a, b) => b.lastPlaces - a.lastPlaces || b.lastRate - a.lastRate,
   },
   {
     id: 'cold_streak',
-    label: 'Hạn Hán Bàn Cờ (Cold Streak)',
-    shortLabel: 'Chuỗi Trắng Tay',
+    label: 'Victory Drought (Cold Streak)',
+    shortLabel: 'Cold Streak',
     group: 'negative',
     icon: Snowflake,
     iconColor: 'text-sky-500 dark:text-sky-400',
     badgeBg: 'bg-sky-500/15 border-sky-500/30 text-sky-700 dark:text-sky-300',
-    badgeText: '❄️ Cơn Hạn Hán Kỷ Lục',
-    tagline: 'Cơn Khát Chiến Thắng Dài Đằng Đẵng',
-    description: 'Kỷ lục chuỗi số ván liên tiếp dài nhất tham gia thi đấu mà chưa một lần biết đến mùi chiến thắng.',
-    metricHeader: 'Chuỗi Trắng Tay',
-    contextHeader: 'Tình Trạng Hạn Hán Hiện Tại',
-    getPrimaryMetric: (st) => `${st.maxColdStreak} ván`,
-    getSecondaryMetric: (st) => `Cơn hạn hiện tại: ${st.currentColdStreak} ván liên tiếp`,
+    badgeText: '❄️ Deep Freeze',
+    tagline: 'Longest Thirst for Victory',
+    description: 'Longest consecutive match drought without a single victory.',
+    metricHeader: 'Longest Drought',
+    contextHeader: 'Current Drought Status',
+    getPrimaryMetric: (st) => `${st.maxColdStreak} games`,
+    getSecondaryMetric: (st) => `Current drought: ${st.currentColdStreak} games without a win`,
     sortFn: (a, b) => b.maxColdStreak - a.maxColdStreak || b.plays - a.plays,
   },
   {
     id: 'heartbreak',
-    label: 'Cay Đắng Nhất (Thua Sát Nút ≤ 2đ)',
-    shortLabel: 'Thua Sát Nút',
+    label: 'Heartbreak Loss (Defeat by ≤ 2 pts)',
+    shortLabel: 'Heartbreak Loss',
     group: 'negative',
     icon: HeartCrack,
     iconColor: 'text-pink-500 dark:text-pink-400',
     badgeBg: 'bg-pink-500/15 border-pink-500/30 text-pink-700 dark:text-pink-300',
-    badgeText: '💔 Nỗi Đau Sát Nút',
-    tagline: 'Gục Ngã Ngay Trước Cửa Thiên Đường',
-    description: 'Số ván về nhì mà chỉ thua người về nhất đúng 1 đến 2 điểm cực kỳ cay đắng và tiếc nuối!',
-    metricHeader: 'Thua Sát Nút (≤ 2đ)',
-    contextHeader: 'Trên Tổng Số Lần Về Nhì',
-    getPrimaryMetric: (st) => `${st.closeLosses} trận`,
-    getSecondaryMetric: (st) => `Chiếm ${(st.secondPlaces > 0 ? Math.round((st.closeLosses / st.secondPlaces) * 100) : 0)}% số lần về nhì (${st.secondPlaces} lần)`,
+    badgeText: '💔 Narrow Defeat',
+    tagline: 'Fell Short at Heaven’s Gate',
+    description: 'Finished 2nd place by an agonizing margin of just 1 or 2 points behind the winner!',
+    metricHeader: 'Narrow Losses (≤ 2 pts)',
+    contextHeader: 'Of All 2nd Places',
+    getPrimaryMetric: (st) => `${st.closeLosses} games`,
+    getSecondaryMetric: (st) => `${(st.secondPlaces > 0 ? Math.round((st.closeLosses / st.secondPlaces) * 100) : 0)}% of 2nd places (${st.secondPlaces} times)`,
     sortFn: (a, b) => b.closeLosses - a.closeLosses || b.secondPlaces - a.secondPlaces,
   },
 ];
@@ -356,10 +356,10 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
           <div>
             <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--ink)] flex items-center gap-2.5">
               <Trophy className="w-6 h-6 text-amber-500" />
-              <span>Bảng Xếp Hạng Đa Chiều (Leaderboard)</span>
+              <span>Multi-Dimensional Leaderboards</span>
             </h2>
             <p className="text-xs sm:text-sm text-[var(--muted)] mt-1">
-              Phân tích mọi góc độ thành tích: từ vinh danh đỉnh cao đến các bảng xếp hạng cà khịa thú vị
+              Rankings across all dimensions: from hall of fame milestones to fun rivalries
             </p>
           </div>
 
@@ -375,7 +375,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                   : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
             >
-              🌟 Tất Cả ({CRITERIA_CONFIG.length})
+              🌟 All ({CRITERIA_CONFIG.length})
             </button>
             <button
               type="button"
@@ -393,7 +393,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                   : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
             >
-              🏆 Vinh Danh ({positiveCount})
+              🏆 Hall of Fame ({positiveCount})
             </button>
             <button
               type="button"
@@ -411,7 +411,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                   : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
             >
-              😈 Cà Khịa ({negativeCount})
+              😈 Spicy &amp; Fun ({negativeCount})
             </button>
           </div>
         </div>
@@ -474,7 +474,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               {activeCriterion.tagline}
             </span>
             <span className="text-xs font-semibold text-[var(--ink-2)]">
-              {rankedStats.length} người chơi đủ điều kiện
+              {rankedStats.length} qualified players
             </span>
           </div>
         </div>
@@ -553,8 +553,8 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-[var(--card-2)] border-b border-[var(--line)] text-[var(--muted)]">
               <tr>
-                <th className="py-3 px-4 font-bold w-16">Hạng</th>
-                <th className="py-3 px-4 font-bold">Người Chơi</th>
+                <th className="py-3 px-4 font-bold w-16">Rank</th>
+                <th className="py-3 px-4 font-bold">Player</th>
                 <th className="py-3 px-4 font-bold text-right">{activeCriterion.metricHeader}</th>
                 <th className="py-3 px-4 font-bold text-right">{activeCriterion.contextHeader}</th>
               </tr>
@@ -563,7 +563,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               {rankedStats.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-sm text-[var(--muted)]">
-                    Không có người chơi nào thỏa mãn tiêu chí này.
+                    No players qualified for this leaderboard yet.
                   </td>
                 </tr>
               ) : (
@@ -600,7 +600,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                           <span className="text-sm">{st.player.name}</span>
                           {isTop1 && (
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30">
-                              👑 Quán Quân
+                              👑 Champion
                             </span>
                           )}
                         </div>

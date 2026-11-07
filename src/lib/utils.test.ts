@@ -137,11 +137,11 @@ test('calculateGameStats accurately breaks ties for mostLossesPlayer', async () 
   assert.equal(stats.mostLossesPlayer?.losses, 2);
 });
 
-test('formatRecordTimeAgo formats dates and relative time in Vietnamese accurately', async () => {
+test('formatRecordTimeAgo formats dates and relative time in English accurately', async () => {
   const { formatRecordTimeAgo } = await import('./utils');
   const result = formatRecordTimeAgo('2025-05-10T10:00:00.000Z');
   assert.ok(result.includes('10/05/2025'));
-  assert.ok(result.includes('trước'));
+  assert.ok(result.includes('ago'));
 });
 
 test('calculateLongestWinStreak tracks consecutive chronological wins accurately', () => {
