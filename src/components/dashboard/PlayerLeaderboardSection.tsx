@@ -223,18 +223,25 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
   ({ players, sessions }) => {
     const [activeGroup, setActiveGroup] = useState<LeaderboardGroup>('all');
     const [activeCriterionId, setActiveCriterionId] = useState<LeaderboardCriterion>('win_rate');
+    const [showAllPlayers, setShowAllPlayers] = useState(false);
 
-    // Dynamic qualification threshold: player must have played >= 5% of total recorded sessions in the app
-    const minRequiredPlays = useMemo(
+    // Dynamic qualification threshold: capped at 5 plays so large vaults (e.g. 1,400+ sessions)
+    // don't lock regular group players out of the leaderboard.
+    const calculatedThreshold = useMemo(
       () => calculateMinRequiredPlays(sessions.length, 0.05),
       [sessions.length]
     );
+    const minRequiredPlays = useMemo(
+      () => Math.min(5, Math.max(1, calculatedThreshold)),
+      [calculatedThreshold]
+    );
+    const effectiveMinPlays = showAllPlayers ? 1 : minRequiredPlays;
 
     // 1. Compute comprehensive stats for all players from session history
     const allStats = useMemo(() => {
-      // Sort sessions chronologically for accurate streak calculations
+      // Sort sessions chronologically for accurate streak calculations (string compare is O(1) per pair)
       const chrono = [...sessions].sort(
-        (a, b) => new Date(a.datePlayed).getTime() - new Date(b.datePlayed).getTime()
+        (a, b) => (a.datePlayed || '').localeCompare(b.datePlayed || '')
       );
 
       const statsMap = new Map<string, PlayerComprehensiveStats>();
@@ -350,13 +357,13 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
 
     // 4. Sorted ranking list for the active criterion
     const rankedStats = useMemo(() => {
-      // Base qualification: player must have played at least 5% of total recorded sessions in the app
-      let list = allStats.filter((st) => st.plays >= minRequiredPlays);
+      // Base qualification: player must have played at least effectiveMinPlays in the app
+      let list = allStats.filter((st) => st.plays >= effectiveMinPlays);
       if (activeCriterion.filterFn) {
         list = list.filter(activeCriterion.filterFn);
       }
       return [...list].sort(activeCriterion.sortFn);
-    }, [allStats, minRequiredPlays, activeCriterion]);
+    }, [allStats, effectiveMinPlays, activeCriterion]);
 
     const IconComponent = activeCriterion.icon;
     const top1 = rankedStats[0];
@@ -373,59 +380,83 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               <span>Multi-Dimensional Leaderboards</span>
             </h2>
             <p className="text-xs sm:text-sm text-[var(--muted)] mt-1">
-              Rankings across all dimensions · Qualification: ≥ 5% of all sessions ({minRequiredPlays} {minRequiredPlays === 1 ? 'play' : 'plays'} min)
+              Rankings across all dimensions ·{' '}
+              {showAllPlayers ? (
+                <span className="text-amber-500 font-medium">All Players view (≥ 1 play)</span>
+              ) : (
+                <span>
+                  Qualification: ≥ {minRequiredPlays} {minRequiredPlays === 1 ? 'play' : 'plays'} min
+                  {calculatedThreshold > 5 && ` (capped from ${calculatedThreshold})`}
+                </span>
+              )}
             </p>
           </div>
 
-          {/* GROUP FILTER TABS (All / Positive / Negative) */}
-          <div className="inline-flex items-center p-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)] self-start md:self-auto">
+          {/* GROUP FILTER TABS & QUALIFICATION TOGGLE */}
+          <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+            <div className="inline-flex items-center p-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
+              <button
+                type="button"
+                onClick={() => setActiveGroup('all')}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
+                  activeGroup === 'all'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
+                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
+                )}
+              >
+                🌟 All ({CRITERIA_CONFIG.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveGroup('positive');
+                  const first = CRITERIA_CONFIG.find((c) => c.group === 'positive');
+                  if (first && !CRITERIA_CONFIG.filter((c) => c.group === 'positive').some((c) => c.id === activeCriterionId)) {
+                    setActiveCriterionId(first.id);
+                  }
+                }}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
+                  activeGroup === 'positive'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
+                )}
+              >
+                🏆 Hall of Fame ({positiveCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveGroup('negative');
+                  const first = CRITERIA_CONFIG.find((c) => c.group === 'negative');
+                  if (first && !CRITERIA_CONFIG.filter((c) => c.group === 'negative').some((c) => c.id === activeCriterionId)) {
+                    setActiveCriterionId(first.id);
+                  }
+                }}
+                className={cn(
+                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
+                  activeGroup === 'negative'
+                    ? 'bg-rose-600 text-white shadow-sm'
+                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
+                )}
+              >
+                😈 Spicy &amp; Fun ({negativeCount})
+              </button>
+            </div>
+
             <button
               type="button"
-              onClick={() => setActiveGroup('all')}
+              onClick={() => setShowAllPlayers((prev) => !prev)}
               className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
-                activeGroup === 'all'
-                  ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
-                  : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
+                'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none inline-flex items-center gap-1.5 border',
+                showAllPlayers
+                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-500 shadow-sm'
+                  : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
+              title={showAllPlayers ? 'Showing all players with at least 1 play' : `Filter by qualified (≥ ${minRequiredPlays} plays)`}
             >
-              🌟 All ({CRITERIA_CONFIG.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveGroup('positive');
-                const first = CRITERIA_CONFIG.find((c) => c.group === 'positive');
-                if (first && !CRITERIA_CONFIG.filter((c) => c.group === 'positive').some((c) => c.id === activeCriterionId)) {
-                  setActiveCriterionId(first.id);
-                }
-              }}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
-                activeGroup === 'positive'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
-              )}
-            >
-              🏆 Hall of Fame ({positiveCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveGroup('negative');
-                const first = CRITERIA_CONFIG.find((c) => c.group === 'negative');
-                if (first && !CRITERIA_CONFIG.filter((c) => c.group === 'negative').some((c) => c.id === activeCriterionId)) {
-                  setActiveCriterionId(first.id);
-                }
-              }}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
-                activeGroup === 'negative'
-                  ? 'bg-rose-600 text-white shadow-sm'
-                  : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
-              )}
-            >
-              😈 Spicy &amp; Fun ({negativeCount})
+              <span>{showAllPlayers ? '👥 All Players' : `🏆 Qualified (≥ ${minRequiredPlays})`}</span>
             </button>
           </div>
         </div>

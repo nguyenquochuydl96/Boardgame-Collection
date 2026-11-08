@@ -143,7 +143,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)]">
-              <th className="py-3 px-4 font-bold text-[var(--text-secondary)] min-w-[180px]">
+              <th className="sticky left-0 bg-[var(--bg-elevated)] z-20 py-3 px-3 sm:px-4 font-bold text-[var(--text-secondary)] min-w-[140px] sm:min-w-[180px] shadow-[1px_0_0_0_var(--border-subtle)]">
                 Scoring Categories
               </th>
               {players.map((p) => {
@@ -181,7 +181,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
               const isPenalty = (cat.multiplier ?? 1) < 0;
               return (
                 <tr key={cat.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="py-2.5 px-4 font-medium text-[var(--text-primary)]">
+                  <td className="sticky left-0 bg-[var(--bg-surface)] z-10 py-2.5 px-3 sm:px-4 font-medium text-[var(--text-primary)] shadow-[1px_0_0_0_var(--border-subtle)]">
                     <div className="flex items-start gap-2.5">
                       <span className="text-base leading-none mt-0.5">{cat.icon || '🎲'}</span>
                       <div className="flex flex-col min-w-0">
@@ -248,7 +248,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
           {/* TOTALS FOOTER */}
           <tfoot>
             <tr className="bg-[var(--bg-elevated)] border-t-2 border-[var(--border-glow)] font-bold">
-              <td className="py-3.5 px-4 text-sm font-extrabold text-[var(--text-primary)]">
+              <td className="sticky left-0 bg-[var(--bg-elevated)] z-20 py-3.5 px-3 sm:px-4 text-sm font-extrabold text-[var(--text-primary)] shadow-[1px_0_0_0_var(--border-subtle)]">
                 TOTAL SCORE
               </td>
               {players.map((p) => {

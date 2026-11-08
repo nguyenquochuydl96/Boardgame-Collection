@@ -44,8 +44,8 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-2.5 shrink-0">
-        <div className="w-28">
+      <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        <div className="w-20 sm:w-28">
           <input
             type="number"
             aria-label={`Score for ${playerScore.playerName}`}
@@ -62,7 +62,7 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
                 }
               }
             }}
-            className="w-full min-h-[42px] px-3 py-1.5 rounded-xl bg-[var(--card-2)] border border-[var(--line-2)] text-right font-mono font-bold text-base text-[var(--ink)] tabular-nums focus:outline-none focus:border-[var(--accent)]"
+            className="w-full min-h-[38px] sm:min-h-[42px] px-2 sm:px-3 py-1.5 rounded-xl bg-[var(--card-2)] border border-[var(--line-2)] text-right font-mono font-bold text-sm sm:text-base text-[var(--ink)] tabular-nums focus:outline-none focus:border-[var(--accent)]"
           />
         </div>
 
@@ -71,7 +71,7 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
           onClick={() => onToggleWinner(playerScore.playerId)}
           aria-label={`Mark ${playerScore.playerName} as winner`}
           className={cn(
-            'min-h-[42px] min-w-[42px] px-3 rounded-xl border inline-flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer select-none',
+            'min-h-[38px] sm:min-h-[42px] min-w-[38px] sm:min-w-[42px] px-2 sm:px-3 rounded-xl border inline-flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer select-none',
             playerScore.isWinner
               ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/25 font-black'
               : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'

@@ -176,20 +176,21 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
     >
       <div className="space-y-5">
         {/* Tab navigation */}
-        <div className="flex gap-2 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+        <div className="flex gap-1 sm:gap-2 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
           {isEnabled && (
             <button
               type="button"
               onClick={() => setActiveTab('status')}
               className={cn(
-                'flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5',
+                'flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 text-center',
                 activeTab === 'status'
                   ? 'bg-[image:var(--gradient-hero)] text-white shadow'
                   : 'text-[var(--text-secondary)] hover:text-white'
               )}
             >
-              <CloudCheck className="w-4 h-4" />
-              <span>Sync Dashboard</span>
+              <CloudCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="hidden sm:inline">Sync Dashboard</span>
+              <span className="sm:hidden">Status</span>
             </button>
           )}
 
@@ -197,28 +198,30 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
             type="button"
             onClick={() => setActiveTab('connect')}
             className={cn(
-              'flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5',
+              'flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 text-center',
               activeTab === 'connect'
                 ? 'bg-[image:var(--gradient-hero)] text-white shadow'
                 : 'text-[var(--text-secondary)] hover:text-white'
             )}
           >
-            <KeyRound className="w-4 h-4" />
-            <span>{isEnabled ? 'Credentials' : 'Connect Cloud'}</span>
+            <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="hidden sm:inline">{isEnabled ? 'Credentials' : 'Connect Cloud'}</span>
+            <span className="sm:hidden">{isEnabled ? 'Keys' : 'Connect'}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('guide')}
             className={cn(
-              'flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5',
+              'flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 text-center',
               activeTab === 'guide'
                 ? 'bg-[image:var(--gradient-hero)] text-white shadow'
                 : 'text-[var(--text-secondary)] hover:text-white'
             )}
           >
-            <Database className="w-4 h-4" />
-            <span>Setup Guide (SQL)</span>
+            <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="hidden sm:inline">Setup Guide (SQL)</span>
+            <span className="sm:hidden">Guide</span>
           </button>
         </div>
 

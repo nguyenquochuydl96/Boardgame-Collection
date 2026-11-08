@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --import tsx --test src/lib/utils.test.ts",
+    "test": "node --import tsx --test src/lib/utils.test.ts src/store/useSessionStore.test.ts src/store/useSessionStore.stress.test.ts src/store/adversarial_m1.test.ts src/store/adversarial_m2_layout.test.ts src/store/adversarial_m2.test.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

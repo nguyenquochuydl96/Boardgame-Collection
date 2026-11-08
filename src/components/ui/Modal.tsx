@@ -44,7 +44,7 @@ export const Modal: React.FC<ModalProps> = ({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-label={title || 'Modal dialog'}
@@ -71,8 +71,8 @@ export const Modal: React.FC<ModalProps> = ({
             )}
           >
             {title && (
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)] bg-[var(--card-2)]/50 shrink-0">
-                <h2 className="text-lg font-bold font-display text-[var(--ink)]">
+              <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-[var(--line)] bg-[var(--card-2)]/50 shrink-0">
+                <h2 className="text-base sm:text-lg font-bold font-display text-[var(--ink)] truncate mr-2">
                   {title}
                 </h2>
                 <motion.button
@@ -81,13 +81,13 @@ export const Modal: React.FC<ModalProps> = ({
                   type="button"
                   onClick={onClose}
                   aria-label="Close modal"
-                  className="w-9 h-9 inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+                  className="w-8 h-8 sm:w-9 sm:h-9 inline-flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer shrink-0"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4 sm:w-5 sm:h-5" />
                 </motion.button>
               </div>
             )}
-            <div className="p-6 overflow-y-auto">{children}</div>
+            <div className="p-4 sm:p-6 overflow-y-auto">{children}</div>
           </motion.div>
         </div>
       )}

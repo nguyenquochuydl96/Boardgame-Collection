@@ -874,3 +874,64 @@ export function calculateMinRequiredPlays(totalSessions: number, percentage = 0.
   if (!totalSessions || totalSessions <= 0) return 0;
   return Math.max(1, Math.ceil(totalSessions * percentage));
 }
+
+/**
+ * In-browser canvas photo compression.
+ * Downscales images to max maxWidth x maxHeight dimensions and converts to JPEG (0.7 quality).
+ * Keeps photo payload < 80 KB to prevent LocalStorage QuotaExceededError.
+ */
+export function compressImage(
+  file: File | Blob,
+  maxWidth = 1024,
+  maxHeight = 1024,
+  quality = 0.7
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === 'undefined' || typeof document === 'undefined' || typeof FileReader === 'undefined') {
+      // Non-browser / Node test environment fallback
+      if (typeof FileReader !== 'undefined') {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      } else {
+        resolve('');
+      }
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, width);
+        canvas.height = Math.max(1, height);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => {
+        resolve(e.target?.result as string);
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}

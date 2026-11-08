@@ -4,6 +4,12 @@ import { Player } from '../types';
 import { generateId } from '../lib/utils';
 import { getRandomBoardgameAvatar, getDeterministicAvatar } from '../lib/boardgameAvatars';
 
+declare module '../types' {
+  interface Player {
+    isGuest?: boolean;
+  }
+}
+
 export const INITIAL_PLAYERS: Player[] = [
   {
     id: 'player-huy',
@@ -38,6 +44,7 @@ export const INITIAL_PLAYERS: Player[] = [
 export interface PlayerStore {
   players: Player[];
   addPlayer: (player: Omit<Player, 'id' | 'createdAt'>) => Player;
+  registerGuestPlayer: (guest: Player) => void;
   bulkAddPlayers: (players: Player[], replaceExisting?: boolean) => void;
   updatePlayer: (id: string, updates: Partial<Player>) => void;
   deletePlayer: (id: string) => void;
@@ -62,17 +69,39 @@ export const usePlayerStore = create<PlayerStore>()(
         }));
         return newPlayer;
       },
+      registerGuestPlayer: (guest) => {
+        set((state) => {
+          if (state.players.some((p) => p.id === guest.id)) {
+            return state;
+          }
+          const bg = !guest.avatar || !guest.avatar.trim() ? getDeterministicAvatar(guest.name || guest.id) : null;
+          const registeredGuest: Player = {
+            ...guest,
+            avatar: guest.avatar?.trim() || bg?.emoji || '🎲',
+            color: guest.color || bg?.color || '#a855f7',
+            isGuest: true,
+          };
+          return {
+            players: [...state.players, registeredGuest],
+          };
+        });
+      },
       bulkAddPlayers: (newPlayers, replaceExisting = false) => {
         set((state) => {
           if (replaceExisting) {
+            // Preserve guest players so remote sync does not break guest match links or details
+            const guestPlayers = state.players.filter((p) => p.isGuest || p.id.startsWith('guest-'));
+            const incomingIds = new Set(newPlayers.map((p) => p.id));
+            const preservedGuests = guestPlayers.filter((g) => !incomingIds.has(g.id));
+            const mapped = newPlayers.map((p) => {
+              if (!p.avatar || !p.avatar.trim()) {
+                const bg = getDeterministicAvatar(p.name || p.id);
+                return { ...p, avatar: bg.emoji, color: p.color || bg.color };
+              }
+              return p;
+            });
             return {
-              players: newPlayers.map((p) => {
-                if (!p.avatar || !p.avatar.trim()) {
-                  const bg = getDeterministicAvatar(p.name || p.id);
-                  return { ...p, avatar: bg.emoji, color: p.color || bg.color };
-                }
-                return p;
-              }),
+              players: [...mapped, ...preservedGuests],
             };
           }
           const existingNames = new Set(state.players.map((p) => p.name.toLowerCase()));

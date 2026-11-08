@@ -40,7 +40,10 @@ if (typeof window !== 'undefined') {
 
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!refreshing) {
+      // Do not disrupt user if they are currently creating a session or have active form
+      const isCreatingSession = window.location.pathname.includes('/new-session') ||
+        Boolean(localStorage.getItem('boardgame_session_draft'));
+      if (!isCreatingSession && !refreshing) {
         refreshing = true;
         window.location.reload();
       }

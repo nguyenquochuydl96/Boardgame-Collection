@@ -73,15 +73,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const autoSync = useSyncStore((s) => s.autoSync);
   const syncStatus = useSyncStore((s) => s.syncStatus);
   const syncHistoricalLocations = useLocationStore((s) => s.syncHistoricalLocations);
-  const sessions = useSessionStore((s) => s.sessions);
   const locationsCount = useLocationStore((s) => s.locations.length);
 
-  // Automatically hydrate venue presets from sessions on boot if empty
+  // Automatically hydrate venue presets from sessions on boot if empty (non-reactive to avoid layout re-renders)
   useEffect(() => {
-    if (sessions.length > 0 && locationsCount === 0) {
-      syncHistoricalLocations(sessions);
+    if (locationsCount === 0) {
+      const currentSessions = useSessionStore.getState().sessions;
+      if (currentSessions.length > 0) {
+        syncHistoricalLocations(currentSessions);
+      }
     }
-  }, [sessions, locationsCount, syncHistoricalLocations]);
+  }, [locationsCount, syncHistoricalLocations]);
 
   // Check 1-click mobile import parameters and setup sync listeners
   useEffect(() => {
@@ -315,7 +317,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           </div>
         </Link>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* Mobile Theme Toggle */}
           <button
             type="button"
@@ -334,7 +336,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <button
               type="button"
               onClick={() => setShowInstallModal(true)}
-              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold inline-flex items-center gap-1 transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
+              className="hidden sm:inline-flex px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold items-center gap-1 transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
               title="Install on your mobile home screen"
             >
               <Smartphone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -369,7 +371,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <button
             type="button"
             onClick={() => setShowBGGModal(true)}
-            className="p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-[#ff7722] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+            className="hidden sm:inline-flex p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-[#ff7722] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
             title="BGG API Settings"
           >
             <Settings className="w-4 h-4" />
@@ -377,11 +379,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
           <Link
             to="/sessions/new"
-            className="min-h-[34px] sm:min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-[var(--accent)] text-xs font-bold text-[var(--accent-ink)] inline-flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0 active:scale-95 transition-transform"
+            className="min-h-[32px] sm:min-h-[38px] px-2 sm:px-3.5 py-1.5 rounded-xl bg-[var(--accent)] text-xs font-bold text-[var(--accent-ink)] inline-flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0 active:scale-95 transition-transform"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
-            <span className="hidden xs:inline">New Session</span>
-            <span className="xs:hidden">Play</span>
+            <span className="hidden sm:inline">New Session</span>
+            <span className="sm:hidden">Play</span>
           </Link>
         </div>
       </header>

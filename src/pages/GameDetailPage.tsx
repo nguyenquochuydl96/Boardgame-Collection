@@ -124,7 +124,7 @@ export const GameDetailPage: React.FC = () => {
     <PageTransition>
       <div className="space-y-6">
         {/* Back button */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <Link
             to="/collection"
             className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
@@ -133,11 +133,12 @@ export const GameDetailPage: React.FC = () => {
             Back to Collection
           </Link>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setIsStatusOpen(true)}
+              className="text-xs sm:text-sm px-2.5 sm:px-3"
             >
               Change Status
             </Button>
@@ -151,12 +152,13 @@ export const GameDetailPage: React.FC = () => {
                 setEditLentTo(game.lentToName || '');
                 setIsEditOpen(true);
               }}
+              className="text-xs sm:text-sm px-2.5 sm:px-3"
             >
-              <Edit3 className="w-4 h-4" />
+              <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
               Edit
             </Button>
-            <Button variant="danger" size="sm" onClick={handleDelete}>
-              <Trash2 className="w-4 h-4" />
+            <Button variant="danger" size="sm" onClick={handleDelete} className="text-xs sm:text-sm px-2.5 sm:px-3">
+              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
               Delete
             </Button>
           </div>

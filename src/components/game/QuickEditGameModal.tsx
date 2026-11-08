@@ -159,7 +159,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 16 }}
           transition={{ type: 'spring', damping: 26, stiffness: 360 }}
-          className="bg-[var(--card)] rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-[var(--line)] relative cursor-default text-[var(--ink)] my-auto max-h-[92vh] flex flex-col"
+          className="bg-[var(--card)] rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-[var(--line)] relative cursor-default text-[var(--ink)] my-auto max-h-[92vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -325,7 +325,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
             </div>
 
             {/* Player Count & Playtime */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
               <div>
                 <Input
                   label="Min Players"
@@ -384,10 +384,10 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
             </div>
 
             {/* Footer Action Bar */}
-            <div className="pt-3 border-t border-[var(--line)] flex items-center justify-between gap-3 shrink-0">
+            <div className="pt-3 border-t border-[var(--line)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
               {onDelete ? (
                 isConfirmingDelete ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs text-rose-500 font-bold">Confirm delete?</span>
                     <button
                       type="button"
@@ -399,7 +399,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsConfirmingDelete(false)}
-                      className="px-2 py-1.5 rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)]"
+                      className="px-2 py-1.5 rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
                     >
                       Cancel
                     </button>
@@ -408,7 +408,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsConfirmingDelete(true)}
-                    className="p-2 rounded-xl text-rose-500/80 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                    className="p-2 rounded-xl text-rose-500/80 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer self-start sm:self-auto"
                     title="Delete Game from Vault"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -418,7 +418,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
                 <div />
               )}
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-end gap-2">
                 <Button variant="ghost" size="sm" onClick={onClose} type="button">
                   Cancel
                 </Button>

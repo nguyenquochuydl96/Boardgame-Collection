@@ -619,25 +619,29 @@ export const StatsPage: React.FC = () => {
                   </button>
 
                   {/* 2. Calendar Date Range Filter */}
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] text-xs">
+                  <div className="inline-flex flex-wrap items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] text-xs max-w-full">
                     <Calendar className="w-3.5 h-3.5 text-[var(--accent)] shrink-0" />
-                    <span className="text-[11px] font-bold text-[var(--muted)]">From:</span>
-                    <input
-                      type="date"
-                      aria-label="Start date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="bg-transparent border-0 text-xs font-bold text-[var(--ink)] focus:outline-none p-0 cursor-pointer min-w-[100px] [color-scheme:light] dark:[color-scheme:dark]"
-                    />
-                    <span className="text-[var(--muted)] font-bold px-0.5">➔</span>
-                    <span className="text-[11px] font-bold text-[var(--muted)]">To:</span>
-                    <input
-                      type="date"
-                      aria-label="End date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="bg-transparent border-0 text-xs font-bold text-[var(--ink)] focus:outline-none p-0 cursor-pointer min-w-[100px] [color-scheme:light] dark:[color-scheme:dark]"
-                    />
+                    <div className="inline-flex items-center gap-1">
+                      <span className="text-[11px] font-bold text-[var(--muted)]">From:</span>
+                      <input
+                        type="date"
+                        aria-label="Start date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="bg-transparent border-0 text-xs font-bold text-[var(--ink)] focus:outline-none p-0 cursor-pointer min-w-[95px] [color-scheme:light] dark:[color-scheme:dark]"
+                      />
+                    </div>
+                    <span className="text-[var(--muted)] font-bold px-0.5 hidden sm:inline">➔</span>
+                    <div className="inline-flex items-center gap-1">
+                      <span className="text-[11px] font-bold text-[var(--muted)]">To:</span>
+                      <input
+                        type="date"
+                        aria-label="End date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="bg-transparent border-0 text-xs font-bold text-[var(--ink)] focus:outline-none p-0 cursor-pointer min-w-[95px] [color-scheme:light] dark:[color-scheme:dark]"
+                      />
+                    </div>
                     {(startDate || endDate) && (
                       <button
                         type="button"

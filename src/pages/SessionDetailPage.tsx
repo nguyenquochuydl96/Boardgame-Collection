@@ -334,7 +334,7 @@ export const SessionDetailPage: React.FC = () => {
     <PageTransition>
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Navigation Bar */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <Link
             to="/sessions"
             className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
@@ -343,23 +343,23 @@ export const SessionDetailPage: React.FC = () => {
             Back to Sessions
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <Button
               variant="primary"
               size="sm"
               onClick={handleRematch}
-              className="bg-[image:var(--gradient-hero)] text-white shadow-md shadow-[var(--accent-glow)] font-bold"
+              className="bg-[image:var(--gradient-hero)] text-white shadow-md shadow-[var(--accent-glow)] font-bold text-xs sm:text-sm px-2.5 sm:px-3"
               title="Launch rematch keeping game, players, and location, skipping to first player picker"
             >
-              <RotateCcw className="w-4 h-4 mr-1.5" />
+              <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
               Rematch
             </Button>
-            <Button variant="secondary" size="sm" onClick={handleOpenEdit}>
-              <Edit3 className="w-4 h-4 mr-1.5 text-[var(--accent-neon)]" />
+            <Button variant="secondary" size="sm" onClick={handleOpenEdit} className="text-xs sm:text-sm px-2.5 sm:px-3">
+              <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 text-[var(--accent-neon)]" />
               Edit
             </Button>
-            <Button variant="danger" size="sm" onClick={handleDelete}>
-              <Trash2 className="w-4 h-4 mr-1.5" />
+            <Button variant="danger" size="sm" onClick={handleDelete} className="text-xs sm:text-sm px-2.5 sm:px-3">
+              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
               Delete
             </Button>
           </div>
@@ -761,20 +761,20 @@ export const SessionDetailPage: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={() => setEditScoreMode(editScoreMode === 'detailed' ? 'quick' : 'detailed')}
-                    className="px-3 py-1 rounded-xl text-xs font-bold bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--accent-neon)] hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5"
+                    className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-bold bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--accent-neon)] hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5"
                   >
-                    <span>{editScoreMode === 'detailed' ? '⚡ Switch to Quick Entry' : '📊 Detailed Score Sheet'}</span>
+                    <span>{editScoreMode === 'detailed' ? '⚡ Quick Entry' : '📊 Score Sheet'}</span>
                   </button>
                   <button
                     type="button"
                     onClick={handleAutoWinner}
-                    className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-[var(--bg-elevated)] text-[var(--accent-secondary)] hover:brightness-110 border border-[var(--border-subtle)] cursor-pointer"
+                    className="px-2 sm:px-2.5 py-1 rounded-xl text-xs font-semibold bg-[var(--bg-elevated)] text-[var(--accent-secondary)] hover:brightness-110 border border-[var(--border-subtle)] cursor-pointer"
                   >
-                    ⚡ Auto Highest Score
+                    ⚡ Auto Winner
                   </button>
                 </div>
               </div>
@@ -875,7 +875,7 @@ export const SessionDetailPage: React.FC = () => {
                           placeholder="Score"
                           value={p.score}
                           onChange={(e) => handleScoreChange(p.playerId, e.target.value)}
-                          className="w-20 min-h-[36px] rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2.5 py-1 text-right font-mono font-bold text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                          className="w-16 sm:w-20 min-h-[34px] sm:min-h-[36px] rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2 py-1 text-right font-mono font-bold text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
                         />
 
                         {/* Remove Player Button */}

@@ -285,8 +285,12 @@ export function startVaultRealtimeSubscription(): () => void {
         const record = payload.new as VaultPayload;
         const localLastSynced = useSyncStore.getState().lastSyncedAt;
 
-        // If this update was triggered by another device
-        if (record.updated_at && record.updated_at !== localLastSynced) {
+        // If this update was triggered by another device (normalize timestamps to avoid self-reflection loop)
+        const recordTime = record.updated_at ? new Date(record.updated_at).getTime() : 0;
+        const localTime = localLastSynced ? new Date(localLastSynced).getTime() : 0;
+        const isSelfReflection = Math.abs(recordTime - localTime) < 1500;
+
+        if (record.updated_at && !isSelfReflection) {
           isApplyingRemoteChange = true;
           try {
             if (record.games) useGameStore.getState().bulkAddGames(record.games, true);

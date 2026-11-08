@@ -254,7 +254,17 @@ export const useSessionStore = create<SessionStore>()(
       bulkAddSessions: (newSessions, replaceExisting = false) => {
         set((state) => {
           if (replaceExisting) {
-            return { sessions: newSessions };
+            // Smart Store Merge: Even when replacing with remote cloud data,
+            // preserve any local sessions created recently (within last 60s)
+            // that are not yet present in the incoming payload.
+            const recentThreshold = Date.now() - 60000;
+            const recentLocal = state.sessions.filter((s) => {
+              const createdTime = s.createdAt ? new Date(s.createdAt).getTime() : 0;
+              return !Number.isNaN(createdTime) && createdTime > recentThreshold;
+            });
+            const incomingIds = new Set(newSessions.map((s) => s.id));
+            const toKeep = recentLocal.filter((s) => !incomingIds.has(s.id));
+            return { sessions: [...toKeep, ...newSessions] };
           }
           const existingIds = new Set(state.sessions.map((s) => s.id));
           const toAdd = newSessions.filter((s) => !existingIds.has(s.id));

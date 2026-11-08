@@ -161,12 +161,14 @@ const GameCardComponent: React.FC<GameCardProps> = ({
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent opacity-95 pointer-events-none" />
 
           {/* Top bar: Status Badge + Rating + Quick Edit */}
-          <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-20">
-            <GameStatusBadge status={game.status} />
-            <div className="flex items-center gap-1.5">
+          <div className="absolute top-2.5 sm:top-3 left-2.5 sm:left-3 right-2.5 sm:right-3 flex items-center justify-between gap-1 z-20">
+            <div className="min-w-0 shrink">
+              <GameStatusBadge status={game.status} />
+            </div>
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {game.bggRating && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/85 text-xs font-bold text-amber-400 tabular-nums border border-white/15 shadow-sm">
-                  <Star className="w-3 h-3 fill-amber-400" />
+                <span className="inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 rounded-lg bg-black/85 text-[11px] sm:text-xs font-bold text-amber-400 tabular-nums border border-white/15 shadow-sm">
+                  <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-400" />
                   {game.bggRating.toFixed(1)}
                 </span>
               )}
@@ -178,11 +180,11 @@ const GameCardComponent: React.FC<GameCardProps> = ({
                     e.stopPropagation();
                     onEdit(game);
                   }}
-                  className="p-1.5 rounded-lg bg-black/85 hover:bg-black text-white/90 hover:text-white border border-white/20 transition-colors shadow-sm cursor-pointer"
+                  className="p-1 sm:p-1.5 rounded-lg bg-black/85 hover:bg-black text-white/90 hover:text-white border border-white/20 transition-colors shadow-sm cursor-pointer"
                   title="Quick Edit Game"
                   aria-label={`Quick Edit ${game.name}`}
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
+                  <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 </button>
               )}
             </div>
@@ -199,18 +201,24 @@ const GameCardComponent: React.FC<GameCardProps> = ({
           </div>
 
           {/* Bottom title inside cover */}
-          <div className="absolute bottom-3 left-3.5 right-3.5 z-10">
-            <h3 className="font-display font-bold text-base sm:text-lg text-white leading-snug line-clamp-1 group-hover:text-teal-200 transition-colors">
+          <div className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3.5 right-2.5 sm:right-3.5 z-10">
+            <h3 className="font-display font-bold text-sm sm:text-base md:text-lg text-white leading-snug line-clamp-1 group-hover:text-teal-200 transition-colors">
               {game.name}
             </h3>
-            <div className="mt-1 flex items-center gap-2 text-xs text-slate-200 tabular-nums font-semibold">
-              <span>{game.yearPublished}</span>
-              <span aria-hidden="true" className="opacity-40">·</span>
+            <div className="mt-1 flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 gap-y-0.5 text-[11px] sm:text-xs text-slate-200 tabular-nums font-semibold">
+              {game.yearPublished && <span>{game.yearPublished}</span>}
+              {game.yearPublished && (game.minPlayers || game.maxPlayers || game.playingTime) && (
+                <span aria-hidden="true" className="opacity-40">·</span>
+              )}
               <span>
-                {game.minPlayers}–{game.maxPlayers} players
+                {game.minPlayers === game.maxPlayers ? `${game.minPlayers}p` : `${game.minPlayers}–${game.maxPlayers}p`}
               </span>
-              <span aria-hidden="true" className="opacity-40">·</span>
-              <span>{game.playingTime}m</span>
+              {game.playingTime && (
+                <>
+                  <span aria-hidden="true" className="opacity-40">·</span>
+                  <span>{game.playingTime}m</span>
+                </>
+              )}
             </div>
           </div>
         </div>

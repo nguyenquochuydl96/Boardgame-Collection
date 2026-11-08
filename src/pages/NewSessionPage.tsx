@@ -45,7 +45,9 @@ import {
   formatDuration,
   generateId,
   isDraftMatchingCompletedSession,
+  compressImage,
 } from '../lib/utils';
+import { pushVaultToCloud } from '../lib/supabaseSync';
 
 const WIZARD_STEPS = [
   { step: 1, title: 'Game' },
@@ -71,6 +73,7 @@ export const NewSessionPage: React.FC = () => {
   const games = useGameStore((s) => s.games);
   const savedPlayers = usePlayerStore((s) => s.players);
   const addPlayerToStore = usePlayerStore((s) => s.addPlayer);
+  const registerGuestPlayer = usePlayerStore((s) => s.registerGuestPlayer);
   const addSession = useSessionStore((s) => s.addSession);
   const sessions = useSessionStore((s) => s.sessions);
   const defaultLocation = useLocationStore(
@@ -195,6 +198,9 @@ export const NewSessionPage: React.FC = () => {
     setPauseStartTime(existingDraft.pauseStartTime);
     setSelectedPlayerIds(existingDraft.selectedPlayerIds);
     setOneOffPlayers(existingDraft.oneOffPlayers);
+    if (existingDraft.oneOffPlayers?.length > 0) {
+      existingDraft.oneOffPlayers.forEach((g) => registerGuestPlayer(g));
+    }
     setFirstPlayerId(existingDraft.firstPlayerId);
     setFirstPlayerMethod(existingDraft.firstPlayerMethod);
     setFirstPlayerAnimStyle(existingDraft.firstPlayerAnimStyle);
@@ -288,7 +294,6 @@ export const NewSessionPage: React.FC = () => {
     datePlayed,
     location,
     durationMinutes,
-    elapsedSeconds,
     sessionStartTime,
     isTimerRunning,
     pausedDurationMs,
@@ -437,7 +442,9 @@ export const NewSessionPage: React.FC = () => {
         avatar: '🎲',
         color,
         createdAt: new Date().toISOString(),
+        isGuest: true,
       };
+      registerGuestPlayer(guest);
       setOneOffPlayers((prev) => [...prev, guest]);
       setSelectedPlayerIds((prev) => [...prev, guest.id]);
     }
@@ -460,19 +467,22 @@ export const NewSessionPage: React.FC = () => {
     );
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setPhotos((prev) => [...prev, reader.result as string]);
+    const fileList = Array.from(files);
+    for (const file of fileList) {
+      try {
+        const compressed = await compressImage(file, 1024, 1024, 0.7);
+        if (compressed) {
+          setPhotos((prev) => [...prev, compressed]);
         }
-      };
-      reader.readAsDataURL(file);
-    });
+      } catch (err) {
+        console.error('Failed to compress image:', err);
+      }
+    }
+    e.target.value = '';
   };
 
   const handleSaveSession = () => {
@@ -484,15 +494,28 @@ export const NewSessionPage: React.FC = () => {
       localStorage.removeItem('boardgame_session_draft');
     } catch {}
 
+    // Ensure all one-off/guest players are registered in usePlayerStore so PlayerDetailPage and leaderboards resolve them
+    oneOffPlayers.forEach((g) => {
+      registerGuestPlayer(g);
+    });
+
     const winnerEntry =
       computedPlayerScores.find((p) => p.isWinner) || computedPlayerScores[0];
+
+    // High-Precision Timestamp: preserve user-selected calendar date while appending wall-clock hours, minutes, seconds, milliseconds
+    // Uses formatted wall-clock time string concatenation so the calendar date never shifts backwards across timezones (e.g. UTC+7)
+    const now = new Date();
+    const pad = (n: number, w = 2) => String(n).padStart(w, '0');
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${pad(now.getMilliseconds(), 3)}Z`;
+    const cleanDate = (datePlayed || '').split('T')[0] || new Date().toISOString().slice(0, 10);
+    const computedIsoDate = `${cleanDate}T${timeStr}`;
 
     const created = addSession({
       status: 'completed',
       gameId: selectedGame.id,
       gameName: selectedGame.name,
       gameThumbnail: selectedGame.thumbnail || selectedGame.image,
-      datePlayed: new Date(datePlayed).toISOString(),
+      datePlayed: computedIsoDate,
       location: location.trim() || undefined,
       durationMinutes: Math.max(5, Number(durationMinutes) || 60),
       players: computedPlayerScores,
@@ -502,6 +525,13 @@ export const NewSessionPage: React.FC = () => {
       photos: photos.length > 0 ? photos : undefined,
       notes: notes.trim() || undefined,
     });
+
+    // Trigger immediate cloud push to eliminate the 2.5s sync race window
+    try {
+      pushVaultToCloud();
+    } catch (err) {
+      console.warn('Immediate sync push after session save skipped or failed:', err);
+    }
 
     try {
       localStorage.removeItem('boardgame_session_draft');
@@ -668,7 +698,7 @@ export const NewSessionPage: React.FC = () => {
           >
             {/* STEP 1: PICK GAME */}
             {currentStep === 1 && (
-              <Card className="p-6 sm:p-8 space-y-6">
+              <Card className="p-4 sm:p-6 md:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
@@ -750,9 +780,8 @@ export const NewSessionPage: React.FC = () => {
             )}
 
             {/* STEP 2: SETUP */}
-            {/* STEP 2: SETUP */}
             {currentStep === 2 && (
-              <Card className="p-6 sm:p-8 space-y-6">
+              <Card className="p-4 sm:p-6 md:p-8 space-y-6">
                 <div>
                   <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
                     Step 2 — Session Setup
@@ -864,7 +893,7 @@ export const NewSessionPage: React.FC = () => {
 
             {/* STEP 3: PLAYERS */}
             {currentStep === 3 && (
-              <Card className="p-6 sm:p-8 space-y-6">
+              <Card className="p-4 sm:p-6 md:p-8 space-y-6">
                 <div>
                   <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
                     Step 3 — Select Players
@@ -924,7 +953,7 @@ export const NewSessionPage: React.FC = () => {
 
             {/* STEP 4: WHO GOES FIRST? */}
             {currentStep === 4 && (
-              <Card className="p-6 sm:p-8 space-y-6">
+              <Card className="p-4 sm:p-6 md:p-8 space-y-6">
                 {isRematchMode && (
                   <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-transparent border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                     <div className="flex items-center gap-2.5">
@@ -951,42 +980,45 @@ export const NewSessionPage: React.FC = () => {
                   </div>
 
                   {/* Mode Selector Tabs */}
-                  <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shrink-0">
+                  <div className="grid grid-cols-3 gap-1 sm:gap-1.5 p-1 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-full sm:w-auto shrink-0">
                     <button
                       type="button"
                       onClick={() => setFirstPlayerAnimStyle('wheel')}
                       className={cn(
-                        'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                        'px-2 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
                         firstPlayerAnimStyle === 'wheel'
                           ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300 shadow-sm'
                           : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       )}
                     >
-                      <span>🎡 Spin Wheel</span>
+                      <span>🎡</span>
+                      <span className="truncate">Wheel</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setFirstPlayerAnimStyle('card_shuffle')}
                       className={cn(
-                        'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                        'px-2 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
                         firstPlayerAnimStyle === 'card_shuffle'
                           ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300 shadow-sm'
                           : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       )}
                     >
-                      <span>🎴 Draw Card</span>
+                      <span>🎴</span>
+                      <span className="truncate">Card</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setFirstPlayerAnimStyle('manual')}
                       className={cn(
-                        'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                        'px-2 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
                         firstPlayerAnimStyle === 'manual'
                           ? 'bg-[var(--accent-glow)] border border-[var(--border-glow)] text-[var(--accent-neon)] shadow-sm'
                           : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       )}
                     >
-                      <span>✋ Manual</span>
+                      <span>✋</span>
+                      <span className="truncate">Manual</span>
                     </button>
                   </div>
                 </div>
@@ -1192,7 +1224,7 @@ export const NewSessionPage: React.FC = () => {
 
             {/* STEP 5: SCORE ENTRY */}
             {currentStep === 5 && (
-              <Card className="p-6 sm:p-8 space-y-6">
+              <Card className="p-4 sm:p-6 md:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h1 className="font-display font-extrabold text-2xl text-[var(--ink)]">
@@ -1281,7 +1313,7 @@ export const NewSessionPage: React.FC = () => {
             {/* STEP 6: MEMORIES & SUMMARY */}
             {currentStep === 6 && (
               <div className="space-y-6">
-                <Card className="p-6 sm:p-8 space-y-6">
+                <Card className="p-4 sm:p-6 md:p-8 space-y-6">
                   <div>
                     <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
                       Step 6 — Game Night Memories &amp; Notes

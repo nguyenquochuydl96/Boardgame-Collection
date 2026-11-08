@@ -173,7 +173,7 @@ export const PickerPage: React.FC = () => {
           </div>
 
           {/* Mode Switcher with sliding spring pill */}
-          <div className="flex p-1.5 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] w-fit">
+          <div className="grid grid-cols-2 p-1.5 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] w-full max-w-md">
             <button
               type="button"
               onClick={() => {
@@ -181,7 +181,7 @@ export const PickerPage: React.FC = () => {
                 setChosenResult(null);
               }}
               className={cn(
-                'relative isolate px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 select-none',
+                'relative isolate px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 select-none text-center',
                 mode === 'first_player'
                   ? 'text-[var(--accent-ink)] font-black'
                   : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
@@ -194,8 +194,9 @@ export const PickerPage: React.FC = () => {
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
-              <Crown className="w-4 h-4 text-amber-500 dark:text-amber-400 relative z-10" />
-              <span className="relative z-10">Determine First Player</span>
+              <Crown className="w-4 h-4 text-amber-500 dark:text-amber-400 relative z-10 shrink-0" />
+              <span className="relative z-10 hidden sm:inline">Determine First Player</span>
+              <span className="relative z-10 sm:hidden">First Player</span>
             </button>
             <button
               type="button"
@@ -204,7 +205,7 @@ export const PickerPage: React.FC = () => {
                 setChosenResult(null);
               }}
               className={cn(
-                'relative isolate px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 select-none',
+                'relative isolate px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 select-none text-center',
                 mode === 'what_to_play'
                   ? 'text-[var(--accent-ink)] font-black'
                   : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
@@ -217,25 +218,26 @@ export const PickerPage: React.FC = () => {
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
-              <Dices className="w-4 h-4 text-[var(--accent)] relative z-10" />
-              <span className="relative z-10">What to Play Tonight?</span>
+              <Dices className="w-4 h-4 text-[var(--accent)] relative z-10 shrink-0" />
+              <span className="relative z-10 hidden sm:inline">What to Play Tonight?</span>
+              <span className="relative z-10 sm:hidden">What to Play?</span>
             </button>
           </div>
         </div>
 
         {/* Animation Switcher Banner with sliding spring pill */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
           <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
             <Sparkles className="w-4 h-4 text-[var(--accent-neon)]" />
             <span>Picker Style:</span>
           </div>
 
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+          <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setAnimStyle('wheel')}
               className={cn(
-                'relative isolate px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 select-none',
+                'relative isolate px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 select-none text-center',
                 animStyle === 'wheel'
                   ? 'text-amber-900 dark:text-amber-200 font-extrabold'
                   : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
@@ -254,7 +256,7 @@ export const PickerPage: React.FC = () => {
               type="button"
               onClick={() => setAnimStyle('card_shuffle')}
               className={cn(
-                'relative isolate px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 select-none',
+                'relative isolate px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 select-none text-center',
                 animStyle === 'card_shuffle'
                   ? 'text-amber-900 dark:text-amber-200 font-extrabold'
                   : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
@@ -267,7 +269,7 @@ export const PickerPage: React.FC = () => {
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
-              <span className="relative z-10">🎴 Mystery Card Shuffle</span>
+              <span className="relative z-10">🎴 Card Shuffle</span>
             </button>
           </div>
         </div>
@@ -275,7 +277,7 @@ export const PickerPage: React.FC = () => {
         {/* Main Grid: Left Stage (Animation) vs Right Pool (Selector) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* LEFT: ANIMATION STAGE (7 COLS) */}
-          <Card className="lg:col-span-7 p-6 flex flex-col items-center justify-center min-h-[440px] relative overflow-hidden">
+          <Card className="lg:col-span-7 p-4 sm:p-6 flex flex-col items-center justify-center min-h-[440px] relative overflow-hidden">
             {currentPool.length === 0 ? (
               <div className="text-center p-8 space-y-3">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-400 mx-auto flex items-center justify-center text-xl">

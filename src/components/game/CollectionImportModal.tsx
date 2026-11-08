@@ -441,7 +441,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
             </div>
 
             {/* Metrics Grid */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
               <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)] space-y-1">
                 <div className="flex items-center gap-1.5 text-xs text-sky-500 font-bold">
                   <Gamepad2 className="w-4 h-4" />
