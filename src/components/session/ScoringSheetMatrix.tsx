@@ -76,15 +76,23 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
       return;
     }
 
+    // Strip redundant leading zeros: e.g. "05" -> "5", "-05" -> "-5", "00" -> "0"
+    let cleanVal = valStr.trim();
+    if (/^0\d+$/.test(cleanVal)) {
+      cleanVal = cleanVal.replace(/^0+/, '') || '0';
+    } else if (/^-0\d+$/.test(cleanVal)) {
+      cleanVal = '-' + (cleanVal.replace(/^-0+/, '') || '0');
+    }
+
     setRawCellValues((prev) => ({
       ...prev,
       [playerId]: {
         ...(prev[playerId] || {}),
-        [categoryId]: valStr,
+        [categoryId]: cleanVal,
       },
     }));
 
-    const trimmed = valStr.trim();
+    const trimmed = cleanVal.trim();
     let val = 0;
     if (trimmed !== '' && trimmed !== '-' && !isNaN(Number(trimmed))) {
       val = Number(trimmed);
@@ -219,6 +227,14 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                           inputMode="numeric"
                           placeholder="0"
                           value={displayVal}
+                          onFocus={(e) => {
+                            e.target.select();
+                          }}
+                          onClick={(e) => {
+                            if (e.currentTarget.value === '0') {
+                              e.currentTarget.select();
+                            }
+                          }}
                           onChange={(e) => handleCellChange(p.id, cat.id, e.target.value)}
                           onBlur={() => handleCellBlur(p.id, cat.id)}
                           className={cn(

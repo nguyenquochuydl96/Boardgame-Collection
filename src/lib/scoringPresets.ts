@@ -61,13 +61,6 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
         icon: '🧭',
         multiplier: 1,
       },
-      {
-        id: 'resources_bonus',
-        name: 'Bonus & Remaining Resources',
-        description: 'Any end-game bonuses or leftover material crates',
-        icon: '📦',
-        multiplier: 1,
-      },
     ],
   },
 
@@ -225,16 +218,39 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
     ],
   },
 
-  // 13. Brass: Birmingham (9 plays)
+  // 13. Brass: Birmingham / Lancashire
   {
     gameNameKeyword: 'brass',
-    displayName: 'Brass: Birmingham',
+    displayName: 'Brass (Birmingham / Lancashire)',
     categories: [
-      { id: 'canal_vps', name: 'Canal Era VPs', icon: '🚣', multiplier: 1 },
-      { id: 'rail_vps', name: 'Rail Era VPs', icon: '🚂', multiplier: 1 },
-      { id: 'flipped_tiles', name: 'Flipped Industry Tiles', icon: '🏭', multiplier: 1 },
-      { id: 'network_links', name: 'Network Link Points', icon: '🛤️', multiplier: 1 },
-      { id: 'cash_bonus', name: 'Endgame Cash (1 pt per £10)', icon: '💰', multiplier: 1 },
+      {
+        id: 'canal_links',
+        name: 'Canal Era Links (Đường nối Kênh đào)',
+        description: 'Điểm đường nối kênh thời kỳ Kênh đào (1 VP mỗi biểu tượng link)',
+        icon: '🚣',
+        multiplier: 1,
+      },
+      {
+        id: 'canal_industries',
+        name: 'Canal Era Industries (Công trình Kênh đào)',
+        description: 'Điểm các thẻ công trình đã lật thời kỳ Kênh đào',
+        icon: '🏭',
+        multiplier: 1,
+      },
+      {
+        id: 'rail_links',
+        name: 'Rail Era Links (Đường nối Đường sắt)',
+        description: 'Điểm đường nối đường sắt thời kỳ Đường sắt (1 VP mỗi biểu tượng link)',
+        icon: '🚂',
+        multiplier: 1,
+      },
+      {
+        id: 'rail_industries',
+        name: 'Rail Era Industries (Công trình Đường sắt)',
+        description: 'Điểm các thẻ công trình đã lật thời kỳ Đường sắt',
+        icon: '🏗️',
+        multiplier: 1,
+      },
     ],
   },
 

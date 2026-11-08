@@ -119,7 +119,7 @@ export const NewSessionPage: React.FC = () => {
     if (preselectedPlayerIds && preselectedPlayerIds.length > 0) {
       return preselectedPlayerIds;
     }
-    return savedPlayers.slice(0, 3).map((p) => p.id);
+    return [];
   });
   const [oneOffPlayers, setOneOffPlayers] = useState<Player[]>([]);
   const [newGuestName, setNewGuestName] = useState('');
@@ -335,6 +335,49 @@ export const NewSessionPage: React.FC = () => {
     () => [...savedPlayers, ...oneOffPlayers],
     [savedPlayers, oneOffPlayers]
   );
+
+  const latestSession = useMemo(() => {
+    if (!sessions || sessions.length === 0) return null;
+    return [...sessions].sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      if (timeB !== timeA) return timeB - timeA;
+      return (b.datePlayed || '').localeCompare(a.datePlayed || '');
+    })[0];
+  }, [sessions]);
+
+  const lastSessionPlayers = useMemo(() => {
+    if (!latestSession || !latestSession.players) return [];
+    return latestSession.players;
+  }, [latestSession]);
+
+  const handleCopyPreviousSessionPlayers = () => {
+    if (!latestSession || !latestSession.players || latestSession.players.length === 0) return;
+    const newGuestList: Player[] = [];
+    const ids: string[] = [];
+
+    latestSession.players.forEach((p, idx) => {
+      ids.push(p.playerId);
+      const exists = allAvailablePlayers.some((ap) => ap.id === p.playerId);
+      if (!exists) {
+        const guestPlayer: Player = {
+          id: p.playerId,
+          name: p.playerName,
+          avatar: '🎲',
+          color: ONE_OFF_COLORS[idx % ONE_OFF_COLORS.length],
+          createdAt: new Date().toISOString(),
+          isGuest: true,
+        };
+        newGuestList.push(guestPlayer);
+        registerGuestPlayer(guestPlayer);
+      }
+    });
+
+    if (newGuestList.length > 0) {
+      setOneOffPlayers((prev) => [...prev, ...newGuestList]);
+    }
+    setSelectedPlayerIds(ids);
+  };
 
   const activeSessionPlayers = useMemo(
     () =>
@@ -903,6 +946,50 @@ export const NewSessionPage: React.FC = () => {
                   </p>
                 </div>
 
+                {/* Quick Add from Last Session Suggestion */}
+                {lastSessionPlayers.length > 0 && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-transparent border border-amber-500/30">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-xl shrink-0">👥</span>
+                      <div className="min-w-0 text-xs">
+                        <p className="font-bold text-[var(--text-primary)]">
+                          Gợi ý từ ván gần nhất ({latestSession?.gameName || 'Session trước'}):
+                        </p>
+                        <p className="text-[var(--text-secondary)] truncate">
+                          {lastSessionPlayers.map((p) => p.playerName).join(', ')} ({lastSessionPlayers.length} người)
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleCopyPreviousSessionPlayers}
+                      className="shrink-0 text-xs font-bold self-start sm:self-auto border-amber-500/40 hover:border-amber-400"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-400" />
+                      Lấy người chơi ván trước
+                    </Button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                    {activeSessionPlayers.length === 0
+                      ? 'Chưa chọn người chơi nào'
+                      : `Đã chọn ${activeSessionPlayers.length} người chơi`}
+                  </span>
+                  {selectedPlayerIds.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPlayerIds([])}
+                      className="text-xs text-[var(--text-muted)] hover:text-rose-400 transition-colors cursor-pointer"
+                    >
+                      Bỏ chọn tất cả
+                    </button>
+                  )}
+                </div>
+
                 <div className="flex flex-wrap gap-3">
                   {allAvailablePlayers.map((player) => {
                     const isSelected = selectedPlayerIds.includes(player.id);
@@ -1283,7 +1370,12 @@ export const NewSessionPage: React.FC = () => {
                       initialBreakdowns={breakdownsByPlayerId}
                       lowScoreWins={lowScoreWins}
                       onScoresUpdate={(totals, breakdowns) => {
-                        setScoresByPlayerId(totals);
+                        const hasAnyInput = Object.values(breakdowns).some((pBreakdown) =>
+                          Object.values(pBreakdown).some((val) => typeof val === 'number' && val !== 0)
+                        );
+                        if (hasAnyInput) {
+                          setScoresByPlayerId(totals);
+                        }
                         setBreakdownsByPlayerId(breakdowns);
                         setManualWinnerIds([]);
                       }}
@@ -1469,6 +1561,10 @@ export const NewSessionPage: React.FC = () => {
           {currentStep < 6 ? (
             <Button
               variant="primary"
+              disabled={
+                (currentStep === 1 && !selectedGame) ||
+                (currentStep === 3 && activeSessionPlayers.length === 0)
+              }
               onClick={() => setCurrentStep((s) => Math.min(6, s + 1))}
             >
               Next Step

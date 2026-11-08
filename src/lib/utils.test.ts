@@ -307,12 +307,31 @@ test('getScoringTemplateForGame resolves official Natera template correctly', as
   const template = getScoringTemplateForGame('Natera: New Beginning');
   assert.equal(template.gameNameKeyword, 'natera');
   assert.equal(template.displayName, 'Natera: New Beginning (Venture Points)');
+  assert.equal(template.categories.length, 6);
   assert.ok(template.categories.some((c) => c.id === 'claim_tokens'));
   assert.ok(template.categories.some((c) => c.id === 'settlements'));
   assert.ok(template.categories.some((c) => c.id === 'science_board'));
   assert.ok(template.categories.some((c) => c.id === 'authority_tracks'));
   assert.ok(template.categories.some((c) => c.id === 'specialist_cards'));
   assert.ok(template.categories.some((c) => c.id === 'exploration_cards'));
+  // Leftover resources is solely a tiebreaker and NOT a scoring category
+  assert.ok(!template.categories.some((c) => c.id === 'resources_bonus'));
+});
+
+test('getScoringTemplateForGame resolves official Brass Birmingham/Lancashire without cash bonus', async () => {
+  const { getScoringTemplateForGame } = await import('./scoringPresets');
+  const templateBirm = getScoringTemplateForGame('Brass: Birmingham');
+  const templateLanc = getScoringTemplateForGame('Brass: Lancashire');
+  assert.equal(templateBirm.gameNameKeyword, 'brass');
+  assert.equal(templateLanc.gameNameKeyword, 'brass');
+  assert.equal(templateBirm.categories.length, 4);
+
+  // Official 4 scoring categories across Canal and Rail eras
+  const catIds = templateBirm.categories.map((c) => c.id);
+  assert.deepEqual(catIds, ['canal_links', 'canal_industries', 'rail_links', 'rail_industries']);
+
+  // Endgame cash is strictly a tiebreaker and MUST NOT be scored as VP
+  assert.ok(!templateBirm.categories.some((c) => c.id === 'cash_bonus'));
 });
 
 test('getScoringTemplateForGame resolves official Great Western Trail: Second Edition template with 11 categories', async () => {

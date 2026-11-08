@@ -47,19 +47,37 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
       <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
         <div className="w-20 sm:w-28">
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             aria-label={`Score for ${playerScore.playerName}`}
             placeholder="Score"
-            value={playerScore.score !== undefined ? playerScore.score : ''}
+            value={playerScore.score !== undefined ? String(playerScore.score) : ''}
+            onFocus={(e) => {
+              e.target.select();
+            }}
+            onClick={(e) => {
+              if (e.currentTarget.value === '0') {
+                e.currentTarget.select();
+              }
+            }}
             onChange={(e) => {
-              const raw = e.target.value;
-              if (raw === '') {
+              let raw = e.target.value.trim();
+              if (raw === '' || raw === '-') {
                 onScoreChange(playerScore.playerId, undefined);
-              } else {
-                const parsed = Number(raw);
-                if (!Number.isNaN(parsed)) {
-                  onScoreChange(playerScore.playerId, parsed);
-                }
+                return;
+              }
+              if (!/^-?\d*$/.test(raw)) {
+                return;
+              }
+              // Strip redundant leading zeros: e.g. "05" -> "5", "-05" -> "-5", "00" -> "0"
+              if (/^0\d+$/.test(raw)) {
+                raw = raw.replace(/^0+/, '') || '0';
+              } else if (/^-0\d+$/.test(raw)) {
+                raw = '-' + (raw.replace(/^-0+/, '') || '0');
+              }
+              const parsed = Number(raw);
+              if (!Number.isNaN(parsed)) {
+                onScoreChange(playerScore.playerId, parsed);
               }
             }}
             className="w-full min-h-[38px] sm:min-h-[42px] px-2 sm:px-3 py-1.5 rounded-xl bg-[var(--card-2)] border border-[var(--line-2)] text-right font-mono font-bold text-sm sm:text-base text-[var(--ink)] tabular-nums focus:outline-none focus:border-[var(--accent)]"
