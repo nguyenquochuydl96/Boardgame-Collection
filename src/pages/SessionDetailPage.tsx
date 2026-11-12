@@ -239,7 +239,7 @@ export const SessionDetailPage: React.FC = () => {
     let maxScore = -Infinity;
     let winnerId = '';
     for (const p of editPlayers) {
-      const num = Number(p.score);
+      const num = p.score.trim() === '' ? NaN : Number(p.score);
       if (!isNaN(num) && num > maxScore) {
         maxScore = num;
         winnerId = p.playerId;
@@ -611,7 +611,7 @@ export const SessionDetailPage: React.FC = () => {
                         >
                           <div className="flex items-center justify-center gap-1">
                             {isLeader && <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />}
-                            <span>{p.score ?? 0}</span>
+                            <span>{typeof p.score === 'number' ? p.score : '—'}</span>
                           </div>
                         </td>
                       );

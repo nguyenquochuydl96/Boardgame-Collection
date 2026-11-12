@@ -224,6 +224,68 @@ test('calculateGameStats returns null for mostLossesPlayer when no player reache
   assert.equal(stats.mostLossesPlayer, null);
 });
 
+test('calculateGameStats handles missing/undefined scores without poisoning records, preserving genuine 0 and negative scores', async () => {
+  const { calculateGameStats } = await import('./utils');
+  const sessions: PlaySession[] = [
+    // Session 1: Faraway-like partial scores (Hằng has undefined)
+    {
+      id: 's1',
+      gameId: 'g-faraway',
+      gameName: 'Faraway',
+      datePlayed: '2026-01-01T10:00:00.000Z',
+      winnerId: 'p-heo',
+      players: [
+        { playerId: 'p-heo', playerName: 'Heo', isWinner: true, score: 71 },
+        { playerId: 'p-loc', playerName: 'Lộc', isWinner: false, score: 51 },
+        { playerId: 'p-hang', playerName: 'Hằng', isWinner: false, score: undefined },
+      ],
+      createdAt: '2026-01-01T11:00:00.000Z',
+    },
+    // Session 2: Co-op / win-loss session with no scores
+    {
+      id: 's2',
+      gameId: 'g-faraway',
+      gameName: 'Faraway',
+      datePlayed: '2026-01-02T10:00:00.000Z',
+      winnerId: 'p-heo',
+      players: [
+        { playerId: 'p-heo', playerName: 'Heo', isWinner: true },
+        { playerId: 'p-loc', playerName: 'Lộc', isWinner: false },
+        { playerId: 'p-hang', playerName: 'Hằng', isWinner: false },
+      ],
+      createdAt: '2026-01-02T11:00:00.000Z',
+    },
+  ];
+
+  const stats = calculateGameStats(sessions);
+  assert.equal(stats.highestScore?.score, 71);
+  assert.equal(stats.highestScore?.playerName, 'Heo');
+  // Lowest score must be 51 from Lộc, NOT 0 from undefined Hằng!
+  assert.equal(stats.lowestScore?.score, 51);
+  assert.equal(stats.lowestScore?.playerName, 'Lộc');
+
+  // Now test genuine 0 score (e.g. Zoo Vadis)
+  const zooVadisSessions: PlaySession[] = [
+    {
+      id: 'zv-1',
+      gameId: 'g-zv',
+      gameName: 'Zoo Vadis',
+      datePlayed: '2026-01-01T10:00:00.000Z',
+      winnerId: 'p-heo',
+      players: [
+        { playerId: 'p-heo', playerName: 'Heo', isWinner: true, score: 20 },
+        { playerId: 'p-huy', playerName: 'Anh Huy', isWinner: false, score: 12 },
+        { playerId: 'p-hang', playerName: 'Hằng', isWinner: false, score: 0 },
+        { playerId: 'p-loc', playerName: 'Lộc', isWinner: false, score: 0 },
+      ],
+      createdAt: '2026-01-01T11:00:00.000Z',
+    },
+  ];
+  const zvStats = calculateGameStats(zooVadisSessions);
+  assert.equal(zvStats.highestScore?.score, 20);
+  assert.equal(zvStats.lowestScore?.score, 0); // Legitimate 0 points
+});
+
 test('formatRecordTimeAgo formats dates and relative time in English accurately', async () => {
   const { formatRecordTimeAgo } = await import('./utils');
   const result = formatRecordTimeAgo('2025-05-10T10:00:00.000Z');

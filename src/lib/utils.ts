@@ -539,7 +539,9 @@ export function calculateGameStats(
         if (Math.abs(rateB - rateA) > 1e-6) return rateB - rateA;
         if (b.losses !== a.losses) return b.losses - a.losses;
         if (b.plays !== a.plays) return b.plays - a.plays;
-        return (a.lowestScore ?? 0) - (b.lowestScore ?? 0);
+        const scoreA = a.lowestScore !== undefined ? a.lowestScore : Infinity;
+        const scoreB = b.lowestScore !== undefined ? b.lowestScore : Infinity;
+        return scoreA - scoreB;
       })[0] || null;
 
   return {

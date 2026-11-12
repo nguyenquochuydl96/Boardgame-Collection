@@ -205,7 +205,13 @@ export function parseBGCatalogJsonObject(
       return {
         playerId: `player-${pp.playerId}`,
         playerName: pl ? pl.name : pp.nickname || 'Guest',
-        score: pp.score !== null && pp.score !== undefined ? Number(pp.score) : undefined,
+        score:
+          pp.score !== null &&
+          pp.score !== undefined &&
+          String(pp.score).trim() !== '' &&
+          !isNaN(Number(pp.score))
+            ? Number(pp.score)
+            : undefined,
         isWinner: pp.winner === 1,
         rank: 1,
       };
