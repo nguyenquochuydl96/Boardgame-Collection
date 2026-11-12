@@ -371,7 +371,10 @@ export function formatRecordTimeAgo(isoDate?: string): string {
   return `${dateStr} (${diffYears}y ago)`;
 }
 
-export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
+export function calculateGameStats(
+  sessions: PlaySession[],
+  minPlaysThreshold = 5
+): GameStatsSummary {
   const totalPlays = sessions.length;
   if (totalPlays === 0) {
     return {
@@ -481,9 +484,10 @@ export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
     }))
     .sort((a, b) => b.winRate - a.winRate || b.wins - a.wins);
 
-  // Most Wins Player
+  // Most Wins Player (must have at least 1 win)
   const mostWinsPlayer: PlayerWinRate | null =
     Array.from(playerMap.values())
+      .filter((item) => item.wins > 0)
       .map((item) => ({
         playerId: item.playerId,
         playerName: item.playerName,
@@ -495,12 +499,19 @@ export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
       .sort((a, b) => b.wins - a.wins || b.winRate - a.winRate || b.plays - a.plays)[0] || null;
 
   // Most Losses Player:
+  // Qualification criteria:
+  // 1. Must have at least 1 loss (losses > 0).
+  // 2. Must meet the qualification threshold of plays (plays >= minPlaysThreshold, default: 5)
+  //    to filter out playtest / sample noise (e.g. 1 loss in 1 play = 100%).
+  //
   // Tie-break rules:
-  // 1. More losses
-  // 2. If equal losses -> more total plays
-  // 3. If still equal -> player with lower lowestScore
+  // 1. Highest loss rate (exact loss ratio: b.losses / b.plays vs a.losses / a.plays)
+  // 2. More total losses (b.losses - a.losses)
+  // 3. More total plays (b.plays - a.plays)
+  // 4. Lower lowestScore ((a.lowestScore ?? 0) - (b.lowestScore ?? 0))
   const mostLossesPlayer: PlayerLossRecord | null =
     Array.from(playerMap.values())
+      .filter((item) => item.losses > 0 && item.plays >= minPlaysThreshold)
       .map((item) => ({
         playerId: item.playerId,
         playerName: item.playerName,
@@ -512,6 +523,9 @@ export function calculateGameStats(sessions: PlaySession[]): GameStatsSummary {
         lastPlayedDate: item.lastPlayedDate,
       }))
       .sort((a, b) => {
+        const rateB = b.plays > 0 ? b.losses / b.plays : 0;
+        const rateA = a.plays > 0 ? a.losses / a.plays : 0;
+        if (Math.abs(rateB - rateA) > 1e-6) return rateB - rateA;
         if (b.losses !== a.losses) return b.losses - a.losses;
         if (b.plays !== a.plays) return b.plays - a.plays;
         return (a.lowestScore ?? 0) - (b.lowestScore ?? 0);

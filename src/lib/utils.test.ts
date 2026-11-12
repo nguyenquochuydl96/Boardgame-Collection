@@ -76,7 +76,7 @@ test('calculateGameStats computes plays, average duration, score records, and wi
     },
   ];
 
-  const stats = calculateGameStats(sampleSessions);
+  const stats = calculateGameStats(sampleSessions, 1);
   assert.equal(stats.totalPlays, 2);
   assert.equal(stats.averageDuration, 70);
   assert.deepEqual(stats.highestScore, {
@@ -132,10 +132,93 @@ test('calculateGameStats accurately breaks ties for mostLossesPlayer', async () 
     },
   ];
 
-  const stats = calculateGameStats(sessions);
+  const stats = calculateGameStats(sessions, 1);
   // Both p1 and p2 have 2 losses and 2 plays. p2 has lower lowestScore (20 vs 30).
   assert.equal(stats.mostLossesPlayer?.playerName, 'Player 2');
   assert.equal(stats.mostLossesPlayer?.losses, 2);
+});
+
+test('calculateGameStats qualifies players with >= 5 plays and ranks by highest loss rate (Brass Birmingham scenario)', async () => {
+  const { calculateGameStats } = await import('./utils');
+  // 12 sessions of Brass Birmingham:
+  // Winner: plays 12, wins 12 (0 losses)
+  // Heo: plays 12, wins 1, loses 11 (11/12 = 91.67% loss rate)
+  // Lộc: plays 8, wins 0, loses 8 (8/8 = 100% loss rate)
+  // Guest: plays 2, wins 0, loses 2 (2/2 = 100% loss rate, but < 5 plays -> disqualified)
+  const brassSessions: PlaySession[] = [];
+
+  for (let i = 1; i <= 12; i++) {
+    const isHeoWin = i === 1; // Heo wins 1 game
+    const playersList: PlaySession['players'] = [
+      { playerId: 'winner-1', playerName: 'Chị Quyên', isWinner: !isHeoWin, score: isHeoWin ? 120 : 150 },
+      { playerId: 'heo-1', playerName: 'Heo', isWinner: isHeoWin, score: isHeoWin ? 155 : 110 },
+    ];
+
+    // Lộc joins the last 8 games and loses all 8
+    if (i > 4) {
+      playersList.push({ playerId: 'loc-1', playerName: 'Lộc', isWinner: false, score: 105 });
+    }
+
+    // Guest joins only sessions 1 and 2
+    if (i <= 2) {
+      playersList.push({ playerId: 'guest-1', playerName: 'Guest', isWinner: false, score: 80 });
+    }
+
+    brassSessions.push({
+      id: `session-${i}`,
+      gameId: 'brass-birmingham',
+      gameName: 'Brass: Birmingham',
+      datePlayed: `2026-02-${String(i).padStart(2, '0')}T10:00:00.000Z`,
+      winnerId: isHeoWin ? 'heo-1' : 'winner-1',
+      players: playersList,
+      createdAt: `2026-02-${String(i).padStart(2, '0')}T12:00:00.000Z`,
+    });
+  }
+
+  // Calculate with default threshold (5 plays minimum)
+  const stats = calculateGameStats(brassSessions);
+
+  // Lộc must beat Heo because 100% loss rate (8/8) > 92% loss rate (11/12).
+  // Guest is disqualified despite 100% loss rate because Guest only played 2 sessions (< 5).
+  assert.ok(stats.mostLossesPlayer);
+  assert.equal(stats.mostLossesPlayer?.playerName, 'Lộc');
+  assert.equal(stats.mostLossesPlayer?.losses, 8);
+  assert.equal(stats.mostLossesPlayer?.plays, 8);
+  assert.equal(stats.mostLossesPlayer?.lossRate, 100);
+});
+
+test('calculateGameStats returns null for mostLossesPlayer when no player reaches the 5 plays threshold', async () => {
+  const { calculateGameStats } = await import('./utils');
+  const shortSessions: PlaySession[] = [
+    {
+      id: 's1',
+      gameId: 'g-short',
+      gameName: 'New Game',
+      datePlayed: '2026-01-01T10:00:00.000Z',
+      winnerId: 'p1',
+      players: [
+        { playerId: 'p1', playerName: 'Player 1', isWinner: true, score: 50 },
+        { playerId: 'p2', playerName: 'Player 2', isWinner: false, score: 30 },
+      ],
+      createdAt: '2026-01-01T11:00:00.000Z',
+    },
+    {
+      id: 's2',
+      gameId: 'g-short',
+      gameName: 'New Game',
+      datePlayed: '2026-01-02T10:00:00.000Z',
+      winnerId: 'p1',
+      players: [
+        { playerId: 'p1', playerName: 'Player 1', isWinner: true, score: 60 },
+        { playerId: 'p2', playerName: 'Player 2', isWinner: false, score: 25 },
+      ],
+      createdAt: '2026-01-02T11:00:00.000Z',
+    },
+  ];
+
+  const stats = calculateGameStats(shortSessions);
+  // Default threshold is 5 plays -> Player 2 only has 2 plays -> does not qualify -> null
+  assert.equal(stats.mostLossesPlayer, null);
 });
 
 test('formatRecordTimeAgo formats dates and relative time in English accurately', async () => {

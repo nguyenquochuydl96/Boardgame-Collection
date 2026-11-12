@@ -1631,6 +1631,7 @@ export const StatsPage: React.FC = () => {
                     <div>
                       <span className="text-[11px] text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wider flex items-center gap-1">
                         <span>🥄</span> Most Losses
+                        <span className="text-[10px] text-[var(--muted)] font-normal lowercase">(≥ 5 plays)</span>
                       </span>
                       <p className="font-display font-bold text-base text-rose-600 dark:text-rose-400 mt-1 truncate">
                         {activeGameStats.mostLossesPlayer?.playerName || '—'}
@@ -1648,7 +1649,7 @@ export const StatsPage: React.FC = () => {
                         )}
                       </div>
                     ) : (
-                      <span className="text-[10px] text-[var(--muted)]">No losses recorded</span>
+                      <span className="text-[10px] text-[var(--muted)]">No qualified record (≥ 5 plays)</span>
                     )}
                   </div>
                 </div>
@@ -1710,7 +1711,7 @@ export const StatsPage: React.FC = () => {
                         <th className="py-3 px-3 font-bold text-right">High Score</th>
                         <th className="py-3 px-3 font-bold text-right">Lowest Score</th>
                         <th className="py-3 px-3 font-bold text-right">Most Wins</th>
-                        <th className="py-3 px-3 font-bold text-right">Most Losses</th>
+                        <th className="py-3 px-3 font-bold text-right" title="Player with highest loss rate (minimum 5 plays)">Most Losses (≥5)</th>
                         <th className="py-3 px-4 font-bold text-center">Action</th>
                       </tr>
                     </thead>
