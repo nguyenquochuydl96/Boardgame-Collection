@@ -94,7 +94,9 @@ test('calculateGameStats computes plays, average duration, score records, and wi
   assert.equal(stats.playerWinRates.length, 2);
   assert.equal(stats.playerWinRates[0].winRate, 50);
   assert.equal(stats.mostWinsPlayer?.playerName, 'Huy');
+  assert.equal(stats.mostWinsPlayer?.lastWonSessionId, 's1');
   assert.equal(stats.mostLossesPlayer?.playerName, 'Huy');
+  assert.equal(stats.mostLossesPlayer?.lastPlayedSessionId, 's2');
 });
 
 test('calculateGameStats accurately breaks ties for mostLossesPlayer', async () => {
@@ -185,6 +187,7 @@ test('calculateGameStats qualifies players with >= 5 plays and ranks by highest 
   assert.equal(stats.mostLossesPlayer?.losses, 8);
   assert.equal(stats.mostLossesPlayer?.plays, 8);
   assert.equal(stats.mostLossesPlayer?.lossRate, 100);
+  assert.equal(stats.mostLossesPlayer?.lastPlayedSessionId, 'session-12');
 });
 
 test('calculateGameStats returns null for mostLossesPlayer when no player reaches the 5 plays threshold', async () => {

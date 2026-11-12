@@ -310,6 +310,7 @@ export interface PlayerWinRate {
   wins: number;
   winRate: number;
   lastWonDate?: string;
+  lastWonSessionId?: string;
 }
 
 export interface PlayerLossRecord {
@@ -321,6 +322,7 @@ export interface PlayerLossRecord {
   wins: number;
   lowestScore?: number;
   lastPlayedDate?: string;
+  lastPlayedSessionId?: string;
 }
 
 export interface GameStatsSummary {
@@ -409,7 +411,9 @@ export function calculateGameStats(
       losses: number;
       lowestScore?: number;
       lastWonDate?: string;
+      lastWonSessionId?: string;
       lastPlayedDate?: string;
+      lastPlayedSessionId?: string;
     }
   >();
 
@@ -448,16 +452,20 @@ export function calculateGameStats(
         losses: 0,
         lowestScore: undefined,
         lastWonDate: undefined,
+        lastWonSessionId: undefined,
         lastPlayedDate: undefined,
+        lastPlayedSessionId: undefined,
       };
 
       existing.plays += 1;
       existing.lastPlayedDate = sDate || existing.lastPlayedDate;
+      existing.lastPlayedSessionId = session.id;
 
       const isWin = p.isWinner || session.winnerId === p.playerId;
       if (isWin) {
         existing.wins += 1;
         existing.lastWonDate = sDate || existing.lastWonDate;
+        existing.lastWonSessionId = session.id;
       } else {
         existing.losses += 1;
       }
@@ -481,6 +489,7 @@ export function calculateGameStats(
       wins: item.wins,
       winRate: item.plays > 0 ? Math.round((item.wins / item.plays) * 100) : 0,
       lastWonDate: item.lastWonDate,
+      lastWonSessionId: item.lastWonSessionId,
     }))
     .sort((a, b) => b.winRate - a.winRate || b.wins - a.wins);
 
@@ -495,6 +504,7 @@ export function calculateGameStats(
         wins: item.wins,
         winRate: item.plays > 0 ? Math.round((item.wins / item.plays) * 100) : 0,
         lastWonDate: item.lastWonDate,
+        lastWonSessionId: item.lastWonSessionId,
       }))
       .sort((a, b) => b.wins - a.wins || b.winRate - a.winRate || b.plays - a.plays)[0] || null;
 
@@ -521,6 +531,7 @@ export function calculateGameStats(
         wins: item.wins,
         lowestScore: item.lowestScore,
         lastPlayedDate: item.lastPlayedDate,
+        lastPlayedSessionId: item.lastPlayedSessionId,
       }))
       .sort((a, b) => {
         const rateB = b.plays > 0 ? b.losses / b.plays : 0;

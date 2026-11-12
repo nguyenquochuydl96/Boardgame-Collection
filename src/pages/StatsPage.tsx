@@ -1527,17 +1527,27 @@ export const StatsPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 tabular-nums">
                   {/* 1. TOTAL PLAYS */}
-                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                  <Link
+                    to={`/sessions?gameId=${activeGame.id}`}
+                    className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] hover:border-[var(--accent)] hover:shadow-lg hover:shadow-[var(--accent)]/10 transition-all flex flex-col justify-between group cursor-pointer"
+                    title="View all logged sessions for this game"
+                  >
                     <div>
-                      <span className="text-[11px] text-[var(--muted)] font-bold uppercase tracking-wider">Total Plays</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-[var(--muted)] font-bold uppercase tracking-wider">Total Plays</span>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-[var(--accent)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                      </div>
                       <p className="font-display font-black text-2xl text-[var(--accent)] mt-1">
                         {activeGameStats.totalPlays} plays
                       </p>
                     </div>
-                    <span className="text-[10px] text-[var(--muted)] mt-1">
-                      {activeGameSessions.length} logged sessions
-                    </span>
-                  </div>
+                    <div className="text-[10px] text-[var(--muted)] group-hover:text-[var(--ink-2)] transition-colors mt-1 flex items-center justify-between">
+                      <span>{activeGameSessions.length} logged sessions</span>
+                      <span className="font-semibold text-[9px] text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity">
+                        View all →
+                      </span>
+                    </div>
+                  </Link>
 
                   {/* 2. AVERAGE DURATION */}
                   <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
@@ -1553,105 +1563,246 @@ export const StatsPage: React.FC = () => {
                   </div>
 
                   {/* 3. HIGHEST SCORE RECORD */}
-                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                        <span>🏆</span> High Score
-                      </span>
-                      <p className="font-mono font-black text-2xl text-emerald-600 dark:text-emerald-400 mt-1">
-                        {activeGameStats.highestScore ? `${activeGameStats.highestScore.score} pts` : '—'}
-                      </p>
-                    </div>
-                    {activeGameStats.highestScore ? (
+                  {activeGameStats.highestScore?.sessionId ? (
+                    <Link
+                      to={`/sessions/${activeGameStats.highestScore.sessionId}`}
+                      className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] hover:border-emerald-500/60 hover:shadow-lg hover:shadow-emerald-500/10 transition-all flex flex-col justify-between group cursor-pointer"
+                      title="View record session details"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                            <span>🏆</span> High Score
+                          </span>
+                          <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                        </div>
+                        <p className="font-mono font-black text-2xl text-emerald-600 dark:text-emerald-400 mt-1">
+                          {activeGameStats.highestScore.score} pts
+                        </p>
+                      </div>
                       <div className="mt-1 space-y-0.5">
-                        <span className="text-xs font-bold text-[var(--ink)] block truncate">
+                        <span className="text-xs font-bold text-[var(--ink)] block truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                           {activeGameStats.highestScore.playerName}
                         </span>
-                        <span className="text-[10px] text-[var(--muted)] block truncate">
-                          {formatRecordTimeAgo(activeGameStats.highestScore.date)}
-                        </span>
+                        <div className="text-[10px] text-[var(--muted)] flex items-center justify-between gap-1">
+                          <span className="truncate">{formatRecordTimeAgo(activeGameStats.highestScore.date)}</span>
+                          <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            View session →
+                          </span>
+                        </div>
                       </div>
-                    ) : (
-                      <span className="text-[10px] text-[var(--muted)]">No score logged</span>
-                    )}
-                  </div>
+                    </Link>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                      <div>
+                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                          <span>🏆</span> High Score
+                        </span>
+                        <p className="font-mono font-black text-2xl text-emerald-600 dark:text-emerald-400 mt-1">
+                          {activeGameStats.highestScore ? `${activeGameStats.highestScore.score} pts` : '—'}
+                        </p>
+                      </div>
+                      {activeGameStats.highestScore ? (
+                        <div className="mt-1 space-y-0.5">
+                          <span className="text-xs font-bold text-[var(--ink)] block truncate">
+                            {activeGameStats.highestScore.playerName}
+                          </span>
+                          <span className="text-[10px] text-[var(--muted)] block truncate">
+                            {formatRecordTimeAgo(activeGameStats.highestScore.date)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-[var(--muted)]">No score logged</span>
+                      )}
+                    </div>
+                  )}
 
                   {/* 4. LOWEST SCORE RECORD */}
-                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] text-rose-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                        <span>📉</span> Lowest Score
-                      </span>
-                      <p className="font-mono font-black text-2xl text-rose-500 mt-1">
-                        {activeGameStats.lowestScore ? `${activeGameStats.lowestScore.score} pts` : '—'}
-                      </p>
-                    </div>
-                    {activeGameStats.lowestScore ? (
+                  {activeGameStats.lowestScore?.sessionId ? (
+                    <Link
+                      to={`/sessions/${activeGameStats.lowestScore.sessionId}`}
+                      className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] hover:border-rose-500/60 hover:shadow-lg hover:shadow-rose-500/10 transition-all flex flex-col justify-between group cursor-pointer"
+                      title="View session details"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] text-rose-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                            <span>📉</span> Lowest Score
+                          </span>
+                          <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-rose-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                        </div>
+                        <p className="font-mono font-black text-2xl text-rose-500 mt-1">
+                          {activeGameStats.lowestScore.score} pts
+                        </p>
+                      </div>
                       <div className="mt-1 space-y-0.5">
-                        <span className="text-xs font-bold text-[var(--ink)] block truncate">
+                        <span className="text-xs font-bold text-[var(--ink)] block truncate group-hover:text-rose-500 transition-colors">
                           {activeGameStats.lowestScore.playerName}
                         </span>
-                        <span className="text-[10px] text-[var(--muted)] block truncate">
-                          {formatRecordTimeAgo(activeGameStats.lowestScore.date)}
-                        </span>
+                        <div className="text-[10px] text-[var(--muted)] flex items-center justify-between gap-1">
+                          <span className="truncate">{formatRecordTimeAgo(activeGameStats.lowestScore.date)}</span>
+                          <span className="text-[9px] text-rose-500 font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            View session →
+                          </span>
+                        </div>
                       </div>
-                    ) : (
-                      <span className="text-[10px] text-[var(--muted)]">No score logged</span>
-                    )}
-                  </div>
+                    </Link>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                      <div>
+                        <span className="text-[11px] text-rose-500 font-bold uppercase tracking-wider flex items-center gap-1">
+                          <span>📉</span> Lowest Score
+                        </span>
+                        <p className="font-mono font-black text-2xl text-rose-500 mt-1">
+                          {activeGameStats.lowestScore ? `${activeGameStats.lowestScore.score} pts` : '—'}
+                        </p>
+                      </div>
+                      {activeGameStats.lowestScore ? (
+                        <div className="mt-1 space-y-0.5">
+                          <span className="text-xs font-bold text-[var(--ink)] block truncate">
+                            {activeGameStats.lowestScore.playerName}
+                          </span>
+                          <span className="text-[10px] text-[var(--muted)] block truncate">
+                            {formatRecordTimeAgo(activeGameStats.lowestScore.date)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-[var(--muted)]">No score logged</span>
+                      )}
+                    </div>
+                  )}
 
                   {/* 5. CHAMPION (MOST WINS) */}
-                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                        <span>👑</span> Most Wins
-                      </span>
-                      <p className="font-display font-bold text-base text-amber-600 dark:text-amber-400 mt-1 truncate">
-                        {activeGameStats.mostWinsPlayer?.playerName || activeGameStats.playerWinRates[0]?.playerName || '—'}
-                      </p>
-                    </div>
-                    {activeGameStats.mostWinsPlayer || activeGameStats.playerWinRates[0] ? (
-                      <div className="mt-1 space-y-0.5">
-                        <span className="text-xs font-mono font-bold text-[var(--ink)] block">
-                          {(activeGameStats.mostWinsPlayer || activeGameStats.playerWinRates[0])?.wins} wins ({(activeGameStats.mostWinsPlayer || activeGameStats.playerWinRates[0])?.winRate}%)
-                        </span>
-                        {(activeGameStats.mostWinsPlayer || activeGameStats.playerWinRates[0])?.lastWonDate && (
-                          <span className="text-[10px] text-[var(--muted)] block truncate">
-                            Won: {formatRecordTimeAgo((activeGameStats.mostWinsPlayer || activeGameStats.playerWinRates[0])?.lastWonDate)}
+                  {(() => {
+                    const topWin = activeGameStats.mostWinsPlayer || activeGameStats.playerWinRates[0];
+                    if (!topWin) {
+                      return (
+                        <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                          <div>
+                            <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                              <span>👑</span> Most Wins
+                            </span>
+                            <p className="font-display font-bold text-base text-amber-600 dark:text-amber-400 mt-1 truncate">—</p>
+                          </div>
+                          <span className="text-[10px] text-[var(--muted)]">No wins recorded</span>
+                        </div>
+                      );
+                    }
+
+                    const cardContent = (
+                      <>
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                              <span>👑</span> Most Wins
+                            </span>
+                            {topWin.lastWonSessionId && (
+                              <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-amber-600 dark:group-hover:text-amber-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                            )}
+                          </div>
+                          <p className="font-display font-bold text-base text-amber-600 dark:text-amber-400 mt-1 truncate">
+                            {topWin.playerName}
+                          </p>
+                        </div>
+                        <div className="mt-1 space-y-0.5">
+                          <span className="text-xs font-mono font-bold text-[var(--ink)] block">
+                            {topWin.wins} wins ({topWin.winRate}%)
                           </span>
-                        )}
-                      </div>
+                          {topWin.lastWonDate && (
+                            <div className="text-[10px] text-[var(--muted)] flex items-center justify-between gap-1">
+                              <span className="truncate">Won: {formatRecordTimeAgo(topWin.lastWonDate)}</span>
+                              {topWin.lastWonSessionId && (
+                                <span className="text-[9px] text-amber-600 dark:text-amber-400 font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  View session →
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+
+                    return topWin.lastWonSessionId ? (
+                      <Link
+                        to={`/sessions/${topWin.lastWonSessionId}`}
+                        className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] hover:border-amber-500/60 hover:shadow-lg hover:shadow-amber-500/10 transition-all flex flex-col justify-between group cursor-pointer"
+                        title="View latest winning session"
+                      >
+                        {cardContent}
+                      </Link>
                     ) : (
-                      <span className="text-[10px] text-[var(--muted)]">No wins recorded</span>
-                    )}
-                  </div>
+                      <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                        {cardContent}
+                      </div>
+                    );
+                  })()}
 
                   {/* 6. MOST LOSSES PLAYER */}
-                  <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
-                    <div>
-                      <span className="text-[11px] text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                        <span>🥄</span> Most Losses
-                        <span className="text-[10px] text-[var(--muted)] font-normal lowercase">(≥ 5 plays)</span>
-                      </span>
-                      <p className="font-display font-bold text-base text-rose-600 dark:text-rose-400 mt-1 truncate">
-                        {activeGameStats.mostLossesPlayer?.playerName || '—'}
-                      </p>
-                    </div>
-                    {activeGameStats.mostLossesPlayer ? (
-                      <div className="mt-1 space-y-0.5">
-                        <span className="text-xs font-mono font-bold text-[var(--ink)] block">
-                          {activeGameStats.mostLossesPlayer.losses} losses / {activeGameStats.mostLossesPlayer.plays} plays ({activeGameStats.mostLossesPlayer.lossRate}%)
-                        </span>
-                        {activeGameStats.mostLossesPlayer.lastPlayedDate && (
-                          <span className="text-[10px] text-[var(--muted)] block truncate">
-                            Recent: {formatRecordTimeAgo(activeGameStats.mostLossesPlayer.lastPlayedDate)}
+                  {(() => {
+                    const topLoss = activeGameStats.mostLossesPlayer;
+                    if (!topLoss) {
+                      return (
+                        <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                          <div>
+                            <span className="text-[11px] text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                              <span>🥄</span> Most Losses
+                              <span className="text-[10px] text-[var(--muted)] font-normal lowercase">(≥ 5 plays)</span>
+                            </span>
+                            <p className="font-display font-bold text-base text-rose-600 dark:text-rose-400 mt-1 truncate">—</p>
+                          </div>
+                          <span className="text-[10px] text-[var(--muted)]">No qualified record (≥ 5 plays)</span>
+                        </div>
+                      );
+                    }
+
+                    const cardContent = (
+                      <>
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-rose-600 dark:text-rose-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                              <span>🥄</span> Most Losses
+                              <span className="text-[10px] text-[var(--muted)] font-normal lowercase">(≥ 5 plays)</span>
+                            </span>
+                            {topLoss.lastPlayedSessionId && (
+                              <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-rose-600 dark:group-hover:text-rose-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                            )}
+                          </div>
+                          <p className="font-display font-bold text-base text-rose-600 dark:text-rose-400 mt-1 truncate">
+                            {topLoss.playerName}
+                          </p>
+                        </div>
+                        <div className="mt-1 space-y-0.5">
+                          <span className="text-xs font-mono font-bold text-[var(--ink)] block">
+                            {topLoss.losses} losses / {topLoss.plays} plays ({topLoss.lossRate}%)
                           </span>
-                        )}
-                      </div>
+                          {topLoss.lastPlayedDate && (
+                            <div className="text-[10px] text-[var(--muted)] flex items-center justify-between gap-1">
+                              <span className="truncate">Recent: {formatRecordTimeAgo(topLoss.lastPlayedDate)}</span>
+                              {topLoss.lastPlayedSessionId && (
+                                <span className="text-[9px] text-rose-600 dark:text-rose-400 font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  View session →
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+
+                    return topLoss.lastPlayedSessionId ? (
+                      <Link
+                        to={`/sessions/${topLoss.lastPlayedSessionId}`}
+                        className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] hover:border-rose-600/60 hover:shadow-lg hover:shadow-rose-600/10 transition-all flex flex-col justify-between group cursor-pointer"
+                        title="View recent session"
+                      >
+                        {cardContent}
+                      </Link>
                     ) : (
-                      <span className="text-[10px] text-[var(--muted)]">No qualified record (≥ 5 plays)</span>
-                    )}
-                  </div>
+                      <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
+                        {cardContent}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Win rates for this game */}
@@ -1749,85 +1900,195 @@ export const StatsPage: React.FC = () => {
                               <GameStatusBadge status={item.game.status} />
                             </td>
                             <td className="py-3 px-3 text-right font-mono font-bold text-sm">
-                              <span className={item.totalPlays > 0 ? 'text-[var(--accent)] font-black' : 'text-[var(--muted)]'}>
-                                {item.totalPlays} plays
-                              </span>
+                              {item.totalPlays > 0 ? (
+                                <Link
+                                  to={`/sessions?gameId=${item.game.id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-[var(--accent)] font-black hover:underline inline-flex items-center gap-0.5 justify-end group/plays"
+                                  title={`View all ${item.totalPlays} sessions of ${item.game.name}`}
+                                >
+                                  <span>{item.totalPlays} plays</span>
+                                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover/plays:opacity-100 transition-opacity" />
+                                </Link>
+                              ) : (
+                                <span className="text-[var(--muted)]">0 plays</span>
+                              )}
                             </td>
-                            <td className="py-3 px-3 text-right font-mono text-xs text-[var(--ink-2)]">
+                            <td className="py-3 px-3 text-right font-mono text-xs">
                               {item.totalDuration > 0 ? formatDuration(item.totalDuration) : '—'}
                             </td>
                             <td className="py-3 px-3 text-right font-mono text-xs">
                               {item.highestScore ? (
-                                <div>
-                                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                                    {item.highestScore.score} pts
-                                  </span>
-                                  <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
-                                    {item.highestScore.playerName}
-                                  </span>
-                                  {item.highestScore.date && (
-                                    <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={formatRecordTimeAgo(item.highestScore.date)}>
-                                      {formatRecordTimeAgo(item.highestScore.date)}
+                                item.highestScore.sessionId ? (
+                                  <Link
+                                    to={`/sessions/${item.highestScore.sessionId}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="group/rec block text-right hover:opacity-90"
+                                    title={`View record session of ${item.highestScore.playerName} (${item.highestScore.score} pts)`}
+                                  >
+                                    <span className="font-bold text-emerald-600 dark:text-emerald-400 group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
+                                      {item.highestScore.score} pts
+                                      <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover/rec:opacity-100 transition-opacity" />
                                     </span>
-                                  )}
-                                </div>
+                                    <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
+                                      {item.highestScore.playerName}
+                                    </span>
+                                    {item.highestScore.date && (
+                                      <span
+                                        className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto group-hover/rec:text-emerald-600 dark:group-hover/rec:text-emerald-400 transition-colors"
+                                        title={formatRecordTimeAgo(item.highestScore.date)}
+                                      >
+                                        {formatRecordTimeAgo(item.highestScore.date)}
+                                      </span>
+                                    )}
+                                  </Link>
+                                ) : (
+                                  <div>
+                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                      {item.highestScore.score} pts
+                                    </span>
+                                    <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
+                                      {item.highestScore.playerName}
+                                    </span>
+                                    {item.highestScore.date && (
+                                      <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={formatRecordTimeAgo(item.highestScore.date)}>
+                                        {formatRecordTimeAgo(item.highestScore.date)}
+                                      </span>
+                                    )}
+                                  </div>
+                                )
                               ) : (
                                 <span className="text-[var(--muted)]">—</span>
                               )}
                             </td>
                             <td className="py-3 px-3 text-right font-mono text-xs">
                               {item.lowestScore ? (
-                                <div>
-                                  <span className="font-bold text-rose-500">
-                                    {item.lowestScore.score} pts
-                                  </span>
-                                  <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
-                                    {item.lowestScore.playerName}
-                                  </span>
-                                  {item.lowestScore.date && (
-                                    <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={formatRecordTimeAgo(item.lowestScore.date)}>
-                                      {formatRecordTimeAgo(item.lowestScore.date)}
+                                item.lowestScore.sessionId ? (
+                                  <Link
+                                    to={`/sessions/${item.lowestScore.sessionId}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="group/rec block text-right hover:opacity-90"
+                                    title={`View session of ${item.lowestScore.playerName} (${item.lowestScore.score} pts)`}
+                                  >
+                                    <span className="font-bold text-rose-500 group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
+                                      {item.lowestScore.score} pts
+                                      <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover/rec:opacity-100 transition-opacity" />
                                     </span>
-                                  )}
-                                </div>
+                                    <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
+                                      {item.lowestScore.playerName}
+                                    </span>
+                                    {item.lowestScore.date && (
+                                      <span
+                                        className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto group-hover/rec:text-rose-500 transition-colors"
+                                        title={formatRecordTimeAgo(item.lowestScore.date)}
+                                      >
+                                        {formatRecordTimeAgo(item.lowestScore.date)}
+                                      </span>
+                                    )}
+                                  </Link>
+                                ) : (
+                                  <div>
+                                    <span className="font-bold text-rose-500">
+                                      {item.lowestScore.score} pts
+                                    </span>
+                                    <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
+                                      {item.lowestScore.playerName}
+                                    </span>
+                                    {item.lowestScore.date && (
+                                      <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={formatRecordTimeAgo(item.lowestScore.date)}>
+                                        {formatRecordTimeAgo(item.lowestScore.date)}
+                                      </span>
+                                    )}
+                                  </div>
+                                )
                               ) : (
                                 <span className="text-[var(--muted)]">—</span>
                               )}
                             </td>
                             <td className="py-3 px-3 text-right font-mono text-xs">
                               {item.topWinner ? (
-                                <div>
-                                  <span className="font-bold text-amber-600 dark:text-amber-400 block truncate max-w-[120px] ml-auto">
-                                    {item.topWinner.playerName}
-                                  </span>
-                                  <span className="text-[10px] text-[var(--muted)] block">
-                                    {item.topWinner.wins} wins ({item.topWinner.winRate}%)
-                                  </span>
-                                  {item.topWinner.lastWonDate && (
-                                    <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={`Won: ${formatRecordTimeAgo(item.topWinner.lastWonDate)}`}>
-                                      {formatRecordTimeAgo(item.topWinner.lastWonDate)}
+                                item.topWinner.lastWonSessionId ? (
+                                  <Link
+                                    to={`/sessions/${item.topWinner.lastWonSessionId}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="group/rec block text-right hover:opacity-90"
+                                    title={`View latest winning session of ${item.topWinner.playerName}`}
+                                  >
+                                    <span className="font-bold text-amber-600 dark:text-amber-400 block truncate max-w-[120px] ml-auto group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
+                                      {item.topWinner.playerName}
+                                      <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover/rec:opacity-100 transition-opacity" />
                                     </span>
-                                  )}
-                                </div>
+                                    <span className="text-[10px] text-[var(--muted)] block">
+                                      {item.topWinner.wins} wins ({item.topWinner.winRate}%)
+                                    </span>
+                                    {item.topWinner.lastWonDate && (
+                                      <span
+                                        className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto group-hover/rec:text-amber-600 dark:group-hover/rec:text-amber-400 transition-colors"
+                                        title={`Won: ${formatRecordTimeAgo(item.topWinner.lastWonDate)}`}
+                                      >
+                                        {formatRecordTimeAgo(item.topWinner.lastWonDate)}
+                                      </span>
+                                    )}
+                                  </Link>
+                                ) : (
+                                  <div>
+                                    <span className="font-bold text-amber-600 dark:text-amber-400 block truncate max-w-[120px] ml-auto">
+                                      {item.topWinner.playerName}
+                                    </span>
+                                    <span className="text-[10px] text-[var(--muted)] block">
+                                      {item.topWinner.wins} wins ({item.topWinner.winRate}%)
+                                    </span>
+                                    {item.topWinner.lastWonDate && (
+                                      <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={`Won: ${formatRecordTimeAgo(item.topWinner.lastWonDate)}`}>
+                                        {formatRecordTimeAgo(item.topWinner.lastWonDate)}
+                                      </span>
+                                    )}
+                                  </div>
+                                )
                               ) : (
                                 <span className="text-[var(--muted)]">—</span>
                               )}
                             </td>
                             <td className="py-3 px-3 text-right font-mono text-xs">
                               {item.topLoser ? (
-                                <div>
-                                  <span className="font-bold text-rose-600 dark:text-rose-400 block truncate max-w-[120px] ml-auto">
-                                    {item.topLoser.playerName}
-                                  </span>
-                                  <span className="text-[10px] text-[var(--muted)] block">
-                                    {item.topLoser.losses} losses ({item.topLoser.lossRate}%)
-                                  </span>
-                                  {item.topLoser.lastPlayedDate && (
-                                    <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={`Recent: ${formatRecordTimeAgo(item.topLoser.lastPlayedDate)}`}>
-                                      {formatRecordTimeAgo(item.topLoser.lastPlayedDate)}
+                                item.topLoser.lastPlayedSessionId ? (
+                                  <Link
+                                    to={`/sessions/${item.topLoser.lastPlayedSessionId}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="group/rec block text-right hover:opacity-90"
+                                    title={`View recent session of ${item.topLoser.playerName}`}
+                                  >
+                                    <span className="font-bold text-rose-600 dark:text-rose-400 block truncate max-w-[120px] ml-auto group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
+                                      {item.topLoser.playerName}
+                                      <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover/rec:opacity-100 transition-opacity" />
                                     </span>
-                                  )}
-                                </div>
+                                    <span className="text-[10px] text-[var(--muted)] block">
+                                      {item.topLoser.losses} losses ({item.topLoser.lossRate}%)
+                                    </span>
+                                    {item.topLoser.lastPlayedDate && (
+                                      <span
+                                        className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto group-hover/rec:text-rose-600 dark:group-hover/rec:text-rose-400 transition-colors"
+                                        title={`Recent: ${formatRecordTimeAgo(item.topLoser.lastPlayedDate)}`}
+                                      >
+                                        {formatRecordTimeAgo(item.topLoser.lastPlayedDate)}
+                                      </span>
+                                    )}
+                                  </Link>
+                                ) : (
+                                  <div>
+                                    <span className="font-bold text-rose-600 dark:text-rose-400 block truncate max-w-[120px] ml-auto">
+                                      {item.topLoser.playerName}
+                                    </span>
+                                    <span className="text-[10px] text-[var(--muted)] block">
+                                      {item.topLoser.losses} losses ({item.topLoser.lossRate}%)
+                                    </span>
+                                    {item.topLoser.lastPlayedDate && (
+                                      <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={`Recent: ${formatRecordTimeAgo(item.topLoser.lastPlayedDate)}`}>
+                                        {formatRecordTimeAgo(item.topLoser.lastPlayedDate)}
+                                      </span>
+                                    )}
+                                  </div>
+                                )
                               ) : (
                                 <span className="text-[var(--muted)]">—</span>
                               )}

@@ -13,6 +13,7 @@ import {
   Trophy,
   Save,
   Coffee,
+  ArrowUpRight,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { GameStatusBadge } from '../components/game/GameStatusBadge';
@@ -340,40 +341,97 @@ export const GameDetailPage: React.FC = () => {
               </h2>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 tabular-nums">
-                <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
-                  <span className="text-xs text-[var(--muted)]">Total Plays</span>
-                  <p className="font-display font-extrabold text-2xl text-[var(--accent)] mt-1">
-                    {stats.totalPlays}
-                  </p>
-                </div>
+                {stats.totalPlays > 0 ? (
+                  <Link
+                    to={`/sessions?gameId=${game.id}`}
+                    className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] hover:border-[var(--accent)] hover:shadow-md transition-all group block cursor-pointer"
+                    title={`View all ${stats.totalPlays} sessions of ${game.name}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-[var(--muted)]">Total Plays</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
+                    </div>
+                    <p className="font-display font-extrabold text-2xl text-[var(--accent)] mt-1">
+                      {stats.totalPlays}
+                    </p>
+                  </Link>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
+                    <span className="text-xs text-[var(--muted)]">Total Plays</span>
+                    <p className="font-display font-extrabold text-2xl text-[var(--accent)] mt-1">
+                      {stats.totalPlays}
+                    </p>
+                  </div>
+                )}
+
                 <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
                   <span className="text-xs text-[var(--muted)]">Avg Duration</span>
                   <p className="font-display font-extrabold text-2xl text-cyan-600 dark:text-cyan-400 mt-1">
                     {formatDuration(stats.averageDuration)}
                   </p>
                 </div>
-                <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
-                  <span className="text-xs text-[var(--muted)]">Highest Score</span>
-                  <p className="font-mono font-extrabold text-xl text-emerald-600 dark:text-emerald-400 mt-1">
-                    {stats.highestScore ? stats.highestScore.score : '—'}
-                  </p>
-                  {stats.highestScore && (
-                    <span className="text-[11px] text-[var(--muted)] truncate block">
+
+                {stats.highestScore?.sessionId ? (
+                  <Link
+                    to={`/sessions/${stats.highestScore.sessionId}`}
+                    className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] hover:border-emerald-500/60 hover:shadow-md transition-all group block cursor-pointer"
+                    title={`View record session of ${stats.highestScore.playerName} (${stats.highestScore.score} pts)`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-[var(--muted)]">Highest Score</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-emerald-500 transition-colors" />
+                    </div>
+                    <p className="font-mono font-extrabold text-xl text-emerald-600 dark:text-emerald-400 mt-1">
+                      {stats.highestScore.score}
+                    </p>
+                    <span className="text-[11px] text-[var(--muted)] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 truncate block transition-colors">
                       {stats.highestScore.playerName}
                     </span>
-                  )}
-                </div>
-                <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
-                  <span className="text-xs text-[var(--muted)]">Lowest Score</span>
-                  <p className="font-mono font-extrabold text-xl text-rose-600 dark:text-rose-400 mt-1">
-                    {stats.lowestScore ? stats.lowestScore.score : '—'}
-                  </p>
-                  {stats.lowestScore && (
-                    <span className="text-[11px] text-[var(--muted)] truncate block">
+                  </Link>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
+                    <span className="text-xs text-[var(--muted)]">Highest Score</span>
+                    <p className="font-mono font-extrabold text-xl text-emerald-600 dark:text-emerald-400 mt-1">
+                      {stats.highestScore ? stats.highestScore.score : '—'}
+                    </p>
+                    {stats.highestScore && (
+                      <span className="text-[11px] text-[var(--muted)] truncate block">
+                        {stats.highestScore.playerName}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {stats.lowestScore?.sessionId ? (
+                  <Link
+                    to={`/sessions/${stats.lowestScore.sessionId}`}
+                    className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] hover:border-rose-500/60 hover:shadow-md transition-all group block cursor-pointer"
+                    title={`View session of ${stats.lowestScore.playerName} (${stats.lowestScore.score} pts)`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-[var(--muted)]">Lowest Score</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-rose-500 transition-colors" />
+                    </div>
+                    <p className="font-mono font-extrabold text-xl text-rose-600 dark:text-rose-400 mt-1">
+                      {stats.lowestScore.score}
+                    </p>
+                    <span className="text-[11px] text-[var(--muted)] group-hover:text-rose-500 truncate block transition-colors">
                       {stats.lowestScore.playerName}
                     </span>
-                  )}
-                </div>
+                  </Link>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
+                    <span className="text-xs text-[var(--muted)]">Lowest Score</span>
+                    <p className="font-mono font-extrabold text-xl text-rose-600 dark:text-rose-400 mt-1">
+                      {stats.lowestScore ? stats.lowestScore.score : '—'}
+                    </p>
+                    {stats.lowestScore && (
+                      <span className="text-[11px] text-[var(--muted)] truncate block">
+                        {stats.lowestScore.playerName}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Win rate per player mini list */}
