@@ -190,6 +190,27 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
           </ol>
         </div>
 
+        {/* App Version & PWA Cache Force Update */}
+        <div className="pt-2 border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
+          <span>PWA Version &amp; Offline Cache (iOS / Web)</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-[var(--ink)] hover:text-cyan-500 font-semibold cursor-pointer"
+            onClick={async () => {
+              if (typeof window !== 'undefined' && (window as any).forceAppUpdate) {
+                await (window as any).forceAppUpdate();
+              } else {
+                window.location.reload();
+              }
+            }}
+            title="Xóa cache service worker và tải bản mới nhất"
+          >
+            <RefreshCw className="w-3.5 h-3.5 mr-1" />
+            Làm mới ứng dụng (Xóa cache)
+          </Button>
+        </div>
+
         <div className="flex items-center justify-between pt-2 border-t border-[var(--line)]">
           <Button variant="ghost" size="sm" onClick={handleTestConnection} disabled={testing}>
             <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${testing ? 'animate-spin' : ''}`} />

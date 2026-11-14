@@ -203,8 +203,28 @@ export const SessionDetailPage: React.FC = () => {
 
   // Change a player's score
   const handleScoreChange = (playerId: string, scoreVal: string) => {
+    if (scoreVal !== '' && scoreVal !== '-' && !/^-?\d*$/.test(scoreVal)) {
+      return;
+    }
     setEditPlayers((prev) =>
       prev.map((p) => (p.playerId === playerId ? { ...p, score: scoreVal } : p))
+    );
+  };
+
+  // Toggle positive/negative sign for a player's score
+  const handleToggleScoreSign = (playerId: string) => {
+    setEditPlayers((prev) =>
+      prev.map((p) => {
+        if (p.playerId !== playerId) return p;
+        const current = p.score.trim();
+        if (current === '' || current === '0') {
+          return { ...p, score: '-' };
+        }
+        if (current.startsWith('-')) {
+          return { ...p, score: current.slice(1) };
+        }
+        return { ...p, score: '-' + current };
+      })
     );
   };
 
@@ -869,14 +889,39 @@ export const SessionDetailPage: React.FC = () => {
                           </span>
                         </button>
 
-                        {/* Score Input */}
-                        <input
-                          type="number"
-                          placeholder="Score"
-                          value={p.score}
-                          onChange={(e) => handleScoreChange(p.playerId, e.target.value)}
-                          className="w-16 sm:w-20 min-h-[34px] sm:min-h-[36px] rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] px-2 py-1 text-right font-mono font-bold text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-                        />
+                        {/* Score Input with Tactile ± Toggle */}
+                        <div className="inline-flex items-center rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus-within:border-[var(--accent-primary)] overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleToggleScoreSign(p.playerId);
+                            }}
+                            title="Chuyển điểm âm / dương (±)"
+                            aria-label={`Toggle negative score for ${p.playerName}`}
+                            className={cn(
+                              'px-2 py-1 text-xs font-mono font-extrabold border-r transition-colors cursor-pointer select-none min-h-[34px] sm:min-h-[36px] flex items-center justify-center',
+                              p.score.startsWith('-')
+                                ? 'bg-rose-500/25 text-rose-400 border-rose-500/30'
+                                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border-[var(--border-subtle)]'
+                            )}
+                          >
+                            ±
+                          </button>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="Score"
+                            value={p.score}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => handleScoreChange(p.playerId, e.target.value)}
+                            className={cn(
+                              'w-16 sm:w-20 min-h-[34px] sm:min-h-[36px] bg-transparent px-2 py-1 text-right font-mono font-bold text-xs focus:outline-none',
+                              p.score.startsWith('-') ? 'text-rose-400' : 'text-[var(--text-primary)]'
+                            )}
+                          />
+                        </div>
 
                         {/* Remove Player Button */}
                         <button

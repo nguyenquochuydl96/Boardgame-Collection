@@ -115,6 +115,29 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
     });
   };
 
+  // Toggle positive/negative sign for a cell (especially helpful on mobile iOS)
+  const handleToggleCellSign = (playerId: string, categoryId: string) => {
+    const rawVal = breakdowns[playerId]?.[categoryId];
+    const userTyping = rawCellValues[playerId]?.[categoryId];
+    const displayVal =
+      userTyping !== undefined
+        ? userTyping
+        : rawVal !== undefined && rawVal !== 0
+        ? String(rawVal)
+        : '';
+
+    let current = displayVal.trim();
+    if (current === '' || current === '0') {
+      handleCellChange(playerId, categoryId, '-');
+      return;
+    }
+    if (current.startsWith('-')) {
+      handleCellChange(playerId, categoryId, current.slice(1));
+    } else {
+      handleCellChange(playerId, categoryId, '-' + current);
+    }
+  };
+
   // Add custom category
   const handleAddCategory = () => {
     if (!newCatName.trim()) return;
@@ -220,28 +243,52 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                         ? String(rawVal)
                         : '';
 
+                    const isCellNegative =
+                      (rawVal !== undefined && rawVal < 0) ||
+                      (userTyping !== undefined && userTyping.startsWith('-'));
+
                     return (
                       <td key={p.id} className="py-2 px-2 text-center">
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="0"
-                          value={displayVal}
-                          onFocus={(e) => {
-                            e.target.select();
-                          }}
-                          onClick={(e) => {
-                            if (e.currentTarget.value === '0') {
-                              e.currentTarget.select();
-                            }
-                          }}
-                          onChange={(e) => handleCellChange(p.id, cat.id, e.target.value)}
-                          onBlur={() => handleCellBlur(p.id, cat.id)}
-                          className={cn(
-                            'w-20 mx-auto px-2 py-1.5 rounded-lg text-center font-mono font-bold text-xs bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)]',
-                            (isPenalty || (rawVal !== undefined && rawVal < 0)) && 'text-rose-400'
-                          )}
-                        />
+                        <div className="inline-flex items-center rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus-within:border-[var(--accent-primary)] focus-within:ring-1 focus-within:ring-[var(--accent-primary)] overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleToggleCellSign(p.id, cat.id);
+                            }}
+                            title="Chuyển điểm âm / dương (±)"
+                            aria-label="Toggle negative score"
+                            className={cn(
+                              'px-1.5 py-1 text-[11px] font-mono font-extrabold border-r transition-colors cursor-pointer select-none',
+                              isCellNegative
+                                ? 'bg-rose-500/25 text-rose-400 border-rose-500/30'
+                                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border-[var(--border-subtle)]'
+                            )}
+                          >
+                            ±
+                          </button>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="0"
+                            value={displayVal}
+                            onFocus={(e) => {
+                              e.target.select();
+                            }}
+                            onClick={(e) => {
+                              if (e.currentTarget.value === '0') {
+                                e.currentTarget.select();
+                              }
+                            }}
+                            onChange={(e) => handleCellChange(p.id, cat.id, e.target.value)}
+                            onBlur={() => handleCellBlur(p.id, cat.id)}
+                            className={cn(
+                              'w-14 sm:w-16 px-1.5 py-1.5 bg-transparent text-center font-mono font-bold text-xs focus:outline-none',
+                              (isPenalty || isCellNegative) ? 'text-rose-400' : 'text-[var(--text-primary)]'
+                            )}
+                          />
+                        </div>
                       </td>
                     );
                   })}

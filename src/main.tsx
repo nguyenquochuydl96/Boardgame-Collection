@@ -19,8 +19,27 @@ try {
   }
 } catch {}
 
+// Force purge all service worker caches and reload newest version (available globally)
+export async function forceAppUpdate(): Promise<void> {
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+  } catch (err) {
+    console.error('Failed to clear app cache:', err);
+  }
+  window.location.reload();
+}
+
 // Invalidate legacy service worker caches and ensure immediate updates
 if (typeof window !== 'undefined') {
+  (window as any).forceAppUpdate = forceAppUpdate;
+
   if ('caches' in window) {
     caches.keys().then((keys) => {
       keys.forEach((key) => {
@@ -32,17 +51,36 @@ if (typeof window !== 'undefined') {
   }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      registrations.forEach((reg) => {
-        reg.update();
+    const checkSWUpdate = () => {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((reg) => {
+          reg.update().catch(() => {});
+        });
       });
+    };
+
+    // Check immediately when page finishes loading
+    window.addEventListener('load', checkSWUpdate);
+
+    // CRITICAL FOR IOS PWA: Check whenever the app returns from background / unlocked
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        checkSWUpdate();
+      }
     });
+
+    // Check when network connection is re-established
+    window.addEventListener('online', checkSWUpdate);
+
+    // Periodic background check every 10 minutes
+    setInterval(checkSWUpdate, 10 * 60 * 1000);
 
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      // Do not disrupt user if they are currently creating a session or have active form
-      const isCreatingSession = window.location.pathname.includes('/new-session') ||
-        Boolean(localStorage.getItem('boardgame_session_draft'));
+      // Do not disrupt user if they are currently on the active new session creation form
+      const isCreatingSession =
+        window.location.pathname.includes('/sessions/new') ||
+        window.location.pathname.includes('/new-session');
       if (!isCreatingSession && !refreshing) {
         refreshing = true;
         window.location.reload();

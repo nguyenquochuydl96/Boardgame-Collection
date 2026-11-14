@@ -11,6 +11,7 @@ import {
   Sun,
   Moon,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
@@ -44,6 +45,20 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showBGGModal, setShowBGGModal] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleForceAppUpdate = async () => {
+    setIsUpdating(true);
+    try {
+      if (typeof window !== 'undefined' && (window as any).forceAppUpdate) {
+        await (window as any).forceAppUpdate();
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      window.location.reload();
+    }
+  };
 
   // Theme mode toggle: Fitlo Light & Fitlo Dark
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
@@ -244,13 +259,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             </Button>
           </Link>
 
-          {/* Cloud Sync & BGG Settings compact 2-column grid */}
-          <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+          {/* Cloud Sync, BGG Settings & Force Update compact 3-column grid */}
+          <div className="grid grid-cols-3 gap-1 pt-0.5">
             <Button
               variant="ghost"
               size="sm"
               className={cn(
-                'justify-center text-xs transition-colors font-semibold px-2',
+                'justify-center text-xs transition-colors font-semibold px-1.5',
                 isSyncEnabled
                   ? syncStatus === 'error'
                     ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
@@ -274,12 +289,24 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <Button
               variant="ghost"
               size="sm"
-              className="justify-center text-xs text-[var(--muted)] hover:text-[var(--ink)] font-semibold px-2"
+              className="justify-center text-xs text-[var(--muted)] hover:text-[var(--ink)] font-semibold px-1.5"
               onClick={() => setShowBGGModal(true)}
               title="BoardGameGeek API Settings"
             >
               <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722] shrink-0" />
               <span className="truncate">BGG</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isUpdating}
+              className="justify-center text-xs text-[var(--muted)] hover:text-cyan-500 font-semibold px-1.5 cursor-pointer"
+              onClick={handleForceAppUpdate}
+              title="Làm mới ứng dụng & Tải bản cập nhật mới nhất (Xóa cache PWA)"
+            >
+              <RefreshCw className={cn("w-3.5 h-3.5 mr-1 shrink-0", isUpdating && "animate-spin text-cyan-500")} />
+              <span className="truncate">{isUpdating ? '...' : 'Update'}</span>
             </Button>
           </div>
 
@@ -366,6 +393,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             {isSyncEnabled && syncStatus === 'syncing' && (
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
             )}
+          </button>
+
+          {/* Mobile Force Refresh / Update PWA button (1-tap cache purge for iOS) */}
+          <button
+            type="button"
+            onClick={handleForceAppUpdate}
+            disabled={isUpdating}
+            className="p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-cyan-500 hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+            title="Làm mới ứng dụng & Tải bản cập nhật mới nhất (Xóa cache PWA)"
+          >
+            <RefreshCw className={cn("w-4 h-4", isUpdating && "animate-spin text-cyan-500")} />
           </button>
 
           <button
