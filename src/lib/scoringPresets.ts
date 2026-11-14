@@ -106,17 +106,61 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
     ],
   },
 
-  // 4. Darwin's Journey (70 plays)
+  // 4. Darwin's Journey (Official Thundergryph Games Scoring Rules)
   {
     gameNameKeyword: 'darwin',
+    aliases: ["darwin's journey", 'darwins journey'],
     displayName: "Darwin's Journey",
     categories: [
-      { id: 'museum', name: 'Museum Specimens', icon: '🏛️', multiplier: 1 },
-      { id: 'correspondence', name: 'Correspondence Track', icon: '✉️', multiplier: 1 },
-      { id: 'beagle', name: 'Beagle Voyage Points', icon: '🚢', multiplier: 1 },
-      { id: 'objectives', name: 'Journals & Objectives', icon: '📔', multiplier: 1 },
-      { id: 'tokens_cash', name: 'Seals & Leftover Cash', icon: '🪙', multiplier: 1 },
-      { id: 'penalties', name: 'Beagle Penalty', icon: '⚠️', multiplier: -1 },
+      {
+        id: 'in_game_vp',
+        name: 'In-Game Points (VP Track)',
+        description: 'Points scored during the 5 rounds on the board (Beagle goals, mail delivery, exploration, museum rewards)',
+        icon: '🧭',
+        multiplier: 1,
+      },
+      {
+        id: 'objectives',
+        name: 'Objectives (Silver & Gold)',
+        description: 'Points from completed Silver & Gold Objective tiles, plus bonus points for completed pairs/columns',
+        icon: '📜',
+        multiplier: 1,
+      },
+      {
+        id: 'wax_seals',
+        name: 'Worker Wax Seals',
+        description: '3 VP for each worker with 5 seals; 10 VP total (3 + 7 bonus) for each worker with all 6 seals',
+        icon: '🪶',
+        multiplier: 1,
+      },
+      {
+        id: 'tents',
+        name: 'Tents (5 VP if all 5 placed)',
+        description: '5 VP awarded if a player has successfully pitched all 5 tents on island campsites',
+        icon: '🏕️',
+        multiplier: 1,
+      },
+      {
+        id: 'evolution_museum',
+        name: 'Theory of Evolution & Museum',
+        description: 'Evolution track book level multiplied by Museum Modifier (2 base + completed museum specimen rows)',
+        icon: '🏛️',
+        multiplier: 1,
+      },
+      {
+        id: 'coins',
+        name: 'Remaining Coins (1 VP / 5 coins)',
+        description: '1 VP for every complete set of 5 remaining coins',
+        icon: '🪙',
+        multiplier: 1,
+      },
+      {
+        id: 'temp_knowledge',
+        name: 'Temporary Knowledge (1 VP each)',
+        description: '1 VP for each leftover Temporary Knowledge token',
+        icon: '💡',
+        multiplier: 1,
+      },
     ],
   },
 

@@ -551,6 +551,52 @@ test('getScoringTemplateForGame resolves official Great Western Trail: Second Ed
   assert.equal(greyTotal, 61);
 });
 
+test("getScoringTemplateForGame resolves official Darwin's Journey template with in-game track first and official endgame categories", async () => {
+  const { getScoringTemplateForGame } = await import('./scoringPresets');
+  
+  const templateFull = getScoringTemplateForGame("Darwin's Journey");
+  const templateKeyword = getScoringTemplateForGame('darwin');
+
+  assert.equal(templateFull.displayName, "Darwin's Journey");
+  assert.equal(templateKeyword.displayName, "Darwin's Journey");
+  assert.equal(templateFull.categories.length, 7);
+
+  // Category 0 MUST be in-game points scored on the VP track
+  assert.equal(templateFull.categories[0].id, 'in_game_vp');
+  assert.equal(templateFull.categories[0].name, 'In-Game Points (VP Track)');
+
+  // Subsequent categories are official endgame scoring categories
+  const categoryIds = templateFull.categories.map((c) => c.id);
+  assert.deepEqual(categoryIds, [
+    'in_game_vp',
+    'objectives',
+    'wax_seals',
+    'tents',
+    'evolution_museum',
+    'coins',
+    'temp_knowledge',
+  ]);
+
+  // All multipliers must be positive (1), no false penalties
+  assert.ok(templateFull.categories.every((c) => (c.multiplier ?? 1) > 0));
+
+  // Simulation test: Mid-game 68, Objectives 18, Seals 13, Tents 5, Evolution 32, Coins 2 (10 coins), Knowledge 3
+  const sampleScores: Record<string, number> = {
+    in_game_vp: 68,
+    objectives: 18,
+    wax_seals: 13,
+    tents: 5,
+    evolution_museum: 32,
+    coins: 2,
+    temp_knowledge: 3,
+  };
+  const total = templateFull.categories.reduce(
+    (acc, cat) => acc + (sampleScores[cat.id] ?? 0) * (cat.multiplier ?? 1),
+    0
+  );
+  assert.equal(total, 141);
+});
+
 test('isDraftMatchingCompletedSession detects when a draft matches a session already saved in history', () => {
   const completedSessions: PlaySession[] = [
     {
