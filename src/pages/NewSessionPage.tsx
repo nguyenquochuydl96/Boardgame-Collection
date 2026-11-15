@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useDeferredValue } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -60,6 +60,70 @@ const WIZARD_STEPS = [
 
 const ONE_OFF_COLORS = ['#f97316', '#22d3ee', '#a855f7', '#10b981', '#ec4899'];
 
+const formatTimer = (secs: number) => {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+};
+
+// Decoupled 1Hz live timer widget: Runs internal interval to eliminate 1600-line NewSessionPage re-renders
+const SessionLiveTimer: React.FC<{
+  sessionStartTime: number;
+  isTimerRunning: boolean;
+  pausedDurationMs: number;
+  pauseStartTime?: number;
+  className?: string;
+}> = React.memo(
+  ({
+    sessionStartTime,
+    isTimerRunning,
+    pausedDurationMs,
+    pauseStartTime,
+    className,
+  }) => {
+    const [secs, setSecs] = useState(() => {
+      if (!isTimerRunning && pauseStartTime) {
+        return Math.max(
+          0,
+          Math.floor((pauseStartTime - sessionStartTime - pausedDurationMs) / 1000)
+        );
+      }
+      return Math.max(
+        0,
+        Math.floor((Date.now() - sessionStartTime - pausedDurationMs) / 1000)
+      );
+    });
+
+    useEffect(() => {
+      const update = () => {
+        if (isTimerRunning) {
+          setSecs(
+            Math.max(
+              0,
+              Math.floor((Date.now() - sessionStartTime - pausedDurationMs) / 1000)
+            )
+          );
+        } else if (pauseStartTime) {
+          setSecs(
+            Math.max(
+              0,
+              Math.floor(
+                (pauseStartTime - sessionStartTime - pausedDurationMs) / 1000
+              )
+            )
+          );
+        }
+      };
+      update();
+      if (!isTimerRunning) return;
+      const interval = window.setInterval(update, 1000);
+      return () => window.clearInterval(interval);
+    }, [isTimerRunning, sessionStartTime, pausedDurationMs, pauseStartTime]);
+
+    return <span className={className}>{formatTimer(secs)}</span>;
+  }
+);
+
 export const NewSessionPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -84,10 +148,11 @@ export const NewSessionPage: React.FC = () => {
     initialStepParam >= 1 && initialStepParam <= 6 ? initialStepParam : 1
   );
 
-  // Step 1: Pick Game
+  // Step 1: Pick Game - Do NOT auto-default to 7 Wonders!
   const [gameSearch, setGameSearch] = useState('');
+  const deferredGameSearch = useDeferredValue(gameSearch);
   const [selectedGameId, setSelectedGameId] = useState<string>(
-    preselectedGameId || games[0]?.id || ''
+    preselectedGameId || ''
   );
 
   // Step 2: Setup
@@ -111,7 +176,6 @@ export const NewSessionPage: React.FC = () => {
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(true);
   const [pausedDurationMs, setPausedDurationMs] = useState<number>(0);
   const [pauseStartTime, setPauseStartTime] = useState<number | undefined>(undefined);
-  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [existingDraft, setExistingDraft] = useState<SessionDraft | null>(null);
 
   // Step 3: Players
@@ -159,8 +223,15 @@ export const NewSessionPage: React.FC = () => {
       const raw = localStorage.getItem('boardgame_session_draft');
       if (raw) {
         const parsed = JSON.parse(raw) as SessionDraft;
-        // If this draft is invalid or already saved to session history, purge it
-        if (!parsed.gameId || isDraftMatchingCompletedSession(parsed, sessions)) {
+        // Purge if invalid, already completed, OR ghost draft (Step 1 with no players, notes, or photos)
+        const isGhostDraft =
+          !parsed.gameId ||
+          (parsed.currentStep === 1 &&
+            (!parsed.selectedPlayerIds || parsed.selectedPlayerIds.length === 0) &&
+            (!parsed.notes || parsed.notes.trim() === '') &&
+            (!parsed.photos || parsed.photos.length === 0));
+
+        if (isGhostDraft || isDraftMatchingCompletedSession(parsed, sessions)) {
           localStorage.removeItem('boardgame_session_draft');
           setExistingDraft(null);
           return;
@@ -222,26 +293,15 @@ export const NewSessionPage: React.FC = () => {
     setExistingDraft(null);
   };
 
-  // Live timer effect based on real wall-clock timestamps (sleep & background proof)
+  // Sync duration on step changes or when leaving Step 1
   useEffect(() => {
-    const updateTime = () => {
-      if (isTimerRunning) {
-        const now = Date.now();
-        const activeMs = now - sessionStartTime - pausedDurationMs;
-        const totalSecs = Math.max(0, Math.floor(activeMs / 1000));
-        setElapsedSeconds(totalSecs);
-        setDurationMinutes(String(Math.max(1, Math.round(totalSecs / 60))));
-      } else if (pauseStartTime) {
-        const activeMs = pauseStartTime - sessionStartTime - pausedDurationMs;
-        const totalSecs = Math.max(0, Math.floor(activeMs / 1000));
-        setElapsedSeconds(totalSecs);
-      }
-    };
-
-    updateTime();
-    const interval = window.setInterval(updateTime, 1000);
-    return () => window.clearInterval(interval);
-  }, [isTimerRunning, sessionStartTime, pausedDurationMs, pauseStartTime]);
+    if (currentStep >= 2) {
+      const activeMs = (pauseStartTime || Date.now()) - sessionStartTime - pausedDurationMs;
+      const totalSecs = Math.max(0, Math.floor(activeMs / 1000));
+      const mins = Math.max(1, Math.round(totalSecs / 60));
+      setDurationMinutes(String(mins));
+    }
+  }, [currentStep, pauseStartTime, sessionStartTime, pausedDurationMs]);
 
   const handleToggleTimer = () => {
     if (isTimerRunning) {
@@ -256,17 +316,32 @@ export const NewSessionPage: React.FC = () => {
     }
   };
 
-  // Auto-save draft effect to LocalStorage
+  // Auto-save draft effect to LocalStorage (Decoupled from 1Hz timer re-renders)
   useEffect(() => {
     if (isSaving || isSubmittedRef.current) return;
     if (!selectedGameId || existingDraft) return;
+
+    // Meaningful progress gate: only save if user progressed past Step 1 or added players/notes/photos
+    const hasMeaningfulProgress =
+      currentStep > 1 ||
+      selectedPlayerIds.length > 0 ||
+      (notes && notes.trim().length > 0) ||
+      photos.length > 0;
+
+    if (!hasMeaningfulProgress) return;
+
+    const currentElapsedSecs = isTimerRunning
+      ? Math.max(0, Math.floor((Date.now() - sessionStartTime - pausedDurationMs) / 1000))
+      : pauseStartTime
+      ? Math.max(0, Math.floor((pauseStartTime - sessionStartTime - pausedDurationMs) / 1000))
+      : 0;
 
     const draft: SessionDraft = {
       gameId: selectedGameId,
       datePlayed,
       location,
       durationMinutes,
-      elapsedSeconds,
+      elapsedSeconds: currentElapsedSecs,
       sessionStartTime,
       isTimerRunning,
       pausedDurationMs,
@@ -316,20 +391,20 @@ export const NewSessionPage: React.FC = () => {
   ]);
 
   const selectedGame = useMemo(
-    () => games.find((g) => g.id === selectedGameId) || games[0],
+    () => (selectedGameId ? games.find((g) => g.id === selectedGameId) : undefined),
     [games, selectedGameId]
   );
 
   const scoringTemplate = useMemo(
-    () => getScoringTemplateForGame(selectedGame?.name),
+    () => (selectedGame?.name ? getScoringTemplateForGame(selectedGame.name) : undefined),
     [selectedGame?.name]
   );
 
   const filteredGames = useMemo(() => {
-    if (!gameSearch.trim()) return games;
-    const q = gameSearch.toLowerCase();
+    if (!deferredGameSearch.trim()) return games;
+    const q = deferredGameSearch.toLowerCase();
     return games.filter((g) => g.name.toLowerCase().includes(q));
-  }, [games, gameSearch]);
+  }, [games, deferredGameSearch]);
 
   const allAvailablePlayers = useMemo(
     () => [...savedPlayers, ...oneOffPlayers],
@@ -703,9 +778,13 @@ export const NewSessionPage: React.FC = () => {
                 )}
               />
               <Clock className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
-              <span className="font-mono font-extrabold text-sm text-[var(--text-primary)] tabular-nums">
-                {formatTimer(elapsedSeconds)}
-              </span>
+              <SessionLiveTimer
+                sessionStartTime={sessionStartTime}
+                isTimerRunning={isTimerRunning}
+                pausedDurationMs={pausedDurationMs}
+                pauseStartTime={pauseStartTime}
+                className="font-mono font-extrabold text-sm text-[var(--text-primary)] tabular-nums"
+              />
             </div>
 
             {/* Pause / Resume Button */}
@@ -752,12 +831,15 @@ export const NewSessionPage: React.FC = () => {
                     </p>
                   </div>
 
-                  {selectedGame && (
+                  {selectedGame ? (
                     <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-glow)]">
                       <img
+                        key={selectedGame.id}
                         src={selectedGame.thumbnail || selectedGame.image}
                         alt={selectedGame.name}
                         referrerPolicy="no-referrer"
+                        loading="eager"
+                        decoding="async"
                         className="w-12 h-16 rounded-lg object-cover"
                       />
                       <div>
@@ -768,6 +850,10 @@ export const NewSessionPage: React.FC = () => {
                           {selectedGame.name}
                         </p>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-[var(--bg-elevated)] border border-dashed border-[var(--border-subtle)] text-xs text-[var(--text-tertiary)]">
+                      <span>💡 Tap a game below to choose</span>
                     </div>
                   )}
                 </div>
@@ -796,9 +882,11 @@ export const NewSessionPage: React.FC = () => {
                       >
                         <div className="aspect-[4/3] w-full overflow-hidden bg-[var(--card-2)] relative">
                           <img
-                            src={game.image || game.thumbnail}
+                            src={game.thumbnail || game.image}
                             alt={game.name}
                             referrerPolicy="no-referrer"
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                           {active && (
@@ -893,7 +981,12 @@ export const NewSessionPage: React.FC = () => {
                       <Clock className="w-4 h-4 text-[var(--accent-neon)]" />
                     </div>
                     <p className="font-mono font-extrabold text-3xl text-[var(--accent-neon)] tabular-nums">
-                      {formatTimer(elapsedSeconds)}
+                      <SessionLiveTimer
+                        sessionStartTime={sessionStartTime}
+                        isTimerRunning={isTimerRunning}
+                        pausedDurationMs={pausedDurationMs}
+                        pauseStartTime={pauseStartTime}
+                      />
                     </p>
                     <div className="flex items-center gap-2">
                       <Button
@@ -920,7 +1013,6 @@ export const NewSessionPage: React.FC = () => {
                           setSessionStartTime(Date.now());
                           setPausedDurationMs(0);
                           setPauseStartTime(undefined);
-                          setElapsedSeconds(0);
                           setDurationMinutes('1');
                         }}
                         className="text-xs text-[var(--text-secondary)]"
