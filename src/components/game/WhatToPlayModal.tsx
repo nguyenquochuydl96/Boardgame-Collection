@@ -65,7 +65,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
   // Sync selectedGameIds with filtered list
   useEffect(() => {
     setSelectedGameIds(filteredAvailableGames.map((g) => g.id));
-  }, [statusFilters, playerCountFilter, durationFilter]);
+  }, [statusFilters, playerCountFilter, durationFilter, gameSearch]);
 
   const gameItems = useMemo<PickerItem[]>(() => {
     return filteredAvailableGames
@@ -116,7 +116,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
                 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
                 animStyle === 'wheel'
                   ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300'
-                  : 'text-[var(--text-secondary)] hover:text-white'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
               )}
             >
               <span>🎡 Lucky Wheel</span>
@@ -131,7 +131,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
                 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
                 animStyle === 'card_shuffle'
                   ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300'
-                  : 'text-[var(--text-secondary)] hover:text-white'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
               )}
             >
               <span>🎴 Mystery Card Shuffle</span>
@@ -163,7 +163,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
                     'px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer',
                     playerCountFilter === cnt
                       ? 'bg-amber-500/20 border-amber-400 text-amber-300'
-                      : 'border-white/10 text-[var(--text-secondary)] hover:text-white'
+                      : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--ink)]'
                   )}
                 >
                   {cnt === 'all' ? 'All' : `${cnt}p`}
@@ -172,7 +172,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] pt-1 border-t border-white/[0.06]">
+          <div className="flex items-center justify-between text-xs text-[var(--text-secondary)] pt-1 border-t border-[var(--border-subtle)]">
             <span>Selected <strong>{gameItems.length}</strong> of {filteredAvailableGames.length} games</span>
             <div className="flex items-center gap-2">
               <button
@@ -192,6 +192,57 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Game Checklist Selection */}
+          {filteredAvailableGames.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 pt-2 border-t border-[var(--border-subtle)]">
+              {filteredAvailableGames.map((g) => {
+                const isSelected = selectedGameIds.includes(g.id);
+                return (
+                  <div
+                    key={g.id}
+                    onClick={() => toggleGame(g.id)}
+                    className={cn(
+                      'flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer select-none',
+                      isSelected
+                        ? 'bg-amber-500/10 border-amber-500/30 text-[var(--text-primary)]'
+                        : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] opacity-40 hover:opacity-75'
+                    )}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      {g.thumbnail ? (
+                        <img
+                          src={g.thumbnail}
+                          alt={g.name}
+                          className="w-7 h-7 rounded-lg object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-xs flex items-center justify-center shrink-0">
+                          🎲
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold truncate text-[var(--text-primary)]">{g.name}</p>
+                        <p className="text-[10px] text-[var(--text-muted)] truncate">
+                          {g.minPlayers}-{g.maxPlayers}p · {g.playingTime}m
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className={cn(
+                        'w-5 h-5 rounded-md flex items-center justify-center text-xs shrink-0 transition-colors',
+                        isSelected
+                          ? 'bg-amber-500 text-slate-950 font-bold'
+                          : 'border border-[var(--border-subtle)] text-transparent'
+                      )}
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Animation Stage */}
@@ -248,7 +299,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
                     <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300">
                       🎯 Tonight's Featured Tabletop Game!
                     </span>
-                    <h4 className="font-display font-extrabold text-base sm:text-lg text-white truncate">
+                    <h4 className="font-display font-extrabold text-base sm:text-lg text-[var(--ink)] truncate">
                       {chosenGame.name}
                     </h4>
                     {chosenGame.subtitle && (

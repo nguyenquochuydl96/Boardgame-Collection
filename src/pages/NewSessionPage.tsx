@@ -1,33 +1,16 @@
-import React, { useEffect, useMemo, useState, useRef, useDeferredValue } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   ArrowLeft,
   ArrowRight,
-  Search,
   Check,
   Clock,
   Play,
   Pause,
-  UserPlus,
-  Camera,
-  Sparkles,
-  Crown,
-  Trash2,
-  RotateCcw,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
-import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { PlayerChip } from '../components/player/PlayerChip';
-import { PlayerScoreRow } from '../components/session/PlayerScoreRow';
-import { ScoringSheetMatrix } from '../components/session/ScoringSheetMatrix';
-import { LocationSelector } from '../components/session/LocationSelector';
-import { getScoringTemplateForGame } from '../lib/scoringPresets';
-import { LuckyWheel } from '../components/picker/LuckyWheel';
-import { MysteryCardShuffle, PickerItem } from '../components/picker/MysteryCardShuffle';
-import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { usePlayerStore } from '../store/usePlayerStore';
@@ -40,14 +23,24 @@ import {
   SessionDraft,
 } from '../types';
 import {
-  FIRST_PLAYER_METHOD_LABELS,
-  formatDate,
-  formatDuration,
   generateId,
   isDraftMatchingCompletedSession,
   compressImage,
+  getLocalDateString,
+  buildLocalDateTimeISO,
 } from '../lib/utils';
+import { getScoringTemplateForGame } from '../lib/scoringPresets';
 import { pushVaultToCloud } from '../lib/supabaseSync';
+import { saveMediaImage } from '../lib/mediaStorage';
+import { PickerItem } from '../components/picker/MysteryCardShuffle';
+
+import { SessionLiveTimer, formatTimer } from '../components/session/wizard/SessionLiveTimer';
+import { Step1PickGame } from '../components/session/wizard/Step1PickGame';
+import { Step2Setup } from '../components/session/wizard/Step2Setup';
+import { Step3Players } from '../components/session/wizard/Step3Players';
+import { Step4FirstPlayer } from '../components/session/wizard/Step4FirstPlayer';
+import { Step5Scoring } from '../components/session/wizard/Step5Scoring';
+import { Step6Memories } from '../components/session/wizard/Step6Memories';
 
 const WIZARD_STEPS = [
   { step: 1, title: 'Game' },
@@ -59,70 +52,6 @@ const WIZARD_STEPS = [
 ];
 
 const ONE_OFF_COLORS = ['#f97316', '#22d3ee', '#a855f7', '#10b981', '#ec4899'];
-
-const formatTimer = (secs: number) => {
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-};
-
-// Decoupled 1Hz live timer widget: Runs internal interval to eliminate 1600-line NewSessionPage re-renders
-const SessionLiveTimer: React.FC<{
-  sessionStartTime: number;
-  isTimerRunning: boolean;
-  pausedDurationMs: number;
-  pauseStartTime?: number;
-  className?: string;
-}> = React.memo(
-  ({
-    sessionStartTime,
-    isTimerRunning,
-    pausedDurationMs,
-    pauseStartTime,
-    className,
-  }) => {
-    const [secs, setSecs] = useState(() => {
-      if (!isTimerRunning && pauseStartTime) {
-        return Math.max(
-          0,
-          Math.floor((pauseStartTime - sessionStartTime - pausedDurationMs) / 1000)
-        );
-      }
-      return Math.max(
-        0,
-        Math.floor((Date.now() - sessionStartTime - pausedDurationMs) / 1000)
-      );
-    });
-
-    useEffect(() => {
-      const update = () => {
-        if (isTimerRunning) {
-          setSecs(
-            Math.max(
-              0,
-              Math.floor((Date.now() - sessionStartTime - pausedDurationMs) / 1000)
-            )
-          );
-        } else if (pauseStartTime) {
-          setSecs(
-            Math.max(
-              0,
-              Math.floor(
-                (pauseStartTime - sessionStartTime - pausedDurationMs) / 1000
-              )
-            )
-          );
-        }
-      };
-      update();
-      if (!isTimerRunning) return;
-      const interval = window.setInterval(update, 1000);
-      return () => window.clearInterval(interval);
-    }, [isTimerRunning, sessionStartTime, pausedDurationMs, pauseStartTime]);
-
-    return <span className={className}>{formatTimer(secs)}</span>;
-  }
-);
 
 export const NewSessionPage: React.FC = () => {
   const navigate = useNavigate();
@@ -148,17 +77,11 @@ export const NewSessionPage: React.FC = () => {
     initialStepParam >= 1 && initialStepParam <= 6 ? initialStepParam : 1
   );
 
-  // Step 1: Pick Game - Do NOT auto-default to 7 Wonders!
-  const [gameSearch, setGameSearch] = useState('');
-  const deferredGameSearch = useDeferredValue(gameSearch);
-  const [selectedGameId, setSelectedGameId] = useState<string>(
-    preselectedGameId || ''
-  );
+  // Step 1: Pick Game
+  const [selectedGameId, setSelectedGameId] = useState<string>(preselectedGameId || '');
 
   // Step 2: Setup
-  const [datePlayed, setDatePlayed] = useState<string>(
-    new Date().toISOString().slice(0, 10)
-  );
+  const [datePlayed, setDatePlayed] = useState<string>(getLocalDateString());
   const [location, setLocation] = useState<string>(() => {
     if (preselectedLocation) return decodeURIComponent(preselectedLocation);
     return defaultLocation;
@@ -169,6 +92,7 @@ export const NewSessionPage: React.FC = () => {
       setLocation(defaultLocation);
     }
   }, [defaultLocation, location]);
+
   const [durationMinutes, setDurationMinutes] = useState<string>('60');
 
   // Auto-Timer & Session Draft state
@@ -177,6 +101,7 @@ export const NewSessionPage: React.FC = () => {
   const [pausedDurationMs, setPausedDurationMs] = useState<number>(0);
   const [pauseStartTime, setPauseStartTime] = useState<number | undefined>(undefined);
   const [existingDraft, setExistingDraft] = useState<SessionDraft | null>(null);
+  const [quotaError, setQuotaError] = useState<string | null>(null);
 
   // Step 3: Players
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>(() => {
@@ -193,22 +118,16 @@ export const NewSessionPage: React.FC = () => {
   const [firstPlayerId, setFirstPlayerId] = useState<string | undefined>(
     isRematchMode ? undefined : (preselectedFirstPlayerId || savedPlayers[0]?.id)
   );
-  const [firstPlayerMethod, setFirstPlayerMethod] =
-    useState<FirstPlayerMethod>('random_wheel');
-  const [firstPlayerAnimStyle, setFirstPlayerAnimStyle] = useState<
-    'wheel' | 'card_shuffle' | 'manual'
-  >('wheel');
+  const [firstPlayerMethod, setFirstPlayerMethod] = useState<FirstPlayerMethod>('random_wheel');
+  const [firstPlayerAnimStyle, setFirstPlayerAnimStyle] = useState<'wheel' | 'card_shuffle' | 'manual'>('wheel');
 
   // Step 5: Scores
   const [lowScoreWins, setLowScoreWins] = useState(false);
   const [scoringMode, setScoringMode] = useState<'detailed' | 'quick'>('detailed');
-  const [breakdownsByPlayerId, setBreakdownsByPlayerId] = useState<
-    Record<string, Record<string, number>>
-  >({});
-  const [scoresByPlayerId, setScoresByPlayerId] = useState<
-    Record<string, number | undefined>
-  >({});
+  const [breakdownsByPlayerId, setBreakdownsByPlayerId] = useState<Record<string, Record<string, number>>>({});
+  const [scoresByPlayerId, setScoresByPlayerId] = useState<Record<string, number | undefined>>({});
   const [manualWinnerIds, setManualWinnerIds] = useState<string[]>([]);
+  const [hasTouchedMatrix, setHasTouchedMatrix] = useState(false);
 
   // Step 6: Memories
   const [photos, setPhotos] = useState<string[]>([]);
@@ -223,7 +142,6 @@ export const NewSessionPage: React.FC = () => {
       const raw = localStorage.getItem('boardgame_session_draft');
       if (raw) {
         const parsed = JSON.parse(raw) as SessionDraft;
-        // Purge if invalid, already completed, OR ghost draft (Step 1 with no players, notes, or photos)
         const isGhostDraft =
           !parsed.gameId ||
           (parsed.currentStep === 1 &&
@@ -236,7 +154,6 @@ export const NewSessionPage: React.FC = () => {
           setExistingDraft(null);
           return;
         }
-        // Offer restoring if draft is less than 36 hours old
         if (parsed && (!parsed.sessionStartTime || Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000)) {
           setExistingDraft(parsed);
         }
@@ -316,12 +233,18 @@ export const NewSessionPage: React.FC = () => {
     }
   };
 
-  // Auto-save draft effect to LocalStorage (Decoupled from 1Hz timer re-renders)
+  const handleResetTimer = () => {
+    setSessionStartTime(Date.now());
+    setPausedDurationMs(0);
+    setPauseStartTime(undefined);
+    setDurationMinutes('1');
+  };
+
+  // Auto-save draft effect to LocalStorage
   useEffect(() => {
     if (isSaving || isSubmittedRef.current) return;
     if (!selectedGameId || existingDraft) return;
 
-    // Meaningful progress gate: only save if user progressed past Step 1 or added players/notes/photos
     const hasMeaningfulProgress =
       currentStep > 1 ||
       selectedPlayerIds.length > 0 ||
@@ -361,9 +284,24 @@ export const NewSessionPage: React.FC = () => {
       currentStep,
       lastUpdated: new Date().toISOString(),
     };
-    try {
-      localStorage.setItem('boardgame_session_draft', JSON.stringify(draft));
-    } catch {}
+
+    const timer = window.setTimeout(() => {
+      try {
+        localStorage.setItem('boardgame_session_draft', JSON.stringify(draft));
+        setQuotaError(null);
+      } catch (err: unknown) {
+        if (
+          err instanceof DOMException &&
+          (err.name === 'QuotaExceededError' || err.code === 22 || err.code === 1014)
+        ) {
+          setQuotaError('Storage quota exceeded: Draft cannot be saved locally. Complete or discard the session to free space.');
+        }
+      }
+    }, 600);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [
     selectedGameId,
     datePlayed,
@@ -396,15 +334,9 @@ export const NewSessionPage: React.FC = () => {
   );
 
   const scoringTemplate = useMemo(
-    () => (selectedGame?.name ? getScoringTemplateForGame(selectedGame.name) : undefined),
+    () => getScoringTemplateForGame(selectedGame?.name),
     [selectedGame?.name]
   );
-
-  const filteredGames = useMemo(() => {
-    if (!deferredGameSearch.trim()) return games;
-    const q = deferredGameSearch.toLowerCase();
-    return games.filter((g) => g.name.toLowerCase().includes(q));
-  }, [games, deferredGameSearch]);
 
   const allAvailablePlayers = useMemo(
     () => [...savedPlayers, ...oneOffPlayers],
@@ -477,17 +409,20 @@ export const NewSessionPage: React.FC = () => {
 
   // Compute ranked PlayerScore list
   const computedPlayerScores: PlayerScore[] = useMemo(() => {
-    const hasAnyNumericScore = activeSessionPlayers.some(
-      (p) => typeof scoresByPlayerId[p.id] === 'number'
-    );
+    const hasAnyNumericScore =
+      hasTouchedMatrix ||
+      activeSessionPlayers.some((p) => typeof scoresByPlayerId[p.id] === 'number');
 
     if (hasAnyNumericScore && manualWinnerIds.length === 0) {
       const validScores = activeSessionPlayers
         .map((p) => scoresByPlayerId[p.id])
         .filter((v): v is number => typeof v === 'number');
-      const targetBest = lowScoreWins
-        ? Math.min(...validScores)
-        : Math.max(...validScores);
+      const targetBest =
+        validScores.length > 0
+          ? lowScoreWins
+            ? Math.min(...validScores)
+            : Math.max(...validScores)
+          : undefined;
 
       const sortedForRank = [...activeSessionPlayers].sort((a, b) => {
         const sa = scoresByPlayerId[a.id];
@@ -498,17 +433,32 @@ export const NewSessionPage: React.FC = () => {
         return lowScoreWins ? sa - sb : sb - sa;
       });
 
+      // Standard Competition Ranking (1, 1, 3 for ties)
+      const ranksByPlayerId: Record<string, number> = {};
+      let currentRank = 1;
+      for (let i = 0; i < sortedForRank.length; i++) {
+        const p = sortedForRank[i];
+        const sc = scoresByPlayerId[p.id];
+        if (sc === undefined) continue;
+        if (i > 0) {
+          const prevScore = scoresByPlayerId[sortedForRank[i - 1].id];
+          if (sc !== prevScore) {
+            currentRank = i + 1;
+          }
+        }
+        ranksByPlayerId[p.id] = currentRank;
+      }
+
       return activeSessionPlayers.map((p) => {
         const sc = scoresByPlayerId[p.id];
-        const rankIdx = sortedForRank.findIndex((x) => x.id === p.id);
         const bd = breakdownsByPlayerId[p.id];
         const hasBd = bd && Object.values(bd).some((v) => v !== 0);
         return {
           playerId: p.id,
           playerName: p.name,
           score: sc,
-          rank: rankIdx >= 0 ? rankIdx + 1 : undefined,
-          isWinner: sc !== undefined && sc === targetBest,
+          rank: ranksByPlayerId[p.id],
+          isWinner: sc !== undefined && targetBest !== undefined && sc === targetBest,
           scoreBreakdown: hasBd ? bd : undefined,
         };
       });
@@ -526,7 +476,14 @@ export const NewSessionPage: React.FC = () => {
         scoreBreakdown: hasBd ? bd : undefined,
       };
     });
-  }, [activeSessionPlayers, scoresByPlayerId, lowScoreWins, manualWinnerIds, breakdownsByPlayerId]);
+  }, [
+    activeSessionPlayers,
+    scoresByPlayerId,
+    lowScoreWins,
+    manualWinnerIds,
+    breakdownsByPlayerId,
+    hasTouchedMatrix,
+  ]);
 
   const handleTogglePlayer = (playerId: string) => {
     setSelectedPlayerIds((prev) =>
@@ -570,7 +527,7 @@ export const NewSessionPage: React.FC = () => {
   };
 
   const handleScoreChange = (playerId: string, score: number | undefined) => {
-    setManualWinnerIds([]); // Re-enable auto-detection when typing scores
+    setManualWinnerIds([]);
     setScoresByPlayerId((prev) => ({
       ...prev,
       [playerId]: score,
@@ -581,7 +538,7 @@ export const NewSessionPage: React.FC = () => {
     setManualWinnerIds((prev) =>
       prev.includes(playerId)
         ? prev.filter((id) => id !== playerId)
-        : [playerId]
+        : [...prev, playerId]
     );
   };
 
@@ -594,7 +551,8 @@ export const NewSessionPage: React.FC = () => {
       try {
         const compressed = await compressImage(file, 1024, 1024, 0.7);
         if (compressed) {
-          setPhotos((prev) => [...prev, compressed]);
+          const idbRef = await saveMediaImage(compressed);
+          setPhotos((prev) => [...prev, idbRef]);
         }
       } catch (err) {
         console.error('Failed to compress image:', err);
@@ -612,7 +570,6 @@ export const NewSessionPage: React.FC = () => {
       localStorage.removeItem('boardgame_session_draft');
     } catch {}
 
-    // Ensure all one-off/guest players are registered in usePlayerStore so PlayerDetailPage and leaderboards resolve them
     oneOffPlayers.forEach((g) => {
       registerGuestPlayer(g);
     });
@@ -620,13 +577,8 @@ export const NewSessionPage: React.FC = () => {
     const winnerEntry =
       computedPlayerScores.find((p) => p.isWinner) || computedPlayerScores[0];
 
-    // High-Precision Timestamp: preserve user-selected calendar date while appending wall-clock hours, minutes, seconds, milliseconds
-    // Uses formatted wall-clock time string concatenation so the calendar date never shifts backwards across timezones (e.g. UTC+7)
-    const now = new Date();
-    const pad = (n: number, w = 2) => String(n).padStart(w, '0');
-    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}.${pad(now.getMilliseconds(), 3)}Z`;
-    const cleanDate = (datePlayed || '').split('T')[0] || new Date().toISOString().slice(0, 10);
-    const computedIsoDate = `${cleanDate}T${timeStr}`;
+    const cleanDate = (datePlayed || '').split('T')[0] || getLocalDateString();
+    const computedIsoDate = buildLocalDateTimeISO(cleanDate, new Date());
 
     const created = addSession({
       status: 'completed',
@@ -644,7 +596,6 @@ export const NewSessionPage: React.FC = () => {
       notes: notes.trim() || undefined,
     });
 
-    // Trigger immediate cloud push to eliminate the 2.5s sync race window
     try {
       pushVaultToCloud();
     } catch (err) {
@@ -656,12 +607,6 @@ export const NewSessionPage: React.FC = () => {
     } catch {}
 
     navigate(`/sessions/${created.id}`, { replace: true });
-  };
-
-  const formatTimer = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   return (
@@ -685,13 +630,22 @@ export const NewSessionPage: React.FC = () => {
           {WIZARD_STEPS.map((s) => {
             const isActive = currentStep === s.step;
             const isDone = currentStep > s.step;
+            const isLocked =
+              (s.step >= 2 && !selectedGame) ||
+              (s.step >= 4 && activeSessionPlayers.length === 0);
             return (
               <button
                 key={s.step}
                 type="button"
-                onClick={() => setCurrentStep(s.step)}
+                disabled={isLocked}
+                onClick={() => {
+                  if (!isLocked) setCurrentStep(s.step);
+                }}
                 className={cn(
-                  'min-w-[85px] sm:min-w-0 flex-1 p-2 sm:p-2.5 rounded-xl border text-left transition-all cursor-pointer shrink-0 select-none',
+                  'min-w-[85px] sm:min-w-0 flex-1 p-2 sm:p-2.5 rounded-xl border text-left transition-all shrink-0 select-none',
+                  isLocked
+                    ? 'opacity-40 cursor-not-allowed bg-[var(--bg-card)]/50 border-[var(--border-subtle)] text-[var(--text-secondary)]'
+                    : 'cursor-pointer',
                   isActive
                     ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[var(--text-primary)] shadow-sm'
                     : isDone
@@ -743,6 +697,20 @@ export const NewSessionPage: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Quota Exceeded Warning Banner */}
+        {quotaError && (
+          <div className="p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center justify-between gap-3 shadow-md">
+            <span>⚠️ {quotaError}</span>
+            <button
+              type="button"
+              onClick={() => setQuotaError(null)}
+              className="text-rose-400 hover:text-rose-200 text-sm font-bold px-1.5 py-0.5 rounded"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Persistent Session Companion Bar (Always Active) */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-sm">
@@ -820,821 +788,111 @@ export const NewSessionPage: React.FC = () => {
           >
             {/* STEP 1: PICK GAME */}
             {currentStep === 1 && (
-              <Card className="p-4 sm:p-6 md:p-8 space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
-                      Step 1 — Choose Boardgame
-                    </h1>
-                    <p className="text-sm text-[var(--text-secondary)]">
-                      Select the tabletop game to bring to the table
-                    </p>
-                  </div>
-
-                  {selectedGame ? (
-                    <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-glow)]">
-                      <img
-                        key={selectedGame.id}
-                        src={selectedGame.thumbnail || selectedGame.image}
-                        alt={selectedGame.name}
-                        referrerPolicy="no-referrer"
-                        loading="eager"
-                        decoding="async"
-                        className="w-12 h-16 rounded-lg object-cover"
-                      />
-                      <div>
-                        <span className="text-[11px] text-[var(--accent-neon)] font-semibold">
-                          Selected Game
-                        </span>
-                        <p className="font-display font-bold text-sm text-[var(--text-primary)]">
-                          {selectedGame.name}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-[var(--bg-elevated)] border border-dashed border-[var(--border-subtle)] text-xs text-[var(--text-tertiary)]">
-                      <span>💡 Tap a game below to choose</span>
-                    </div>
-                  )}
-                </div>
-
-                <Input
-                  placeholder="Filter your collection..."
-                  value={gameSearch}
-                  onChange={(e) => setGameSearch(e.target.value)}
-                  leftIcon={<Search className="w-4 h-4" />}
-                />
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-h-96 overflow-y-auto pr-1">
-                  {filteredGames.map((game) => {
-                    const active = selectedGame?.id === game.id;
-                    return (
-                      <button
-                        key={game.id}
-                        type="button"
-                        onClick={() => setSelectedGameId(game.id)}
-                        className={cn(
-                          'group relative rounded-2xl overflow-hidden border text-left transition-all cursor-pointer flex flex-col select-none',
-                          active
-                            ? 'border-[var(--accent)] ring-2 ring-[var(--accent)]/40 bg-[var(--accent)]/15'
-                            : 'border-[var(--line)] bg-[var(--card)] hover:border-[var(--line-2)] hover:bg-[var(--card-2)]'
-                        )}
-                      >
-                        <div className="aspect-[4/3] w-full overflow-hidden bg-[var(--card-2)] relative">
-                          <img
-                            src={game.thumbnail || game.image}
-                            alt={game.name}
-                            referrerPolicy="no-referrer"
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                          {active && (
-                            <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-lg">
-                              <Check className="w-4 h-4" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-3">
-                          <p className="font-display font-bold text-sm text-[var(--ink)] truncate">
-                            {game.name}
-                          </p>
-                          <p className="text-xs text-[var(--muted)] tabular-nums">
-                            {game.minPlayers}–{game.maxPlayers}p · {game.playingTime}m
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Card>
+              <Step1PickGame
+                selectedGame={selectedGame}
+                selectedGameId={selectedGameId}
+                onSelectGameId={setSelectedGameId}
+                games={games}
+              />
             )}
 
             {/* STEP 2: SETUP */}
             {currentStep === 2 && (
-              <Card className="p-4 sm:p-6 md:p-8 space-y-6">
-                <div>
-                  <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
-                    Step 2 — Session Setup
-                  </h1>
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    Select play date, venue location, and track game time
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <Input
-                    label="Date Played"
-                    type="date"
-                    value={datePlayed}
-                    onChange={(e) => setDatePlayed(e.target.value)}
-                  />
-
-                  {/* Location Selector from permanent list */}
-                  <LocationSelector
-                    selectedLocation={location}
-                    onSelectLocation={(loc) => setLocation(loc)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
-                  <div className="p-5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-3">
-                    <label
-                      htmlFor="manual-duration-input"
-                      className="block text-xs font-semibold text-[var(--text-secondary)]"
-                    >
-                      Duration (Minutes - Auto or manual adjustment)
-                    </label>
-                    <input
-                      id="manual-duration-input"
-                      type="number"
-                      min={1}
-                      value={durationMinutes}
-                      onChange={(e) => setDurationMinutes(e.target.value)}
-                      className="w-full min-h-[44px] rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-4 py-2 font-mono font-bold text-xl text-[var(--text-primary)] tabular-nums focus:outline-none focus:border-[var(--accent-primary)]"
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      {[30, 45, 60, 90, 120].map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => setDurationMinutes(String(preset))}
-                          className="px-3 py-1 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--accent-glow)] text-xs font-mono text-[var(--text-primary)] border border-[var(--border-subtle)] cursor-pointer"
-                        >
-                          {preset}m
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="p-5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex flex-col justify-between space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
-                        <span
-                          className={cn(
-                            'w-2 h-2 rounded-full',
-                            isTimerRunning ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
-                          )}
-                        />
-                        Stopwatch Active
-                      </span>
-                      <Clock className="w-4 h-4 text-[var(--accent-neon)]" />
-                    </div>
-                    <p className="font-mono font-extrabold text-3xl text-[var(--accent-neon)] tabular-nums">
-                      <SessionLiveTimer
-                        sessionStartTime={sessionStartTime}
-                        isTimerRunning={isTimerRunning}
-                        pausedDurationMs={pausedDurationMs}
-                        pauseStartTime={pauseStartTime}
-                      />
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant={isTimerRunning ? 'secondary' : 'primary'}
-                        size="sm"
-                        onClick={handleToggleTimer}
-                      >
-                        {isTimerRunning ? (
-                          <>
-                            <Pause className="w-4 h-4 mr-1" />
-                            Pause Timer
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-4 h-4 mr-1 fill-current" />
-                            Resume Timer
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSessionStartTime(Date.now());
-                          setPausedDurationMs(0);
-                          setPauseStartTime(undefined);
-                          setDurationMinutes('1');
-                        }}
-                        className="text-xs text-[var(--text-secondary)]"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5 mr-1" />
-                        Reset
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
+              <Step2Setup
+                datePlayed={datePlayed}
+                setDatePlayed={setDatePlayed}
+                location={location}
+                setLocation={setLocation}
+                durationMinutes={durationMinutes}
+                setDurationMinutes={setDurationMinutes}
+                sessionStartTime={sessionStartTime}
+                isTimerRunning={isTimerRunning}
+                pausedDurationMs={pausedDurationMs}
+                pauseStartTime={pauseStartTime}
+                onToggleTimer={handleToggleTimer}
+                onResetTimer={handleResetTimer}
+              />
             )}
 
             {/* STEP 3: PLAYERS */}
             {currentStep === 3 && (
-              <Card className="p-4 sm:p-6 md:p-8 space-y-6">
-                <div>
-                  <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
-                    Step 3 — Select Players
-                  </h1>
-                  <p className="text-sm text-[var(--text-secondary)]">
-                    Tap cards to select participating players ({activeSessionPlayers.length} selected)
-                  </p>
-                </div>
-
-                {/* Quick Add from Last Session Suggestion */}
-                {lastSessionPlayers.length > 0 && (
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-transparent border border-amber-500/30">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="text-xl shrink-0">👥</span>
-                      <div className="min-w-0 text-xs">
-                        <p className="font-bold text-[var(--text-primary)]">
-                          Gợi ý từ ván gần nhất ({latestSession?.gameName || 'Session trước'}):
-                        </p>
-                        <p className="text-[var(--text-secondary)] truncate">
-                          {lastSessionPlayers.map((p) => p.playerName).join(', ')} ({lastSessionPlayers.length} người)
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={handleCopyPreviousSessionPlayers}
-                      className="shrink-0 text-xs font-bold self-start sm:self-auto border-amber-500/40 hover:border-amber-400"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-400" />
-                      Lấy người chơi ván trước
-                    </Button>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-semibold text-[var(--text-secondary)]">
-                    {activeSessionPlayers.length === 0
-                      ? 'Chưa chọn người chơi nào'
-                      : `Đã chọn ${activeSessionPlayers.length} người chơi`}
-                  </span>
-                  {selectedPlayerIds.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedPlayerIds([])}
-                      className="text-xs text-[var(--text-muted)] hover:text-rose-400 transition-colors cursor-pointer"
-                    >
-                      Bỏ chọn tất cả
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  {allAvailablePlayers.map((player) => {
-                    const isSelected = selectedPlayerIds.includes(player.id);
-                    return (
-                      <PlayerChip
-                        key={player.id}
-                        player={player}
-                        selected={isSelected}
-                        onClick={() => handleTogglePlayer(player.id)}
-                      />
-                    );
-                  })}
-                </div>
-
-                {/* Add Guest or New Player */}
-                <form
-                  onSubmit={handleAddGuestPlayer}
-                  className="p-4 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-3"
-                >
-                  <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-                    Add New Friend or Guest Player
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="flex-1">
-                      <Input
-                        placeholder="Player name (e.g. Alex, Sam)..."
-                        value={newGuestName}
-                        onChange={(e) => setNewGuestName(e.target.value)}
-                      />
-                    </div>
-                    <Button type="submit" variant="secondary">
-                      <UserPlus className="w-4 h-4 mr-1" />
-                      Add to Table
-                    </Button>
-                  </div>
-                  <label className="inline-flex items-center gap-2 text-xs text-[var(--text-secondary)] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={saveGuestToVault}
-                      onChange={(e) => setSaveGuestToVault(e.target.checked)}
-                      className="rounded border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--accent-primary)]"
-                    />
-                    Save this player to permanent vault roster
-                  </label>
-                </form>
-              </Card>
+              <Step3Players
+                activeSessionPlayers={activeSessionPlayers}
+                latestSession={latestSession}
+                lastSessionPlayers={lastSessionPlayers}
+                onCopyPreviousSessionPlayers={handleCopyPreviousSessionPlayers}
+                allAvailablePlayers={allAvailablePlayers}
+                selectedPlayerIds={selectedPlayerIds}
+                onTogglePlayer={handleTogglePlayer}
+                onClearSelection={() => setSelectedPlayerIds([])}
+                newGuestName={newGuestName}
+                setNewGuestName={setNewGuestName}
+                saveGuestToVault={saveGuestToVault}
+                setSaveGuestToVault={setSaveGuestToVault}
+                onAddGuestPlayer={handleAddGuestPlayer}
+              />
             )}
 
             {/* STEP 4: WHO GOES FIRST? */}
             {currentStep === 4 && (
-              <Card className="p-4 sm:p-6 md:p-8 space-y-6">
-                {isRematchMode && (
-                  <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-transparent border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-xl">🔄</span>
-                      <span>
-                        <strong className="text-amber-300">Rematch:</strong> Kept <strong>{selectedGame?.name}</strong>, <strong>{activeSessionPlayers.length} players</strong> and venue <strong>{location}</strong>. Spin or draw to pick a new first player!
-                      </span>
-                    </div>
-                    <span className="font-mono text-emerald-400 font-bold shrink-0 flex items-center gap-1">
-                      <span>⏱️</span> New timer running
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] flex items-center gap-2.5">
-                      <span>👑</span>
-                      Step 4 — Who Goes First?
-                    </h1>
-                    <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-                      Spin the lucky wheel, shuffle mystery cards, or choose house rules for {activeSessionPlayers.length} players
-                    </p>
-                  </div>
-
-                  {/* Mode Selector Tabs */}
-                  <div className="grid grid-cols-3 gap-1 sm:gap-1.5 p-1 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-full sm:w-auto shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setFirstPlayerAnimStyle('wheel')}
-                      className={cn(
-                        'px-2 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
-                        firstPlayerAnimStyle === 'wheel'
-                          ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300 shadow-sm'
-                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                      )}
-                    >
-                      <span>🎡</span>
-                      <span className="truncate">Wheel</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFirstPlayerAnimStyle('card_shuffle')}
-                      className={cn(
-                        'px-2 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
-                        firstPlayerAnimStyle === 'card_shuffle'
-                          ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300 shadow-sm'
-                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                      )}
-                    >
-                      <span>🎴</span>
-                      <span className="truncate">Card</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFirstPlayerAnimStyle('manual')}
-                      className={cn(
-                        'px-2 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
-                        firstPlayerAnimStyle === 'manual'
-                          ? 'bg-[var(--accent-glow)] border border-[var(--border-glow)] text-[var(--accent-neon)] shadow-sm'
-                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                      )}
-                    >
-                      <span>✋</span>
-                      <span className="truncate">Manual</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Main Interactive Stage */}
-                {activeSessionPlayers.length === 0 ? (
-                  <div className="p-8 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center space-y-3">
-                    <span className="text-3xl">⚠️</span>
-                    <h3 className="font-bold text-base text-[var(--text-primary)]">No players at the table yet</h3>
-                    <p className="text-xs text-[var(--text-secondary)] max-w-sm mx-auto">
-                      Please return to Step 3 and select at least 1 player for this session.
-                    </p>
-                    <Button variant="secondary" size="sm" onClick={() => setCurrentStep(3)}>
-                      <ArrowLeft className="w-4 h-4 mr-1" /> Back to Step 3
-                    </Button>
-                  </div>
-                ) : activeSessionPlayers.length === 1 ? (
-                  <div className="p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-center space-y-4">
-                    <div className="inline-flex items-center gap-3 p-3 rounded-2xl bg-amber-500/15 border border-amber-500/40">
-                      <PlayerAvatar
-                        avatar={activeSessionPlayers[0].avatar}
-                        name={activeSessionPlayers[0].name}
-                        color={activeSessionPlayers[0].color}
-                        size="md"
-                      />
-                      <div className="text-left">
-                        <span className="text-[10px] uppercase font-bold text-amber-400">Solo Mode</span>
-                        <p className="font-bold text-[var(--text-primary)] text-sm">{activeSessionPlayers[0].name} goes first</p>
-                      </div>
-                    </div>
-                    <div>
-                      <Button variant="primary" onClick={() => setCurrentStep(5)}>
-                        Continue to Score Entry (Step 5) 👉
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 sm:p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex flex-col items-center justify-center min-h-[380px] relative overflow-hidden">
-                    {firstPlayerAnimStyle === 'wheel' ? (
-                      <LuckyWheel
-                        items={playerPickerItems}
-                        onSelect={(winner) => {
-                          setFirstPlayerId(winner.id);
-                          setFirstPlayerMethod('random_wheel');
-                        }}
-                      />
-                    ) : firstPlayerAnimStyle === 'card_shuffle' ? (
-                      <MysteryCardShuffle
-                        items={playerPickerItems}
-                        onSelect={(winner) => {
-                          setFirstPlayerId(winner.id);
-                          setFirstPlayerMethod('random_wheel');
-                        }}
-                        mode="first_player"
-                      />
-                    ) : (
-                      <div className="w-full max-w-md py-6 space-y-6 text-center">
-                        <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-2xl mx-auto shadow-inner">
-                          👑
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-base text-[var(--text-primary)]">Manually Assign First Player</h3>
-                          <p className="text-xs text-[var(--text-secondary)] mt-1">
-                            Choose directly below or use custom tabletop house rules
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap justify-center gap-2.5">
-                          {activeSessionPlayers.map((p) => {
-                            const isChosen = firstPlayerId === p.id;
-                            return (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => {
-                                  setFirstPlayerId(p.id);
-                                  setFirstPlayerMethod('manual');
-                                }}
-                                className={cn(
-                                  'flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer',
-                                  isChosen
-                                    ? 'bg-amber-500/25 border-amber-400 text-[var(--ink)] shadow-lg ring-2 ring-amber-400/30'
-                                    : 'bg-[var(--card)] border-[var(--line)] text-[var(--ink-2)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
-                                )}
-                              >
-                                <PlayerAvatar
-                                  avatar={p.avatar}
-                                  name={p.name}
-                                  color={p.color}
-                                  size="sm"
-                                />
-                                <span>{p.name}</span>
-                                {isChosen && <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Spotlight Celebration Card when First Player is Picked */}
-                    <AnimatePresence>
-                      {firstPlayerObj && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 16, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/25 to-amber-600/20 border-2 border-amber-400 shadow-2xl w-full max-w-lg flex flex-col sm:flex-row items-center justify-between gap-4"
-                        >
-                          <div className="flex items-center gap-3.5 min-w-0">
-                            <div className="relative">
-                              <PlayerAvatar
-                                avatar={firstPlayerObj.avatar}
-                                name={firstPlayerObj.name}
-                                color={firstPlayerObj.color}
-                                size="lg"
-                              />
-                              <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-lg font-bold">
-                                👑
-                              </div>
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300">
-                                  First Player This Session!
-                                </span>
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-[var(--text-primary)] font-medium">
-                                  {FIRST_PLAYER_METHOD_LABELS[firstPlayerMethod]}
-                                </span>
-                              </div>
-                              <h4 className="font-display font-extrabold text-base sm:text-lg text-[var(--text-primary)] truncate">
-                                {firstPlayerObj.name}
-                              </h4>
-                            </div>
-                          </div>
-
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => setCurrentStep(5)}
-                            className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg shrink-0 w-full sm:w-auto"
-                          >
-                            Enter Scores 👉
-                          </Button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                )}
-
-                {/* Alternative Quick Manual Rule Selector */}
-                {activeSessionPlayers.length > 1 && (
-                  <div className="pt-4 border-t border-[var(--line)] space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-semibold text-[var(--muted)]">
-                        Alternative house rules:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(
-                          [
-                            'random_wheel',
-                            'manual',
-                            'previous_loser',
-                            'previous_winner',
-                          ] as FirstPlayerMethod[]
-                        ).map((m) => (
-                          <button
-                            key={m}
-                            type="button"
-                            onClick={() => setFirstPlayerMethod(m)}
-                            className={cn(
-                              'px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors cursor-pointer',
-                              firstPlayerMethod === m
-                                ? 'bg-amber-500/25 border-amber-400 text-amber-700 dark:text-amber-300'
-                                : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
-                            )}
-                          >
-                            {FIRST_PLAYER_METHOD_LABELS[m]}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {activeSessionPlayers.map((p) => (
-                        <PlayerChip
-                          key={p.id}
-                          player={p}
-                          size="sm"
-                          selected={firstPlayerId === p.id}
-                          onClick={() => {
-                            setFirstPlayerId(p.id);
-                            if (firstPlayerMethod === 'random_wheel') {
-                              setFirstPlayerMethod('manual');
-                            }
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </Card>
+              <Step4FirstPlayer
+                isRematchMode={isRematchMode}
+                selectedGame={selectedGame}
+                activeSessionPlayers={activeSessionPlayers}
+                location={location}
+                firstPlayerAnimStyle={firstPlayerAnimStyle}
+                setFirstPlayerAnimStyle={setFirstPlayerAnimStyle}
+                playerPickerItems={playerPickerItems}
+                firstPlayerId={firstPlayerId}
+                firstPlayerMethod={firstPlayerMethod}
+                setFirstPlayerId={setFirstPlayerId}
+                setFirstPlayerMethod={setFirstPlayerMethod}
+                firstPlayerObj={firstPlayerObj}
+                onBackToStep3={() => setCurrentStep(3)}
+                onContinueToStep5={() => setCurrentStep(5)}
+              />
             )}
 
             {/* STEP 5: SCORE ENTRY */}
             {currentStep === 5 && (
-              <Card className="p-4 sm:p-6 md:p-8 space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h1 className="font-display font-extrabold text-2xl text-[var(--ink)]">
-                      Step 5 — Scores &amp; Scoring Sheet
-                    </h1>
-                    <p className="text-sm text-[var(--muted)]">
-                      Automatically calculate category scores and crown table champions
-                    </p>
-                  </div>
-
-                  <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[var(--card-2)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={lowScoreWins}
-                      onChange={(e) => setLowScoreWins(e.target.checked)}
-                      className="rounded border-[var(--line)] bg-[var(--card)] text-[var(--accent)]"
-                    />
-                    Lowest score wins
-                  </label>
-                </div>
-
-                {/* Mode Selector Tabs */}
-                <div className="flex flex-wrap items-center gap-2 p-1.5 bg-[var(--card-2)] border border-[var(--line)] rounded-2xl w-fit">
-                  <button
-                    type="button"
-                    onClick={() => setScoringMode('detailed')}
-                    className={cn(
-                      'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2',
-                      scoringMode === 'detailed'
-                        ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
-                        : 'text-[var(--muted)] hover:text-[var(--ink)]'
-                    )}
-                  >
-                    <span>📊 Scoring Sheet:</span>
-                    <span className="font-extrabold">{scoringTemplate.displayName}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setScoringMode('quick')}
-                    className={cn(
-                      'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
-                      scoringMode === 'quick'
-                        ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
-                        : 'text-[var(--muted)] hover:text-[var(--ink)]'
-                    )}
-                  >
-                    <span>⚡ Quick Total Entry</span>
-                  </button>
-                </div>
-
-                {scoringMode === 'detailed' ? (
-                  <div className="space-y-4">
-                    <ScoringSheetMatrix
-                      players={activeSessionPlayers}
-                      initialCategories={scoringTemplate.categories}
-                      initialBreakdowns={breakdownsByPlayerId}
-                      lowScoreWins={lowScoreWins}
-                      onScoresUpdate={(totals, breakdowns) => {
-                        const hasAnyInput = Object.values(breakdowns).some((pBreakdown) =>
-                          Object.values(pBreakdown).some((val) => typeof val === 'number' && val !== 0)
-                        );
-                        if (hasAnyInput) {
-                          setScoresByPlayerId(totals);
-                        }
-                        setBreakdownsByPlayerId(breakdowns);
-                        setManualWinnerIds([]);
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {computedPlayerScores.map((ps) => {
-                      const pl = allAvailablePlayers.find(
-                        (x) => x.id === ps.playerId
-                      );
-                      return (
-                        <PlayerScoreRow
-                          key={ps.playerId}
-                          playerScore={ps}
-                          player={pl}
-                          onScoreChange={handleScoreChange}
-                          onToggleWinner={handleToggleManualWinner}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </Card>
+              <Step5Scoring
+                lowScoreWins={lowScoreWins}
+                setLowScoreWins={setLowScoreWins}
+                scoringMode={scoringMode}
+                setScoringMode={setScoringMode}
+                scoringTemplate={scoringTemplate}
+                activeSessionPlayers={activeSessionPlayers}
+                breakdownsByPlayerId={breakdownsByPlayerId}
+                onScoresUpdate={(totals, breakdowns) => {
+                  setHasTouchedMatrix(true);
+                  setScoresByPlayerId(totals);
+                  setBreakdownsByPlayerId(breakdowns);
+                  setManualWinnerIds([]);
+                }}
+                computedPlayerScores={computedPlayerScores}
+                allAvailablePlayers={allAvailablePlayers}
+                onScoreChange={handleScoreChange}
+                onToggleManualWinner={handleToggleManualWinner}
+              />
             )}
 
             {/* STEP 6: MEMORIES & SUMMARY */}
             {currentStep === 6 && (
-              <div className="space-y-6">
-                <Card className="p-4 sm:p-6 md:p-8 space-y-6">
-                  <div>
-                    <h1 className="font-display font-extrabold text-2xl text-[var(--text-primary)]">
-                      Step 6 — Game Night Memories &amp; Notes
-                    </h1>
-                    <p className="text-sm text-[var(--text-secondary)]">
-                      Snap final board photos and record memorable tabletop moments
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <label className="block text-xs font-semibold text-[var(--text-secondary)]">
-                      Boardgame Photos
-                    </label>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <label className="min-h-[88px] px-5 py-4 rounded-2xl border-2 border-dashed border-[var(--border-subtle)] hover:border-[var(--accent-primary)] bg-[var(--bg-elevated)] flex flex-col items-center justify-center gap-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer transition-colors">
-                        <Camera className="w-5 h-5 text-[var(--accent-primary)]" />
-                        <span>Upload Photos</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handlePhotoUpload}
-                          className="hidden"
-                        />
-                      </label>
-
-                      {photos.map((src, idx) => (
-                        <div
-                          key={idx}
-                          className="relative w-24 h-24 rounded-2xl overflow-hidden border border-[var(--border-subtle)] group"
-                        >
-                          <img
-                            src={src}
-                            alt={`Session upload ${idx + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            aria-label="Remove photo"
-                            onClick={() =>
-                              setPhotos((prev) =>
-                                prev.filter((_, i) => i !== idx)
-                              )
-                            }
-                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/75 text-rose-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label
-                      htmlFor="session-notes"
-                      className="block text-xs font-semibold text-[var(--text-secondary)]"
-                    >
-                      Session Notes
-                    </label>
-                    <textarea
-                      id="session-notes"
-                      rows={3}
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Epic comeback? House rule used? Fun moments at the table? 😄"
-                      className="w-full rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-3.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
-                    />
-                  </div>
-                </Card>
-
-                {/* Animated Summary Card Before Save */}
-                {selectedGame && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-6 rounded-3xl bg-[var(--card)] border border-[var(--line-2)] shadow-xl space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
-                        <Sparkles className="w-4 h-4" />
-                        Ready to Record Session
-                      </span>
-                      <span className="text-xs text-[var(--muted)] tabular-nums">
-                        {formatDate(datePlayed)} ·{' '}
-                        {formatDuration(Number(durationMinutes) || 60)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <img
-                        src={selectedGame.thumbnail || selectedGame.image}
-                        alt={selectedGame.name}
-                        referrerPolicy="no-referrer"
-                        className="w-16 h-20 rounded-xl object-cover shrink-0 border border-[var(--line)]"
-                      />
-                      <div className="space-y-1">
-                        <h2 className="font-display font-extrabold text-xl text-[var(--ink)]">
-                          {selectedGame.name}
-                        </h2>
-                        <p className="text-xs text-[var(--muted)]">
-                          {location || 'Home Table'} · First turn:{' '}
-                          <strong className="text-[var(--ink)]">
-                            {allAvailablePlayers.find(
-                              (p) => p.id === firstPlayerId
-                            )?.name || activeSessionPlayers[0]?.name}
-                          </strong>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--line)]">
-                      {computedPlayerScores.map((ps) => (
-                        <div
-                          key={ps.playerId}
-                          className={cn(
-                            'inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold border',
-                            ps.isWinner
-                              ? 'bg-amber-500/20 border-amber-500/40 text-amber-800 dark:text-amber-300 font-bold'
-                              : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink)]'
-                          )}
-                        >
-                          {ps.isWinner && (
-                            <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                          )}
-                          <span>{ps.playerName}</span>
-                          {typeof ps.score === 'number' && (
-                            <span className="font-mono font-bold">
-                              {ps.score}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </div>
+              <Step6Memories
+                photos={photos}
+                onPhotoUpload={handlePhotoUpload}
+                onRemovePhoto={(idx) => setPhotos((prev) => prev.filter((_, i) => i !== idx))}
+                notes={notes}
+                setNotes={setNotes}
+                selectedGame={selectedGame}
+                datePlayed={datePlayed}
+                durationMinutes={durationMinutes}
+                location={location}
+                firstPlayerId={firstPlayerId}
+                allAvailablePlayers={allAvailablePlayers}
+                activeSessionPlayers={activeSessionPlayers}
+                computedPlayerScores={computedPlayerScores}
+              />
             )}
           </motion.div>
         </AnimatePresence>

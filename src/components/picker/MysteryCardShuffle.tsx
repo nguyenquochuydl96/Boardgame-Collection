@@ -10,6 +10,7 @@ import {
   triggerConfetti,
 } from '../../lib/soundEffects';
 import { resolveAvatarImage, getSafeDisplayAvatar } from '../../lib/utils';
+import { useResolvedMedia } from '../../hooks/useResolvedMedia';
 import { cn } from '../ui/cn';
 
 export interface PickerItem {
@@ -39,7 +40,8 @@ const DECK_CARD_COUNT = 8;
  */
 const CardItemPortrait: React.FC<{ item: PickerItem; size?: number }> = ({ item, size = 84 }) => {
   const [imgError, setImgError] = useState(false);
-  const imageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
+  const rawImageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
+  const imageSrc = useResolvedMedia(rawImageSrc);
 
   if (imageSrc && !imgError) {
     return (
@@ -88,12 +90,17 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
   const [revealedItem, setRevealedItem] = useState<PickerItem | null>(null);
   const [cascadedCount, setCascadedCount] = useState(0);
   const timerRef = useRef<NodeJS.Timeout[]>([]);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isBusy = stage !== 'idle' && stage !== 'revealed';
 
   const clearTimers = () => {
     timerRef.current.forEach(clearTimeout);
     timerRef.current = [];
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -118,13 +125,17 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
       // 2. RAPID RIFFLE CASCADE INTERLEAVE (0.8s)
       setStage('riffling');
       let count = 0;
-      const riffleInterval = setInterval(() => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(() => {
         count++;
         setCascadedCount(count);
         playTickSound(1.0 + count * 0.1);
 
         if (count >= DECK_CARD_COUNT) {
-          clearInterval(riffleInterval);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
 
           // 3. CASINO ARCH BRIDGE & FLUSH SNAP (0.35s)
           setStage('bridging');

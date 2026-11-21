@@ -54,10 +54,39 @@ const FULL_MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+/**
+ * Returns current or given date formatted as YYYY-MM-DD in local timezone
+ */
+export function getLocalDateString(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Builds an authentic UTC ISO string preserving user's calendar date and actual wall-clock time
+ */
+export function buildLocalDateTimeISO(calendarDateYYYYMMDD: string, refTime: Date = new Date()): string {
+  if (!calendarDateYYYYMMDD || !/^\d{4}-\d{2}-\d{2}$/.test(calendarDateYYYYMMDD)) {
+    return refTime.toISOString();
+  }
+  const [yearStr, monthStr, dayStr] = calendarDateYYYYMMDD.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10) - 1;
+  const day = parseInt(dayStr, 10);
+  const hours = refTime.getHours();
+  const mins = refTime.getMinutes();
+  const secs = refTime.getSeconds();
+  const ms = refTime.getMilliseconds();
+  const localDateObj = new Date(year, month, day, hours, mins, secs, ms);
+  return localDateObj.toISOString();
+}
+
 export function formatDate(isoDate?: string): string {
   if (!isoDate) return 'Unknown date';
-  // Fast path for standard ISO 8601 strings (zero Date and Intl allocations)
-  if (isoDate.length >= 10 && isoDate[4] === '-' && isoDate[7] === '-') {
+  // Bare calendar date (YYYY-MM-DD): format directly without timezone shifts
+  if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
     const year = isoDate.slice(0, 4);
     const mIdx = parseInt(isoDate.slice(5, 7), 10) - 1;
     const day = parseInt(isoDate.slice(8, 10), 10);
@@ -67,6 +96,10 @@ export function formatDate(isoDate?: string): string {
   }
   const d = new Date(isoDate);
   if (Number.isNaN(d.getTime())) return isoDate;
+  // Year 9999 rollover protection in positive timezones (e.g. UTC+7)
+  if (d.getFullYear() >= 10000) {
+    return 'Dec 31, 9999';
+  }
   return d.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -87,6 +120,42 @@ export function getGameCoverImage(game?: Partial<BoardGame> | null): string {
     return 'https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__large/img/PWhlasf_TqRSxwf605lU_lDOh-4=/fit-in/1024x1024/filters:no_upscale():strip_icc()/pic9719419.png';
   }
   return game.image || game.thumbnail || '';
+}
+
+/**
+ * Returns lightweight thumbnail URL for boardgames, prioritizing thumbnail over full image
+ */
+export function getGameThumbnail(game?: Partial<BoardGame> | null): string {
+  if (!game) return '';
+  if (
+    game.name &&
+    game.name.toLowerCase().includes('iron clay') &&
+    (!game.thumbnail || game.thumbnail.startsWith('data:image/svg'))
+  ) {
+    return 'https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__large/img/PWhlasf_TqRSxwf605lU_lDOh-4=/fit-in/200x150/filters:no_upscale():strip_icc()/pic9719419.png';
+  }
+  return game.thumbnail || game.image || '';
+}
+
+const playCountsCache = new WeakMap<PlaySession[], Record<string, number>>();
+
+/**
+ * O(1) cached play count calculator using WeakMap reference caching
+ */
+export function getPlayCountsByGameId(sessions: PlaySession[]): Record<string, number> {
+  if (!sessions || !Array.isArray(sessions)) return {};
+  const cached = playCountsCache.get(sessions);
+  if (cached) return cached;
+
+  const counts: Record<string, number> = {};
+  for (let i = 0; i < sessions.length; i++) {
+    const gid = sessions[i]?.gameId;
+    if (gid) {
+      counts[gid] = (counts[gid] || 0) + 1;
+    }
+  }
+  playCountsCache.set(sessions, counts);
+  return counts;
 }
 
 export function formatMonthYear(isoDate: string): string {
@@ -757,7 +826,7 @@ export function calculateHeadToHead(
 
 export function getCollectionTotalValue(games: BoardGame[]): number {
   return games
-    .filter((g) => g.status === 'own')
+    .filter((g) => g.status === 'own' || g.status === 'lent_out')
     .reduce((sum, g) => sum + (g.purchasePrice || 0), 0);
 }
 
@@ -771,7 +840,7 @@ export function getCollectionTotalValue(games: BoardGame[]): number {
 export function resolveAvatarImage(avatar?: string | null): string | null {
   if (!avatar || typeof avatar !== 'string') return null;
   const trimmed = avatar.trim();
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:image/')) {
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:image/') || trimmed.startsWith('idb://')) {
     return trimmed;
   }
   // Check if it's raw base64 data without data:image prefix (must have sufficient length and valid base64 signature)

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, Suspense } from 'react';
+import React, { useMemo, useState, useEffect, useDeferredValue, Suspense } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   Search,
@@ -17,6 +17,7 @@ import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { BoardGame, GameStatus } from '../types';
+import { getPlayCountsByGameId } from '../lib/utils';
 
 // Lazy-load heavy modals so the main collection loads instantly
 const QuickEditGameModal = React.lazy(() =>
@@ -46,7 +47,7 @@ const FILTER_TABS: Array<{ id: FilterTab; label: string }> = [
   { id: 'previously_owned', label: 'Prev. Owned' },
 ];
 
-const PAGE_SIZE = 36;
+const PAGE_SIZE = 20;
 
 export const CollectionPage: React.FC = () => {
   const games = useGameStore((s) => s.games);
@@ -79,6 +80,7 @@ export const CollectionPage: React.FC = () => {
     }
   };
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const [sortBy, setSortBy] = useState<SortOption>('addedDate');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
@@ -88,29 +90,32 @@ export const CollectionPage: React.FC = () => {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isWhatToPlayOpen, setIsWhatToPlayOpen] = useState(false);
 
+  // Status counts memoized once across [games]
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: games.length };
+    for (const g of games) {
+      counts[g.status] = (counts[g.status] || 0) + 1;
+    }
+    return counts;
+  }, [games]);
+
   // Reset pagination when search or filters change
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [activeFilter, searchQuery, sortBy]);
+  }, [activeFilter, deferredSearchQuery, sortBy]);
 
   const playCountsByGameId = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const s of sessions) {
-      if (s.gameId) {
-        counts[s.gameId] = (counts[s.gameId] || 0) + 1;
-      }
-    }
-    return counts;
+    return getPlayCountsByGameId(sessions);
   }, [sessions]);
 
   const filteredGames = useMemo(() => {
+    const q = deferredSearchQuery.trim().toLowerCase();
     return games
       .filter((g) => {
         if (activeFilter !== 'all' && g.status !== activeFilter) {
           return false;
         }
-        if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase();
+        if (q) {
           const matchName = g.name.toLowerCase().includes(q);
           const matchTags = g.tags?.some((t) => t.toLowerCase().includes(q));
           if (!matchName && !matchTags) return false;
@@ -118,14 +123,16 @@ export const CollectionPage: React.FC = () => {
         return true;
       })
       .sort((a, b) => {
-        if (sortBy === 'name') return a.name.localeCompare(b.name);
+        if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
         if (sortBy === 'bggRating') return (b.bggRating || 0) - (a.bggRating || 0);
         if (sortBy === 'purchasePrice')
           return (b.purchasePrice || 0) - (a.purchasePrice || 0);
         // Default: addedDate descending (fast ISO string comparison)
-        return (b.addedDate || '').localeCompare(a.addedDate || '');
+        const dateA = a.addedDate || '';
+        const dateB = b.addedDate || '';
+        return dateB > dateA ? 1 : dateB < dateA ? -1 : 0;
       });
-  }, [games, activeFilter, searchQuery, sortBy]);
+  }, [games, activeFilter, deferredSearchQuery, sortBy]);
 
   const visibleGames = useMemo(() => {
     return filteredGames.slice(0, visibleCount);
@@ -183,10 +190,7 @@ export const CollectionPage: React.FC = () => {
           className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none"
         >
           {FILTER_TABS.map((tab) => {
-            const count =
-              tab.id === 'all'
-                ? games.length
-                : games.filter((g) => g.status === tab.id).length;
+            const count = statusCounts[tab.id] || 0;
             const isActive = activeFilter === tab.id;
 
             return (
@@ -284,7 +288,7 @@ export const CollectionPage: React.FC = () => {
               games={visibleGames}
               viewMode={viewMode}
               playCountsByGameId={playCountsByGameId}
-              onEdit={(game) => setQuickEditGame(game)}
+              onEdit={setQuickEditGame}
             />
 
             {/* Load More Button */}

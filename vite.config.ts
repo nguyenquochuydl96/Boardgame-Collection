@@ -55,6 +55,9 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           manualChunks(id: string) {
+            if (id.includes('bggCatalogData')) {
+              return 'bgg-catalog-data';
+            }
             if (id.includes('node_modules')) {
               if (id.includes('@supabase')) return 'supabase-vendor';
               if (id.includes('lucide-react')) return 'lucide-vendor';

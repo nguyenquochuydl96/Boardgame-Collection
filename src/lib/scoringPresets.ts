@@ -11,6 +11,7 @@ export interface GameScoringTemplate {
   aliases?: string[];
   displayName: string;
   categories: ScoringCategory[];
+  computeTotal?: (values: Record<string, number>) => number;
 }
 
 export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
@@ -255,11 +256,19 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
     gameNameKeyword: 'ark nova',
     displayName: 'Ark Nova',
     categories: [
-      { id: 'appeal', name: 'Appeal Track', icon: '🎟️', multiplier: 1 },
-      { id: 'conservation', name: 'Conservation Projects (x3)', icon: '🌿', multiplier: 3 },
-      { id: 'final_scoring', name: 'Final Scoring Cards', icon: '🎯', multiplier: 1 },
-      { id: 'penalties', name: 'Penalties', icon: '⚠️', multiplier: -1 },
+      { id: 'appeal', name: 'Appeal Track', description: 'Points on the Appeal Track', icon: '🎟️', multiplier: 1 },
+      { id: 'conservation', name: 'Conservation Projects', description: 'Conservation Points (CP)', icon: '🌿', multiplier: 1 },
+      { id: 'final_scoring', name: 'Final Scoring Cards', description: 'Endgame / Bonus Cards added to score', icon: '🎯', multiplier: 1 },
+      { id: 'penalties', name: 'Penalties', description: 'Deductions (multiplier: -1)', icon: '⚠️', multiplier: -1 },
     ],
+    computeTotal: (values: Record<string, number>): number => {
+      const appeal = values['appeal'] || 0;
+      const c = values['conservation'] || 0;
+      const finalScoring = values['final_scoring'] || 0;
+      const penalties = values['penalties'] || 0;
+      const targetAppeal = 100 - (c <= 10 ? c * 2 : 20 + (c - 10) * 3);
+      return appeal - targetAppeal + finalScoring - Math.abs(penalties);
+    },
   },
 
   // 13. Brass: Birmingham / Lancashire
@@ -450,7 +459,7 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
     gameNameKeyword: 'tiny towns',
     displayName: 'Tiny Towns',
     categories: [
-      { id: 'cottages', name: 'Fed Cottages (3 pts)', icon: '🏡', multiplier: 3 },
+      { id: 'cottages', name: 'Fed Cottages (3 pts each - enter count)', description: '3 pts per fed Cottage (enter count)', icon: '🏡', multiplier: 3 },
       { id: 'buildings', name: 'Other Buildings', icon: '🏛️', multiplier: 1 },
       { id: 'monument', name: 'Monument', icon: '🗿', multiplier: 1 },
       { id: 'empty_spaces', name: 'Empty Spaces (-1 pt each)', icon: '❌', multiplier: -1 },
@@ -506,11 +515,11 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
     gameNameKeyword: 'catan',
     displayName: 'Catan Scoring Sheet',
     categories: [
-      { id: 'settlements', name: 'Settlements (1 pt)', icon: '🏠', multiplier: 1 },
-      { id: 'cities', name: 'Cities (2 pts)', icon: '🏰', multiplier: 2 },
-      { id: 'road', name: 'Longest Road (2 pts)', icon: '🛤️', multiplier: 2 },
-      { id: 'army', name: 'Largest Army (2 pts)', icon: '⚔️', multiplier: 2 },
-      { id: 'vp_cards', name: 'Victory Point Cards (1 pt)', icon: '📜', multiplier: 1 },
+      { id: 'settlements', name: 'Settlements (1 pt)', description: '1 pt per Settlement', icon: '🏠', multiplier: 1 },
+      { id: 'cities', name: 'Cities (2 pts each - enter count)', description: '2 pts per City (enter count)', icon: '🏰', multiplier: 2 },
+      { id: 'road', name: 'Longest Road (2 pts if held, else 0)', description: '2 pts if held, else 0', icon: '🛤️', multiplier: 1 },
+      { id: 'army', name: 'Largest Army (2 pts if held, else 0)', description: '2 pts if held, else 0', icon: '⚔️', multiplier: 1 },
+      { id: 'vp_cards', name: 'Victory Point Cards (1 pt)', description: '1 pt per VP Card', icon: '📜', multiplier: 1 },
     ],
   },
 

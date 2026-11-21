@@ -30,6 +30,8 @@ import {
   getSafeDisplayAvatar,
   compressImageToDataUrl,
 } from '../../lib/utils';
+import { saveMediaImage } from '../../lib/mediaStorage';
+import { useResolvedMedia } from '../../hooks/useResolvedMedia';
 import { cn } from '../ui/cn';
 
 export const PLAYER_COLORS = [
@@ -127,7 +129,8 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
     try {
       setIsUploading(true);
       const compressedDataUrl = await compressImageToDataUrl(file, 200, 0.85);
-      setAvatar(compressedDataUrl);
+      const idbRef = await saveMediaImage(compressedDataUrl);
+      setAvatar(idbRef);
     } catch (err) {
       console.error('Failed to compress avatar image:', err);
     } finally {
@@ -175,7 +178,8 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
   };
 
   const isEditing = Boolean(player);
-  const imagePreview = resolveAvatarImage(avatar);
+  const rawImagePreview = resolveAvatarImage(avatar);
+  const resolvedImagePreview = useResolvedMedia(rawImagePreview);
 
   return (
     <Modal
@@ -196,9 +200,9 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
               }}
               className="w-20 h-20 rounded-2xl border-2 flex items-center justify-center text-4xl shadow-xl overflow-hidden relative select-none"
             >
-              {imagePreview ? (
+              {resolvedImagePreview ? (
                 <img
-                  src={imagePreview}
+                  src={resolvedImagePreview}
                   alt={name || 'Avatar'}
                   className="w-full h-full object-cover"
                 />
@@ -254,7 +258,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                   'px-2.5 py-1 rounded-md transition-colors cursor-pointer',
                   avatarTab === 'preset'
                     ? 'bg-amber-500 text-slate-950 shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-white'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
                 )}
               >
                 Boardgame Emoji
@@ -266,7 +270,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                   'px-2.5 py-1 rounded-md transition-colors cursor-pointer',
                   avatarTab === 'upload'
                     ? 'bg-amber-500 text-slate-950 shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-white'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
                 )}
               >
                 Upload Image
@@ -278,7 +282,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                   'px-2.5 py-1 rounded-md transition-colors cursor-pointer',
                   avatarTab === 'url'
                     ? 'bg-amber-500 text-slate-950 shadow-sm'
-                    : 'text-[var(--text-secondary)] hover:text-white'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
                 )}
               >
                 Online Image URL
@@ -328,7 +332,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                 <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Upload className="w-5 h-5" />
                 </div>
-                <p className="text-xs font-bold text-white">
+                <p className="text-xs font-bold text-[var(--ink)]">
                   {isUploading ? 'Processing image...' : 'Click or tap to upload photo'}
                 </p>
                 <p className="text-[11px] text-[var(--text-secondary)]">
@@ -406,13 +410,13 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                   className={cn(
                     'p-2.5 rounded-xl border transition-all cursor-pointer text-left flex items-start gap-2.5 select-none',
                     isSelected
-                      ? 'bg-amber-500/15 border-amber-400/80 shadow-md text-white'
-                      : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-white hover:border-white/20'
+                      ? 'bg-amber-500/15 border-amber-400/80 shadow-md text-[var(--ink)]'
+                      : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--ink)] hover:border-white/20'
                   )}
                 >
                   <span className="text-2xl shrink-0 mt-0.5">{style.emoji}</span>
                   <div className="min-w-0">
-                    <h4 className="text-xs font-bold text-white flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-[var(--ink)] flex items-center justify-between">
                       <span>{style.label}</span>
                       {isSelected && <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
                     </h4>
@@ -437,7 +441,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
             <select
               value={favoriteGameId}
               onChange={(e) => setFavoriteGameId(e.target.value)}
-              className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer"
+              className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-[var(--ink)] focus:outline-none focus:border-amber-400 cursor-pointer"
             >
               <option value="">⭐ Auto (Most Played)</option>
               {games.map((g) => (
@@ -460,7 +464,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
             <select
               value={specialtyGameId}
               onChange={(e) => setSpecialtyGameId(e.target.value)}
-              className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-white focus:outline-none focus:border-emerald-400 cursor-pointer"
+              className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-[var(--ink)] focus:outline-none focus:border-emerald-400 cursor-pointer"
             >
               <option value="">🏆 Auto (Highest Win Rate ≥ 5 plays)</option>
               {games.map((g) => (
@@ -483,7 +487,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
             <select
               value={weaknessGameId}
               onChange={(e) => setWeaknessGameId(e.target.value)}
-              className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-white focus:outline-none focus:border-rose-400 cursor-pointer"
+              className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-[var(--ink)] focus:outline-none focus:border-rose-400 cursor-pointer"
             >
               <option value="">💀 Auto (Lowest Win Rate ≥ 5 plays)</option>
               {games.map((g) => (
@@ -509,7 +513,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={2}
-            className="w-full px-3 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-white placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] resize-none"
+            className="w-full px-3 py-2 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-xs text-[var(--ink)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] resize-none"
           />
         </div>
 

@@ -106,8 +106,13 @@ export const SessionsPage: React.FC = () => {
     setActiveDraft(null);
   };
 
-  // Sync from URL params on load (e.g. ?gameId=... or ?playerId=...)
+  // Sync from URL params on load (e.g. ?gameId=..., ?playerId=..., ?search=...)
   useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch && urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch);
+    }
+
     const urlGameId = searchParams.get('gameId');
     if (urlGameId && !selectedGameIds.includes(urlGameId)) {
       setSelectedGameIds([urlGameId]);
@@ -279,21 +284,32 @@ export const SessionsPage: React.FC = () => {
     setVisibleCount(PAGE_SIZE);
     searchParams.delete('gameId');
     searchParams.delete('playerId');
+    searchParams.delete('search');
     setSearchParams(searchParams, { replace: true });
   };
 
   // Toggle Handlers
   const togglePlayer = (id: string) => {
-    setSelectedPlayerIds((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
+    setSelectedPlayerIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id];
+      if (searchParams.get('playerId') === id) {
+        searchParams.delete('playerId');
+        setSearchParams(searchParams, { replace: true });
+      }
+      return next;
+    });
     setVisibleCount(PAGE_SIZE);
   };
 
   const toggleGame = (id: string) => {
-    setSelectedGameIds((prev) =>
-      prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
-    );
+    setSelectedGameIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id];
+      if (searchParams.get('gameId') === id) {
+        searchParams.delete('gameId');
+        setSearchParams(searchParams, { replace: true });
+      }
+      return next;
+    });
     setVisibleCount(PAGE_SIZE);
   };
 
@@ -365,8 +381,13 @@ export const SessionsPage: React.FC = () => {
                 placeholder="Search by game, player, venue, notes..."
                 value={searchQuery}
                 onChange={(e) => {
-                  setSearchQuery(e.target.value);
+                  const val = e.target.value;
+                  setSearchQuery(val);
                   setVisibleCount(PAGE_SIZE);
+                  if (!val && searchParams.has('search')) {
+                    searchParams.delete('search');
+                    setSearchParams(searchParams, { replace: true });
+                  }
                 }}
                 leftIcon={<Search className="w-4 h-4 text-[var(--text-secondary)]" />}
               />
@@ -819,6 +840,27 @@ export const SessionsPage: React.FC = () => {
                     <span>Match: {playerMatchMode === 'and' ? 'Together (AND)' : 'Any (OR)'}</span>
                     <RotateCcw className="w-2.5 h-2.5 ml-0.5" />
                   </button>
+                )}
+
+                {/* Search Query Chip */}
+                {searchQuery && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30">
+                    <span>🔍 "{searchQuery}"</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        if (searchParams.has('search')) {
+                          searchParams.delete('search');
+                          setSearchParams(searchParams, { replace: true });
+                        }
+                      }}
+                      className="hover:text-[var(--ink)] ml-0.5 cursor-pointer"
+                      title="Clear search filter"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
                 )}
 
                 {/* Player Chips */}

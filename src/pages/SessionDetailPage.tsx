@@ -25,6 +25,51 @@ import { Input } from '../components/ui/Input';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
+import { useResolvedMedia } from '../hooks/useResolvedMedia';
+
+const SessionGalleryPhoto: React.FC<{
+  photo: string;
+  index: number;
+  onClick: () => void;
+}> = ({ photo, index, onClick }) => {
+  const resolved = useResolvedMedia(photo);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative aspect-video rounded-2xl overflow-hidden border border-[var(--border-subtle)] cursor-pointer bg-[var(--card-2)]"
+    >
+      {resolved && (
+        <img
+          src={resolved}
+          alt={`Session memory ${index + 1}`}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+        />
+      )}
+      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+        <Maximize2 className="w-5 h-5 text-white" />
+      </div>
+    </button>
+  );
+};
+
+const FullscreenPhotoModalContent: React.FC<{ photo: string }> = ({ photo }) => {
+  const resolved = useResolvedMedia(photo);
+  if (!resolved) {
+    return (
+      <div className="h-64 flex items-center justify-center text-sm text-[var(--text-secondary)]">
+        Loading photo...
+      </div>
+    );
+  }
+  return (
+    <img
+      src={resolved}
+      alt="Fullscreen session memory"
+      className="w-full max-h-[75vh] object-contain rounded-xl mx-auto"
+    />
+  );
+};
 import {
   FIRST_PLAYER_METHOD_LABELS,
   formatDate,
@@ -73,6 +118,7 @@ export const SessionDetailPage: React.FC = () => {
   const [addPlayerSelectId, setAddPlayerSelectId] = useState('');
   const [editBreakdowns, setEditBreakdowns] = useState<Record<string, Record<string, number>>>({});
   const [editScoreMode, setEditScoreMode] = useState<'quick' | 'detailed'>('quick');
+  const [editLowScoreWins, setEditLowScoreWins] = useState(false);
 
   const scoringTemplate = React.useMemo(
     () => getScoringTemplateForGame(session?.gameName),
@@ -121,6 +167,52 @@ export const SessionDetailPage: React.FC = () => {
     });
   }, [session, hasBreakdown, scoringTemplate]);
 
+  const playersById = React.useMemo(
+    () => Object.fromEntries(savedPlayers.map((p) => [p.id, p])),
+    [savedPlayers]
+  );
+
+  const editPlayersIdsKey = React.useMemo(
+    () => editPlayers.map((p) => `${p.playerId}:${p.playerName}`).join('|'),
+    [editPlayers]
+  );
+
+  const matrixPlayers = React.useMemo(
+    () =>
+      editPlayers.map((ep) => {
+        const sp = playersById[ep.playerId];
+        return (
+          sp || {
+            id: ep.playerId,
+            name: ep.playerName,
+            avatar: '🎲',
+            color: '#f97316',
+            createdAt: '2026-01-01T00:00:00.000Z',
+          }
+        );
+      }),
+    [editPlayersIdsKey, playersById]
+  );
+
+  const handleScoresUpdate = React.useCallback(
+    (totals: Record<string, number>, breakdowns: Record<string, Record<string, number>>) => {
+      setEditBreakdowns(breakdowns);
+      setEditPlayers((prev) => {
+        let hasChanges = false;
+        const next = prev.map((p) => {
+          const newScore = totals[p.playerId] !== undefined ? String(totals[p.playerId]) : p.score;
+          if (newScore !== p.score) {
+            hasChanges = true;
+            return { ...p, score: newScore };
+          }
+          return p;
+        });
+        return hasChanges ? next : prev;
+      });
+    },
+    []
+  );
+
   if (!session) {
     return (
       <PageTransition>
@@ -139,7 +231,6 @@ export const SessionDetailPage: React.FC = () => {
     );
   }
 
-  const playersById = Object.fromEntries(savedPlayers.map((p) => [p.id, p]));
   const firstPlayer = session.players?.find(
     (p) => p.playerId === session.firstPlayerId
   );
@@ -179,6 +270,17 @@ export const SessionDetailPage: React.FC = () => {
     });
     setEditBreakdowns(initialBreakdowns);
     setEditScoreMode(hasBreakdown ? 'detailed' : 'quick');
+
+    const validScores = (session.players || [])
+      .map((p) => p.score)
+      .filter((s): s is number => typeof s === 'number');
+    const isLowScoreWinner =
+      session.winnerId &&
+      validScores.length > 1 &&
+      session.players.find((p) => p.playerId === session.winnerId)?.score === Math.min(...validScores) &&
+      Math.min(...validScores) < Math.max(...validScores);
+    setEditLowScoreWins(Boolean(isLowScoreWinner));
+
     setIsEditOpen(true);
   };
 
@@ -254,25 +356,31 @@ export const SessionDetailPage: React.FC = () => {
     setAddPlayerSelectId('');
   };
 
-  // Auto pick highest score as winner
+  // Auto pick best score as winner (supports lowScoreWins and ties)
   const handleAutoWinner = () => {
-    let maxScore = -Infinity;
-    let winnerId = '';
+    const validScores: { playerId: string; score: number }[] = [];
     for (const p of editPlayers) {
       const num = p.score.trim() === '' ? NaN : Number(p.score);
-      if (!isNaN(num) && num > maxScore) {
-        maxScore = num;
-        winnerId = p.playerId;
+      if (!isNaN(num)) {
+        validScores.push({ playerId: p.playerId, score: num });
       }
     }
-    if (winnerId) {
-      setEditPlayers((prev) =>
-        prev.map((p) => ({
-          ...p,
-          isWinner: p.playerId === winnerId,
-        }))
-      );
-    }
+    if (validScores.length === 0) return;
+
+    const target = editLowScoreWins
+      ? Math.min(...validScores.map((x) => x.score))
+      : Math.max(...validScores.map((x) => x.score));
+
+    const bestPlayerIds = new Set(
+      validScores.filter((x) => x.score === target).map((x) => x.playerId)
+    );
+
+    setEditPlayers((prev) =>
+      prev.map((p) => ({
+        ...p,
+        isWinner: bestPlayerIds.has(p.playerId),
+      }))
+    );
   };
 
   // Save changes
@@ -294,16 +402,32 @@ export const SessionDetailPage: React.FC = () => {
       };
     });
 
-    // Sort to recalculate ranks
+    // Sort to recalculate ranks using Standard Competition Ranking ("1224")
     const sorted = [...updatedScores].sort((a, b) => {
+      // Winners first
       if (a.isWinner && !b.isWinner) return -1;
       if (!a.isWinner && b.isWinner) return 1;
-      return (b.score ?? -999999) - (a.score ?? -999999);
+
+      const sa = a.score;
+      const sb = b.score;
+      if (sa === undefined && sb === undefined) return 0;
+      if (sa === undefined) return 1;
+      if (sb === undefined) return -1;
+      return editLowScoreWins ? sa - sb : sb - sa;
     });
 
-    sorted.forEach((item, idx) => {
-      item.rank = idx + 1;
-    });
+    // Compute standard competition rank (1, 1, 3 for ties)
+    let currentRank = 1;
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0) {
+        const prev = sorted[i - 1];
+        const curr = sorted[i];
+        if (curr.isWinner !== prev.isWinner || curr.score !== prev.score) {
+          currentRank = i + 1;
+        }
+      }
+      sorted[i].rank = currentRank;
+    }
 
     const activeWinner = editPlayers.find((p) => p.isWinner);
     const activeFirstPlayer = editPlayers.find((p) => p.isFirstPlayer);
@@ -663,21 +787,12 @@ export const SessionDetailPage: React.FC = () => {
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {session.photos.map((photo, index) => (
-                <button
+                <SessionGalleryPhoto
                   key={index}
-                  type="button"
+                  photo={photo}
+                  index={index}
                   onClick={() => setFullscreenPhoto(photo)}
-                  className="group relative aspect-video rounded-2xl overflow-hidden border border-[var(--border-subtle)] cursor-pointer"
-                >
-                  <img
-                    src={photo}
-                    alt={`Session memory ${index + 1}`}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <Maximize2 className="w-5 h-5 text-white" />
-                  </div>
-                </button>
+                />
               ))}
             </div>
           </Card>
@@ -714,13 +829,7 @@ export const SessionDetailPage: React.FC = () => {
           title="Session Photo"
           maxWidthClass="max-w-4xl"
         >
-          {fullscreenPhoto && (
-            <img
-              src={fullscreenPhoto}
-              alt="Fullscreen session memory"
-              className="w-full max-h-[75vh] object-contain rounded-xl mx-auto"
-            />
-          )}
+          {fullscreenPhoto && <FullscreenPhotoModalContent photo={fullscreenPhoto} />}
         </Modal>
 
         {/* FULL EDIT SESSION MODAL */}
@@ -784,6 +893,19 @@ export const SessionDetailPage: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
+                    onClick={() => setEditLowScoreWins((prev) => !prev)}
+                    className={cn(
+                      'px-2.5 sm:px-3 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5',
+                      editLowScoreWins
+                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                        : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    )}
+                    title="Toggle lowest score wins (e.g. Golf, 6 Nimmt, Scout)"
+                  >
+                    <span>{editLowScoreWins ? '⛳ Lowest Score Wins' : '🏆 Highest Score Wins'}</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setEditScoreMode(editScoreMode === 'detailed' ? 'quick' : 'detailed')}
                     className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-bold bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--accent-neon)] hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5"
                   >
@@ -805,29 +927,12 @@ export const SessionDetailPage: React.FC = () => {
                     📊 {scoringTemplate.displayName}
                   </div>
                   <ScoringSheetMatrix
-                    players={editPlayers.map((ep) => {
-                      const sp = playersById[ep.playerId];
-                      return (
-                        sp || {
-                          id: ep.playerId,
-                          name: ep.playerName,
-                          avatar: '🎲',
-                          color: '#f97316',
-                          createdAt: new Date().toISOString(),
-                        }
-                      );
-                    })}
+                    players={matrixPlayers}
                     initialCategories={scoringTemplate.categories}
                     initialBreakdowns={editBreakdowns}
-                    onScoresUpdate={(totals, breakdowns) => {
-                      setEditBreakdowns(breakdowns);
-                      setEditPlayers((prev) =>
-                        prev.map((p) => ({
-                          ...p,
-                          score: totals[p.playerId] !== undefined ? String(totals[p.playerId]) : p.score,
-                        }))
-                      );
-                    }}
+                    lowScoreWins={editLowScoreWins}
+                    computeTotal={scoringTemplate.computeTotal}
+                    onScoresUpdate={handleScoresUpdate}
                   />
                 </div>
               ) : null}

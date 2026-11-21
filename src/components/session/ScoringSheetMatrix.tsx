@@ -11,6 +11,7 @@ export interface ScoringSheetMatrixProps {
   initialCategories: ScoringCategory[];
   initialBreakdowns?: Record<string, Record<string, number>>;
   lowScoreWins?: boolean;
+  computeTotal?: (values: Record<string, number>) => number;
   onScoresUpdate: (
     totalScores: Record<string, number>,
     breakdowns: Record<string, Record<string, number>>
@@ -22,6 +23,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
   initialCategories,
   initialBreakdowns = {},
   lowScoreWins = false,
+  computeTotal,
   onScoresUpdate,
 }) => {
   const [categories, setCategories] = useState<ScoringCategory[]>(initialCategories);
@@ -44,36 +46,79 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
     setCategories(initialCategories);
   }, [initialCategories]);
 
+  // Synchronize breakdowns state when players list changes (adding new player doesn't wipe old players' scores)
+  useEffect(() => {
+    setBreakdowns((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      players.forEach((p) => {
+        if (!next[p.id]) {
+          next[p.id] = { ...(initialBreakdowns[p.id] || {}) };
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [players, initialBreakdowns]);
+
   // Compute totals
   const playerTotals = React.useMemo(() => {
     const totals: Record<string, number> = {};
 
     players.forEach((p) => {
       const playerVals = breakdowns[p.id] || {};
-      let sum = 0;
-      categories.forEach((cat) => {
-        const raw = playerVals[cat.id];
-        if (typeof raw === 'number' && !isNaN(raw)) {
-          const mult = cat.multiplier ?? 1;
-          sum += raw * mult;
-        }
-      });
-      totals[p.id] = sum;
+      if (computeTotal) {
+        totals[p.id] = computeTotal(playerVals);
+      } else {
+        let sum = 0;
+        categories.forEach((cat) => {
+          const raw = playerVals[cat.id];
+          if (typeof raw === 'number' && !isNaN(raw)) {
+            const mult = cat.multiplier ?? 1;
+            const effectiveVal = mult < 0 ? Math.abs(raw) : raw;
+            sum += effectiveVal * mult;
+          }
+        });
+        totals[p.id] = sum;
+      }
     });
 
     return totals;
-  }, [players, categories, breakdowns]);
+  }, [players, categories, breakdowns, computeTotal]);
 
-  // Notify parent on change
+  const isMountedRef = React.useRef(false);
+  const lastEmittedRef = React.useRef<string>('');
+
+  // Notify parent on change only when totals or breakdowns actually change, and NEVER unconditionally on initial mount
   useEffect(() => {
-    onScoresUpdate(playerTotals, breakdowns);
-  }, [playerTotals, breakdowns]);
-
-  // Handle cell value change (supports negative numbers e.g. -6 for Kansas City)
-  const handleCellChange = (playerId: string, categoryId: string, valStr: string) => {
-    // Only allow numbers, minus sign, and empty string
-    if (valStr !== '' && valStr !== '-' && !/^-?\d*$/.test(valStr)) {
+    const serialized = JSON.stringify({ totals: playerTotals, breakdowns });
+    if (!isMountedRef.current) {
+      isMountedRef.current = true;
+      lastEmittedRef.current = serialized;
       return;
+    }
+
+    if (serialized !== lastEmittedRef.current) {
+      lastEmittedRef.current = serialized;
+      onScoresUpdate(playerTotals, breakdowns);
+    }
+  }, [playerTotals, breakdowns, onScoresUpdate]);
+
+  // Handle cell value change (supports negative numbers e.g. -6 for Kansas City, disallows negative for penalty rows)
+  const handleCellChange = (playerId: string, categoryId: string, valStr: string) => {
+    const targetCat = categories.find((c) => c.id === categoryId);
+    const isPenalty = (targetCat?.multiplier ?? 1) < 0;
+
+    // For penalty categories, disallow minus signs completely (only positive numbers or empty)
+    if (isPenalty) {
+      if (valStr !== '' && !/^\d*$/.test(valStr)) {
+        return;
+      }
+    } else {
+      // Only allow numbers, minus sign, and empty string
+      if (valStr !== '' && valStr !== '-' && !/^-?\d*$/.test(valStr)) {
+        return;
+      }
     }
 
     // Strip redundant leading zeros: e.g. "05" -> "5", "-05" -> "-5", "00" -> "0"
@@ -95,7 +140,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
     const trimmed = cleanVal.trim();
     let val = 0;
     if (trimmed !== '' && trimmed !== '-' && !isNaN(Number(trimmed))) {
-      val = Number(trimmed);
+      val = isPenalty ? Math.abs(Number(trimmed)) : Number(trimmed);
     }
 
     setBreakdowns((prev) => ({
@@ -117,6 +162,9 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
 
   // Toggle positive/negative sign for a cell (especially helpful on mobile iOS)
   const handleToggleCellSign = (playerId: string, categoryId: string) => {
+    const targetCat = categories.find((c) => c.id === categoryId);
+    if ((targetCat?.multiplier ?? 1) < 0) return; // Prevent sign toggle on penalty rows
+
     const rawVal = breakdowns[playerId]?.[categoryId];
     const userTyping = rawCellValues[playerId]?.[categoryId];
     const displayVal =
@@ -158,14 +206,30 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
     setCategories((prev) => prev.filter((c) => c.id !== catId));
   };
 
-  // Determine current winner ID
-  const winnerId = React.useMemo(() => {
-    if (players.length === 0) return null;
+  // Check if at least one player has entered any score
+  const hasAnyScore = React.useMemo(() => {
+    return players.some((p) => {
+      const bd = breakdowns[p.id];
+      if (bd && Object.values(bd).some((v) => typeof v === 'number' && v !== 0)) return true;
+      const typing = rawCellValues[p.id];
+      if (typing && Object.values(typing).some((v) => v !== '' && v !== '0')) return true;
+      return (playerTotals[p.id] ?? 0) !== 0;
+    });
+  }, [players, breakdowns, rawCellValues, playerTotals]);
+
+  // Determine current winner IDs (Set of player IDs sharing the best score)
+  const winnerIds = React.useMemo(() => {
+    if (players.length === 0 || !hasAnyScore) return new Set<string>();
     const scores = players.map((p) => playerTotals[p.id] ?? 0);
     const target = lowScoreWins ? Math.min(...scores) : Math.max(...scores);
-    const winningPlayer = players.find((p) => (playerTotals[p.id] ?? 0) === target);
-    return winningPlayer?.id || null;
-  }, [players, playerTotals, lowScoreWins]);
+    const winners = new Set<string>();
+    players.forEach((p) => {
+      if ((playerTotals[p.id] ?? 0) === target) {
+        winners.add(p.id);
+      }
+    });
+    return winners;
+  }, [players, playerTotals, lowScoreWins, hasAnyScore]);
 
   return (
     <div className="space-y-4">
@@ -178,7 +242,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                 Scoring Categories
               </th>
               {players.map((p) => {
-                const isLeader = p.id === winnerId;
+                const isLeader = winnerIds.has(p.id);
                 return (
                   <th
                     key={p.id}
@@ -250,24 +314,33 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                     return (
                       <td key={p.id} className="py-2 px-2 text-center">
                         <div className="inline-flex items-center rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus-within:border-[var(--accent-primary)] focus-within:ring-1 focus-within:ring-[var(--accent-primary)] overflow-hidden">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleToggleCellSign(p.id, cat.id);
-                            }}
-                            title="Chuyển điểm âm / dương (±)"
-                            aria-label="Toggle negative score"
-                            className={cn(
-                              'px-1.5 py-1 text-[11px] font-mono font-extrabold border-r transition-colors cursor-pointer select-none',
-                              isCellNegative
-                                ? 'bg-rose-500/25 text-rose-400 border-rose-500/30'
-                                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border-[var(--border-subtle)]'
-                            )}
-                          >
-                            ±
-                          </button>
+                          {isPenalty ? (
+                            <span
+                              className="px-2 py-1 text-[11px] font-mono font-extrabold border-r bg-rose-500/25 text-rose-400 border-rose-500/30 select-none cursor-default"
+                              title="Điểm phạt (tự động trừ)"
+                            >
+                              -
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleToggleCellSign(p.id, cat.id);
+                              }}
+                              title="Chuyển điểm âm / dương (±)"
+                              aria-label="Toggle negative score"
+                              className={cn(
+                                'px-1.5 py-1 text-[11px] font-mono font-extrabold border-r transition-colors cursor-pointer select-none',
+                                isCellNegative
+                                  ? 'bg-rose-500/25 text-rose-400 border-rose-500/30'
+                                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border-[var(--border-subtle)]'
+                              )}
+                            >
+                              ±
+                            </button>
+                          )}
                           <input
                             type="text"
                             inputMode="numeric"
@@ -316,7 +389,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
               </td>
               {players.map((p) => {
                 const total = playerTotals[p.id] ?? 0;
-                const isLeader = p.id === winnerId;
+                const isLeader = winnerIds.has(p.id);
                 return (
                   <td
                     key={p.id}

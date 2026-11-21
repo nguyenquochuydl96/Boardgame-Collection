@@ -99,13 +99,19 @@ export const LocationSelectorComponent: React.FC<LocationSelectorProps> = ({
     });
   }, [locations, sessions]);
 
-  // If no location is selected and we have venues, auto-select the default or most played venue
+  const hasAutoSelectedRef = useRef(false);
+
+  // If no location is selected and we have venues, auto-select the default or most played venue once on initial mount
   useEffect(() => {
+    if (hasAutoSelectedRef.current) return;
     if (!selectedLocation && allVenues.length > 0) {
+      hasAutoSelectedRef.current = true;
       const defaultVenue = allVenues.find((v) => v.isDefault) || allVenues[0];
       if (defaultVenue) {
         onSelectLocation(defaultVenue.name);
       }
+    } else if (selectedLocation) {
+      hasAutoSelectedRef.current = true;
     }
   }, [selectedLocation, allVenues, onSelectLocation]);
 

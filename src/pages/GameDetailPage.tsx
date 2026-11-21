@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -64,6 +64,24 @@ export const GameDetailPage: React.FC = () => {
   );
   const [editLentTo, setEditLentTo] = useState(game?.lentToName || '');
 
+  const gameSessions = React.useMemo(() => {
+    if (!game) return [];
+    return allSessions
+      .filter((s) => s.gameId === game.id)
+      .sort((a, b) => (b.datePlayed || '').localeCompare(a.datePlayed || ''));
+  }, [allSessions, game?.id]);
+
+  const stats = React.useMemo(() => calculateGameStats(gameSessions), [gameSessions]);
+
+  const playersById = React.useMemo(
+    () => Object.fromEntries(players.map((p) => [p.id, p])),
+    [players]
+  );
+
+  useEffect(() => {
+    setNotesDraft(game?.notes || '');
+  }, [game?.id, game?.notes]);
+
   if (!game) {
     return (
       <PageTransition>
@@ -81,19 +99,6 @@ export const GameDetailPage: React.FC = () => {
       </PageTransition>
     );
   }
-
-  const gameSessions = React.useMemo(() => {
-    return allSessions
-      .filter((s) => s.gameId === game.id)
-      .sort((a, b) => (b.datePlayed || '').localeCompare(a.datePlayed || ''));
-  }, [allSessions, game.id]);
-
-  const stats = React.useMemo(() => calculateGameStats(gameSessions), [gameSessions]);
-
-  const playersById = React.useMemo(
-    () => Object.fromEntries(players.map((p) => [p.id, p])),
-    [players]
-  );
 
   const handleSaveNotes = () => {
     updateGame(game.id, { notes: notesDraft });

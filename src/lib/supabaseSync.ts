@@ -5,12 +5,34 @@ import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useLocationStore } from '../store/useLocationStore';
 import { BoardGame, PlaySession, Player, GameLocation } from '../types';
+import { setSyncApplyingRemote, isSyncApplyingRemote } from './syncGuard';
+import { isIdbMediaRef, getMediaImage, saveMediaImage } from './mediaStorage';
+
+export { isSyncApplyingRemote };
 
 let cachedClient: SupabaseClient | null = null;
 let cachedUrl = '';
 let cachedKey = '';
 let activeChannel: RealtimeChannel | null = null;
-let isApplyingRemoteChange = false;
+
+/**
+ * Smart merge two arrays of entities with unique IDs.
+ * Remote records take precedence for updated data, while local-only offline records are preserved.
+ */
+export function mergeById<T extends { id: string }>(localList: T[], remoteList: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const item of localList) {
+    if (item && item.id) {
+      map.set(item.id, item);
+    }
+  }
+  for (const item of remoteList) {
+    if (item && item.id) {
+      map.set(item.id, item);
+    }
+  }
+  return Array.from(map.values());
+}
 
 export const SQL_SETUP_SCRIPT = `-- ==========================================
 -- BOARDGAME VAULT REAL-TIME CLOUD SYNC SETUP
@@ -114,6 +136,63 @@ export interface VaultPayload {
 }
 
 /**
+ * Convert large incoming base64 images to idb:// to protect LocalStorage quota on receiving devices
+ */
+async function processIncomingMedia(
+  incomingPlayers?: Player[],
+  incomingSessions?: PlaySession[]
+): Promise<{ players: Player[]; sessions: PlaySession[] }> {
+  const processedPlayers = incomingPlayers
+    ? await Promise.all(
+        incomingPlayers.map(async (p) => {
+          if (
+            p.avatar &&
+            typeof p.avatar === 'string' &&
+            p.avatar.startsWith('data:image/') &&
+            !p.avatar.startsWith('data:image/svg+xml') &&
+            p.avatar.length > 5000
+          ) {
+            const existingId = `player_avatar_${p.id}`;
+            const idbRef = await saveMediaImage(p.avatar, existingId);
+            return { ...p, avatar: idbRef };
+          }
+          return p;
+        })
+      )
+    : [];
+
+  const processedSessions = incomingSessions
+    ? await Promise.all(
+        incomingSessions.map(async (s) => {
+          if (s.photos && s.photos.length > 0) {
+            let changed = false;
+            const newPhotos = await Promise.all(
+              s.photos.map(async (photo, idx) => {
+                if (
+                  photo &&
+                  typeof photo === 'string' &&
+                  photo.startsWith('data:image/') &&
+                  !photo.startsWith('data:image/svg+xml') &&
+                  photo.length > 5000
+                ) {
+                  changed = true;
+                  const existingId = `session_photo_${s.id}_${idx}`;
+                  return await saveMediaImage(photo, existingId);
+                }
+                return photo;
+              })
+            );
+            return changed ? { ...s, photos: newPhotos } : s;
+          }
+          return s;
+        })
+      )
+    : [];
+
+  return { players: processedPlayers, sessions: processedSessions };
+}
+
+/**
  * Push current local state to Supabase Cloud
  */
 export async function pushVaultToCloud(): Promise<{ success: boolean; error?: string }> {
@@ -124,7 +203,7 @@ export async function pushVaultToCloud(): Promise<{ success: boolean; error?: st
     return { success: false, error: 'Sync is not configured or disabled' };
   }
 
-  if (isApplyingRemoteChange) {
+  if (isSyncApplyingRemote()) {
     return { success: true };
   }
 
@@ -137,11 +216,40 @@ export async function pushVaultToCloud(): Promise<{ success: boolean; error?: st
     const locations = useLocationStore.getState().locations;
     const nowIso = new Date().toISOString();
 
+    // Resolve idb:// references to data URLs before uploading to cloud so other devices can access images
+    const cloudPlayers = await Promise.all(
+      players.map(async (p) => {
+        if (p.avatar && isIdbMediaRef(p.avatar)) {
+          const resolved = await getMediaImage(p.avatar);
+          return resolved ? { ...p, avatar: resolved } : p;
+        }
+        return p;
+      })
+    );
+
+    const cloudSessions = await Promise.all(
+      sessions.map(async (s) => {
+        if (s.photos && s.photos.some((ph) => isIdbMediaRef(ph))) {
+          const resolvedPhotos = await Promise.all(
+            s.photos.map(async (ph) => {
+              if (isIdbMediaRef(ph)) {
+                const resolved = await getMediaImage(ph);
+                return resolved || ph;
+              }
+              return ph;
+            })
+          );
+          return { ...s, photos: resolvedPhotos };
+        }
+        return s;
+      })
+    );
+
     const payload: VaultPayload = {
       vault_id: vaultId,
       games,
-      sessions,
-      players,
+      sessions: cloudSessions,
+      players: cloudPlayers,
       locations,
       updated_at: nowIso,
     };
@@ -207,26 +315,50 @@ export async function pullVaultFromCloud(mode: 'replace' | 'merge' = 'replace'):
     }
 
     // Apply remote data
-    isApplyingRemoteChange = true;
+    setSyncApplyingRemote(true);
     try {
       const remoteGames = (data.games || []) as BoardGame[];
-      const remoteSessions = (data.sessions || []) as PlaySession[];
-      const remotePlayers = (data.players || []) as Player[];
+      const rawSessions = (data.sessions || []) as PlaySession[];
+      const rawPlayers = (data.players || []) as Player[];
       const remoteLocations = (data.locations || []) as GameLocation[];
 
-      const replace = mode === 'replace';
+      const { players: remotePlayers, sessions: remoteSessions } = await processIncomingMedia(
+        rawPlayers,
+        rawSessions
+      );
 
-      if (remoteGames.length > 0) {
-        useGameStore.getState().bulkAddGames(remoteGames, replace);
-      }
-      if (remoteSessions.length > 0) {
-        useSessionStore.getState().bulkAddSessions(remoteSessions, replace);
-      }
-      if (remotePlayers.length > 0) {
-        usePlayerStore.getState().bulkAddPlayers(remotePlayers, replace);
-      }
-      if (remoteLocations.length > 0) {
-        useLocationStore.getState().bulkAddLocations(remoteLocations, replace);
+      if (mode === 'replace') {
+        if (remoteGames.length > 0) {
+          useGameStore.getState().bulkAddGames(remoteGames, true);
+        }
+        if (remoteSessions.length > 0) {
+          useSessionStore.getState().bulkAddSessions(remoteSessions, true);
+        }
+        if (remotePlayers.length > 0) {
+          usePlayerStore.getState().bulkAddPlayers(remotePlayers, true);
+        }
+        if (remoteLocations.length > 0) {
+          useLocationStore.getState().bulkAddLocations(remoteLocations, true);
+        }
+      } else {
+        // Smart merge: preserve local records created offline while applying remote updates
+        const mergedGames = mergeById(useGameStore.getState().games, remoteGames);
+        const mergedSessions = mergeById(useSessionStore.getState().sessions, remoteSessions);
+        const mergedPlayers = mergeById(usePlayerStore.getState().players, remotePlayers);
+        const mergedLocations = mergeById(useLocationStore.getState().locations, remoteLocations);
+
+        if (mergedGames.length > 0) {
+          useGameStore.getState().bulkAddGames(mergedGames, true);
+        }
+        if (mergedSessions.length > 0) {
+          useSessionStore.getState().bulkAddSessions(mergedSessions, true);
+        }
+        if (mergedPlayers.length > 0) {
+          usePlayerStore.getState().bulkAddPlayers(mergedPlayers, true);
+        }
+        if (mergedLocations.length > 0) {
+          useLocationStore.getState().bulkAddLocations(mergedLocations, true);
+        }
       }
 
       setLastSyncedAt(data.updated_at || new Date().toISOString());
@@ -241,9 +373,7 @@ export async function pullVaultFromCloud(mode: 'replace' | 'merge' = 'replace'):
         },
       };
     } finally {
-      setTimeout(() => {
-        isApplyingRemoteChange = false;
-      }, 500);
+      setSyncApplyingRemote(false);
     }
   } catch (err: any) {
     const msg = err?.message || 'Failed to pull cloud vault data';
@@ -291,20 +421,23 @@ export function startVaultRealtimeSubscription(): () => void {
         const isSelfReflection = Math.abs(recordTime - localTime) < 1500;
 
         if (record.updated_at && !isSelfReflection) {
-          isApplyingRemoteChange = true;
-          try {
-            if (record.games) useGameStore.getState().bulkAddGames(record.games, true);
-            if (record.sessions) useSessionStore.getState().bulkAddSessions(record.sessions, true);
-            if (record.players) usePlayerStore.getState().bulkAddPlayers(record.players, true);
-            if (record.locations) useLocationStore.getState().bulkAddLocations(record.locations, true);
+          setSyncApplyingRemote(true);
+          processIncomingMedia(record.players, record.sessions)
+            .then(({ players: processedPlayers, sessions: processedSessions }) => {
+              if (record.games) useGameStore.getState().bulkAddGames(record.games, true);
+              if (record.sessions) useSessionStore.getState().bulkAddSessions(processedSessions, true);
+              if (record.players) usePlayerStore.getState().bulkAddPlayers(processedPlayers, true);
+              if (record.locations) useLocationStore.getState().bulkAddLocations(record.locations, true);
 
-            setLastSyncedAt(record.updated_at);
-            setSyncStatus('synced');
-          } finally {
-            setTimeout(() => {
-              isApplyingRemoteChange = false;
-            }, 500);
-          }
+              setLastSyncedAt(record.updated_at);
+              setSyncStatus('synced');
+            })
+            .catch((err) => {
+              console.warn('[supabaseSync] Error processing incoming realtime media:', err);
+            })
+            .finally(() => {
+              setSyncApplyingRemote(false);
+            });
         }
       }
     )

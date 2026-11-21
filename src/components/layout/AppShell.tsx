@@ -23,6 +23,7 @@ import { useGameStore } from '../../store/useGameStore';
 import { useSessionStore } from '../../store/useSessionStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { useLocationStore } from '../../store/useLocationStore';
+import { isSyncApplyingRemote } from '../../lib/syncGuard';
 
 // Lazy load modals on-demand to keep core AppShell bundle ultra-lightweight
 const BGGConfigModal = React.lazy(() =>
@@ -100,24 +101,63 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     }
   }, [locationsCount, syncHistoricalLocations]);
 
+  // Run background migration of large base64 images to IndexedDB during idle time
+  useEffect(() => {
+    const runMigration = () => {
+      import('../../lib/mediaStorage').then(({ migrateBase64ImagesToIdb }) => {
+        migrateBase64ImagesToIdb()
+          .then((res) => {
+            if (res.migratedCount > 0) {
+              console.info(
+                `[AppShell] Migrated ${res.migratedCount} media images to IndexedDB (saved ${(res.savedBytes / 1024).toFixed(1)} KB).`
+              );
+            }
+          })
+          .catch((err) => {
+            console.warn('[AppShell] Media migration warning:', err);
+          });
+      });
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const handle = (window as any).requestIdleCallback(runMigration, { timeout: 3000 });
+      return () => {
+        if ('cancelIdleCallback' in window) {
+          (window as any).cancelIdleCallback(handle);
+        }
+      };
+    } else {
+      const timer = setTimeout(runMigration, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   // Check 1-click mobile import parameters and setup sync listeners
   useEffect(() => {
+    let isCancelled = false;
     let unsubscribeRealtime: (() => void) | null = null;
 
     import('../../lib/supabaseSync').then((sync) => {
+      if (isCancelled) return;
       const importedFromUrl = sync.checkUrlSyncParameters();
       if (importedFromUrl) {
         setShowSyncModal(true);
       } else if (isSyncEnabled && autoSync) {
-        // Pull latest cloud updates on app launch
-        sync.pullVaultFromCloud('replace');
+        // Pull latest cloud updates on app launch with safe merge
+        sync.pullVaultFromCloud('merge');
       }
 
       // Subscribe to multi-device Realtime events
-      unsubscribeRealtime = sync.startVaultRealtimeSubscription();
+      const unsub = sync.startVaultRealtimeSubscription();
+      if (isCancelled) {
+        unsub();
+      } else {
+        unsubscribeRealtime = unsub;
+      }
     });
 
     return () => {
+      isCancelled = true;
       if (unsubscribeRealtime) {
         unsubscribeRealtime();
       }
@@ -129,10 +169,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     if (!isSyncEnabled || !autoSync) return;
 
     let timer: ReturnType<typeof setTimeout> | null = null;
+
     const triggerPush = () => {
+      if (isSyncApplyingRemote()) return;
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
+        if (isSyncApplyingRemote()) return;
         import('../../lib/supabaseSync').then((sync) => {
+          if (isSyncApplyingRemote()) return;
           sync.pushVaultToCloud();
         });
       }, 2500);
@@ -141,12 +185,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     const unsubGames = useGameStore.subscribe(triggerPush);
     const unsubSessions = useSessionStore.subscribe(triggerPush);
     const unsubPlayers = usePlayerStore.subscribe(triggerPush);
+    const unsubLocations = useLocationStore.subscribe(triggerPush);
 
     return () => {
       if (timer) clearTimeout(timer);
       unsubGames();
       unsubSessions();
       unsubPlayers();
+      unsubLocations();
     };
   }, [isSyncEnabled, autoSync]);
 

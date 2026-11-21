@@ -13,6 +13,7 @@ export interface SyncStore {
   vaultId: string;
   autoSync: boolean;
   isEnabled: boolean;
+  hasManuallyDisconnected: boolean;
   lastSyncedAt: string | null;
   syncStatus: SyncStatus;
   errorMessage: string | null;
@@ -32,6 +33,7 @@ export const useSyncStore = create<SyncStore>()(
       vaultId: import.meta.env.VITE_SUPABASE_VAULT_ID || DEFAULT_VAULT_ID,
       autoSync: true,
       isEnabled: true,
+      hasManuallyDisconnected: false,
       lastSyncedAt: null,
       syncStatus: 'idle',
       errorMessage: null,
@@ -42,6 +44,7 @@ export const useSyncStore = create<SyncStore>()(
           supabaseAnonKey: anonKey.trim(),
           vaultId: vaultId.trim(),
           isEnabled: Boolean(url.trim() && anonKey.trim() && vaultId.trim()),
+          hasManuallyDisconnected: false,
           syncStatus: 'idle',
           errorMessage: null,
         }),
@@ -59,6 +62,8 @@ export const useSyncStore = create<SyncStore>()(
           supabaseAnonKey: '',
           vaultId: '',
           isEnabled: false,
+          autoSync: false,
+          hasManuallyDisconnected: true,
           syncStatus: 'disabled',
           lastSyncedAt: null,
           errorMessage: null,
@@ -68,11 +73,13 @@ export const useSyncStore = create<SyncStore>()(
       name: 'bg-vault-sync-settings',
       onRehydrateStorage: () => (state) => {
         if (state) {
-          if (!state.supabaseUrl) state.supabaseUrl = DEFAULT_SUPABASE_URL;
-          if (!state.supabaseAnonKey) state.supabaseAnonKey = DEFAULT_SUPABASE_ANON_KEY;
-          if (!state.vaultId) state.vaultId = DEFAULT_VAULT_ID;
-          state.isEnabled = true;
-          state.autoSync = true;
+          if (!state.hasManuallyDisconnected && !state.supabaseUrl) {
+            state.supabaseUrl = DEFAULT_SUPABASE_URL;
+            state.supabaseAnonKey = DEFAULT_SUPABASE_ANON_KEY;
+            state.vaultId = DEFAULT_VAULT_ID;
+            state.isEnabled = true;
+            state.autoSync = true;
+          }
         }
       },
     }

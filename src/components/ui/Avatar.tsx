@@ -1,6 +1,7 @@
 import React, { useState, memo } from 'react';
 import { cn } from './cn';
 import { resolveAvatarImage, getSafeDisplayAvatar } from '../../lib/utils';
+import { useResolvedMedia } from '../../hooks/useResolvedMedia';
 
 export interface AvatarProps {
   name: string;
@@ -34,7 +35,8 @@ const AvatarComponent: React.FC<AvatarProps> = ({
     .join('')
     .toUpperCase();
 
-  const imageSrc = resolveAvatarImage(avatar);
+  const resolvedAvatar = useResolvedMedia(avatar);
+  const imageSrc = resolveAvatarImage(resolvedAvatar);
 
   return (
     <div

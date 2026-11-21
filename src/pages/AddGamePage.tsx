@@ -17,7 +17,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { cn } from '../components/ui/cn';
 import { useBGGSearch } from '../hooks/useBGGSearch';
 import { useGameStore } from '../store/useGameStore';
-import { createGameCoverDataUri, STATUS_CONFIG, formatNumberInput, parseNumberInput } from '../lib/utils';
+import { createGameCoverDataUri, STATUS_CONFIG, formatNumberInput, parseNumberInput, getLocalDateString } from '../lib/utils';
 import { BGGGameDetail, GameStatus } from '../types';
 import { BGGConfigModal } from '../components/game/BGGConfigModal';
 import { BGGCardThumbnail } from '../components/game/BGGCardThumbnail';
@@ -47,7 +47,7 @@ export const AddGamePage: React.FC = () => {
   const [sellPrice, setSellPrice] = useState('');
   const [lentToName, setLentToName] = useState('');
   const [lentDate, setLentDate] = useState(
-    new Date().toISOString().slice(0, 10)
+    getLocalDateString()
   );
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);

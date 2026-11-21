@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, useAnimation } from 'motion/react';
 import { RotateCcw } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { PickerItem } from './MysteryCardShuffle';
 import { playTickSound, playFanfareSound, triggerConfetti } from '../../lib/soundEffects';
 import { resolveAvatarImage, getSafeDisplayAvatar } from '../../lib/utils';
+import { isIdbMediaRef, getMediaImage } from '../../lib/mediaStorage';
 
 export interface LuckyWheelProps {
   items: PickerItem[];
@@ -67,6 +68,42 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
   const [isSpinning, setIsSpinning] = useState(false);
   const [winnerItem, setWinnerItem] = useState<PickerItem | null>(null);
   const currentRotationRef = useRef(0);
+  const tickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [resolvedImages, setResolvedImages] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    return () => {
+      if (tickerRef.current) {
+        clearInterval(tickerRef.current);
+        tickerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const resolveImages = async () => {
+      const map: Record<string, string> = {};
+      for (const item of items) {
+        const raw = resolveAvatarImage(item.thumbnail || item.avatar);
+        if (raw) {
+          if (isIdbMediaRef(raw)) {
+            const dataUrl = await getMediaImage(raw);
+            if (dataUrl) map[item.id] = dataUrl;
+          } else {
+            map[item.id] = raw;
+          }
+        }
+      }
+      if (active) {
+        setResolvedImages(map);
+      }
+    };
+    resolveImages();
+    return () => {
+      active = false;
+    };
+  }, [items]);
 
   const count = Math.max(items.length, 1);
   const sliceAngle = 360 / count;
@@ -95,11 +132,15 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
     const spinDuration = 4.2; // seconds
     let elapsed = 0;
     const interval = 120;
-    const ticker = setInterval(() => {
+    if (tickerRef.current) clearInterval(tickerRef.current);
+    tickerRef.current = setInterval(() => {
       elapsed += interval;
       playTickSound(1 + (elapsed / (spinDuration * 1000)) * 0.3);
       if (elapsed >= spinDuration * 1000 - 300) {
-        clearInterval(ticker);
+        if (tickerRef.current) {
+          clearInterval(tickerRef.current);
+          tickerRef.current = null;
+        }
       }
     }, interval);
 
@@ -111,7 +152,10 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
       },
     });
 
-    clearInterval(ticker);
+    if (tickerRef.current) {
+      clearInterval(tickerRef.current);
+      tickerRef.current = null;
+    }
     setIsSpinning(false);
     setWinnerItem(chosen);
     playFanfareSound();
@@ -158,7 +202,7 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
           >
             <defs>
               {items.map((item, idx) => {
-                const imageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
+                const imageSrc = resolvedImages[item.id];
                 if (!imageSrc) return null;
                 const midAngle = idx * sliceAngle + sliceAngle / 2;
                 const pos = polarToCartesian(center, center, radius * 0.74, midAngle);
@@ -180,7 +224,7 @@ export const LuckyWheel: React.FC<LuckyWheelProps> = ({ items, onSelect }) => {
               const avatarPos = polarToCartesian(center, center, radius * 0.74, midAngle);
               const textPos = polarToCartesian(center, center, radius * 0.42, midAngle);
               const color = item.color || SLICE_COLORS[idx % SLICE_COLORS.length];
-              const imageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
+              const imageSrc = resolvedImages[item.id];
 
               return (
                 <g key={`item-${item.id}-${idx}`}>

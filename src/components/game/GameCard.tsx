@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Users, Clock, Star, Play, Dices, Edit3 } from 'lucide-react';
 import { BoardGame } from '../../types';
 import { GameStatusBadge } from './GameStatusBadge';
-import { formatVND, getGameCoverImage } from '../../lib/utils';
+import { formatVND, getGameThumbnail } from '../../lib/utils';
 
 export interface GameCardProps {
   game: BoardGame;
@@ -18,12 +18,16 @@ const GameCardComponent: React.FC<GameCardProps> = ({
   viewMode = 'grid',
   onEdit,
 }) => {
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const ratingNum = Number(game.bggRating);
+  const hasValidRating = !Number.isNaN(ratingNum) && ratingNum > 0;
 
   if (viewMode === 'list') {
     return (
-      <div className="transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.99]">
+      <div
+        className="transition-transform duration-200 hover:-translate-y-0.5 active:scale-[0.99]"
+        style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 96px' }}
+      >
         <Link
           to={`/collection/${game.id}`}
           className="flex items-center gap-4 p-3.5 rounded-[18px] bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line),var(--shadow)] hover:shadow-lg transition-all duration-200 group"
@@ -31,17 +35,13 @@ const GameCardComponent: React.FC<GameCardProps> = ({
           {/* Cover with spine accent */}
           <div className="relative w-16 h-20 rounded-[12px] overflow-hidden bg-[var(--card-2)] shrink-0 shadow-sm shadow-[inset_0_0_0_1px_var(--line)]">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/40 to-transparent z-10" />
-            {!imageLoaded && !imageError && (
-              <div className="absolute inset-0 animate-shimmer bg-[var(--card-2)]" />
-            )}
             {!imageError ? (
               <img
-                src={getGameCoverImage(game)}
+                src={getGameThumbnail(game)}
                 alt={game.name}
                 loading="lazy"
                 decoding="async"
                 referrerPolicy="no-referrer"
-                onLoad={() => setImageLoaded(true)}
                 onError={() => setImageError(true)}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
@@ -72,12 +72,12 @@ const GameCardComponent: React.FC<GameCardProps> = ({
                 <Clock className="w-3.5 h-3.5 text-amber-500" />
                 {game.playingTime}m
               </span>
-              {game.bggRating && (
+              {hasValidRating && (
                 <>
                   <span aria-hidden="true" className="opacity-40">·</span>
                   <span className="inline-flex items-center gap-1 text-amber-500 font-bold">
                     <Star className="w-3.5 h-3.5 fill-amber-500" />
-                    {game.bggRating.toFixed(1)}
+                    {ratingNum.toFixed(1)}
                   </span>
                 </>
               )}
@@ -122,7 +122,10 @@ const GameCardComponent: React.FC<GameCardProps> = ({
 
   // Grid View (Fitlo authentic cover card with smooth spring hover)
   return (
-    <div className="h-full group rounded-[20px] overflow-hidden transition-all duration-200 hover:-translate-y-1 bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line),var(--shadow)] hover:shadow-lg flex flex-col">
+    <div
+      className="h-full group rounded-[20px] overflow-hidden transition-all duration-200 hover:-translate-y-1 bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line),var(--shadow)] hover:shadow-lg flex flex-col"
+      style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 300px' }}
+    >
       <Link
         to={`/collection/${game.id}`}
         className="flex flex-col h-full focus:outline-none"
@@ -134,17 +137,13 @@ const GameCardComponent: React.FC<GameCardProps> = ({
             className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-r from-black/40 via-black/15 to-transparent z-20 pointer-events-none"
           />
 
-          {!imageLoaded && !imageError && (
-            <div className="absolute inset-0 animate-shimmer bg-[var(--card-2)]" />
-          )}
           {!imageError ? (
             <img
-              src={getGameCoverImage(game)}
+              src={getGameThumbnail(game)}
               alt={game.name}
               loading="lazy"
               decoding="async"
               referrerPolicy="no-referrer"
-              onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
               className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
             />
@@ -166,10 +165,10 @@ const GameCardComponent: React.FC<GameCardProps> = ({
               <GameStatusBadge status={game.status} />
             </div>
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-              {game.bggRating && (
+              {hasValidRating && (
                 <span className="inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 rounded-lg bg-black/85 text-[11px] sm:text-xs font-bold text-amber-400 tabular-nums border border-white/15 shadow-sm">
                   <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-400" />
-                  {game.bggRating.toFixed(1)}
+                  {ratingNum.toFixed(1)}
                 </span>
               )}
               {onEdit && (

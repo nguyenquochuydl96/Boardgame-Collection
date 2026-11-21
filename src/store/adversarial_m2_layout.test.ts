@@ -189,7 +189,11 @@ test('CHALLENGE 4.1: PickerPage mode switcher and style switcher wrap/grid clean
 // CHALLENGE 5: StatsPage Date Range Filter & Chart Overflow Protection
 // ============================================================================
 test('CHALLENGE 5.1: StatsPage date filter wraps cleanly and charts are horizontally contained', () => {
-  const stats = readSourceFile('pages/StatsPage.tsx');
+  let stats = readSourceFile('pages/StatsPage.tsx');
+  const overviewPath = path.join(SRC_DIR, 'components/stats/StatsOverviewTab.tsx');
+  if (fs.existsSync(overviewPath)) {
+    stats += fs.readFileSync(overviewPath, 'utf8');
+  }
 
   // Verify date range filter has flex-wrap and max-w-full
   assert.ok(
@@ -220,7 +224,15 @@ test('CHALLENGE 5.1: StatsPage date filter wraps cleanly and charts are horizont
 // CHALLENGE 6: NewSessionPage Step 4 & Player Score Row Fit
 // ============================================================================
 test('CHALLENGE 6.1: NewSessionPage Step 4 tabs use responsive 3-col grid and step cards have responsive padding', () => {
-  const sessionPage = readSourceFile('pages/NewSessionPage.tsx');
+  let sessionPage = readSourceFile('pages/NewSessionPage.tsx');
+  const wizardDir = path.join(SRC_DIR, 'components/session/wizard');
+  if (fs.existsSync(wizardDir)) {
+    fs.readdirSync(wizardDir).forEach((f) => {
+      if (f.endsWith('.tsx') || f.endsWith('.ts')) {
+        sessionPage += fs.readFileSync(path.join(wizardDir, f), 'utf8');
+      }
+    });
+  }
 
   // Verify Step 4 first player tabs use grid grid-cols-3
   assert.ok(

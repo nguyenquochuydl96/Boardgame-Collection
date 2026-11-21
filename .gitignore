@@ -7,3 +7,5 @@ coverage/
 .env*
 !.env.example
 .agents/
+*audit*.txt
+codebase_for_audit.txt

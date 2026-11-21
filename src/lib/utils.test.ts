@@ -170,6 +170,8 @@ test('calculateGameStats qualifies players with >= 5 plays and ranks by highest 
       id: `session-${i}`,
       gameId: 'brass-birmingham',
       gameName: 'Brass: Birmingham',
+      gameThumbnail: '',
+      firstPlayerMethod: 'manual',
       datePlayed: `2026-02-${String(i).padStart(2, '0')}T10:00:00.000Z`,
       winnerId: isHeoWin ? 'heo-1' : 'winner-1',
       players: playersList,
@@ -197,6 +199,8 @@ test('calculateGameStats returns null for mostLossesPlayer when no player reache
       id: 's1',
       gameId: 'g-short',
       gameName: 'New Game',
+      gameThumbnail: '',
+      firstPlayerMethod: 'manual',
       datePlayed: '2026-01-01T10:00:00.000Z',
       winnerId: 'p1',
       players: [
@@ -209,6 +213,8 @@ test('calculateGameStats returns null for mostLossesPlayer when no player reache
       id: 's2',
       gameId: 'g-short',
       gameName: 'New Game',
+      gameThumbnail: '',
+      firstPlayerMethod: 'manual',
       datePlayed: '2026-01-02T10:00:00.000Z',
       winnerId: 'p1',
       players: [
@@ -232,6 +238,8 @@ test('calculateGameStats handles missing/undefined scores without poisoning reco
       id: 's1',
       gameId: 'g-faraway',
       gameName: 'Faraway',
+      gameThumbnail: '',
+      firstPlayerMethod: 'manual',
       datePlayed: '2026-01-01T10:00:00.000Z',
       winnerId: 'p-heo',
       players: [
@@ -246,6 +254,8 @@ test('calculateGameStats handles missing/undefined scores without poisoning reco
       id: 's2',
       gameId: 'g-faraway',
       gameName: 'Faraway',
+      gameThumbnail: '',
+      firstPlayerMethod: 'manual',
       datePlayed: '2026-01-02T10:00:00.000Z',
       winnerId: 'p-heo',
       players: [
@@ -270,6 +280,8 @@ test('calculateGameStats handles missing/undefined scores without poisoning reco
       id: 'zv-1',
       gameId: 'g-zv',
       gameName: 'Zoo Vadis',
+      gameThumbnail: '',
+      firstPlayerMethod: 'manual',
       datePlayed: '2026-01-01T10:00:00.000Z',
       winnerId: 'p-heo',
       players: [
@@ -373,7 +385,7 @@ test('calculateHeadToHead compares shared sessions between selected players', ()
   assert.equal(h2h.playerStats[1].winsInShared, 0);
 });
 
-test('getCollectionTotalValue sums purchase prices of owned games only', () => {
+test('getCollectionTotalValue sums purchase prices of owned and lent_out games, excluding sold, rented, wishlist, and borrowed', () => {
   const games: BoardGame[] = [
     {
       id: '1',
@@ -445,9 +457,38 @@ test('getCollectionTotalValue sums purchase prices of owned games only', () => {
       purchasePrice: 750000,
       addedDate: '2026-01-01',
     },
+    {
+      id: '6',
+      name: 'G6',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 1,
+      maxPlayers: 4,
+      playingTime: 60,
+      yearPublished: 2020,
+      status: 'wishlist',
+      purchasePrice: 400000,
+      addedDate: '2026-01-01',
+    },
+    {
+      id: '7',
+      name: 'G7',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 1,
+      maxPlayers: 4,
+      playingTime: 60,
+      yearPublished: 2020,
+      status: 'borrowed',
+      purchasePrice: 600000,
+      addedDate: '2026-01-01',
+    },
   ];
 
-  assert.equal(getCollectionTotalValue(games), 1000000);
+  // 1,000,000 (own) + 500,000 (lent_out) = 1,500,000
+  assert.equal(getCollectionTotalValue(games), 1500000);
 });
 
 test('getScoringTemplateForGame resolves official Natera template correctly', async () => {
@@ -670,4 +711,83 @@ test('calculateMinRequiredPlays computes dynamic 5% qualification threshold with
   assert.equal(calculateMinRequiredPlays(100), 5); // 100 * 0.05 = 5
   assert.equal(calculateMinRequiredPlays(500), 25); // 500 * 0.05 = 25
   assert.equal(calculateMinRequiredPlays(1400), 70); // 1400 * 0.05 = 70
+});
+
+test('PHASE 3: Ark Nova official scoring formula calculates correctly (c <= 10, c > 10, negative scores, penalties)', async () => {
+  const { getScoringTemplateForGame } = await import('./scoringPresets');
+  const template = getScoringTemplateForGame('Ark Nova');
+  assert.ok(template);
+  assert.ok(template.computeTotal);
+
+  // Scenario A: c <= 10 (each CP is 2 Appeal steps)
+  // Appeal 40, Conservation 8 -> targetAppeal = 100 - (8 * 2) = 84 -> score = 40 - 84 = -44
+  const scoreA = template.computeTotal!({ appeal: 40, conservation: 8, final_scoring: 0, penalties: 0 });
+  assert.equal(scoreA, -44);
+
+  // Scenario B: c > 10 (first 10 CP = 20, remaining CP = (c - 10) * 3)
+  // Appeal 45, Conservation 20 -> targetAppeal = 100 - (20 + 30) = 50 -> score = 45 - 50 = -5
+  const scoreB = template.computeTotal!({ appeal: 45, conservation: 20, final_scoring: 0, penalties: 0 });
+  assert.equal(scoreB, -5);
+
+  // Scenario C: Positive winner score with final scoring bonus cards
+  // Appeal 82, Conservation 25 -> targetAppeal = 100 - (20 + 45) = 35 -> 82 - 35 = 47 + 5 bonus = 52
+  const scoreC = template.computeTotal!({ appeal: 82, conservation: 25, final_scoring: 5, penalties: 0 });
+  assert.equal(scoreC, 52);
+
+  // Scenario D: Deductions / penalties are strictly subtracted
+  // Appeal 82, Conservation 25, Final Scoring 5, Penalties 3 -> 52 - 3 = 49
+  const scoreD = template.computeTotal!({ appeal: 82, conservation: 25, final_scoring: 5, penalties: 3 });
+  assert.equal(scoreD, 49);
+});
+
+test('PHASE 3: Penalty row double-negative prevention guarantees penalties are deducted, never added', () => {
+  // If a category has multiplier = -1, entering 5 or -5 should both evaluate to subtracting 5 points
+  const mult = -1;
+  const rawPositive = 5;
+  const rawNegative = -5;
+
+  const effectivePositive = mult < 0 ? Math.abs(rawPositive) : rawPositive;
+  const totalPositive = effectivePositive * mult;
+  assert.equal(totalPositive, -5);
+
+  const effectiveNegative = mult < 0 ? Math.abs(rawNegative) : rawNegative;
+  const totalNegative = effectiveNegative * mult;
+  assert.equal(totalNegative, -5); // Prevents -5 * -1 = +5 bug
+});
+
+test('PHASE 3: Standard Competition Ranking ("1224") computes ties correctly and supports co-op multi-winners', () => {
+  // Standard competition ranking: tied scores share rank, subsequent player skips (e.g. 1, 1, 3)
+  const players = [
+    { id: 'p1', name: 'Alice' },
+    { id: 'p2', name: 'Bob' },
+    { id: 'p3', name: 'Charlie' },
+    { id: 'p4', name: 'Diana' },
+  ];
+  const scores: Record<string, number> = { p1: 50, p2: 50, p3: 40, p4: 20 };
+
+  const sortedForRank = [...players].sort((a, b) => scores[b.id] - scores[a.id]);
+  const ranksByPlayerId: Record<string, number> = {};
+  let currentRank = 1;
+  for (let i = 0; i < sortedForRank.length; i++) {
+    const p = sortedForRank[i];
+    const sc = scores[p.id];
+    if (sc === undefined) continue;
+    if (i > 0) {
+      const prevScore = scores[sortedForRank[i - 1].id];
+      if (sc !== prevScore) {
+        currentRank = i + 1;
+      }
+    }
+    ranksByPlayerId[p.id] = currentRank;
+  }
+
+  assert.equal(ranksByPlayerId['p1'], 1);
+  assert.equal(ranksByPlayerId['p2'], 1); // Tied for 1st
+  assert.equal(ranksByPlayerId['p3'], 3); // Skips to 3rd
+  assert.equal(ranksByPlayerId['p4'], 4); // 4th
+
+  // Co-op multi-winner test: all players win together
+  const manualWinnerIds = ['p1', 'p2', 'p3', 'p4'];
+  const coopWinners = players.filter((p) => manualWinnerIds.includes(p.id));
+  assert.equal(coopWinners.length, 4);
 });

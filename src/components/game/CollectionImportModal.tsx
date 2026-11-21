@@ -33,6 +33,7 @@ import { useSessionStore } from '../../store/useSessionStore';
 import { useLocationStore } from '../../store/useLocationStore';
 import { createGameCoverDataUri } from '../../lib/utils';
 import { exportVaultJSON, exportGamesCSV, exportSessionsCSV } from '../../lib/exportVault';
+import { migrateBase64ImagesToIdb } from '../../lib/mediaStorage';
 import { GameStatus } from '../../types';
 import { PoweredByBGG } from '../ui/PoweredByBGG';
 
@@ -71,6 +72,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
   }, [isOpen, initialTab]);
   const [bggUsername, setBggUsername] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -131,7 +133,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
               ownCount: (parsed.games || []).filter((g: any) => g.status === 'own').length,
               rentedCount: (parsed.games || []).filter((g: any) => g.status === 'rented').length,
               soldCount: (parsed.games || []).filter((g: any) => g.status === 'sold').length,
-              prevOwnedCount: (parsed.games || []).filter((g: any) => g.status === 'prev_owned').length,
+              prevOwnedCount: (parsed.games || []).filter((g: any) => g.status === 'previously_owned').length,
               wishlistCount: (parsed.games || []).filter((g: any) => g.status === 'wishlist').length,
             },
           };
@@ -198,6 +200,10 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
     if (importOptions.locations && fullBackup.locations && fullBackup.locations.length > 0) {
       bulkAddLocations(fullBackup.locations, replace);
     }
+
+    migrateBase64ImagesToIdb().catch((err) => {
+      console.warn('[CollectionImportModal] Failed to migrate backup images to IDB:', err);
+    });
 
     setSuccessMessage(
       `Successfully restored ${importOptions.games ? `${summary.gameCount} board games, ` : ''}${importOptions.players ? `${summary.playerCount} players, ` : ''}${importOptions.sessions ? `${summary.playCount} sessions, ` : ''}${importOptions.locations && summary.locationCount ? `${summary.locationCount} locations` : ''} into Vault!`
@@ -589,13 +595,22 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
               <Button
                 variant="primary"
                 className="w-full justify-center py-3 text-sm font-bold shadow-md"
-                onClick={() => {
-                  exportVaultJSON();
-                  setSuccessMessage('Boardgame Vault JSON backup downloaded successfully!');
+                disabled={isExporting}
+                onClick={async () => {
+                  try {
+                    setIsExporting(true);
+                    await exportVaultJSON();
+                    setSuccessMessage('Boardgame Vault JSON backup downloaded successfully!');
+                  } catch (err) {
+                    console.error('Failed to export vault backup:', err);
+                    setError('Failed to export backup. Please try again.');
+                  } finally {
+                    setIsExporting(false);
+                  }
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
-                Download Full Archive (.JSON)
+                {isExporting ? 'Exporting Archive...' : 'Download Full Archive (.JSON)'}
               </Button>
             </div>
 

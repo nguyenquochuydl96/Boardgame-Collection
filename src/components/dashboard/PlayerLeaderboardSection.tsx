@@ -241,7 +241,9 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
     const allStats = useMemo(() => {
       // Sort sessions chronologically for accurate streak calculations (string compare is O(1) per pair)
       const chrono = [...sessions].sort(
-        (a, b) => (a.datePlayed || '').localeCompare(b.datePlayed || '')
+        (a, b) =>
+          (a.datePlayed || '').localeCompare(b.datePlayed || '') ||
+          (a.createdAt || '').localeCompare(b.createdAt || '')
       );
 
       const statsMap = new Map<string, PlayerComprehensiveStats>();
@@ -270,13 +272,12 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
 
       chrono.forEach((s) => {
         const totalPlayers = s.players.length;
-        // Determine highest score among players in this session
-        let maxScore = -Infinity;
-        s.players.forEach((ps) => {
-          if (typeof ps.score === 'number' && ps.score > maxScore) {
-            maxScore = ps.score;
-          }
-        });
+        // Determine actual winner's score in this session
+        const winningPlayer = s.players.find(
+          (p) => p.isWinner || (s.winnerId && p.playerId === s.winnerId)
+        );
+        const winnerScore =
+          typeof winningPlayer?.score === 'number' ? winningPlayer.score : undefined;
 
         s.players.forEach((ps) => {
           const st = statsMap.get(ps.playerId);
@@ -304,9 +305,9 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               st.secondPlaces += 1;
               if (
                 typeof ps.score === 'number' &&
-                maxScore > -Infinity &&
-                maxScore - ps.score <= 2 &&
-                maxScore - ps.score > 0
+                winnerScore !== undefined &&
+                Math.abs(winnerScore - ps.score) <= 2 &&
+                Math.abs(winnerScore - ps.score) > 0
               ) {
                 st.closeLosses += 1;
               }
@@ -523,7 +524,9 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                 {rankedStats.length} qualified players
               </span>
               <span className="text-[11px] text-[var(--muted)] font-mono">
-                (≥ 5% · min {minRequiredPlays} {minRequiredPlays === 1 ? 'play' : 'plays'})
+                {showAllPlayers
+                  ? '(≥ 1 play)'
+                  : `(≥ 5% · min ${minRequiredPlays} ${minRequiredPlays === 1 ? 'play' : 'plays'})`}
               </span>
             </div>
           </div>

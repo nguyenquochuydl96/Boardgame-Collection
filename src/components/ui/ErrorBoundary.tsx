@@ -1,7 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, Home, RotateCcw } from 'lucide-react';
+import { AlertTriangle, Home, RotateCcw, Copy, Check } from 'lucide-react';
 import { Button } from './Button';
 import { Card } from './Card';
+import { recordCrash } from '../../lib/crashLogger';
 
 interface Props {
   children: ReactNode;
@@ -10,30 +11,53 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  copied: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
     error: null,
+    copied: false,
   };
 
   public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, copied: false };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error in component tree:', error, errorInfo);
+    recordCrash('ErrorBoundary', error, errorInfo.componentStack ?? undefined);
   }
 
+  private handleCopyError = () => {
+    const details = [
+      `[Crash Report]`,
+      `Route: ${window.location.pathname}${window.location.hash}`,
+      `Time: ${new Date().toISOString()}`,
+      `Message: ${this.state.error?.message || 'Unknown error'}`,
+      `Stack:\n${this.state.error?.stack || 'No stack trace'}`,
+    ].join('\n\n');
+
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard
+        .writeText(details)
+        .then(() => {
+          this.setState({ copied: true });
+          setTimeout(() => this.setState({ copied: false }), 2000);
+        })
+        .catch(() => {});
+    }
+  };
+
   private handleGoHome = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, copied: false });
     window.location.hash = '#/';
     window.location.reload();
   };
 
   private handleReload = () => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, copied: false });
     window.location.reload();
   };
 
@@ -60,7 +84,20 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
             )}
 
-            <div className="flex gap-2.5 pt-2 justify-center">
+            <div className="flex flex-wrap gap-2 pt-2 justify-center">
+              <Button variant="secondary" size="sm" onClick={this.handleCopyError}>
+                {this.state.copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 mr-1 text-emerald-400" />
+                    Copied Details!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 mr-1" />
+                    Copy Error Details
+                  </>
+                )}
+              </Button>
               <Button variant="secondary" size="sm" onClick={this.handleReload}>
                 <RotateCcw className="w-3.5 h-3.5 mr-1" />
                 Reload Page

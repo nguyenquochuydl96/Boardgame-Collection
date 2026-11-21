@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { BoardGame, GameStatus, Player, PlaySession, GameLocation } from '../types';
-import { generateId } from './utils';
+import { generateId, compressImage } from './utils';
+import { saveMediaImage } from './mediaStorage';
 
 export interface ImportPreviewItem {
   name: string;
@@ -60,7 +61,7 @@ export async function parseBGCatalogZip(
   const zip = await JSZip.loadAsync(file);
   const imageMap: Record<string, string> = {};
 
-  // Extract all jpg/png files into base64 data URIs
+  // Extract all jpg/png files into base64 data URIs, compress, and store to IndexedDB
   const imageFileNames = Object.keys(zip.files).filter((fn) =>
     /\.(jpe?g|png|webp)$/i.test(fn)
   );
@@ -68,10 +69,22 @@ export async function parseBGCatalogZip(
   for (const fileName of imageFileNames) {
     const entry = zip.files[fileName];
     if (entry && !entry.dir) {
-      const base64 = await entry.async('base64');
-      const ext = fileName.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
       const cleanName = fileName.replace(/^.*[\\/]/, '');
-      imageMap[cleanName] = `data:image/${ext};base64,${base64}`;
+      try {
+        const blob = await entry.async('blob');
+        const compressed = await compressImage(blob, 1024, 1024, 0.7);
+        if (compressed) {
+          const idbRef = await saveMediaImage(compressed);
+          imageMap[cleanName] = idbRef;
+        }
+      } catch (err) {
+        console.warn(`Failed to compress zip image ${fileName}, falling back to direct save:`, err);
+        const base64 = await entry.async('base64');
+        const ext = fileName.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
+        const dataUrl = `data:image/${ext};base64,${base64}`;
+        const idbRef = await saveMediaImage(dataUrl);
+        imageMap[cleanName] = idbRef;
+      }
     }
   }
 
@@ -217,12 +230,16 @@ export function parseBGCatalogJsonObject(
       };
     });
 
-    // Rank sorting
+    // Rank sorting - competition ranking (1, 1, 3 for ties)
     const sorted = [...scores].sort(
       (a, b) => (b.score ?? -999999) - (a.score ?? -999999)
     );
     sorted.forEach((item, idx) => {
-      item.rank = idx + 1;
+      if (idx > 0 && item.score !== undefined && item.score === sorted[idx - 1].score) {
+        item.rank = sorted[idx - 1].rank;
+      } else {
+        item.rank = idx + 1;
+      }
     });
 
     const winner = pps.find((pp: any) => pp.winner === 1);
@@ -254,14 +271,24 @@ export function parseBGCatalogJsonObject(
     };
   });
 
+  // Convert Locations
+  const locations: GameLocation[] = rawLocations
+    .filter((l: any) => l && l.name && String(l.name).trim())
+    .map((l: any) => ({
+      id: `location-${l.id}`,
+      name: String(l.name).trim(),
+    }));
+
   return {
     games,
     players,
     sessions,
+    locations,
     summary: {
       gameCount: games.length,
       playCount: sessions.length,
       playerCount: players.length,
+      locationCount: locations.length,
       ownCount,
       soldCount,
       prevOwnedCount,

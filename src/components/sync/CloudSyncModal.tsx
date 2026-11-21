@@ -185,7 +185,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
                 'flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 text-center',
                 activeTab === 'status'
                   ? 'bg-[image:var(--gradient-hero)] text-white shadow'
-                  : 'text-[var(--text-secondary)] hover:text-white'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
               )}
             >
               <CloudCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -201,7 +201,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
               'flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 text-center',
               activeTab === 'connect'
                 ? 'bg-[image:var(--gradient-hero)] text-white shadow'
-                : 'text-[var(--text-secondary)] hover:text-white'
+                : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
             )}
           >
             <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -216,7 +216,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
               'flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 text-center',
               activeTab === 'guide'
                 ? 'bg-[image:var(--gradient-hero)] text-white shadow'
-                : 'text-[var(--text-secondary)] hover:text-white'
+                : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
             )}
           >
             <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -330,7 +330,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
                   <Smartphone className="w-4 h-4" />
                 </div>
                 <div>
-                  <h5 className="font-bold text-xs text-white">
+                  <h5 className="font-bold text-xs text-[var(--ink)]">
                     1-Click Connect on Phone (iPhone / Android)
                   </h5>
                   <p className="text-[11px] text-[var(--text-secondary)]">

@@ -64,7 +64,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
             <PlayerAvatar player={player} size="lg" className="border-2" />
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-display font-extrabold text-lg text-white">
+                <h3 className="font-display font-extrabold text-lg text-[var(--ink)]">
                   {player.name}
                 </h3>
                 {player.nickname && (
@@ -153,7 +153,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-display font-bold text-sm text-white group-hover:text-amber-300 transition-colors truncate">
+                            <h4 className="font-display font-bold text-sm text-[var(--ink)] group-hover:text-amber-500 transition-colors truncate">
                               {session.gameName}
                             </h4>
                             {isWinner && (
@@ -175,7 +175,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
                               </span>
                             )}
                             {playerEntry?.score !== undefined && (
-                              <span className="text-white font-mono font-bold">
+                              <span className="text-[var(--ink)] font-mono font-bold">
                                 Score: {playerEntry.score}
                               </span>
                             )}

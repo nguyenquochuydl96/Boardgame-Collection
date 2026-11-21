@@ -3,6 +3,7 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useLocationStore } from '../store/useLocationStore';
 import { BoardGame, Player, PlaySession, GameLocation } from '../types';
+import { isIdbMediaRef, getMediaImage } from './mediaStorage';
 
 export interface VaultBackupData {
   app: 'BoardGameVault';
@@ -39,11 +40,41 @@ function downloadFile(content: string, fileName: string, contentType: string) {
 /**
  * Export 100% full JSON backup of the entire Vault
  */
-export function exportVaultJSON(): VaultBackupData {
+export async function exportVaultJSON(): Promise<VaultBackupData> {
   const games = useGameStore.getState().games;
-  const players = usePlayerStore.getState().players;
-  const sessions = useSessionStore.getState().sessions;
+  const rawPlayers = usePlayerStore.getState().players;
+  const rawSessions = useSessionStore.getState().sessions;
   const locations = useLocationStore.getState().locations;
+
+  // Resolve player avatars from idb://
+  const players: Player[] = await Promise.all(
+    rawPlayers.map(async (p) => {
+      if (p.avatar && isIdbMediaRef(p.avatar)) {
+        const resolved = await getMediaImage(p.avatar);
+        return { ...p, avatar: resolved || p.avatar };
+      }
+      return p;
+    })
+  );
+
+  // Resolve session photos from idb://
+  const sessions: PlaySession[] = await Promise.all(
+    rawSessions.map(async (s) => {
+      if (s.photos && s.photos.length > 0) {
+        const resolvedPhotos = await Promise.all(
+          s.photos.map(async (photo) => {
+            if (photo && isIdbMediaRef(photo)) {
+              const resolved = await getMediaImage(photo);
+              return resolved || photo;
+            }
+            return photo;
+          })
+        );
+        return { ...s, photos: resolvedPhotos };
+      }
+      return s;
+    })
+  );
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const payload: VaultBackupData = {

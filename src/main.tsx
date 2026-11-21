@@ -1,6 +1,18 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { recordCrash } from './lib/crashLogger';
+
+// Register global blackbox crash listeners as early as possible
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (event) => {
+    recordCrash('window.error', event.error || event.message);
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    recordCrash('unhandledrejection', event.reason);
+  });
+}
 
 // Initialize Fitlo design system theme mode (default to light or saved preference)
 try {
@@ -78,9 +90,10 @@ if (typeof window !== 'undefined') {
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       // Do not disrupt user if they are currently on the active new session creation form
+      const currentRoute = `${window.location.pathname}${window.location.hash}`;
       const isCreatingSession =
-        window.location.pathname.includes('/sessions/new') ||
-        window.location.pathname.includes('/new-session');
+        currentRoute.includes('/sessions/new') ||
+        currentRoute.includes('/new-session');
       if (!isCreatingSession && !refreshing) {
         refreshing = true;
         window.location.reload();
