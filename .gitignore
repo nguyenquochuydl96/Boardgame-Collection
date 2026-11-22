@@ -8,4 +8,5 @@ coverage/
 !.env.example
 .agents/
 *audit*.txt
+audit_part*.txt
 codebase_for_audit.txt
