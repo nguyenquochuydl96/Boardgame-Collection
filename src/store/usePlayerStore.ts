@@ -10,36 +10,7 @@ declare module '../types' {
   }
 }
 
-export const INITIAL_PLAYERS: Player[] = [
-  {
-    id: 'player-huy',
-    name: 'Huy Nguyễn',
-    avatar: '🦊',
-    color: '#7c3aed',
-    createdAt: '2026-01-01T10:00:00.000Z',
-  },
-  {
-    id: 'player-linh',
-    name: 'Linh Trần',
-    avatar: '🦉',
-    color: '#ec4899',
-    createdAt: '2026-01-05T10:00:00.000Z',
-  },
-  {
-    id: 'player-quan',
-    name: 'Minh Quân',
-    avatar: '🐉',
-    color: '#22d3ee',
-    createdAt: '2026-01-12T10:00:00.000Z',
-  },
-  {
-    id: 'player-thao',
-    name: 'Phương Thảo',
-    avatar: '🐼',
-    color: '#10b981',
-    createdAt: '2026-02-01T10:00:00.000Z',
-  },
-];
+export const INITIAL_PLAYERS: Player[] = [];
 
 export interface PlayerStore {
   players: Player[];

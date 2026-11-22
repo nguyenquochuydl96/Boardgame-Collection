@@ -14,6 +14,7 @@ export interface SyncStore {
   autoSync: boolean;
   isEnabled: boolean;
   hasManuallyDisconnected: boolean;
+  hasCompletedInitialPull: boolean;
   lastSyncedAt: string | null;
   syncStatus: SyncStatus;
   errorMessage: string | null;
@@ -22,6 +23,7 @@ export interface SyncStore {
   setAutoSync: (enabled: boolean) => void;
   setSyncStatus: (status: SyncStatus, errorMessage?: string | null) => void;
   setLastSyncedAt: (timestamp: string) => void;
+  setHasCompletedInitialPull: (completed: boolean) => void;
   disconnect: () => void;
 }
 
@@ -34,6 +36,7 @@ export const useSyncStore = create<SyncStore>()(
       autoSync: true,
       isEnabled: true,
       hasManuallyDisconnected: false,
+      hasCompletedInitialPull: false,
       lastSyncedAt: null,
       syncStatus: 'idle',
       errorMessage: null,
@@ -45,6 +48,7 @@ export const useSyncStore = create<SyncStore>()(
           vaultId: vaultId.trim(),
           isEnabled: Boolean(url.trim() && anonKey.trim() && vaultId.trim()),
           hasManuallyDisconnected: false,
+          hasCompletedInitialPull: false,
           syncStatus: 'idle',
           errorMessage: null,
         }),
@@ -56,6 +60,8 @@ export const useSyncStore = create<SyncStore>()(
 
       setLastSyncedAt: (lastSyncedAt) => set({ lastSyncedAt }),
 
+      setHasCompletedInitialPull: (hasCompletedInitialPull) => set({ hasCompletedInitialPull }),
+
       disconnect: () =>
         set({
           supabaseUrl: '',
@@ -64,6 +70,7 @@ export const useSyncStore = create<SyncStore>()(
           isEnabled: false,
           autoSync: false,
           hasManuallyDisconnected: true,
+          hasCompletedInitialPull: false,
           syncStatus: 'disabled',
           lastSyncedAt: null,
           errorMessage: null,

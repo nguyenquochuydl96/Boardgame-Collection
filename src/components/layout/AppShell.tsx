@@ -143,8 +143,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       if (importedFromUrl) {
         setShowSyncModal(true);
       } else if (isSyncEnabled && autoSync) {
-        // Pull latest cloud updates on app launch with safe merge
-        sync.pullVaultFromCloud('merge');
+        // Prioritize 'replace' on app launch when local store is empty to prevent merging stale artifacts
+        const localGamesCount = useGameStore.getState().games.length;
+        const localSessionsCount = useSessionStore.getState().sessions.length;
+        const isLocalEmpty = localGamesCount === 0 && localSessionsCount === 0;
+        sync.pullVaultFromCloud(isLocalEmpty ? 'replace' : 'merge');
       }
 
       // Subscribe to multi-device Realtime events
@@ -172,9 +175,22 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
     const triggerPush = () => {
       if (isSyncApplyingRemote()) return;
+      const { hasCompletedInitialPull } = useSyncStore.getState();
+      if (!hasCompletedInitialPull) return;
+
+      const localGames = useGameStore.getState().games.length;
+      const localSessions = useSessionStore.getState().sessions.length;
+      if (localGames === 0 && localSessions === 0) return;
+
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         if (isSyncApplyingRemote()) return;
+        const { hasCompletedInitialPull: ready } = useSyncStore.getState();
+        if (!ready) return;
+        const currentGames = useGameStore.getState().games.length;
+        const currentSessions = useSessionStore.getState().sessions.length;
+        if (currentGames === 0 && currentSessions === 0) return;
+
         import('../../lib/supabaseSync').then((sync) => {
           if (isSyncApplyingRemote()) return;
           sync.pushVaultToCloud();

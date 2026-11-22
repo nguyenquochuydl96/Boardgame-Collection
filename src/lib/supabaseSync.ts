@@ -207,6 +207,45 @@ export async function pushVaultToCloud(): Promise<{ success: boolean; error?: st
     return { success: true };
   }
 
+  const games = useGameStore.getState().games;
+  const sessions = useSessionStore.getState().sessions;
+  const { hasCompletedInitialPull } = useSyncStore.getState();
+
+  // Guard against pushing empty local state before initial cloud pull completes
+  if (!hasCompletedInitialPull && games.length === 0 && sessions.length === 0) {
+    return {
+      success: false,
+      error: 'Cannot push empty vault before initial cloud pull has completed',
+    };
+  }
+
+  // Catastrophic data loss protection: Never overwrite a populated cloud vault with an empty local store
+  if (games.length === 0 && sessions.length === 0) {
+    try {
+      const { data: remoteData } = await client
+        .from('vaults')
+        .select('games, sessions')
+        .eq('vault_id', vaultId)
+        .maybeSingle();
+
+      const remoteGamesCount = Array.isArray(remoteData?.games) ? remoteData.games.length : 0;
+      const remoteSessionsCount = Array.isArray(remoteData?.sessions) ? remoteData.sessions.length : 0;
+
+      if (remoteGamesCount > 0 || remoteSessionsCount > 0) {
+        console.warn(
+          `[supabaseSync] Blocked push of empty vault: remote vault has ${remoteGamesCount} games and ${remoteSessionsCount} sessions.`
+        );
+        return {
+          success: false,
+          error: 'Accidental overwrite blocked: remote vault has data but local vault is empty.',
+        };
+      }
+    } catch (checkErr) {
+      console.warn('[supabaseSync] Error verifying remote vault content:', checkErr);
+      return { success: false, error: 'Could not verify remote vault state before pushing empty data.' };
+    }
+  }
+
   setSyncStatus('syncing');
 
   try {
@@ -301,16 +340,29 @@ export async function pullVaultFromCloud(mode: 'replace' | 'merge' = 'replace'):
     }
 
     if (!data) {
-      // Remote vault does not exist yet. Push local data to create it.
-      const pushRes = await pushVaultToCloud();
+      // Remote vault does not exist yet.
+      useSyncStore.getState().setHasCompletedInitialPull(true);
+      const currentGames = useGameStore.getState().games;
+      const currentSessions = useSessionStore.getState().sessions;
+
+      // Only push if local actually has data to initialize the vault
+      if (currentGames.length > 0 || currentSessions.length > 0) {
+        const pushRes = await pushVaultToCloud();
+        return {
+          success: pushRes.success,
+          error: pushRes.error,
+          count: {
+            games: currentGames.length,
+            sessions: currentSessions.length,
+            players: usePlayerStore.getState().players.length,
+          },
+        };
+      }
+
+      setSyncStatus('synced');
       return {
-        success: pushRes.success,
-        error: pushRes.error,
-        count: {
-          games: useGameStore.getState().games.length,
-          sessions: useSessionStore.getState().sessions.length,
-          players: usePlayerStore.getState().players.length,
-        },
+        success: true,
+        count: { games: 0, sessions: 0, players: 0 },
       };
     }
 
@@ -327,41 +379,33 @@ export async function pullVaultFromCloud(mode: 'replace' | 'merge' = 'replace'):
         rawSessions
       );
 
-      if (mode === 'replace') {
-        if (remoteGames.length > 0) {
-          useGameStore.getState().bulkAddGames(remoteGames, true);
-        }
-        if (remoteSessions.length > 0) {
-          useSessionStore.getState().bulkAddSessions(remoteSessions, true);
-        }
-        if (remotePlayers.length > 0) {
-          usePlayerStore.getState().bulkAddPlayers(remotePlayers, true);
-        }
-        if (remoteLocations.length > 0) {
-          useLocationStore.getState().bulkAddLocations(remoteLocations, true);
-        }
+      const localGames = useGameStore.getState().games;
+      const localSessions = useSessionStore.getState().sessions;
+      const isLocalEmpty = localGames.length === 0 && localSessions.length === 0;
+
+      // Prioritize replace when local is empty
+      const effectiveMode = isLocalEmpty ? 'replace' : mode;
+
+      if (effectiveMode === 'replace') {
+        useGameStore.getState().bulkAddGames(remoteGames, true);
+        useSessionStore.getState().bulkAddSessions(remoteSessions, true);
+        usePlayerStore.getState().bulkAddPlayers(remotePlayers, true);
+        useLocationStore.getState().bulkAddLocations(remoteLocations, true);
       } else {
         // Smart merge: preserve local records created offline while applying remote updates
-        const mergedGames = mergeById(useGameStore.getState().games, remoteGames);
-        const mergedSessions = mergeById(useSessionStore.getState().sessions, remoteSessions);
+        const mergedGames = mergeById(localGames, remoteGames);
+        const mergedSessions = mergeById(localSessions, remoteSessions);
         const mergedPlayers = mergeById(usePlayerStore.getState().players, remotePlayers);
         const mergedLocations = mergeById(useLocationStore.getState().locations, remoteLocations);
 
-        if (mergedGames.length > 0) {
-          useGameStore.getState().bulkAddGames(mergedGames, true);
-        }
-        if (mergedSessions.length > 0) {
-          useSessionStore.getState().bulkAddSessions(mergedSessions, true);
-        }
-        if (mergedPlayers.length > 0) {
-          usePlayerStore.getState().bulkAddPlayers(mergedPlayers, true);
-        }
-        if (mergedLocations.length > 0) {
-          useLocationStore.getState().bulkAddLocations(mergedLocations, true);
-        }
+        useGameStore.getState().bulkAddGames(mergedGames, true);
+        useSessionStore.getState().bulkAddSessions(mergedSessions, true);
+        usePlayerStore.getState().bulkAddPlayers(mergedPlayers, true);
+        useLocationStore.getState().bulkAddLocations(mergedLocations, true);
       }
 
       setLastSyncedAt(data.updated_at || new Date().toISOString());
+      useSyncStore.getState().setHasCompletedInitialPull(true);
       setSyncStatus('synced');
 
       return {

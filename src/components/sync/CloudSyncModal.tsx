@@ -102,18 +102,22 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
     }
 
     setCredentials(urlInput.trim(), keyInput.trim(), vaultInput.trim());
-    setActionSuccess('Successfully connected! Pushing initial dataset to cloud...');
+    setActionSuccess('Successfully connected! Syncing vault with cloud...');
 
-    // Push initial vault
+    // Pull from cloud first to download remote data and avoid pushing empty/default state
     setIsSyncing(true);
-    const pushResult = await pushVaultToCloud();
+    const localGames = useGameStore.getState().games.length;
+    const localSessions = useSessionStore.getState().sessions.length;
+    const isLocalEmpty = localGames === 0 && localSessions === 0;
+
+    const pullRes = await pullVaultFromCloud(isLocalEmpty ? 'replace' : 'merge');
     setIsSyncing(false);
 
-    if (pushResult.success) {
-      setActionSuccess('Connected and synced your vault to Supabase Cloud!');
+    if (pullRes.success) {
+      setActionSuccess('Connected and synced your vault with Supabase Cloud!');
       setActiveTab('status');
     } else {
-      setActionError(pushResult.error || 'Failed to upload initial vault data.');
+      setActionError(pullRes.error || 'Failed to sync initial vault data.');
     }
   };
 
