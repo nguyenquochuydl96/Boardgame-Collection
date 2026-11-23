@@ -1,6 +1,6 @@
 import React, { useState, useEffect, memo } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Clock, Star, Play, Dices, Edit3 } from 'lucide-react';
+import { Users, Clock, Star, Dices, Edit3 } from 'lucide-react';
 import { BoardGame } from '../../types';
 import { GameStatusBadge } from './GameStatusBadge';
 import { formatVND, getGameThumbnail } from '../../lib/utils';
@@ -37,11 +37,10 @@ const GameCardComponent: React.FC<GameCardProps> = ({
       >
         <Link
           to={`/collection/${game.id}`}
-          className="flex items-center gap-4 p-3.5 rounded-[18px] bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line),var(--shadow)] hover:shadow-lg transition-all duration-200 group"
+          className="flex items-center gap-4 p-3.5 rounded-2xl bg-[var(--card)] border border-[var(--line)] hover:border-[var(--line-2)] hover:shadow-md transition-all duration-200 group"
         >
-          {/* Cover with spine accent */}
-          <div className="relative w-16 h-20 rounded-[12px] overflow-hidden bg-[var(--card-2)] shrink-0 shadow-sm shadow-[inset_0_0_0_1px_var(--line)]">
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/40 to-transparent z-10" />
+          {/* Cover thumbnail */}
+          <div className="relative w-16 h-20 rounded-xl overflow-hidden bg-[var(--card-2)] shrink-0 border border-[var(--line)]">
             {!imageError && resolvedCover ? (
               <img
                 src={resolvedCover}
@@ -64,15 +63,17 @@ const GameCardComponent: React.FC<GameCardProps> = ({
               <h3 className="font-display font-bold text-base text-[var(--ink)] truncate group-hover:text-[var(--accent)] transition-colors">
                 {game.name}
               </h3>
-              <span className="text-xs text-[var(--muted)] tabular-nums font-semibold">
-                {game.yearPublished}
-              </span>
+              {game.yearPublished && (
+                <span className="text-xs text-[var(--muted)] tabular-nums font-medium">
+                  {game.yearPublished}
+                </span>
+              )}
             </div>
 
             <div className="mt-1.5 flex items-center gap-3 text-xs text-[var(--muted)] tabular-nums flex-wrap font-medium">
               <span className="inline-flex items-center gap-1 font-semibold text-[var(--ink-2)]">
                 <Users className="w-3.5 h-3.5 text-[var(--accent)]" />
-                {game.minPlayers}–{game.maxPlayers}p
+                {game.minPlayers === game.maxPlayers ? `${game.minPlayers}p` : `${game.minPlayers}–${game.maxPlayers}p`}
               </span>
               <span aria-hidden="true" className="opacity-40">·</span>
               <span className="inline-flex items-center gap-1 font-semibold text-[var(--ink-2)]">
@@ -82,8 +83,8 @@ const GameCardComponent: React.FC<GameCardProps> = ({
               {hasValidRating && (
                 <>
                   <span aria-hidden="true" className="opacity-40">·</span>
-                  <span className="inline-flex items-center gap-1 text-amber-500 font-bold">
-                    <Star className="w-3.5 h-3.5 fill-amber-500" />
+                  <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
+                    <Star className="w-3.5 h-3.5 fill-current" />
                     {ratingNum.toFixed(1)}
                   </span>
                 </>
@@ -101,7 +102,9 @@ const GameCardComponent: React.FC<GameCardProps> = ({
 
           <div className="flex flex-col items-end gap-2 shrink-0">
             <div className="flex items-center gap-1.5">
-              <GameStatusBadge status={game.status} />
+              <div className="min-w-0 shrink">
+                <GameStatusBadge status={game.status} />
+              </div>
               {onEdit && (
                 <button
                   type="button"
@@ -127,21 +130,22 @@ const GameCardComponent: React.FC<GameCardProps> = ({
     );
   }
 
-  // Grid View (Fitlo authentic cover card with smooth spring hover)
+  // Grid View (Warm Editorial Minimalist Album Cover)
   return (
     <div
-      className="h-full group rounded-[20px] overflow-hidden transition-all duration-200 hover:-translate-y-1 bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line),var(--shadow)] hover:shadow-lg flex flex-col"
+      className="h-full group rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-1 bg-[var(--card)] border border-[var(--line)] shadow-xs hover:shadow-md flex flex-col p-2.5"
       style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 300px' }}
     >
       <Link
         to={`/collection/${game.id}`}
         className="flex flex-col h-full focus:outline-none"
       >
-        <div className="relative aspect-[3/4] w-full overflow-hidden bg-[var(--card-2)]">
+        {/* Album Cover Art */}
+        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
           {/* Authentic physical box spine highlight */}
           <div
             aria-hidden="true"
-            className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-r from-black/40 via-black/15 to-transparent z-20 pointer-events-none"
+            className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-r from-black/25 via-black/10 to-transparent z-10 pointer-events-none"
           />
 
           {!imageError && resolvedCover ? (
@@ -163,18 +167,15 @@ const GameCardComponent: React.FC<GameCardProps> = ({
             </div>
           )}
 
-          {/* Smooth gradient scrim for high-contrast legible text */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent opacity-95 pointer-events-none" />
-
-          {/* Top bar: Status Badge + Rating + Quick Edit */}
-          <div className="absolute top-2.5 sm:top-3 left-2.5 sm:left-3 right-2.5 sm:right-3 flex items-center justify-between gap-1 z-20">
+          {/* Hover / Touch Quick Controls (Sleek overlay fades in on hover; zero clutter by default) */}
+          <div className="absolute top-2 left-2 right-2 flex items-center justify-between gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
             <div className="min-w-0 shrink">
               <GameStatusBadge status={game.status} />
             </div>
-            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <div className="shrink-0 flex items-center gap-1">
               {hasValidRating && (
-                <span className="inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-0.5 rounded-lg bg-black/85 text-[11px] sm:text-xs font-bold text-amber-400 tabular-nums border border-white/15 shadow-sm">
-                  <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-400" />
+                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-black/75 backdrop-blur-sm text-[11px] font-bold text-amber-400 tabular-nums border border-white/10 shadow-xs">
+                  <Star className="w-2.5 h-2.5 fill-amber-400" />
                   {ratingNum.toFixed(1)}
                 </span>
               )}
@@ -186,38 +187,31 @@ const GameCardComponent: React.FC<GameCardProps> = ({
                     e.stopPropagation();
                     onEdit(game);
                   }}
-                  className="p-1 sm:p-1.5 rounded-lg bg-black/85 hover:bg-black text-white/90 hover:text-white border border-white/20 transition-colors shadow-sm cursor-pointer"
+                  className="p-1.5 rounded-full bg-black/75 hover:bg-black text-white/90 hover:text-white backdrop-blur-sm border border-white/15 transition-colors shadow-xs cursor-pointer"
                   title="Quick Edit Game"
                   aria-label={`Quick Edit ${game.name}`}
                 >
-                  <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  <Edit3 className="w-3 h-3" />
                 </button>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Hover Play Count Overlay */}
-          <div className="absolute inset-0 z-15 flex items-center justify-center bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-            <div className="px-4 py-2 rounded-xl bg-[var(--accent)] text-[var(--accent-ink)] font-display font-bold text-sm shadow-xl flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-200">
-              <Play className="w-4 h-4 fill-current" />
-              <span>
-                {playCount} {playCount === 1 ? 'Session' : 'Sessions'} Played
-              </span>
-            </div>
-          </div>
-
-          {/* Bottom title inside cover */}
-          <div className="absolute bottom-2.5 sm:bottom-3 left-2.5 sm:left-3.5 right-2.5 sm:right-3.5 z-10">
-            <h3 className="font-display font-bold text-sm sm:text-base md:text-lg text-white leading-snug line-clamp-1 group-hover:text-teal-200 transition-colors">
+        {/* Album Typography: Bold Title + 1 Clean Meta Line Beneath Cover */}
+        <div className="pt-2.5 pb-0.5 px-0.5 flex flex-col flex-1 justify-between">
+          <div>
+            <h3 className="font-display font-bold text-sm sm:text-base text-[var(--ink)] leading-snug line-clamp-1 group-hover:text-[var(--accent)] transition-colors">
               {game.name}
             </h3>
-            <div className="mt-1 flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 gap-y-0.5 text-[11px] sm:text-xs text-slate-200 tabular-nums font-semibold">
+
+            <div className="mt-1 flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 gap-y-0.5 text-xs text-[var(--muted)] tabular-nums font-medium">
               {game.yearPublished && <span>{game.yearPublished}</span>}
               {game.yearPublished && (game.minPlayers || game.maxPlayers || game.playingTime) && (
                 <span aria-hidden="true" className="opacity-40">·</span>
               )}
               <span>
-                {game.minPlayers === game.maxPlayers ? `${game.minPlayers}p` : `${game.minPlayers}–${game.maxPlayers}p`}
+                {game.minPlayers === game.maxPlayers ? `${game.minPlayers} players` : `${game.minPlayers}–${game.maxPlayers} players`}
               </span>
               {game.playingTime && (
                 <>
@@ -227,16 +221,16 @@ const GameCardComponent: React.FC<GameCardProps> = ({
               )}
             </div>
           </div>
-        </div>
 
-        {game.purchasePrice ? (
-          <div className="px-3.5 py-2.5 flex items-center justify-between text-xs border-t border-[var(--line)] bg-[var(--card-2)]/50 mt-auto">
-            <span className="text-[var(--muted)] font-medium">Valuation</span>
-            <span className="font-mono font-bold text-[var(--ink)] tabular-nums">
-              {formatVND(game.purchasePrice)}
-            </span>
-          </div>
-        ) : null}
+          {game.purchasePrice ? (
+            <div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center justify-between text-[11px] text-[var(--muted)] font-medium">
+              <span>Valuation</span>
+              <span className="font-mono font-bold text-[var(--ink)] tabular-nums">
+                {formatVND(game.purchasePrice)}
+              </span>
+            </div>
+          ) : null}
+        </div>
       </Link>
     </div>
   );

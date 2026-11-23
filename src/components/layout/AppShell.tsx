@@ -12,6 +12,8 @@ import {
   Moon,
   Sparkles,
   RefreshCw,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
@@ -50,6 +52,24 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Desktop sidebar collapsible rail state (persisted)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bg-vault-sidebar-collapsed') === 'true';
+    }
+    return false;
+  });
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('bg-vault-sidebar-collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const handleForceAppUpdate = async () => {
     setIsUpdating(true);
     try {
@@ -63,7 +83,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     }
   };
 
-  // Theme mode toggle: Fitlo Light & Fitlo Dark
+  // Theme mode toggle: Warm Editorial Light & Warm Editorial Dark
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('bg-vault-theme-mode');
@@ -93,7 +113,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const syncHistoricalLocations = useLocationStore((s) => s.syncHistoricalLocations);
   const locationsCount = useLocationStore((s) => s.locations.length);
 
-  // Automatically hydrate venue presets from sessions on boot if empty (non-reactive to avoid layout re-renders)
+  // Automatically hydrate venue presets from sessions on boot if empty
   useEffect(() => {
     if (locationsCount === 0) {
       const currentSessions = useSessionStore.getState().sessions;
@@ -145,14 +165,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       if (importedFromUrl) {
         setShowSyncModal(true);
       } else if (isSyncEnabled && autoSync) {
-        // Prioritize 'replace' on app launch when local store is empty to prevent merging stale artifacts
         const localGamesCount = useGameStore.getState().games.length;
         const localSessionsCount = useSessionStore.getState().sessions.length;
         const isLocalEmpty = localGamesCount === 0 && localSessionsCount === 0;
         sync.pullVaultFromCloud(isLocalEmpty ? 'replace' : 'merge');
       }
 
-      // Subscribe to multi-device Realtime events
       const unsub = sync.startVaultRealtimeSubscription();
       if (isCancelled) {
         unsub();
@@ -227,43 +245,82 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   const isNewSession = location.pathname.startsWith('/sessions/new');
 
+  const getPageTitle = () => {
+    if (location.pathname === '/') return 'Overview & Highlights';
+    if (location.pathname.startsWith('/collection/add')) return 'Add New Game';
+    if (location.pathname.startsWith('/collection/')) return 'Game Details';
+    if (location.pathname.startsWith('/collection')) return 'Boardgame Vault';
+    if (location.pathname.startsWith('/sessions/new')) return 'New Session Wizard';
+    if (location.pathname.startsWith('/sessions/')) return 'Session Details';
+    if (location.pathname.startsWith('/sessions')) return 'Tabletop Plays';
+    if (location.pathname.startsWith('/players/')) return 'Player Profile';
+    if (location.pathname.startsWith('/players')) return 'Players & Rivals';
+    if (location.pathname.startsWith('/stats')) return 'Vault Analytics';
+    return 'Vault';
+  };
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--bg)] text-[var(--ink)] transition-colors duration-200 overflow-x-hidden max-w-full">
-      {/* Desktop Sidebar Navigation */}
+      {/* Desktop Sidebar Navigation (Soft Sage Green in Light, Dark Olive in Dark) */}
       <aside
         aria-label="Sidebar navigation"
-        className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-30 bg-[var(--bg)] border-r border-[var(--line)]"
+        className={cn(
+          'hidden lg:flex lg:flex-col lg:fixed lg:inset-y-0 z-30 bg-[var(--sidebar)] text-[var(--sidebar-ink)] border-r border-[var(--sidebar-line)] transition-all duration-300 ease-in-out',
+          isSidebarCollapsed ? 'lg:w-20' : 'lg:w-60'
+        )}
       >
         {/* Brand Header */}
-        <div className="flex items-center gap-3 px-5 h-20 border-b border-[var(--line)]">
+        <div
+          className={cn(
+            'flex items-center h-20 border-b border-[var(--sidebar-line)] transition-all duration-300',
+            isSidebarCollapsed ? 'justify-center px-2' : 'justify-between px-5'
+          )}
+        >
           <Link
             to="/"
             className="flex items-center gap-3 group focus:outline-none min-w-0"
+            title="Heo's Board Game Vault"
           >
-            {/* Distinctive stylized logo badge */}
-            <div className="relative w-10 h-10 rounded-[13px] bg-gradient-to-br from-[#0b7a73] via-[#08665f] to-[#043d39] dark:from-[#3cc2b5] dark:via-[#2ea69a] dark:to-[#175d56] flex items-center justify-center text-white dark:text-[#05201d] shadow-md shadow-[var(--accent)]/20 group-hover:scale-105 transition-transform duration-200 shrink-0 ring-2 ring-white/10 dark:ring-black/20">
+            {/* Terracotta / Soft Logo badge */}
+            <div className="relative w-10 h-10 rounded-2xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-md shadow-[var(--accent)]/20 group-hover:scale-105 transition-transform duration-200 shrink-0">
               <Dices className="w-5 h-5 text-current drop-shadow-sm" />
-              <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 border-2 border-[var(--bg)] flex items-center justify-center">
+              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-400 border-2 border-[var(--sidebar)] flex items-center justify-center">
                 <Sparkles className="w-2 h-2 text-slate-950" />
               </div>
             </div>
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-display font-black text-sm tracking-tight text-[var(--accent)] uppercase">
-                  Heo's
-                </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)]">
-                  Vault
+
+            {!isSidebarCollapsed && (
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-display font-black text-sm tracking-tight text-[var(--sidebar-ink)] uppercase">
+                    Heo's
+                  </span>
+                  <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/15 text-[var(--sidebar-ink)]">
+                    Vault
+                  </span>
+                </div>
+                <span className="font-display font-semibold text-xs tracking-tight opacity-75 truncate leading-tight">
+                  Board Games
                 </span>
               </div>
-              <span className="font-display font-extrabold text-sm tracking-tight text-[var(--ink)] truncate leading-tight">
-                Board Game Collection
-              </span>
-            </div>
+            )}
           </Link>
+
+          {!isSidebarCollapsed && (
+            <button
+              type="button"
+              onClick={toggleSidebarCollapse}
+              className="p-1.5 rounded-lg opacity-60 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              title="Collapse sidebar rail"
+              aria-label="Collapse sidebar rail"
+            >
+              <PanelLeftClose className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1.5">
+        {/* Navigation Items */}
+        <nav className="flex-1 px-3 py-5 space-y-1.5 overflow-y-auto">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = isTabActive(item.to);
@@ -272,141 +329,146 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               <NavLink
                 key={item.to}
                 to={item.to}
+                title={isSidebarCollapsed ? item.label : undefined}
                 className={cn(
-                  'relative flex items-center gap-3.5 px-4 py-2.5 rounded-[14px] text-sm font-semibold transition-all duration-200 whitespace-nowrap',
+                  'relative flex items-center rounded-xl text-sm font-semibold transition-all duration-200 select-none group',
+                  isSidebarCollapsed
+                    ? 'justify-center p-3'
+                    : 'gap-3.5 px-3.5 py-2.5',
                   active
-                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md shadow-[var(--accent)]/20 font-bold'
-                    : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
+                    ? 'bg-[var(--sidebar-active)] text-[var(--sidebar-ink)] font-bold shadow-xs'
+                    : 'text-[var(--sidebar-ink)] opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 )}
               >
                 <Icon
                   className={cn(
-                    'w-5 h-5 shrink-0',
-                    active ? 'text-current' : 'text-[var(--muted)]'
+                    'w-5 h-5 shrink-0 transition-transform duration-200 group-hover:scale-105',
+                    active ? 'text-[var(--accent)]' : 'opacity-85'
                   )}
                 />
-                <span>{item.label}</span>
+                {!isSidebarCollapsed && (
+                  <span className="truncate">{item.label}</span>
+                )}
               </NavLink>
             );
           })}
         </nav>
 
         {/* Sidebar Footer Controls */}
-        <div className="p-4 border-t border-[var(--line)] space-y-2.5">
-          {/* Fitlo Theme Mode Toggle (High Contrast) */}
-          <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] text-xs font-semibold text-[var(--ink-2)]">
-            <span className="flex items-center gap-2 font-bold text-[var(--ink)]">
-              {themeMode === 'light' ? (
-                <Sun className="w-3.5 h-3.5 text-amber-600" />
-              ) : (
-                <Moon className="w-3.5 h-3.5 text-teal-400" />
+        <div className="p-3 border-t border-[var(--sidebar-line)] space-y-2">
+          {isSidebarCollapsed ? (
+            <div className="flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleSidebarCollapse}
+                className="p-2 rounded-xl text-[var(--sidebar-ink)] opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                title="Expand sidebar"
+                aria-label="Expand sidebar"
+              >
+                <PanelLeftOpen className="w-5 h-5" />
+              </button>
+
+              <Link
+                to="/sessions/new"
+                className="w-10 h-10 rounded-xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-sm hover:scale-105 transition-transform"
+                title="New Session"
+              >
+                <Play className="w-4 h-4 fill-current" />
+              </Link>
+            </div>
+          ) : (
+            <>
+              {/* Quick Session CTAs */}
+              <Link to="/sessions/new" className="block">
+                <Button variant="primary" className="w-full justify-center rounded-xl font-bold">
+                  <Play className="w-4 h-4 fill-current mr-1" />
+                  New Session
+                </Button>
+              </Link>
+
+              <Link to="/collection/add" className="block">
+                <Button variant="secondary" className="w-full justify-center rounded-xl text-xs font-semibold bg-[var(--sidebar-active)] text-[var(--sidebar-ink)] border-0">
+                  <Plus className="w-4 h-4 mr-1 text-[var(--accent)]" />
+                  Add Game
+                </Button>
+              </Link>
+
+              {/* Utility Tools Grid */}
+              <div className="grid grid-cols-3 gap-1 pt-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    'justify-center text-xs transition-colors font-semibold px-1 rounded-lg',
+                    isSyncEnabled
+                      ? syncStatus === 'error'
+                        ? 'text-rose-600 bg-rose-500/10'
+                        : 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/10'
+                      : 'opacity-70 hover:opacity-100'
+                  )}
+                  onClick={() => setShowSyncModal(true)}
+                  title={isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}
+                >
+                  {isSyncEnabled ? (
+                    <CloudCheck className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  ) : (
+                    <Cloud className="w-3.5 h-3.5 mr-1 shrink-0" />
+                  )}
+                  <span className="truncate">{isSyncEnabled ? 'Synced' : 'Cloud'}</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-center text-xs opacity-70 hover:opacity-100 font-semibold px-1 rounded-lg"
+                  onClick={() => setShowBGGModal(true)}
+                  title="BoardGameGeek API Settings"
+                >
+                  <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722] shrink-0" />
+                  <span className="truncate">BGG</span>
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={isUpdating}
+                  className="justify-center text-xs opacity-70 hover:opacity-100 font-semibold px-1 rounded-lg cursor-pointer"
+                  onClick={handleForceAppUpdate}
+                  title="Làm mới ứng dụng & Tải bản cập nhật mới nhất (Xóa cache PWA)"
+                >
+                  <RefreshCw className={cn('w-3.5 h-3.5 mr-1 shrink-0', isUpdating && 'animate-spin text-[var(--accent)]')} />
+                  <span className="truncate">{isUpdating ? '...' : 'Update'}</span>
+                </Button>
+              </div>
+
+              {!isInstalled && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-center text-xs font-bold rounded-xl mt-1"
+                  onClick={() => setShowInstallModal(true)}
+                >
+                  <Smartphone className="w-3.5 h-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
+                  Install App
+                </Button>
               )}
-              <span>{themeMode === 'light' ? 'Light Mode' : 'Dark Mode'}</span>
-            </span>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="px-2.5 py-1 rounded-lg bg-[var(--card)] text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--line-2)] hover:bg-[var(--card-3)] transition-colors cursor-pointer text-xs font-extrabold"
-            >
-              Switch
-            </button>
-          </div>
-
-          <Link to="/sessions/new" className="block">
-            <Button variant="primary" className="w-full justify-center">
-              <Play className="w-4 h-4 fill-current" />
-              New Session
-            </Button>
-          </Link>
-          <Link to="/collection/add" className="block">
-            <Button variant="secondary" className="w-full justify-center">
-              <Plus className="w-4 h-4" />
-              Add Game
-            </Button>
-          </Link>
-
-          {/* Cloud Sync, BGG Settings & Force Update compact 3-column grid */}
-          <div className="grid grid-cols-3 gap-1 pt-0.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                'justify-center text-xs transition-colors font-semibold px-1.5',
-                isSyncEnabled
-                  ? syncStatus === 'error'
-                    ? 'text-rose-600 dark:text-rose-400 bg-rose-500/10'
-                    : 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10'
-                  : 'text-[var(--muted)] hover:text-[var(--ink)]'
-              )}
-              onClick={() => setShowSyncModal(true)}
-              title={isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}
-            >
-              {isSyncEnabled ? (
-                <CloudCheck className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              ) : (
-                <Cloud className="w-3.5 h-3.5 mr-1 text-cyan-600 dark:text-cyan-400 shrink-0" />
-              )}
-              <span className="truncate">{isSyncEnabled ? 'Synced' : 'Cloud'}</span>
-              {isSyncEnabled && syncStatus === 'syncing' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping ml-1 shrink-0" />
-              )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="justify-center text-xs text-[var(--muted)] hover:text-[var(--ink)] font-semibold px-1.5"
-              onClick={() => setShowBGGModal(true)}
-              title="BoardGameGeek API Settings"
-            >
-              <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722] shrink-0" />
-              <span className="truncate">BGG</span>
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={isUpdating}
-              className="justify-center text-xs text-[var(--muted)] hover:text-cyan-500 font-semibold px-1.5 cursor-pointer"
-              onClick={handleForceAppUpdate}
-              title="Làm mới ứng dụng & Tải bản cập nhật mới nhất (Xóa cache PWA)"
-            >
-              <RefreshCw className={cn("w-3.5 h-3.5 mr-1 shrink-0", isUpdating && "animate-spin text-cyan-500")} />
-              <span className="truncate">{isUpdating ? '...' : 'Update'}</span>
-            </Button>
-          </div>
-
-          {/* Official Powered by BGG Badge in Sidebar */}
-          <div className="pt-1">
-            <PoweredByBGG variant="sidebar" />
-          </div>
-
-          {!isInstalled && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full justify-center text-xs font-bold"
-              onClick={() => setShowInstallModal(true)}
-            >
-              <Smartphone className="w-4 h-4 mr-1.5 text-emerald-600 dark:text-emerald-400" />
-              Install Mobile App
-            </Button>
+            </>
           )}
         </div>
       </aside>
 
-      {/* Mobile Top Header */}
-      <header className="lg:hidden sticky top-0 z-30 h-14 pt-[env(safe-area-inset-top)] px-3 sm:px-4 flex items-center justify-between gap-2 bg-[var(--bg)] shadow-sm border-b border-[var(--line)]">
+      {/* Mobile Top Header (1-line, safe-area-inset-top padding, clean layout) */}
+      <header className="lg:hidden sticky top-0 z-30 h-14 pt-[env(safe-area-inset-top)] px-3 sm:px-4 flex items-center justify-between gap-2 bg-[var(--bg)] border-b border-[var(--line)]">
         <Link
           to="/"
           className="font-display font-bold text-sm tracking-tight text-[var(--ink)] whitespace-nowrap shrink-0 flex items-center gap-2"
         >
-          <span className="w-7 h-7 rounded-[9px] bg-[var(--accent)] text-[var(--accent-ink)] inline-flex items-center justify-center shrink-0 shadow-sm">
+          <span className="w-7 h-7 rounded-xl bg-[var(--accent)] text-[var(--accent-ink)] inline-flex items-center justify-center shrink-0 shadow-xs">
             <Dices className="w-4 h-4 text-current" />
           </span>
           <div className="flex flex-col">
-            <span className="font-extrabold text-xs leading-none text-[var(--ink)]">Heo's Collection</span>
-            <span className="text-[9px] font-bold text-[var(--accent-text)] uppercase tracking-tight">Board Games</span>
+            <span className="font-extrabold text-xs leading-none text-[var(--ink)]">Heo's Vault</span>
+            <span className="text-[9px] font-bold text-[var(--muted)] uppercase tracking-tight">Board Games</span>
           </div>
         </Link>
 
@@ -415,7 +477,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <button
             type="button"
             onClick={toggleTheme}
-            className="p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
             title={`Switch to ${themeMode === 'light' ? 'Dark' : 'Light'} Mode`}
           >
             {themeMode === 'light' ? (
@@ -425,24 +487,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             )}
           </button>
 
-          {!isInstalled && (
-            <button
-              type="button"
-              onClick={() => setShowInstallModal(true)}
-              className="hidden sm:inline-flex px-2.5 py-1.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold items-center gap-1 transition-all shadow-sm shrink-0 cursor-pointer active:scale-95"
-              title="Install on your mobile home screen"
-            >
-              <Smartphone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Install</span>
-            </button>
-          )}
-
           {/* Mobile Cloud Sync Icon */}
           <button
             type="button"
             onClick={() => setShowSyncModal(true)}
             className={cn(
-              'p-1.5 sm:p-2 rounded-xl transition-colors cursor-pointer relative',
+              'p-1.5 rounded-xl transition-colors cursor-pointer relative',
               isSyncEnabled
                 ? syncStatus === 'error'
                   ? 'text-rose-500 bg-rose-500/10'
@@ -457,25 +507,37 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               <Cloud className="w-4 h-4" />
             )}
             {isSyncEnabled && syncStatus === 'syncing' && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[var(--accent)] animate-ping" />
             )}
           </button>
 
-          {/* Mobile Force Refresh / Update PWA button (1-tap cache purge for iOS) */}
+          {/* Mobile Force Refresh */}
           <button
             type="button"
             onClick={handleForceAppUpdate}
             disabled={isUpdating}
-            className="p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-cyan-500 hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--accent)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
             title="Làm mới ứng dụng & Tải bản cập nhật mới nhất (Xóa cache PWA)"
           >
-            <RefreshCw className={cn("w-4 h-4", isUpdating && "animate-spin text-cyan-500")} />
+            <RefreshCw className={cn('w-4 h-4', isUpdating && 'animate-spin text-[var(--accent)]')} />
           </button>
+
+          {!isInstalled && (
+            <button
+              type="button"
+              onClick={() => setShowInstallModal(true)}
+              className="hidden sm:inline-flex px-2.5 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold items-center gap-1 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+              title="Install on your mobile home screen"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Install</span>
+            </button>
+          )}
 
           <button
             type="button"
             onClick={() => setShowBGGModal(true)}
-            className="hidden sm:inline-flex p-1.5 sm:p-2 rounded-xl text-[var(--muted)] hover:text-[#ff7722] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+            className="hidden sm:inline-flex p-1.5 sm:p-2 rounded-full text-[var(--muted)] hover:text-[#ff7722] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
             title="BGG API Settings"
           >
             <Settings className="w-4 h-4" />
@@ -483,7 +545,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
           <Link
             to="/sessions/new"
-            className="min-h-[32px] sm:min-h-[38px] px-2 sm:px-3.5 py-1.5 rounded-xl bg-[var(--accent)] text-xs font-bold text-[var(--accent-ink)] inline-flex items-center gap-1 shadow-sm whitespace-nowrap shrink-0 active:scale-95 transition-transform"
+            className="min-h-[32px] sm:min-h-[36px] px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[var(--accent)] text-xs font-bold text-[var(--accent-ink)] inline-flex items-center gap-1 shadow-xs whitespace-nowrap shrink-0 active:scale-95 transition-transform"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span className="hidden sm:inline">New Session</span>
@@ -495,12 +557,80 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       {/* Main Content Area */}
       <main
         className={cn(
-          "flex-1 lg:pl-64 overflow-x-hidden max-w-full",
+          'flex-1 overflow-x-hidden max-w-full transition-all duration-300 ease-in-out',
+          isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-60',
           isNewSession
-            ? "pb-[calc(1.5rem+env(safe-area-inset-bottom))] lg:pb-8"
-            : "pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-12"
+            ? 'pb-[calc(1.5rem+env(safe-area-inset-bottom))] lg:pb-8'
+            : 'pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-12'
         )}
       >
+        {/* Desktop Top Header Bar (Breadcrumb / Status / Theme Switcher) */}
+        <div className="hidden lg:flex items-center justify-between px-8 h-16 border-b border-[var(--line)] bg-[var(--bg)]/90 backdrop-blur-sm sticky top-0 z-20">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              Vault
+            </span>
+            <span className="text-xs text-[var(--line)]">/</span>
+            <h2 className="font-display font-bold text-sm text-[var(--ink)]">
+              {getPageTitle()}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Desktop Theme Pill */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="px-3 py-1.5 rounded-full bg-[var(--card)] border border-[var(--line)] hover:bg-[var(--card-2)] text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              title={`Switch to ${themeMode === 'light' ? 'Dark' : 'Light'} Mode`}
+            >
+              {themeMode === 'light' ? (
+                <>
+                  <Sun className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Warm Cream</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Deep Espresso</span>
+                </>
+              )}
+            </button>
+
+            {/* Cloud Sync Status Pill */}
+            <button
+              type="button"
+              onClick={() => setShowSyncModal(true)}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border shadow-xs',
+                isSyncEnabled
+                  ? syncStatus === 'error'
+                    ? 'bg-rose-500/10 border-rose-500/20 text-rose-600'
+                    : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-[var(--card)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
+              )}
+            >
+              {isSyncEnabled ? (
+                <CloudCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <Cloud className="w-3.5 h-3.5" />
+              )}
+              <span>{isSyncEnabled ? (syncStatus === 'syncing' ? 'Syncing...' : 'Synced') : 'Cloud Off'}</span>
+            </button>
+
+            {/* Force Refresh */}
+            <button
+              type="button"
+              onClick={handleForceAppUpdate}
+              disabled={isUpdating}
+              className="p-1.5 rounded-full bg-[var(--card)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+              title="Làm mới ứng dụng & Tải bản cập nhật mới nhất (Xóa cache PWA)"
+            >
+              <RefreshCw className={cn('w-3.5 h-3.5', isUpdating && 'animate-spin text-[var(--accent)]')} />
+            </button>
+          </div>
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
           {children}
 

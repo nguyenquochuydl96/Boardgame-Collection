@@ -2,12 +2,12 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* =========================================================================
-   HEO'S BOARD GAME COLLECTION — DESIGN SYSTEM & TOKENS
-   Modern Lisbon & Nordic aesthetic with flawless Vietnamese typography
+   HEO'S BOARD GAME COLLECTION — WARM EDITORIAL DESIGN SYSTEM
+   Minimalist, warm, editorial aesthetic with Plus Jakarta Sans & Be Vietnam Pro
    ========================================================================= */
 
 :root {
-  /* Typography — Plus Jakarta Sans & Be Vietnam Pro with native Vietnamese diacritics */
+  /* Typography */
   --font-display: "Plus Jakarta Sans", "Be Vietnam Pro", system-ui, -apple-system, sans-serif;
   --font-sans: "Plus Jakarta Sans", "Be Vietnam Pro", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", monospace;
@@ -16,141 +16,174 @@
   --r-sm: 10px;
   --r-md: 14px;
   --r-lg: 20px;
-  --r-xl: 26px;
+  --r-xl: 28px;
   --ease: cubic-bezier(.22, 1, .36, 1);
 
-  /* Light Theme (Fitlo Natural Stone & Deep Forest Spruce) */
-  --bg: #f7f6f2;
-  --bg-base: #f7f6f2;
-  --bg-surface: #fdfdfb;
-  --bg-elevated: #f0efea;
-  --bg-card: #fdfdfb;
-  --card: #fdfdfb;
-  --card-2: #f0efea;
-  --card-3: #e5e4de;
+  /* Light Theme (Warm Editorial: Warm Cream, Soft Sage, Terracotta) */
+  --bg: #FAF6EE;
+  --bg-base: #FAF6EE;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #F5EFE4;
+  --bg-card: #FFFFFF;
+  --card: #FFFFFF;
+  --card-2: #F5EFE4;
+  --card-3: #E8E0D5;
 
-  --ink: #161a19;
-  --ink-2: #2e3534;
-  --muted: #565e5c;
-  --text-primary: #161a19;
-  --text-secondary: #565e5c;
-  --text-muted: #788280;
+  /* Desktop Sidebar (Soft Sage Green in Light Mode) */
+  --sidebar: #CDD7C7;
+  --sidebar-ink: #231F1D;
+  --sidebar-active: #FAF6EE;
+  --sidebar-line: #B9C6B1;
 
-  --line: rgba(22, 26, 25, 0.10);
-  --line-2: rgba(22, 26, 25, 0.18);
-  --border-subtle: rgba(22, 26, 25, 0.10);
-  --border-glow: rgba(11, 122, 115, 0.38);
+  /* Editorial Typography Colors */
+  --ink: #231F1D;
+  --ink-2: #3E3834;
+  --muted: #756D67;
+  --text-primary: #231F1D;
+  --text-secondary: #756D67;
+  --text-muted: #9E958C;
 
-  --accent: #0b7a73;
-  --accent-primary: #0b7a73;
-  --accent-secondary: #08665f;
-  --accent-neon: #0b7a73;
-  --accent-glow: rgba(11, 122, 115, 0.22);
-  --accent-ink: #ffffff;
-  --accent-hi: #08665f;
-  --accent-soft: rgba(11, 122, 115, 0.12);
-  --accent-text: #08665f;
+  /* Ultra-subtle Borders & Dividers */
+  --line: #E8E0D5;
+  --line-2: rgba(35, 31, 29, 0.16);
+  --border-subtle: #E8E0D5;
+  --border-glow: rgba(229, 115, 79, 0.35);
 
-  --sig: #0b7a73;
-  --sig-text: #08665f;
-  --sig-soft: rgba(11, 122, 115, 0.12);
-  --data: #0b7a73;
+  /* Primary Accent: Terracotta */
+  --accent: #E5734F;
+  --accent-primary: #E5734F;
+  --accent-secondary: #D6633F;
+  --accent-hover: #D6633F;
+  --accent-neon: #E5734F;
+  --accent-glow: rgba(229, 115, 79, 0.22);
+  --accent-ink: #FFFFFF;
+  --accent-hi: #D6633F;
+  --accent-soft: rgba(229, 115, 79, 0.12);
+  --accent-text: #E5734F;
 
-  --accent-pink: #c93b2a;
-  --accent-cyan: #127582;
-  --accent-green: #196f42;
-  --accent-orange: #d95328;
+  --sig: #E5734F;
+  --sig-text: #E5734F;
+  --sig-soft: rgba(229, 115, 79, 0.12);
+  --data: #E5734F;
 
-  --good: #196f42;
-  --warn: #855300;
-  --bad: #b32116;
-  --info: #25567f;
-  --good-soft: rgba(25, 111, 66, 0.12);
-  --warn-soft: rgba(199, 137, 10, 0.16);
-  --bad-soft: rgba(179, 33, 22, 0.10);
-  --info-soft: rgba(37, 86, 127, 0.12);
+  --accent-pink: #E5734F;
+  --accent-cyan: #355E7F;
+  --accent-green: #2D6A4F;
+  --accent-orange: #E5734F;
 
-  /* Fitlo pastel KPI tiles (high contrast in light mode) */
-  --tile-1: #ffe4d4;  /* Apricot peach */
-  --tile-2: #d8ecee;  /* Ice mint */
-  --tile-3: #fceba7;  /* Warm butter */
-  --tile-4: #ebeae3;  /* Warm stone */
-  --tile-ink: #161a19;
-  --tile-muted: rgba(22, 26, 25, 0.72);
+  /* Functional Status Colors */
+  --good: #2D6A4F;
+  --warn: #B87333;
+  --bad: #C93B2B;
+  --info: #355E7F;
+  --good-soft: rgba(45, 106, 79, 0.12);
+  --warn-soft: rgba(184, 115, 51, 0.14);
+  --bad-soft: rgba(201, 59, 43, 0.12);
+  --info-soft: rgba(53, 94, 127, 0.12);
 
-  --gradient-hero: linear-gradient(135deg, #0b7a73 0%, #08665f 50%, #054843 100%);
-  --gradient-card: linear-gradient(145deg, #fdfdfb, #f0efea);
-  --shimmer: linear-gradient(90deg, transparent, rgba(22, 26, 25, 0.05), transparent);
-  --shadow: 0 1px 2px rgba(22, 26, 25, 0.05), 0 10px 26px -18px rgba(22, 26, 25, 0.22);
-  --shadow-lg: 0 2px 6px rgba(22, 26, 25, 0.08), 0 28px 60px -24px rgba(22, 26, 25, 0.30);
+  /* 4 Pastel KPI Tiles */
+  --tile-1: #D7E2D2;  /* Sage */
+  --tile-2: #FADAD0;  /* Peach */
+  --tile-3: #FBE8CA;  /* Apricot */
+  --tile-4: #DBE7EC;  /* Soft Sky */
+  --tile-sage: #D7E2D2;
+  --tile-peach: #FADAD0;
+  --tile-apricot: #FBE8CA;
+  --tile-sky: #DBE7EC;
+  --tile-ink: #231F1D;
+  --tile-muted: #756D67;
+
+  /* Gradients & Shadows */
+  --gradient-hero: linear-gradient(135deg, #FADAD0 0%, #F5CEBF 50%, #ECC0B0 100%);
+  --gradient-card: linear-gradient(145deg, #FFFFFF, #F5EFE4);
+  --shimmer: linear-gradient(90deg, transparent, rgba(35, 31, 29, 0.05), transparent);
+  --shadow: 0 1px 2px rgba(35, 31, 29, 0.04), 0 8px 24px -16px rgba(35, 31, 29, 0.12);
+  --shadow-lg: 0 2px 6px rgba(35, 31, 29, 0.06), 0 20px 48px -20px rgba(35, 31, 29, 0.18);
   color-scheme: light;
 }
 
 [data-theme="dark"],
 .dark {
-  /* Dark Theme (Fitlo Deep Obsidian & Electric Mint) */
-  --bg: #111514;
-  --bg-base: #111514;
-  --bg-surface: #191e1d;
-  --bg-elevated: #262c2b;
-  --bg-card: #191e1d;
-  --card: #191e1d;
-  --card-2: #151a19;
-  --card-3: #262c2b;
+  /* Dark Theme (Warm Editorial: Deep Espresso, Dark Olive, Terracotta) */
+  --bg: #161311;
+  --bg-base: #161311;
+  --bg-surface: #221E1B;
+  --bg-elevated: #2A2420;
+  --bg-card: #221E1B;
+  --card: #221E1B;
+  --card-2: #1D1917;
+  --card-3: #2A2420;
 
-  --ink: #f3f6f5;
-  --ink-2: #d3d8d6;
-  --muted: #9aa4a2;
-  --text-primary: #f3f6f5;
-  --text-secondary: #9aa4a2;
-  --text-muted: #6b7573;
+  /* Desktop Sidebar (Dark Olive Charcoal in Dark Mode) */
+  --sidebar: #1D211B;
+  --sidebar-ink: #F4EFE6;
+  --sidebar-active: #2A3026;
+  --sidebar-line: #2C332A;
 
-  --line: rgba(243, 246, 245, 0.08);
-  --line-2: rgba(243, 246, 245, 0.18);
-  --border-subtle: rgba(243, 246, 245, 0.09);
-  --border-glow: rgba(60, 194, 181, 0.45);
+  /* Editorial Typography Colors */
+  --ink: #F4EFE6;
+  --ink-2: #D9D1C5;
+  --muted: #9E958C;
+  --text-primary: #F4EFE6;
+  --text-secondary: #9E958C;
+  --text-muted: #756D67;
 
-  --accent: #3cc2b5;
-  --accent-primary: #3cc2b5;
-  --accent-secondary: #5fd3c7;
-  --accent-neon: #3cc2b5;
-  --accent-glow: rgba(60, 194, 181, 0.28);
-  --accent-ink: #05201d;
-  --accent-hi: #5fd3c7;
-  --accent-soft: rgba(60, 194, 181, 0.15);
-  --accent-text: #6fd6cb;
+  /* Ultra-subtle Borders & Dividers */
+  --line: #322C27;
+  --line-2: rgba(244, 239, 230, 0.16);
+  --border-subtle: #322C27;
+  --border-glow: rgba(229, 115, 79, 0.45);
 
-  --sig: #3cc2b5;
-  --sig-text: #6fd6cb;
-  --sig-soft: rgba(60, 194, 181, 0.16);
-  --data: #3cc2b5;
+  /* Primary Accent: Terracotta */
+  --accent: #E5734F;
+  --accent-primary: #E5734F;
+  --accent-secondary: #D6633F;
+  --accent-hover: #D6633F;
+  --accent-neon: #E5734F;
+  --accent-glow: rgba(229, 115, 79, 0.28);
+  --accent-ink: #FFFFFF;
+  --accent-hi: #F28C6D;
+  --accent-soft: rgba(229, 115, 79, 0.16);
+  --accent-text: #F28C6D;
 
-  --accent-pink: #f4826b;
-  --accent-cyan: #52c5d4;
-  --accent-green: #6fcb95;
-  --accent-orange: #f08a5d;
+  --sig: #E5734F;
+  --sig-text: #F28C6D;
+  --sig-soft: rgba(229, 115, 79, 0.16);
+  --data: #E5734F;
 
-  --good: #6fcb95;
-  --warn: #e8b85e;
-  --bad: #f38a7e;
-  --info: #8fb9e0;
-  --good-soft: rgba(111, 203, 149, 0.16);
-  --warn-soft: rgba(232, 184, 94, 0.16);
-  --bad-soft: rgba(243, 138, 126, 0.16);
-  --info-soft: rgba(143, 185, 224, 0.15);
+  --accent-pink: #F28C6D;
+  --accent-cyan: #74A4BC;
+  --accent-green: #52B788;
+  --accent-orange: #E5734F;
 
-  --tile-1: #3a2a21;
-  --tile-2: #1b2f30;
-  --tile-3: #353019;
-  --tile-4: #222726;
-  --tile-ink: #f3f6f5;
-  --tile-muted: rgba(243, 246, 245, 0.72);
+  /* Functional Status Colors */
+  --good: #52B788;
+  --warn: #E0A96D;
+  --bad: #E76F51;
+  --info: #74A4BC;
+  --good-soft: rgba(82, 183, 136, 0.16);
+  --warn-soft: rgba(224, 169, 109, 0.16);
+  --bad-soft: rgba(231, 111, 81, 0.16);
+  --info-soft: rgba(116, 164, 188, 0.16);
 
-  --gradient-hero: linear-gradient(135deg, #1b3834 0%, #132b28 50%, #0d1e1c 100%);
-  --gradient-card: linear-gradient(145deg, #262c2b, #191e1d);
+  /* 4 Pastel KPI Tiles (Deep Tone) */
+  --tile-1: #222920;  /* Dark Sage */
+  --tile-2: #2F221E;  /* Dark Peach */
+  --tile-3: #31271D;  /* Dark Apricot */
+  --tile-4: #1F272B;  /* Dark Soft Sky */
+  --tile-sage: #222920;
+  --tile-peach: #2F221E;
+  --tile-apricot: #31271D;
+  --tile-sky: #1F272B;
+  --tile-ink: #F4EFE6;
+  --tile-muted: #9E958C;
+
+  /* Gradients & Shadows */
+  --gradient-hero: linear-gradient(135deg, #2A201D 0%, #231917 50%, #1D1412 100%);
+  --gradient-card: linear-gradient(145deg, #221E1B, #1D1917);
   --shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 30px -16px rgba(0, 0, 0, 0.65);
-  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.42), 0 30px 70px -24px rgba(0, 0, 0, 0.85);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 24px -16px rgba(0, 0, 0, 0.65);
+  --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.45), 0 24px 60px -20px rgba(0, 0, 0, 0.85);
   color-scheme: dark;
 }
 
@@ -286,7 +319,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Custom sleek scrollbar matching Fitlo */
+/* Custom sleek scrollbar matching Warm Editorial */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

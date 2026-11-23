@@ -1,14 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Dices,
   Gamepad2,
   Clock,
-  Wallet,
   Play,
   Crown,
   ArrowRight,
   Calendar,
+  Sparkles,
+  Flame,
+  Users,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { StatCard } from '../components/dashboard/StatCard';
@@ -18,13 +20,27 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
-import { formatDate, formatDuration, getCollectionTotalValue, isDraftMatchingCompletedSession } from '../lib/utils';
+import { usePlayerStore } from '../store/usePlayerStore';
+import {
+  formatDate,
+  formatDuration,
+  getCollectionTotalValue,
+  isDraftMatchingCompletedSession,
+  calculatePlayerStreaks,
+} from '../lib/utils';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
 import { SessionDraft } from '../types';
+
+const WhatToPlayModal = React.lazy(() =>
+  import('../components/game/WhatToPlayModal').then((m) => ({ default: m.WhatToPlayModal }))
+);
 
 export const HomePage: React.FC = () => {
   const games = useGameStore((s) => s.games);
   const sessions = useSessionStore((s) => s.sessions);
+  const players = usePlayerStore((s) => s.players);
+
+  const [isWhatToPlayOpen, setIsWhatToPlayOpen] = useState(false);
 
   // Active Draft Session detection
   const [activeDraft, setActiveDraft] = useState<SessionDraft | null>(null);
@@ -39,7 +55,6 @@ export const HomePage: React.FC = () => {
           parsed.gameId &&
           (!parsed.sessionStartTime || Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000)
         ) {
-          // If this draft corresponds to an already completed session, discard it
           if (isDraftMatchingCompletedSession(parsed, sessions)) {
             localStorage.removeItem('boardgame_session_draft');
             setActiveDraft(null);
@@ -63,7 +78,31 @@ export const HomePage: React.FC = () => {
     setActiveDraft(null);
   };
 
-  // High-performance memoized calculations across all games and 1400+ sessions
+  // Greeting based on time of day
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning, Heo';
+    if (hour < 18) return 'Good afternoon, Heo';
+    return 'Good evening, Heo';
+  }, []);
+
+  const todayFormatted = useMemo(() => {
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(new Date());
+  }, []);
+
+  // Primary user streak calculation
+  const heoStreak = useMemo(() => {
+    const heo = players.find((p) => p.name.toLowerCase() === 'heo') || players[0];
+    if (!heo) return null;
+    return calculatePlayerStreaks(heo.id, sessions);
+  }, [players, sessions]);
+
+  // High-performance memoized calculations across all games and sessions
   const {
     ownedGamesCount,
     totalSessionsCount,
@@ -126,39 +165,24 @@ export const HomePage: React.FC = () => {
     };
   }, [games, sessions]);
 
+  const lastSession = recentSessions[0];
+
   return (
     <PageTransition>
       <div className="space-y-8">
-        {/* Fitlo Editorial Hero Banner with Clean High-Contrast Action Buttons */}
-        <section
-          className="relative rounded-[24px] overflow-hidden p-6 sm:p-8 lg:p-10 bg-[image:var(--gradient-hero)] shadow-xl shadow-[var(--accent)]/15 border border-white/15 text-white"
-        >
-          <div
-            className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.12)_0%,transparent_70%)] pointer-events-none"
-            aria-hidden="true"
-          />
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="space-y-1.5 max-w-2xl">
-              <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-teal-200">
-                Curated by Heo
-              </p>
-              <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight">
-                Heo's Board Game Collection
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-3 shrink-0">
-              <Link to="/sessions/new">
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  className="bg-white text-slate-950 hover:bg-slate-100 font-extrabold shadow-lg"
-                >
-                  <Play className="w-4 h-4 fill-slate-950 text-slate-950 mr-1.5" />
-                  New Session
-                </Button>
-              </Link>
-            </div>
+        {/* Editorial Greeting Header */}
+        <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-[var(--line)] pb-5">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+              {todayFormatted}
+            </p>
+            <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-[var(--ink)] tracking-tight">
+              {greeting}
+            </h1>
+          </div>
+          <div className="text-xs sm:text-sm text-[var(--muted)] font-medium">
+            <span className="font-bold text-[var(--ink)]">{ownedGamesCount}</span> games in vault ·{' '}
+            <span className="font-bold text-[var(--ink)]">{totalSessionsCount}</span> plays logged
           </div>
         </section>
 
@@ -169,244 +193,246 @@ export const HomePage: React.FC = () => {
           </section>
         )}
 
-        {/* Fitlo Signature Pastel KPI Tiles Grid */}
-        <section
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-        >
-          <StatCard
-            label="Total Games Owned"
-            value={ownedGamesCount}
-            icon={<Dices className="w-5 h-5" />}
-            subtitle={`${games.length} total in vault`}
-            href="/collection?status=own"
-            tileIndex={1}
-          />
-          <StatCard
-            label="Sessions Played"
-            value={totalSessionsCount}
-            icon={<Gamepad2 className="w-5 h-5" />}
-            subtitle="All-time tabletop logs"
-            href="/sessions"
-            tileIndex={2}
-          />
-          <StatCard
-            label="Hours Played"
-            value={totalHoursPlayed}
-            suffix="h"
-            icon={<Clock className="w-5 h-5" />}
-            subtitle={`${totalMinutesPlayed} minutes at the table`}
-            href="/stats"
-            tileIndex={3}
-          />
-          <StatCard
-            label="Collection Value"
-            value={totalCollectionValue}
-            isCurrencyVND
-            icon={<Wallet className="w-5 h-5" />}
-            subtitle="Active shelf valuation"
-            href="/collection"
-            tileIndex={4}
-          />
-        </section>
+        {/* Bento Grid Upper Row: Left Peach Hero Tile + Right 2x2 Pastel KPI Cards */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+          {/* Left Hero Card (Peach / Terracotta Editorial Accent) */}
+          <div className="lg:col-span-7 rounded-3xl p-6 sm:p-8 bg-[#FADAD0] text-[#231F1D] dark:bg-[#2A201D] dark:text-[#F4EFE6] border border-[var(--line)] shadow-xs flex flex-col justify-between relative overflow-hidden group">
+            {/* Soft decorative background shape */}
+            <div
+              className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-white/30 dark:bg-white/5 pointer-events-none transition-transform duration-500 group-hover:scale-110"
+              aria-hidden="true"
+            />
 
-        {/* Recently Played Horizontal Scroll List */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--ink)]">
-                Recently Played
+            <div className="relative z-10 space-y-3 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/10 dark:bg-white/10 text-xs font-extrabold uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-[#E5734F]" />
+                Tabletop Vault
+              </div>
+              <h2 className="font-display font-black text-2xl sm:text-3xl lg:text-4xl leading-tight tracking-tight">
+                Ready for game night?
               </h2>
-              <p className="text-xs sm:text-sm text-[var(--muted)] font-medium">
-                Your last 5 tabletop game nights
+              <p className="text-xs sm:text-sm opacity-80 leading-relaxed font-medium">
+                {lastSession ? (
+                  <>
+                    Last game on the table was{' '}
+                    <strong className="font-bold text-[var(--accent)]">{lastSession.gameName}</strong> ({formatDate(lastSession.datePlayed)}). Start a new play or roll for what to play next.
+                  </>
+                ) : (
+                  'Explore your collection, pick what to play tonight, or log your scores in seconds.'
+                )}
               </p>
             </div>
-            <Link
-              to="/sessions"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[var(--accent)] hover:underline transition-colors"
-            >
-              View All
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+
+            {/* Pill Action Buttons */}
+            <div className="relative z-10 mt-6 pt-4 flex items-center gap-3 flex-wrap">
+              <Link to="/sessions/new">
+                <button
+                  type="button"
+                  className="px-6 py-3 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-bold text-sm inline-flex items-center gap-2 shadow-md shadow-[var(--accent)]/25 active:scale-95 transition-all cursor-pointer"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>New Session</span>
+                </button>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setIsWhatToPlayOpen(true)}
+                className="px-5 py-3 rounded-full bg-white/90 hover:bg-white text-[#231F1D] dark:bg-white/10 dark:hover:bg-white/20 dark:text-[#F4EFE6] border border-black/10 dark:border-white/15 font-bold text-sm inline-flex items-center gap-2 active:scale-95 transition-all cursor-pointer shadow-xs"
+              >
+                <Dices className="w-4 h-4 text-[var(--accent)]" />
+                <span>What to Play</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex gap-4 overflow-x-auto pb-3 snap-x">
-            {recentSessions.map((session) => {
-              const winner = session.players.find(
-                (p) => p.isWinner || p.playerId === session.winnerId
-              );
-              return (
-                <div
-                  key={session.id}
-                  className="snap-start shrink-0 transition-transform duration-200 hover:-translate-y-1 active:scale-[0.99]"
-                >
-                  <Link
-                    to={`/sessions/${session.id}`}
-                    className="block w-72 sm:w-80 rounded-[18px] bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line),var(--shadow)] hover:shadow-lg p-3.5 transition-all duration-200 group flex gap-3.5"
-                  >
-                    <div className="relative w-20 h-24 rounded-[12px] overflow-hidden bg-[var(--card-2)] shrink-0 shadow-sm shadow-[inset_0_0_0_1px_var(--line)]">
-                      <img
-                        src={session.gameThumbnail}
-                        alt={session.gameName}
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      <div>
-                        <h3 className="font-display font-bold text-base text-[var(--ink)] truncate group-hover:text-[var(--accent)] transition-colors">
-                          {session.gameName}
-                        </h3>
-                        <p className="text-xs text-[var(--muted)] inline-flex items-center gap-1 mt-1 tabular-nums font-semibold">
-                          <Calendar className="w-3 h-3 text-[var(--accent)]" />
-                          {formatDate(session.datePlayed)}
-                          {session.durationMinutes
-                            ? ` · ${formatDuration(session.durationMinutes)}`
-                            : ''}
-                        </p>
+          {/* Right 2x2 Grid of 4 Pastel KPI Cards */}
+          <div className="lg:col-span-5 grid grid-cols-2 gap-3.5">
+            <StatCard
+              label="Games Owned"
+              value={ownedGamesCount}
+              icon={<Dices className="w-5 h-5" />}
+              subtitle={`${games.length} total in vault`}
+              href="/collection?status=own"
+              tileIndex={1}
+            />
+            <StatCard
+              label="Sessions Played"
+              value={totalSessionsCount}
+              icon={<Gamepad2 className="w-5 h-5" />}
+              subtitle="All-time plays"
+              href="/sessions"
+              tileIndex={2}
+            />
+            <StatCard
+              label="Hours Played"
+              value={totalHoursPlayed}
+              suffix="h"
+              icon={<Clock className="w-5 h-5" />}
+              subtitle={`${totalMinutesPlayed}m at the table`}
+              href="/stats"
+              tileIndex={3}
+            />
+            {heoStreak && heoStreak.currentStreak && heoStreak.currentStreak.count > 0 ? (
+              <StatCard
+                label="Current Streak"
+                value={heoStreak.currentStreak.count}
+                suffix={heoStreak.currentStreak.type === 'win' ? ' Win' : ' Loss'}
+                icon={<Flame className="w-5 h-5" />}
+                subtitle={heoStreak.currentStreak.type === 'win' ? 'Consecutive wins' : 'Current games streak'}
+                href="/players"
+                tileIndex={4}
+              />
+            ) : (
+              <StatCard
+                label="Active Rivals"
+                value={players.length}
+                icon={<Users className="w-5 h-5" />}
+                subtitle="Players logged"
+                href="/players"
+                tileIndex={4}
+              />
+            )}
+          </div>
+        </section>
+
+        {/* Lower Row: Recent Sessions + Top Played Games */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+          {/* Recent Sessions List */}
+          <div className="lg:col-span-7 rounded-3xl p-6 bg-[var(--card)] border border-[var(--line)] shadow-xs flex flex-col justify-between space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--line)]">
+              <div>
+                <h2 className="font-display font-bold text-xl text-[var(--ink)]">
+                  Recent Sessions
+                </h2>
+                <p className="text-xs text-[var(--muted)] font-medium">
+                  Your last 5 tabletop game nights
+                </p>
+              </div>
+              <Link
+                to="/sessions"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[var(--accent)] hover:underline transition-colors"
+              >
+                <span>View All</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            <div className="space-y-2.5">
+              {recentSessions.length > 0 ? (
+                recentSessions.map((session) => {
+                  const winner = session.players.find(
+                    (p) => p.isWinner || p.playerId === session.winnerId
+                  );
+
+                  return (
+                    <Link
+                      key={session.id}
+                      to={`/sessions/${session.id}`}
+                      className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--card-2)] hover:bg-[var(--line)]/40 transition-colors group"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        {/* Square rounded album thumbnail */}
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-[var(--card)] shrink-0 border border-[var(--line)] shadow-xs">
+                          <img
+                            src={session.gameThumbnail}
+                            alt={session.gameName}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                        </div>
+
+                        <div className="min-w-0">
+                          <h3 className="font-display font-bold text-sm text-[var(--ink)] truncate group-hover:text-[var(--accent)] transition-colors">
+                            {session.gameName}
+                          </h3>
+                          <p className="text-xs text-[var(--muted)] inline-flex items-center gap-1 tabular-nums font-medium mt-0.5">
+                            <Calendar className="w-3 h-3 text-[var(--accent)]" />
+                            {formatDate(session.datePlayed)}
+                            {session.durationMinutes ? ` · ${formatDuration(session.durationMinutes)}` : ''}
+                          </p>
+                        </div>
                       </div>
 
                       {winner && (
-                        <div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center justify-between text-xs">
-                          <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold truncate">
-                            <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500 shrink-0" />
-                            {winner.playerName}
-                          </span>
+                        <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-bold">
+                          <Crown className="w-3 h-3 fill-amber-500 text-amber-500" />
+                          <span className="truncate max-w-[80px] sm:max-w-[120px]">{winner.playerName}</span>
                           {typeof winner.score === 'number' && (
-                            <span className="font-mono font-extrabold text-[var(--ink)] tabular-nums">
-                              {winner.score} pts
+                            <span className="font-mono text-[var(--ink)] tabular-nums ml-0.5">
+                              {winner.score}p
                             </span>
                           )}
                         </div>
                       )}
-                    </div>
-                  </Link>
+                    </Link>
+                  );
+                })
+              ) : (
+                <div className="py-8 text-center text-xs text-[var(--muted)] font-medium">
+                  No plays logged yet. Start your first session!
                 </div>
-              );
-            })}
+              )}
+            </div>
           </div>
-        </section>
 
-        {/* Bottom Split: Most Played Bar Chart + Vault Spotlight */}
-        <section
-          className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"
-        >
-          <Card className="lg:col-span-7 p-6 space-y-5 flex flex-col justify-between rounded-[20px]">
-            <div className="flex items-center justify-between">
+          {/* Most Played Games Chart & Shelf Summary */}
+          <div className="lg:col-span-5 rounded-3xl p-6 bg-[var(--card)] border border-[var(--line)] shadow-xs flex flex-col justify-between space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--line)]">
               <div>
                 <h2 className="font-display font-bold text-xl text-[var(--ink)]">
                   Most Played Games
                 </h2>
                 <p className="text-xs text-[var(--muted)] font-medium">
-                  Top 5 boardgames hitting the table
+                  Top board games hitting the table
                 </p>
               </div>
               <Link
                 to="/stats"
                 className="text-xs font-bold text-[var(--accent)] hover:underline transition-colors"
               >
-                Full Analytics →
+                Analytics →
               </Link>
             </div>
+
             <MiniBarChart items={topPlayedGames} unit="plays" />
-          </Card>
 
-          <Card className="lg:col-span-5 p-6 flex flex-col justify-between space-y-5 rounded-[20px]">
-            <div className="space-y-1">
-              <h2 className="font-display font-bold text-xl text-[var(--ink)]">
-                Shelf Status Breakdown
-              </h2>
-              <p className="text-xs text-[var(--muted)] font-medium">
-                Inventory status across your vault
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 tabular-nums">
+            {/* Shelf Status Quick Chips */}
+            <div className="pt-3 border-t border-[var(--line)] flex items-center justify-between gap-2 text-xs flex-wrap">
               <Link
                 to="/collection?status=own"
-                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
+                className="px-3 py-1.5 rounded-full bg-[var(--card-2)] hover:bg-[var(--line)]/50 text-[var(--ink)] font-semibold transition-colors flex items-center gap-1.5"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 font-bold transition-colors">Owned</span>
-                  <span className="text-xs text-[var(--muted)]">→</span>
-                </div>
-                <div className="font-display font-extrabold text-2xl text-emerald-600 dark:text-emerald-400 mt-1">
-                  <AnimatedNumber value={statusCounts.own} />
-                </div>
+                <span>Owned</span>
+                <span className="font-mono font-bold text-[var(--accent)]">{statusCounts.own}</span>
               </Link>
-
-              <Link
-                to="/collection?status=rented"
-                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-amber-600 dark:group-hover:text-amber-400 font-bold transition-colors">Rented</span>
-                  <span className="text-xs text-[var(--muted)]">→</span>
-                </div>
-                <div className="font-display font-extrabold text-2xl text-amber-600 dark:text-amber-400 mt-1">
-                  <AnimatedNumber value={statusCounts.rented} />
-                </div>
-              </Link>
-
-              <Link
-                to="/collection?status=lent_out"
-                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-orange-600 dark:group-hover:text-orange-400 font-bold transition-colors">Lent Out</span>
-                  <span className="text-xs text-[var(--muted)]">→</span>
-                </div>
-                <div className="font-display font-extrabold text-2xl text-orange-600 dark:text-orange-400 mt-1">
-                  <AnimatedNumber value={statusCounts.lent_out} />
-                </div>
-              </Link>
-
               <Link
                 to="/collection?status=borrowed"
-                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
+                className="px-3 py-1.5 rounded-full bg-[var(--card-2)] hover:bg-[var(--line)]/50 text-[var(--ink)] font-semibold transition-colors flex items-center gap-1.5"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-cyan-600 dark:group-hover:text-cyan-400 font-bold transition-colors">Borrowed</span>
-                  <span className="text-xs text-[var(--muted)]">→</span>
-                </div>
-                <div className="font-display font-extrabold text-2xl text-cyan-600 dark:text-cyan-400 mt-1">
-                  <AnimatedNumber value={statusCounts.borrowed} />
-                </div>
+                <span>Borrowed</span>
+                <span className="font-mono font-bold">{statusCounts.borrowed}</span>
               </Link>
-
-              <Link
-                to="/collection?status=sold"
-                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-rose-600 dark:group-hover:text-rose-400 font-bold transition-colors">Sold Archive</span>
-                  <span className="text-xs text-[var(--muted)]">→</span>
-                </div>
-                <div className="font-display font-extrabold text-2xl text-rose-600 dark:text-rose-400 mt-1">
-                  <AnimatedNumber value={statusCounts.sold} />
-                </div>
-              </Link>
-
               <Link
                 to="/collection?status=wishlist"
-                className="p-3.5 rounded-[14px] bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:shadow-md transition-all group cursor-pointer block"
+                className="px-3 py-1.5 rounded-full bg-[var(--card-2)] hover:bg-[var(--line)]/50 text-[var(--ink)] font-semibold transition-colors flex items-center gap-1.5"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--ink-2)] group-hover:text-[var(--accent)] font-bold transition-colors">Wishlist</span>
-                  <span className="text-xs text-[var(--muted)]">→</span>
-                </div>
-                <div className="font-display font-extrabold text-2xl text-[var(--accent)] mt-1">
-                  <AnimatedNumber value={statusCounts.wishlist} />
-                </div>
+                <span>Wishlist</span>
+                <span className="font-mono font-bold">{statusCounts.wishlist}</span>
               </Link>
             </div>
-
-            <Link to="/collection" className="block">
-              <Button variant="outline" className="w-full justify-center">
-                Browse Full Collection
-              </Button>
-            </Link>
-          </Card>
+          </div>
         </section>
+
+        {/* On-demand What to Play Modal */}
+        {isWhatToPlayOpen && (
+          <Suspense fallback={null}>
+            <WhatToPlayModal
+              isOpen={isWhatToPlayOpen}
+              onClose={() => setIsWhatToPlayOpen(false)}
+            />
+          </Suspense>
+        )}
       </div>
     </PageTransition>
   );

@@ -153,37 +153,41 @@ export const CollectionPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="secondary"
-              size="sm"
+            <button
+              type="button"
               onClick={() => setIsWhatToPlayOpen(true)}
-              className="text-amber-600 dark:text-amber-400 font-semibold"
+              className="px-4 py-2 rounded-full bg-[var(--card)] border border-[var(--line)] hover:bg-[var(--card-2)] text-amber-600 dark:text-amber-400 font-bold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer active:scale-95"
             >
-              <Sparkles className="w-4 h-4 mr-1 text-amber-500" />
-              What to Play?
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>What to Play?</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => {
                 setImportModalTab('import');
                 setIsImportOpen(true);
               }}
               title="Import or Export collection data"
+              className="px-4 py-2 rounded-full bg-[var(--card)] border border-[var(--line)] hover:bg-[var(--card-2)] text-[var(--ink)] font-semibold text-xs inline-flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer active:scale-95"
             >
-              <ArrowDownUp className="w-4 h-4 mr-1.5 text-[var(--accent)]" />
-              Import / Export
-            </Button>
+              <ArrowDownUp className="w-3.5 h-3.5 text-[var(--accent)]" />
+              <span>Import / Export</span>
+            </button>
+
             <Link to="/collection/add">
-              <Button variant="primary">
-                <Plus className="w-4 h-4 mr-1" />
-                Add Game
-              </Button>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm active:scale-95 transition-transform cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Game</span>
+              </button>
             </Link>
           </div>
         </div>
 
-        {/* Status Filter Bar with Fitlo sliding pill */}
+        {/* Status Filter Bar with Warm Editorial Pill Chips */}
         <div
           role="tablist"
           aria-label="Filter collection by status"
@@ -201,17 +205,19 @@ export const CollectionPage: React.FC = () => {
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
                 className={cn(
-                  'min-h-[38px] px-3.5 py-1.5 rounded-[12px] text-xs font-bold shrink-0 transition-all duration-150 cursor-pointer flex items-center gap-2 select-none active:scale-95',
+                  'min-h-[36px] px-4 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all duration-150 cursor-pointer flex items-center gap-2 select-none active:scale-95 border',
                   isActive
-                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-sm'
-                    : 'bg-[var(--card)] text-[var(--ink-2)] shadow-[inset_0_0_0_1px_var(--line)] hover:bg-[var(--card-2)] hover:text-[var(--ink)]'
+                    ? 'bg-[#231F1D] text-white dark:bg-[#F4EFE6] dark:text-[#161311] border-transparent shadow-xs'
+                    : 'bg-[var(--card)] text-[var(--muted)] border-[var(--line)] hover:bg-[var(--card-2)] hover:text-[var(--ink)]'
                 )}
               >
                 <span>{tab.label}</span>
                 <span
                   className={cn(
                     'px-1.5 py-0.5 rounded-full text-[10px] tabular-nums font-bold',
-                    isActive ? 'bg-black/20 text-white' : 'bg-[var(--card-3)] text-[var(--ink-2)]'
+                    isActive
+                      ? 'bg-white/20 dark:bg-black/20 text-current'
+                      : 'bg-[var(--card-2)] text-[var(--muted)]'
                   )}
                 >
                   {count}
@@ -229,18 +235,19 @@ export const CollectionPage: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               leftIcon={<Search className="w-4 h-4 text-[var(--muted)]" />}
+              className="rounded-full bg-[var(--card)] border-[var(--line)] text-xs"
             />
           </div>
 
           <div className="flex items-center gap-2.5 self-end sm:self-auto">
             {/* Sort Dropdown */}
             <div className="relative inline-flex items-center">
-              <ArrowUpDown className="w-4 h-4 text-[var(--muted)] absolute left-3 pointer-events-none" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-[var(--muted)] absolute left-3 pointer-events-none" />
               <select
                 aria-label="Sort collection by"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="min-h-[42px] pl-9 pr-8 py-2 rounded-xl bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line-2)] text-xs font-semibold text-[var(--ink)] focus:outline-none focus:shadow-[inset_0_0_0_1.5px_var(--accent)] cursor-pointer appearance-none"
+                className="min-h-[38px] pl-8 pr-7 py-1.5 rounded-full bg-[var(--card)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] cursor-pointer appearance-none shadow-xs"
               >
                 <option value="addedDate">Date Added (Newest)</option>
                 <option value="name">Name (A-Z)</option>
@@ -250,32 +257,32 @@ export const CollectionPage: React.FC = () => {
             </div>
 
             {/* View Mode Switcher */}
-            <div className="p-1 rounded-[12px] bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line)] flex items-center gap-1">
+            <div className="p-1 rounded-full bg-[var(--card)] border border-[var(--line)] flex items-center gap-1 shadow-xs">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={cn(
-                  'p-2 rounded-[9px] transition-all duration-150 cursor-pointer select-none active:scale-95',
+                  'p-1.5 rounded-full transition-all duration-150 cursor-pointer select-none active:scale-95',
                   viewMode === 'grid'
-                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-xs'
-                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
+                    ? 'bg-[#231F1D] text-white dark:bg-[#F4EFE6] dark:text-[#161311] shadow-xs'
+                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
                 aria-label="Grid view"
               >
-                <LayoutGrid className="w-4 h-4" />
+                <LayoutGrid className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
                 className={cn(
-                  'p-2 rounded-[9px] transition-all duration-150 cursor-pointer select-none active:scale-95',
+                  'p-1.5 rounded-full transition-all duration-150 cursor-pointer select-none active:scale-95',
                   viewMode === 'list'
-                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-xs'
-                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
+                    ? 'bg-[#231F1D] text-white dark:bg-[#F4EFE6] dark:text-[#161311] shadow-xs'
+                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
                 aria-label="List view"
               >
-                <List className="w-4 h-4" />
+                <List className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -297,7 +304,7 @@ export const CollectionPage: React.FC = () => {
                 <Button
                   variant="secondary"
                   onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
-                  className="px-6 py-2 text-xs font-bold"
+                  className="px-6 py-2 text-xs font-bold rounded-full"
                 >
                   Load More Games ({filteredGames.length - visibleCount} remaining)
                 </Button>
@@ -306,8 +313,8 @@ export const CollectionPage: React.FC = () => {
           </>
         ) : (
           /* Empty State */
-          <div className="p-12 rounded-[24px] bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line)] text-center space-y-4 max-w-md mx-auto my-8">
-            <div className="w-16 h-16 rounded-[18px] bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center text-3xl mx-auto shadow-md">
+          <div className="p-12 rounded-3xl bg-[var(--card)] border border-[var(--line)] text-center space-y-4 max-w-md mx-auto my-8">
+            <div className="w-16 h-16 rounded-2xl bg-[var(--card-2)] text-[var(--accent)] border border-[var(--line)] flex items-center justify-center text-3xl mx-auto shadow-xs">
               🎲
             </div>
             <div className="space-y-1">
@@ -328,24 +335,28 @@ export const CollectionPage: React.FC = () => {
                     setActiveFilter('all');
                     setSearchQuery('');
                   }}
+                  className="rounded-full"
                 >
                   Reset Filters
                 </Button>
               )}
-              <Button variant="secondary" onClick={() => setIsImportOpen(true)}>
+              <Button
+                variant="secondary"
+                onClick={() => setIsImportOpen(true)}
+                className="rounded-full"
+              >
                 <ArrowDownUp className="w-4 h-4 mr-1 text-[var(--accent)]" />
                 Import / Export
               </Button>
               <Link to="/collection/add">
-                <Button variant="primary">
-                  <Plus className="w-4 h-4" />
+                <Button variant="primary" className="rounded-full">
+                  <Plus className="w-4 h-4 mr-1" />
                   Add New Game
                 </Button>
               </Link>
             </div>
           </div>
         )}
-
 
         {/* Modals - Lazy loaded on-demand */}
         {quickEditGame && (

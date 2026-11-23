@@ -22,9 +22,9 @@ export const BottomNavBar: React.FC = memo(() => {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="lg:hidden fixed bottom-[max(10px,env(safe-area-inset-bottom))] left-3 right-3 z-40 max-w-md mx-auto"
+      className="lg:hidden fixed bottom-[max(10px,env(safe-area-inset-bottom))] left-3 right-3 z-40 max-w-md mx-auto pointer-events-auto"
     >
-      <div className="bg-[var(--card)] rounded-[22px] shadow-[inset_0_0_0_1px_var(--line-2),var(--shadow-lg)] p-1.5 grid grid-cols-5 items-center">
+      <div className="bg-[var(--card)] rounded-2xl border border-[var(--line)] shadow-lg shadow-black/5 dark:shadow-black/25 p-1.5 grid grid-cols-5 items-center backdrop-blur-md">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = isTabActive(item.to);
@@ -34,16 +34,16 @@ export const BottomNavBar: React.FC = memo(() => {
               key={item.to}
               to={item.to}
               className={cn(
-                'relative flex flex-col items-center justify-center h-[52px] rounded-[16px] transition-all duration-150 select-none cursor-pointer active:scale-95',
+                'relative flex flex-col items-center justify-center h-[50px] rounded-xl transition-all duration-150 select-none cursor-pointer active:scale-95',
                 active
-                  ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-bold shadow-sm'
-                  : 'text-[var(--muted)] hover:text-[var(--ink)] font-medium'
+                  ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-bold shadow-xs'
+                  : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] font-medium'
               )}
             >
               <Icon
                 className={cn(
                   'w-[20px] h-[20px] transition-transform duration-150',
-                  active ? 'scale-105' : 'opacity-80'
+                  active ? 'scale-105' : 'opacity-85'
                 )}
               />
               <span className="text-[10px] mt-0.5 tracking-tight truncate max-w-[54px]">
