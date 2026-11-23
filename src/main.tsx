@@ -1,4 +1,5 @@
 import { createRoot } from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
 import App from './App.tsx';
 import './index.css';
 import { recordCrash } from './lib/crashLogger';
@@ -48,7 +49,9 @@ export async function forceAppUpdate(): Promise<void> {
   window.location.reload();
 }
 
-// Invalidate legacy service worker caches and ensure immediate updates
+// Service worker registration with onNeedRefresh notification banner
+let updateServiceWorker: ((reloadPage?: boolean) => Promise<void>) | null = null;
+
 if (typeof window !== 'undefined') {
   (window as any).forceAppUpdate = forceAppUpdate;
 
@@ -63,6 +66,25 @@ if (typeof window !== 'undefined') {
   }
 
   if ('serviceWorker' in navigator) {
+    updateServiceWorker = registerSW({
+      immediate: true,
+      onNeedRefresh() {
+        // Dispatches event to display non-disruptive update banner in AppShell
+        window.dispatchEvent(new CustomEvent('pwa-need-refresh'));
+      },
+      onOfflineReady() {
+        console.info('[PWA] Boardgame Vault is ready for offline use');
+      },
+    });
+
+    (window as any).updatePwaSW = async (reloadPage = true) => {
+      if (updateServiceWorker) {
+        await updateServiceWorker(reloadPage);
+      } else {
+        await forceAppUpdate();
+      }
+    };
+
     const checkSWUpdate = () => {
       navigator.serviceWorker.getRegistrations().then((registrations) => {
         registrations.forEach((reg) => {
@@ -71,10 +93,10 @@ if (typeof window !== 'undefined') {
       });
     };
 
-    // Check immediately when page finishes loading
+    // Check on page load
     window.addEventListener('load', checkSWUpdate);
 
-    // CRITICAL FOR IOS PWA: Check whenever the app returns from background / unlocked
+    // Check whenever app returns to foreground on iOS/mobile
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         checkSWUpdate();
@@ -84,21 +106,8 @@ if (typeof window !== 'undefined') {
     // Check when network connection is re-established
     window.addEventListener('online', checkSWUpdate);
 
-    // Periodic background check every 10 minutes
-    setInterval(checkSWUpdate, 10 * 60 * 1000);
-
-    let refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      // Do not disrupt user if they are currently on the active new session creation form
-      const currentRoute = `${window.location.pathname}${window.location.hash}`;
-      const isCreatingSession =
-        currentRoute.includes('/sessions/new') ||
-        currentRoute.includes('/new-session');
-      if (!isCreatingSession && !refreshing) {
-        refreshing = true;
-        window.location.reload();
-      }
-    });
+    // Periodic check every 15 minutes
+    setInterval(checkSWUpdate, 15 * 60 * 1000);
   }
 }
 

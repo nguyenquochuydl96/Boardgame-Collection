@@ -1,9 +1,10 @@
-import React, { useState, memo } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, Clock, Star, Play, Dices, Edit3 } from 'lucide-react';
 import { BoardGame } from '../../types';
 import { GameStatusBadge } from './GameStatusBadge';
 import { formatVND, getGameThumbnail } from '../../lib/utils';
+import { useResolvedMedia } from '../../hooks/useResolvedMedia';
 
 export interface GameCardProps {
   game: BoardGame;
@@ -21,6 +22,12 @@ const GameCardComponent: React.FC<GameCardProps> = ({
   const [imageError, setImageError] = useState(false);
   const ratingNum = Number(game.bggRating);
   const hasValidRating = !Number.isNaN(ratingNum) && ratingNum > 0;
+  const rawThumbnail = getGameThumbnail(game);
+  const resolvedCover = useResolvedMedia(rawThumbnail, game.thumbnail || game.image || undefined);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [game.id, rawThumbnail]);
 
   if (viewMode === 'list') {
     return (
@@ -35,9 +42,9 @@ const GameCardComponent: React.FC<GameCardProps> = ({
           {/* Cover with spine accent */}
           <div className="relative w-16 h-20 rounded-[12px] overflow-hidden bg-[var(--card-2)] shrink-0 shadow-sm shadow-[inset_0_0_0_1px_var(--line)]">
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/40 to-transparent z-10" />
-            {!imageError ? (
+            {!imageError && resolvedCover ? (
               <img
-                src={getGameThumbnail(game)}
+                src={resolvedCover}
                 alt={game.name}
                 loading="lazy"
                 decoding="async"
@@ -46,7 +53,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-[var(--accent)] text-[var(--accent-ink)]">
+              <div className="w-full h-full flex items-center justify-center bg-[var(--card-2)] text-[var(--accent)]">
                 <Dices className="w-6 h-6 text-current" />
               </div>
             )}
@@ -137,9 +144,9 @@ const GameCardComponent: React.FC<GameCardProps> = ({
             className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-r from-black/40 via-black/15 to-transparent z-20 pointer-events-none"
           />
 
-          {!imageError ? (
+          {!imageError && resolvedCover ? (
             <img
-              src={getGameThumbnail(game)}
+              src={resolvedCover}
               alt={game.name}
               loading="lazy"
               decoding="async"

@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { BoardGame } from '../types';
-import { generateId } from '../lib/utils';
+import {
+  generateId,
+  getGameThumbnail,
+  isLowResBGGThumbnail,
+  BGG_OFFICIAL_IRON_CLAYS,
+} from '../lib/utils';
 
 export const INITIAL_GAMES: BoardGame[] = [];
 
@@ -57,30 +62,49 @@ export const useGameStore = create<GameStore>()(
     {
       name: 'bg-vault-games-v2',
       onRehydrateStorage: () => (state) => {
-        if (!state) return;
-        const bggIronClays =
-          'https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__large/img/PWhlasf_TqRSxwf605lU_lDOh-4=/fit-in/1024x1024/filters:no_upscale():strip_icc()/pic9719419.png';
-        const bggIronClaysThumb =
-          'https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__thumb/img/hP92m4b4s44y5qV5s4XhP75v1e4=/fit-in/200x150/filters:strip_icc()/pic9719419.png';
+        if (!state || !Array.isArray(state.games)) return;
 
         let changed = false;
         const nextGames = state.games.map((g) => {
-          if (
-            g.name.toLowerCase().includes('iron clay') &&
-            (!g.image || g.image.startsWith('data:image/svg'))
-          ) {
-            changed = true;
-            return {
-              ...g,
-              image: bggIronClays,
-              thumbnail: bggIronClaysThumb,
-            };
+          let updated = g;
+          const lowerName = (g.name || '').toLowerCase();
+
+          // 1. Guaranteed official high-res cover for Iron Clays
+          if (lowerName.includes('iron clay')) {
+            if (
+              !g.image ||
+              g.image !== BGG_OFFICIAL_IRON_CLAYS ||
+              !g.thumbnail ||
+              g.thumbnail !== BGG_OFFICIAL_IRON_CLAYS
+            ) {
+              changed = true;
+              updated = {
+                ...updated,
+                image: BGG_OFFICIAL_IRON_CLAYS,
+                thumbnail: BGG_OFFICIAL_IRON_CLAYS,
+              };
+            }
+          } else {
+            // 2. Auto-heal any games with low-res thumbnails matching catalog
+            const sharp = getGameThumbnail(g);
+            if (
+              sharp &&
+              (!g.image || isLowResBGGThumbnail(g.image) || g.image.startsWith('data:image/svg'))
+            ) {
+              changed = true;
+              updated = {
+                ...updated,
+                image: sharp,
+                thumbnail: g.thumbnail && !isLowResBGGThumbnail(g.thumbnail) ? g.thumbnail : sharp,
+              };
+            }
           }
-          return g;
+          return updated;
         });
 
         if (changed) {
           state.games = nextGames;
+          useGameStore.setState({ games: nextGames });
         }
       },
     }

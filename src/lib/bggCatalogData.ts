@@ -1901,5 +1901,21 @@ export const EXPANDED_BGG_CATALOG: BGGGameDetail[] = [
       "Strategy",
       "Boardgame"
     ]
+  },
+  {
+    "bggId": "233281",
+    "name": "Iron Clays",
+    "yearPublished": 2017,
+    "minPlayers": 1,
+    "maxPlayers": 10,
+    "playingTime": 0,
+    "bggRating": 8.8,
+    "description": "Iron Clays are premium dual-toned, clay composite gaming counters with weighted metal cores designed by Roxley Games.",
+    "thumbnail": "https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__small/img/Wj4r9y5-EYofShSIJ6CNQUI3aDA=/fit-in/200x150/filters:strip_icc()/pic9719419.png",
+    "image": "https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__original/img/Hn638x-ccBuLyDEQsAnVcu5R0tA=/0x0/filters:format(png)/pic9719419.png",
+    "tags": [
+      "Accessory",
+      "Poker Chips"
+    ]
   }
 ];

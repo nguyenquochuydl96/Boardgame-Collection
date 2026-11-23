@@ -17,7 +17,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { cn } from '../components/ui/cn';
 import { useBGGSearch } from '../hooks/useBGGSearch';
 import { useGameStore } from '../store/useGameStore';
-import { createGameCoverDataUri, STATUS_CONFIG, formatNumberInput, parseNumberInput, getLocalDateString } from '../lib/utils';
+import { createGameCoverDataUri, STATUS_CONFIG, formatNumberInput, parseNumberInput, getLocalDateString, getGameThumbnail } from '../lib/utils';
 import { BGGGameDetail, GameStatus } from '../types';
 import { BGGConfigModal } from '../components/game/BGGConfigModal';
 import { BGGCardThumbnail } from '../components/game/BGGCardThumbnail';
@@ -78,7 +78,9 @@ export const AddGamePage: React.FC = () => {
     setIsSaving(true);
     setFormError(null);
 
+    const sharpCover = getGameThumbnail({ name: name.trim(), bggId: selectedBggId, thumbnail: thumbnail.trim() });
     const generatedCover =
+      sharpCover ||
       thumbnail.trim() ||
       createGameCoverDataUri(
         name.trim(),

@@ -14,6 +14,7 @@ import {
   Save,
   Coffee,
   ArrowUpRight,
+  Dices,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { GameStatusBadge } from '../components/game/GameStatusBadge';
@@ -36,6 +37,7 @@ import {
   STATUS_CONFIG,
 } from '../lib/utils';
 import { GameStatus } from '../types';
+import { useResolvedMedia } from '../hooks/useResolvedMedia';
 
 export const GameDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,6 +49,10 @@ export const GameDetailPage: React.FC = () => {
 
   const allSessions = useSessionStore((s) => s.sessions);
   const players = usePlayerStore((s) => s.players);
+
+  const [coverError, setCoverError] = useState(false);
+  const rawCover = getGameCoverImage(game);
+  const resolvedCover = useResolvedMedia(rawCover, game?.image || game?.thumbnail || undefined);
 
   const [notesDraft, setNotesDraft] = useState(game?.notes || '');
   const [notesSaved, setNotesSaved] = useState(false);
@@ -174,12 +180,22 @@ export const GameDetailPage: React.FC = () => {
         <div className="relative rounded-3xl overflow-hidden border border-[var(--line)] bg-[var(--card)] shadow-xl">
           <div className="grid grid-cols-1 md:grid-cols-12 items-stretch">
             <div className="md:col-span-4 relative aspect-[4/3] md:aspect-auto bg-[var(--card-2)]">
-              <img
-                src={getGameCoverImage(game)}
-                alt={game.name}
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
-              />
+              {!coverError && resolvedCover ? (
+                <img
+                  src={resolvedCover}
+                  alt={game.name}
+                  loading="lazy"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                  onError={() => setCoverError(true)}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center text-[var(--muted)] bg-[var(--card-2)]">
+                  <Dices className="w-12 h-12 text-[var(--accent)] mb-2" />
+                  <span className="font-display font-bold text-base text-[var(--ink)]">{game.name}</span>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] via-transparent to-transparent md:hidden" />
             </div>
 

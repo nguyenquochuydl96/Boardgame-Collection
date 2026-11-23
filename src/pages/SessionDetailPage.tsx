@@ -16,6 +16,7 @@ import {
   X,
   Trophy,
   RotateCcw,
+  ImageOff,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
@@ -33,18 +34,28 @@ const SessionGalleryPhoto: React.FC<{
   onClick: () => void;
 }> = ({ photo, index, onClick }) => {
   const resolved = useResolvedMedia(photo);
+  const [imgError, setImgError] = useState(false);
+
   return (
     <button
       type="button"
       onClick={onClick}
       className="group relative aspect-video rounded-2xl overflow-hidden border border-[var(--border-subtle)] cursor-pointer bg-[var(--card-2)]"
     >
-      {resolved && (
+      {resolved && !imgError ? (
         <img
           src={resolved}
           alt={`Session memory ${index + 1}`}
+          loading="lazy"
+          decoding="async"
+          onError={() => setImgError(true)}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
         />
+      ) : (
+        <div className="w-full h-full flex flex-col items-center justify-center p-3 text-xs text-[var(--muted)]">
+          <ImageOff className="w-5 h-5 mb-1 opacity-50" />
+          <span>Ảnh không khả dụng</span>
+        </div>
       )}
       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
         <Maximize2 className="w-5 h-5 text-white" />
@@ -55,10 +66,13 @@ const SessionGalleryPhoto: React.FC<{
 
 const FullscreenPhotoModalContent: React.FC<{ photo: string }> = ({ photo }) => {
   const resolved = useResolvedMedia(photo);
-  if (!resolved) {
+  const [imgError, setImgError] = useState(false);
+
+  if (!resolved || imgError) {
     return (
-      <div className="h-64 flex items-center justify-center text-sm text-[var(--text-secondary)]">
-        Loading photo...
+      <div className="h-64 flex flex-col items-center justify-center text-sm text-[var(--text-secondary)]">
+        <ImageOff className="w-8 h-8 mb-2 opacity-50" />
+        <span>Ảnh không khả dụng hoặc đã bị xóa khỏi thiết bị</span>
       </div>
     );
   }
@@ -66,6 +80,7 @@ const FullscreenPhotoModalContent: React.FC<{ photo: string }> = ({ photo }) => 
     <img
       src={resolved}
       alt="Fullscreen session memory"
+      onError={() => setImgError(true)}
       className="w-full max-h-[75vh] object-contain rounded-xl mx-auto"
     />
   );

@@ -138,6 +138,8 @@ export const NewSessionPage: React.FC = () => {
   // Detect and offer restoring previous draft on mount (skip in rematch mode)
   useEffect(() => {
     if (isRematchMode) return;
+    const shouldAutoResume = searchParams.get('resume') === '1' || searchParams.get('resume') === 'true';
+
     try {
       const raw = localStorage.getItem('boardgame_session_draft');
       if (raw) {
@@ -151,17 +153,46 @@ export const NewSessionPage: React.FC = () => {
 
         if (isGhostDraft || isDraftMatchingCompletedSession(parsed, sessions)) {
           localStorage.removeItem('boardgame_session_draft');
+          window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
           setExistingDraft(null);
           return;
         }
         if (parsed && (!parsed.sessionStartTime || Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000)) {
-          setExistingDraft(parsed);
+          if (shouldAutoResume) {
+            setSelectedGameId(parsed.gameId);
+            setDatePlayed(parsed.datePlayed);
+            setLocation(parsed.location);
+            setDurationMinutes(parsed.durationMinutes);
+            setSessionStartTime(parsed.sessionStartTime);
+            setIsTimerRunning(parsed.isTimerRunning);
+            setPausedDurationMs(parsed.pausedDurationMs);
+            setPauseStartTime(parsed.pauseStartTime);
+            setSelectedPlayerIds(parsed.selectedPlayerIds || []);
+            setOneOffPlayers(parsed.oneOffPlayers || []);
+            if (parsed.oneOffPlayers?.length > 0) {
+              parsed.oneOffPlayers.forEach((g) => registerGuestPlayer(g));
+            }
+            setFirstPlayerId(parsed.firstPlayerId);
+            setFirstPlayerMethod(parsed.firstPlayerMethod);
+            setFirstPlayerAnimStyle(parsed.firstPlayerAnimStyle);
+            setScoresByPlayerId(parsed.scoresByPlayerId || {});
+            setBreakdownsByPlayerId(parsed.breakdownsByPlayerId || {});
+            setManualWinnerIds(parsed.manualWinnerIds || []);
+            setLowScoreWins(parsed.lowScoreWins ?? false);
+            setScoringMode(parsed.scoringMode || 'quick');
+            setPhotos(parsed.photos || []);
+            setNotes(parsed.notes || '');
+            setCurrentStep(parsed.currentStep || 1);
+            setExistingDraft(null);
+          } else {
+            setExistingDraft(parsed);
+          }
         }
       }
     } catch {
       // Ignore parse errors
     }
-  }, [isRematchMode, sessions]);
+  }, [isRematchMode, sessions, searchParams, registerGuestPlayer]);
 
   // Ensure draft is cleared if session has been submitted
   useEffect(() => {
@@ -169,6 +200,7 @@ export const NewSessionPage: React.FC = () => {
       if (isSubmittedRef.current) {
         try {
           localStorage.removeItem('boardgame_session_draft');
+          window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
         } catch {}
       }
     };
@@ -206,8 +238,66 @@ export const NewSessionPage: React.FC = () => {
   const handleDiscardDraft = () => {
     try {
       localStorage.removeItem('boardgame_session_draft');
+      window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
     } catch {}
     setExistingDraft(null);
+  };
+
+  // Synchronous flush function: writes draft immediately to localStorage without debounce delay
+  const flushDraftNow = (overrides?: Partial<SessionDraft>) => {
+    if (isSaving || isSubmittedRef.current) return;
+    const targetGameId = overrides?.gameId ?? selectedGameId;
+    if (!targetGameId) return;
+
+    const timerRunning = overrides?.isTimerRunning !== undefined ? overrides.isTimerRunning : isTimerRunning;
+    const startMs = overrides?.sessionStartTime ?? sessionStartTime;
+    const pauseMs = overrides?.pausedDurationMs ?? pausedDurationMs;
+    const pauseStart = overrides?.pauseStartTime !== undefined ? overrides.pauseStartTime : pauseStartTime;
+
+    const currentElapsedSecs = timerRunning
+      ? Math.max(0, Math.floor((Date.now() - startMs - pauseMs) / 1000))
+      : pauseStart
+      ? Math.max(0, Math.floor((pauseStart - startMs - pauseMs) / 1000))
+      : 0;
+
+    const draft: SessionDraft = {
+      gameId: targetGameId,
+      datePlayed: overrides?.datePlayed ?? datePlayed,
+      location: overrides?.location ?? location,
+      durationMinutes: overrides?.durationMinutes ?? durationMinutes,
+      elapsedSeconds: currentElapsedSecs,
+      sessionStartTime: startMs,
+      isTimerRunning: timerRunning,
+      pausedDurationMs: pauseMs,
+      pauseStartTime: pauseStart,
+      selectedPlayerIds: overrides?.selectedPlayerIds ?? selectedPlayerIds,
+      oneOffPlayers: overrides?.oneOffPlayers ?? oneOffPlayers,
+      firstPlayerId: overrides?.firstPlayerId ?? firstPlayerId,
+      firstPlayerMethod: overrides?.firstPlayerMethod ?? firstPlayerMethod,
+      firstPlayerAnimStyle: overrides?.firstPlayerAnimStyle ?? firstPlayerAnimStyle,
+      scoresByPlayerId: overrides?.scoresByPlayerId ?? scoresByPlayerId,
+      breakdownsByPlayerId: overrides?.breakdownsByPlayerId ?? breakdownsByPlayerId,
+      manualWinnerIds: overrides?.manualWinnerIds ?? manualWinnerIds,
+      lowScoreWins: overrides?.lowScoreWins ?? lowScoreWins,
+      scoringMode: overrides?.scoringMode ?? scoringMode,
+      photos: overrides?.photos ?? photos,
+      notes: overrides?.notes ?? notes,
+      currentStep: overrides?.currentStep ?? currentStep,
+      lastUpdated: new Date().toISOString(),
+    };
+
+    try {
+      localStorage.setItem('boardgame_session_draft', JSON.stringify(draft));
+      setQuotaError(null);
+      window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
+    } catch (err: unknown) {
+      if (
+        err instanceof DOMException &&
+        (err.name === 'QuotaExceededError' || err.code === 22 || err.code === 1014)
+      ) {
+        setQuotaError('Storage quota exceeded: Draft cannot be saved locally.');
+      }
+    }
   };
 
   // Sync duration on step changes or when leaving Step 1
@@ -222,25 +312,69 @@ export const NewSessionPage: React.FC = () => {
 
   const handleToggleTimer = () => {
     if (isTimerRunning) {
+      const now = Date.now();
       setIsTimerRunning(false);
-      setPauseStartTime(Date.now());
+      setPauseStartTime(now);
+      // Synchronously flush state to localStorage immediately!
+      flushDraftNow({
+        isTimerRunning: false,
+        pauseStartTime: now,
+      });
     } else {
       const now = Date.now();
       const addedPause = pauseStartTime ? now - pauseStartTime : 0;
-      setPausedDurationMs((prev) => prev + addedPause);
+      const nextPausedDurationMs = pausedDurationMs + addedPause;
+      setPausedDurationMs(nextPausedDurationMs);
       setPauseStartTime(undefined);
       setIsTimerRunning(true);
+      // Synchronously flush state to localStorage immediately!
+      flushDraftNow({
+        isTimerRunning: true,
+        pauseStartTime: undefined,
+        pausedDurationMs: nextPausedDurationMs,
+      });
     }
   };
 
   const handleResetTimer = () => {
-    setSessionStartTime(Date.now());
+    const now = Date.now();
+    setSessionStartTime(now);
     setPausedDurationMs(0);
     setPauseStartTime(undefined);
     setDurationMinutes('1');
+    flushDraftNow({
+      sessionStartTime: now,
+      pausedDurationMs: 0,
+      pauseStartTime: undefined,
+      durationMinutes: '1',
+      elapsedSeconds: 0,
+    });
   };
 
-  // Auto-save draft effect to LocalStorage
+  // Listen to visibilitychange (e.g. user locks screen or switches apps on iOS) and pagehide to save draft immediately
+  useEffect(() => {
+    const handleVisibilityOrPageHide = () => {
+      if (document.visibilityState === 'hidden') {
+        flushDraftNow();
+      }
+    };
+
+    const handlePageHide = () => {
+      flushDraftNow();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityOrPageHide);
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('beforeunload', handlePageHide);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityOrPageHide);
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('beforeunload', handlePageHide);
+    };
+  });
+
+  // Debounced auto-save draft effect to LocalStorage for typing/scoring changes
   useEffect(() => {
     if (isSaving || isSubmittedRef.current) return;
     if (!selectedGameId || existingDraft) return;
@@ -253,50 +387,8 @@ export const NewSessionPage: React.FC = () => {
 
     if (!hasMeaningfulProgress) return;
 
-    const currentElapsedSecs = isTimerRunning
-      ? Math.max(0, Math.floor((Date.now() - sessionStartTime - pausedDurationMs) / 1000))
-      : pauseStartTime
-      ? Math.max(0, Math.floor((pauseStartTime - sessionStartTime - pausedDurationMs) / 1000))
-      : 0;
-
-    const draft: SessionDraft = {
-      gameId: selectedGameId,
-      datePlayed,
-      location,
-      durationMinutes,
-      elapsedSeconds: currentElapsedSecs,
-      sessionStartTime,
-      isTimerRunning,
-      pausedDurationMs,
-      pauseStartTime,
-      selectedPlayerIds,
-      oneOffPlayers,
-      firstPlayerId,
-      firstPlayerMethod,
-      firstPlayerAnimStyle,
-      scoresByPlayerId,
-      breakdownsByPlayerId,
-      manualWinnerIds,
-      lowScoreWins,
-      scoringMode,
-      photos,
-      notes,
-      currentStep,
-      lastUpdated: new Date().toISOString(),
-    };
-
     const timer = window.setTimeout(() => {
-      try {
-        localStorage.setItem('boardgame_session_draft', JSON.stringify(draft));
-        setQuotaError(null);
-      } catch (err: unknown) {
-        if (
-          err instanceof DOMException &&
-          (err.name === 'QuotaExceededError' || err.code === 22 || err.code === 1014)
-        ) {
-          setQuotaError('Storage quota exceeded: Draft cannot be saved locally. Complete or discard the session to free space.');
-        }
-      }
+      flushDraftNow();
     }, 600);
 
     return () => {

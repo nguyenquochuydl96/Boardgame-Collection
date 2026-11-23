@@ -15,11 +15,8 @@ export default defineConfig(() => {
       react(),
       tailwindcss(),
       VitePWA({
-        registerType: 'autoUpdate',
-        injectRegister: 'auto',
+        registerType: 'prompt',
         workbox: {
-          skipWaiting: true,
-          clientsClaim: true,
           cleanupOutdatedCaches: true,
           navigateFallback: 'index.html',
           runtimeCaching: [

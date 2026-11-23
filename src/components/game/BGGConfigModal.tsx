@@ -191,24 +191,32 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
         </div>
 
         {/* App Version & PWA Cache Force Update */}
-        <div className="pt-2 border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--muted)]">
-          <span>PWA Version &amp; Offline Cache (iOS / Web)</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs text-[var(--ink)] hover:text-cyan-500 font-semibold cursor-pointer"
-            onClick={async () => {
-              if (typeof window !== 'undefined' && (window as any).forceAppUpdate) {
-                await (window as any).forceAppUpdate();
-              } else {
-                window.location.reload();
-              }
-            }}
-            title="Xóa cache service worker và tải bản mới nhất"
-          >
-            <RefreshCw className="w-3.5 h-3.5 mr-1" />
-            Làm mới ứng dụng (Xóa cache)
-          </Button>
+        <div className="pt-3 border-t border-[var(--line)] space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-xs text-[var(--ink)]">Cập nhật PWA &amp; Làm mới Cache</span>
+            <span className="text-[11px] text-[var(--muted)] font-mono">v1.0 Production</span>
+          </div>
+          <p className="text-xs text-[var(--muted)] leading-relaxed">
+            Xóa bộ nhớ Cache Storage của Service Worker và tải lại phiên bản mới nhất từ máy chủ. Toàn bộ dữ liệu board game và kết quả ván đấu (LocalStorage &amp; IndexedDB) được bảo toàn 100%.
+          </p>
+          <div className="pt-1">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full sm:w-auto text-xs font-semibold text-[var(--ink)] hover:text-cyan-500 cursor-pointer flex items-center justify-center gap-1.5"
+              onClick={async () => {
+                if (typeof window !== 'undefined' && (window as any).forceAppUpdate) {
+                  await (window as any).forceAppUpdate();
+                } else {
+                  window.location.reload();
+                }
+              }}
+              title="Xóa cache service worker và tải bản mới nhất"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-cyan-500" />
+              <span>Kiểm tra cập nhật / Làm mới Cache</span>
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-[var(--line)]">

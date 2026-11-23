@@ -11,7 +11,11 @@ import {
   getCollectionTotalValue,
   isDraftMatchingCompletedSession,
   calculateMinRequiredPlays,
+  isLowResBGGThumbnail,
+  getGameThumbnail,
+  BGG_OFFICIAL_IRON_CLAYS,
 } from './utils';
+import { healIncomingGames } from './supabaseSync';
 import { BoardGame, PlaySession, Player, SessionDraft } from '../types';
 
 test('formatNumberInput and parseNumberInput handle commas in price fields', () => {
@@ -790,4 +794,103 @@ test('PHASE 3: Standard Competition Ranking ("1224") computes ties correctly and
   const manualWinnerIds = ['p1', 'p2', 'p3', 'p4'];
   const coopWinners = players.filter((p) => manualWinnerIds.includes(p.id));
   assert.equal(coopWinners.length, 4);
+});
+
+test('isLowResBGGThumbnail detects 200x150, 246x300, and thumb variants', () => {
+  assert.equal(isLowResBGGThumbnail('https://cf.geekdo-images.com/xxx/fit-in/200x150/pic123.jpg'), true);
+  assert.equal(isLowResBGGThumbnail('https://cf.geekdo-images.com/xxx__small/img/pic123.jpg'), true);
+  assert.equal(isLowResBGGThumbnail('https://cf.geekdo-images.com/xxx__thumb/img/pic123.jpg'), true);
+  assert.equal(isLowResBGGThumbnail('https://cf.geekdo-images.com/xxx__original/img/pic123.jpg'), false);
+  assert.equal(isLowResBGGThumbnail(''), true);
+});
+
+test('getGameThumbnail automatically upgrades Zoo Vadis, Brass Birmingham, and The Old Kings Crown to original resolution', () => {
+  // 1. Zoo Vadis (even when input only has low-res 200x150 thumbnail)
+  const zooVadisThumb = getGameThumbnail({
+    name: 'Zoo Vadis',
+    thumbnail: 'https://cf.geekdo-images.com/Kl3NjtNKpuJNPjdBQtdsow__small/img/Or2YcwIFnCP84aWJ_63HMwRJDis=/fit-in/200x150/filters:strip_icc()/pic6988937.jpg',
+  });
+  assert.match(zooVadisThumb, /__original/);
+  assert.match(zooVadisThumb, /pic6988937/);
+
+  // 2. Brass: Birmingham
+  const brassThumb = getGameThumbnail({
+    name: 'Brass: Birmingham',
+    thumbnail: 'https://cf.geekdo-images.com/x3zxjr-Vw5iU4yDPg70Jgw__small/img/o18rjEemoWaVru9Y2TyPwuIaRfE=/fit-in/200x150/filters:strip_icc()/pic3490053.jpg',
+  });
+  assert.match(brassThumb, /__original/);
+  assert.match(brassThumb, /pic3490053/);
+
+  // 3. The Old King's Crown
+  const kingThumb = getGameThumbnail({
+    name: "The Old King's Crown",
+    thumbnail: 'https://cf.geekdo-images.com/q3Qp4L-rU3VOW6fMAFUJnQ__small/img/wLX_C6w13ebCON4euesUohQE_Ck=/fit-in/200x150/filters:strip_icc()/pic8937255.jpg',
+  });
+  assert.match(kingThumb, /__original/);
+  assert.match(kingThumb, /pic8937255/);
+
+  // 4. Iron Clays (any variant like "Iron Clays 200", "Iron Clays (100)")
+  const ironClaysThumb = getGameThumbnail({
+    name: 'Iron Clays 200',
+    thumbnail: 'data:image/svg+xml;base64,broken',
+  });
+  assert.equal(ironClaysThumb, BGG_OFFICIAL_IRON_CLAYS);
+});
+
+test('healIncomingGames repairs broken/low-res remote games and preserves local sharp images', () => {
+  const localGames: BoardGame[] = [
+    {
+      id: 'g-iron',
+      name: 'Iron Clays 200',
+      image: BGG_OFFICIAL_IRON_CLAYS,
+      thumbnail: BGG_OFFICIAL_IRON_CLAYS,
+      yearPublished: 2017,
+      minPlayers: 1,
+      maxPlayers: 10,
+      playingTime: 0,
+      status: 'own',
+    },
+    {
+      id: 'g-zoo',
+      name: 'Zoo Vadis',
+      image: 'https://cf.geekdo-images.com/Kl3NjtNKpuJNPjdBQtdsow__original/img/3ABkMQwQ-85hqaBO7gHP5ekBAQ0=/0x0/filters:format(jpeg)/pic6988937.jpg',
+      thumbnail: 'https://cf.geekdo-images.com/Kl3NjtNKpuJNPjdBQtdsow__original/img/3ABkMQwQ-85hqaBO7gHP5ekBAQ0=/0x0/filters:format(jpeg)/pic6988937.jpg',
+      yearPublished: 2023,
+      minPlayers: 3,
+      maxPlayers: 7,
+      playingTime: 40,
+      status: 'own',
+    },
+  ];
+
+  // Remote data coming from cloud with broken/missing/low-res images
+  const remoteGames: BoardGame[] = [
+    {
+      id: 'g-iron',
+      name: 'Iron Clays 200',
+      image: '', // broken / empty remote
+      thumbnail: 'data:image/svg+xml;base64,placeholder',
+      yearPublished: 2017,
+      minPlayers: 1,
+      maxPlayers: 10,
+      playingTime: 0,
+      status: 'own',
+    },
+    {
+      id: 'g-zoo',
+      name: 'Zoo Vadis',
+      image: 'https://cf.geekdo-images.com/Kl3NjtNKpuJNPjdBQtdsow__small/img/fit-in/200x150/pic6988937.jpg', // low-res remote
+      thumbnail: 'https://cf.geekdo-images.com/Kl3NjtNKpuJNPjdBQtdsow__small/img/fit-in/200x150/pic6988937.jpg',
+      yearPublished: 2023,
+      minPlayers: 3,
+      maxPlayers: 7,
+      playingTime: 40,
+      status: 'own',
+    },
+  ];
+
+  const { games: healed, wasHealed } = healIncomingGames(remoteGames, localGames);
+  assert.equal(wasHealed, true);
+  assert.equal(healed.find((g) => g.id === 'g-iron')?.image, BGG_OFFICIAL_IRON_CLAYS);
+  assert.match(healed.find((g) => g.id === 'g-zoo')?.image || '', /__original/);
 });

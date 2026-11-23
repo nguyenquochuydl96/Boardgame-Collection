@@ -1,4 +1,25 @@
 import { BoardGame, GameStatus, PlaySession, Player, SessionDraft } from '../types';
+import { EXPANDED_BGG_CATALOG } from './bggCatalogData';
+
+const catalogByBggId = new Map<string, string>();
+const catalogByName = new Map<string, string>();
+const catalogByPicId = new Map<string, string>();
+
+function normalizeGameName(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+for (const g of EXPANDED_BGG_CATALOG) {
+  if (g.image) {
+    if (g.bggId) catalogByBggId.set(g.bggId, g.image);
+    if (g.name) catalogByName.set(normalizeGameName(g.name), g.image);
+    const m = (g.image || g.thumbnail || '').match(/pic(\d+)/);
+    if (m) catalogByPicId.set(m[1], g.image);
+  }
+}
+
+export const BGG_OFFICIAL_IRON_CLAYS =
+  'https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__original/img/Hn638x-ccBuLyDEQsAnVcu5R0tA=/0x0/filters:format(png)/pic9719419.png';
 
 export function generateId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -108,33 +129,67 @@ export function formatDate(isoDate?: string): string {
 }
 
 /**
- * Returns the best image URL for a boardgame, automatically upgrading known placeholders
+ * Checks if a URL is a low-res BGG thumbnail (e.g. fit-in/200x150, fit-in/246x300, __small, __thumb)
  */
-export function getGameCoverImage(game?: Partial<BoardGame> | null): string {
+export function isLowResBGGThumbnail(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return true;
+  return (
+    url.includes('fit-in/200x150') ||
+    url.includes('fit-in/246x300') ||
+    url.includes('__small') ||
+    url.includes('__thumb') ||
+    url.includes('__micro')
+  );
+}
+
+/**
+ * Returns high quality thumbnail/cover URL for boardgames.
+ * Automatically upgrades low-res BGG thumbnails to crisp original resolution
+ * and guarantees official cover for Iron Clays.
+ */
+export function getGameThumbnail(game?: Partial<BoardGame> | null): string {
   if (!game) return '';
-  if (
-    game.name &&
-    game.name.toLowerCase().includes('iron clay') &&
-    (!game.image || game.image.startsWith('data:image/svg'))
-  ) {
-    return 'https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__large/img/PWhlasf_TqRSxwf605lU_lDOh-4=/fit-in/1024x1024/filters:no_upscale():strip_icc()/pic9719419.png';
+
+  const name = game.name ? game.name.trim() : '';
+  const lowerName = name.toLowerCase();
+
+  // 1. Guaranteed official high-res cover for Iron Clays
+  if (lowerName.includes('iron clay')) {
+    return BGG_OFFICIAL_IRON_CLAYS;
   }
+
+  // 2. If game.image exists and is already high resolution, use it
+  if (game.image && !isLowResBGGThumbnail(game.image) && !game.image.startsWith('data:image/svg')) {
+    return game.image;
+  }
+
+  // 3. Try upgrading from EXPANDED_BGG_CATALOG
+  if (game.bggId && catalogByBggId.has(game.bggId)) {
+    return catalogByBggId.get(game.bggId)!;
+  }
+
+  if (name) {
+    const norm = normalizeGameName(name);
+    if (catalogByName.has(norm)) {
+      return catalogByName.get(norm)!;
+    }
+  }
+
+  const rawUrl = game.image || game.thumbnail || '';
+  const picMatch = rawUrl.match(/pic(\d+)/);
+  if (picMatch && catalogByPicId.has(picMatch[1])) {
+    return catalogByPicId.get(picMatch[1])!;
+  }
+
+  // 4. Fallback to existing image or thumbnail
   return game.image || game.thumbnail || '';
 }
 
 /**
- * Returns lightweight thumbnail URL for boardgames, prioritizing thumbnail over full image
+ * Returns the best cover image URL for a boardgame.
  */
-export function getGameThumbnail(game?: Partial<BoardGame> | null): string {
-  if (!game) return '';
-  if (
-    game.name &&
-    game.name.toLowerCase().includes('iron clay') &&
-    (!game.thumbnail || game.thumbnail.startsWith('data:image/svg'))
-  ) {
-    return 'https://cf.geekdo-images.com/2Mv38mPu495buGquy-Irqg__large/img/PWhlasf_TqRSxwf605lU_lDOh-4=/fit-in/200x150/filters:no_upscale():strip_icc()/pic9719419.png';
-  }
-  return game.thumbnail || game.image || '';
+export function getGameCoverImage(game?: Partial<BoardGame> | null): string {
+  return getGameThumbnail(game);
 }
 
 const playCountsCache = new WeakMap<PlaySession[], Record<string, number>>();
@@ -868,9 +923,9 @@ export function getSafeDisplayAvatar(avatar?: string | null, fallback = '👤'):
 }
 
 /**
- * Compresses an uploaded image file on canvas to a lightweight data URL (~160x160 JPEG)
+ * Compresses an uploaded image file on canvas to a crisp data URL (max 480px, 0.85 quality)
  */
-export function compressImageToDataUrl(file: File, maxDim = 160, quality = 0.82): Promise<string> {
+export function compressImageToDataUrl(file: File, maxDim = 480, quality = 0.85): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -973,14 +1028,13 @@ export function calculateMinRequiredPlays(totalSessions: number, percentage = 0.
 
 /**
  * In-browser canvas photo compression.
- * Downscales images to max maxWidth x maxHeight dimensions and converts to JPEG (0.7 quality).
- * Keeps photo payload < 80 KB to prevent LocalStorage QuotaExceededError.
+ * Downscales images to max maxWidth x maxHeight dimensions and converts to JPEG (0.85 quality).
  */
 export function compressImage(
   file: File | Blob,
-  maxWidth = 1024,
-  maxHeight = 1024,
-  quality = 0.7
+  maxWidth = 1200,
+  maxHeight = 1200,
+  quality = 0.85
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     if (typeof window === 'undefined' || typeof document === 'undefined' || typeof FileReader === 'undefined') {

@@ -24,6 +24,8 @@ import { useSessionStore } from '../../store/useSessionStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { useLocationStore } from '../../store/useLocationStore';
 import { isSyncApplyingRemote } from '../../lib/syncGuard';
+import { ResumeSessionBanner } from '../session/ResumeSessionBanner';
+import { PwaUpdateToast } from '../pwa/PwaUpdateToast';
 
 // Lazy load modals on-demand to keep core AppShell bundle ultra-lightweight
 const BGGConfigModal = React.lazy(() =>
@@ -497,6 +499,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <PoweredByBGG variant="footer" />
         </div>
       </main>
+
+      {/* Floating Resume Session Banner & PWA Update Prompt */}
+      <ResumeSessionBanner />
+      <PwaUpdateToast />
 
       <BottomNavBar />
 

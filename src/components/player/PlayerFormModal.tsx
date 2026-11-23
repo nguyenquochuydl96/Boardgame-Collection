@@ -128,7 +128,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
 
     try {
       setIsUploading(true);
-      const compressedDataUrl = await compressImageToDataUrl(file, 200, 0.85);
+      const compressedDataUrl = await compressImageToDataUrl(file, 480, 0.85);
       const idbRef = await saveMediaImage(compressedDataUrl);
       setAvatar(idbRef);
     } catch (err) {

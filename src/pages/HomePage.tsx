@@ -58,6 +58,7 @@ export const HomePage: React.FC = () => {
   const handleDiscardDraft = () => {
     try {
       localStorage.removeItem('boardgame_session_draft');
+      window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
     } catch {}
     setActiveDraft(null);
   };

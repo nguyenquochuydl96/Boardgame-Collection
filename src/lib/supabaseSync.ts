@@ -7,6 +7,11 @@ import { useLocationStore } from '../store/useLocationStore';
 import { BoardGame, PlaySession, Player, GameLocation } from '../types';
 import { setSyncApplyingRemote, isSyncApplyingRemote } from './syncGuard';
 import { isIdbMediaRef, getMediaImage, saveMediaImage } from './mediaStorage';
+import {
+  getGameThumbnail,
+  isLowResBGGThumbnail,
+  BGG_OFFICIAL_IRON_CLAYS,
+} from './utils';
 
 export { isSyncApplyingRemote };
 
@@ -18,6 +23,8 @@ let activeChannel: RealtimeChannel | null = null;
 /**
  * Smart merge two arrays of entities with unique IDs.
  * Remote records take precedence for updated data, while local-only offline records are preserved.
+ * If local item has a sharp/healed image and remote item has empty/low-res/placeholder image,
+ * the sharp local image is preserved.
  */
 export function mergeById<T extends { id: string }>(localList: T[], remoteList: T[]): T[] {
   const map = new Map<string, T>();
@@ -28,10 +35,87 @@ export function mergeById<T extends { id: string }>(localList: T[], remoteList: 
   }
   for (const item of remoteList) {
     if (item && item.id) {
-      map.set(item.id, item);
+      const existing = map.get(item.id) as any;
+      if (existing) {
+        const merged = { ...existing, ...item };
+        if (
+          existing.image &&
+          !isLowResBGGThumbnail(existing.image) &&
+          !existing.image.startsWith('data:image/svg') &&
+          (!(item as any).image || isLowResBGGThumbnail((item as any).image) || (item as any).image.startsWith('data:image/svg'))
+        ) {
+          merged.image = existing.image;
+          merged.thumbnail = existing.thumbnail || existing.image;
+        }
+        map.set(item.id, merged);
+      } else {
+        map.set(item.id, item);
+      }
     }
   }
   return Array.from(map.values());
+}
+
+/**
+ * Heals game images from local cache, BGG catalog, and fixes Iron Clays.
+ */
+export function healIncomingGames(
+  incomingGames: BoardGame[],
+  localGames: BoardGame[] = []
+): { games: BoardGame[]; wasHealed: boolean } {
+  const localMap = new Map<string, BoardGame>();
+  for (const g of localGames) {
+    if (g && g.id) localMap.set(g.id, g);
+  }
+
+  let wasHealed = false;
+
+  const healed = incomingGames.map((g) => {
+    let item = { ...g };
+    const local = localMap.get(g.id);
+
+    // 1. If local has a good image and incoming has broken/empty/low-res image, keep local
+    if (
+      local &&
+      local.image &&
+      !isLowResBGGThumbnail(local.image) &&
+      !local.image.startsWith('data:image/svg')
+    ) {
+      if (!item.image || isLowResBGGThumbnail(item.image) || item.image.startsWith('data:image/svg')) {
+        item.image = local.image;
+        if (local.thumbnail) item.thumbnail = local.thumbnail;
+        wasHealed = true;
+      }
+    }
+
+    // 2. Iron Clays guard
+    if (item.name && item.name.toLowerCase().includes('iron clay')) {
+      if (
+        !item.image ||
+        item.image !== BGG_OFFICIAL_IRON_CLAYS ||
+        !item.thumbnail ||
+        item.thumbnail !== BGG_OFFICIAL_IRON_CLAYS
+      ) {
+        item.image = BGG_OFFICIAL_IRON_CLAYS;
+        item.thumbnail = BGG_OFFICIAL_IRON_CLAYS;
+        wasHealed = true;
+      }
+    } else {
+      // 3. Auto-heal from catalog if low-res or placeholder
+      const sharp = getGameThumbnail(item);
+      if (sharp && (!item.image || isLowResBGGThumbnail(item.image) || item.image.startsWith('data:image/svg'))) {
+        item.image = sharp;
+        if (!item.thumbnail || isLowResBGGThumbnail(item.thumbnail)) {
+          item.thumbnail = sharp;
+        }
+        wasHealed = true;
+      }
+    }
+
+    return item;
+  });
+
+  return { games: healed, wasHealed };
 }
 
 export const SQL_SETUP_SCRIPT = `-- ==========================================
@@ -386,22 +470,31 @@ export async function pullVaultFromCloud(mode: 'replace' | 'merge' = 'replace'):
       // Prioritize replace when local is empty
       const effectiveMode = isLocalEmpty ? 'replace' : mode;
 
+      const rawCandidateGames = effectiveMode === 'replace' ? remoteGames : mergeById(localGames, remoteGames);
+      const { games: processedGames, wasHealed } = healIncomingGames(rawCandidateGames, localGames);
+
+      useGameStore.getState().bulkAddGames(processedGames, true);
+
       if (effectiveMode === 'replace') {
-        useGameStore.getState().bulkAddGames(remoteGames, true);
         useSessionStore.getState().bulkAddSessions(remoteSessions, true);
         usePlayerStore.getState().bulkAddPlayers(remotePlayers, true);
         useLocationStore.getState().bulkAddLocations(remoteLocations, true);
       } else {
-        // Smart merge: preserve local records created offline while applying remote updates
-        const mergedGames = mergeById(localGames, remoteGames);
         const mergedSessions = mergeById(localSessions, remoteSessions);
         const mergedPlayers = mergeById(usePlayerStore.getState().players, remotePlayers);
         const mergedLocations = mergeById(useLocationStore.getState().locations, remoteLocations);
 
-        useGameStore.getState().bulkAddGames(mergedGames, true);
         useSessionStore.getState().bulkAddSessions(mergedSessions, true);
         usePlayerStore.getState().bulkAddPlayers(mergedPlayers, true);
         useLocationStore.getState().bulkAddLocations(mergedLocations, true);
+      }
+
+      // If local games were healed (Iron Clays or sharp catalog images), push back to Cloud
+      // so Cloud is also updated with the repaired images and never pushes back broken images
+      if (wasHealed) {
+        setTimeout(() => {
+          pushVaultToCloud();
+        }, 1500);
       }
 
       setLastSyncedAt(data.updated_at || new Date().toISOString());
@@ -468,7 +561,11 @@ export function startVaultRealtimeSubscription(): () => void {
           setSyncApplyingRemote(true);
           processIncomingMedia(record.players, record.sessions)
             .then(({ players: processedPlayers, sessions: processedSessions }) => {
-              if (record.games) useGameStore.getState().bulkAddGames(record.games, true);
+              if (record.games) {
+                const currentLocal = useGameStore.getState().games;
+                const { games: healedRealtime } = healIncomingGames(record.games, currentLocal);
+                useGameStore.getState().bulkAddGames(healedRealtime, true);
+              }
               if (record.sessions) useSessionStore.getState().bulkAddSessions(processedSessions, true);
               if (record.players) usePlayerStore.getState().bulkAddPlayers(processedPlayers, true);
               if (record.locations) useLocationStore.getState().bulkAddLocations(record.locations, true);

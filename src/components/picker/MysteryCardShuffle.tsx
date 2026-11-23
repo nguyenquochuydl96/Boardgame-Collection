@@ -41,7 +41,7 @@ const DECK_CARD_COUNT = 8;
 const CardItemPortrait: React.FC<{ item: PickerItem; size?: number }> = ({ item, size = 84 }) => {
   const [imgError, setImgError] = useState(false);
   const rawImageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
-  const imageSrc = useResolvedMedia(rawImageSrc);
+  const imageSrc = useResolvedMedia(rawImageSrc, item.thumbnail || undefined);
 
   if (imageSrc && !imgError) {
     return (

@@ -31,7 +31,7 @@ import { useGameStore } from '../../store/useGameStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { useSessionStore } from '../../store/useSessionStore';
 import { useLocationStore } from '../../store/useLocationStore';
-import { createGameCoverDataUri } from '../../lib/utils';
+import { createGameCoverDataUri, getGameThumbnail } from '../../lib/utils';
 import { exportVaultJSON, exportGamesCSV, exportSessionsCSV } from '../../lib/exportVault';
 import { migrateBase64ImagesToIdb } from '../../lib/mediaStorage';
 import { GameStatus } from '../../types';
@@ -270,7 +270,9 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
     if (selected.length === 0) return;
 
     for (const item of selected) {
+      const sharpCover = getGameThumbnail({ name: item.name, bggId: item.bggId, thumbnail: item.thumbnail });
       const cover =
+        sharpCover ||
         item.thumbnail ||
         createGameCoverDataUri(
           item.name,

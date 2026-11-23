@@ -13,22 +13,30 @@ const SessionPhotoThumb: React.FC<{
   onRemove: () => void;
 }> = ({ src, alt, onRemove }) => {
   const resolved = useResolvedMedia(src);
+  const [imgError, setImgError] = React.useState(false);
+
   return (
-    <div className="relative w-24 h-24 rounded-2xl overflow-hidden border border-[var(--border-subtle)] group">
-      {resolved ? (
+    <div className="relative w-24 h-24 rounded-2xl overflow-hidden border border-[var(--border-subtle)] bg-[var(--card-2)] group">
+      {resolved && !imgError ? (
         <img
           src={resolved}
           alt={alt}
+          loading="lazy"
+          decoding="async"
+          onError={() => setImgError(true)}
           className="w-full h-full object-cover"
         />
       ) : (
-        <div className="w-full h-full bg-[var(--card-2)] animate-pulse" />
+        <div className="w-full h-full flex flex-col items-center justify-center p-2 text-[10px] text-[var(--muted)] text-center">
+          <Camera className="w-5 h-5 mb-0.5 opacity-60" />
+          <span className="truncate max-w-full">Ảnh</span>
+        </div>
       )}
       <button
         type="button"
         aria-label="Remove photo"
         onClick={onRemove}
-        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/75 text-rose-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/75 text-rose-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>

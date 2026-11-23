@@ -30,9 +30,9 @@ export interface SyncStore {
 export const useSyncStore = create<SyncStore>()(
   persist(
     (set) => ({
-      supabaseUrl: import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL,
-      supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY,
-      vaultId: import.meta.env.VITE_SUPABASE_VAULT_ID || DEFAULT_VAULT_ID,
+      supabaseUrl: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || DEFAULT_SUPABASE_URL,
+      supabaseAnonKey: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || DEFAULT_SUPABASE_ANON_KEY,
+      vaultId: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_VAULT_ID) || DEFAULT_VAULT_ID,
       autoSync: true,
       isEnabled: true,
       hasManuallyDisconnected: false,

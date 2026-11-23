@@ -206,10 +206,10 @@ const DraftSessionCardComponent: React.FC<DraftSessionCardProps> = ({
             <Trash2 className="w-4 h-4" />
           </button>
 
-          <Link to="/sessions/new">
+          <Link to="/sessions/new?resume=1">
             <Button variant="primary" className="shadow-lg shadow-amber-500/25">
               <Play className="w-4 h-4 mr-1.5 fill-current" />
-              Resume Session
+              Tiếp tục ván đấu
             </Button>
           </Link>
         </div>
