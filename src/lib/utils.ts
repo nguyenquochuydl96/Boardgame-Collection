@@ -296,11 +296,165 @@ export const STATUS_CONFIG: Record<
 };
 
 export const FIRST_PLAYER_METHOD_LABELS: Record<string, string> = {
-  random_wheel: 'Spin Wheel',
+  random_wheel: 'Random Draw',
   manual: 'Manual Choice',
   previous_loser: 'Previous Loser',
   previous_winner: 'Previous Winner',
 };
+
+export interface PreviousMatchPlayerResult {
+  player: Player;
+  session: PlaySession;
+  reason: string;
+}
+
+/**
+ * Finds the previous loser from match history.
+ * In the most recent match of this game (or any game) played by these players:
+ * Identifies the last-place player (lowest rank / lowest score, or highest score if lowestScoreWins).
+ * If multiple players tied for last place, picks randomly among them.
+ */
+export function findPreviousLoser(
+  activePlayers: Player[],
+  sessions: PlaySession[],
+  currentGameId?: string
+): PreviousMatchPlayerResult | null {
+  if (!activePlayers || activePlayers.length === 0 || !sessions || sessions.length === 0) return null;
+
+  const activeIds = new Set(activePlayers.map((p) => p.id));
+
+  const sortedSessions = [...sessions].sort((a, b) => {
+    const da = new Date(a.datePlayed || a.createdAt).getTime();
+    const db = new Date(b.datePlayed || b.createdAt).getTime();
+    return db - da;
+  });
+
+  // Prefer recent session of the same game with active players
+  let targetSession = sortedSessions.find(
+    (s) => s.gameId === currentGameId && s.players.some((p) => activeIds.has(p.playerId))
+  );
+
+  // Fallback to most recent session of any game with active players
+  if (!targetSession) {
+    targetSession = sortedSessions.find((s) => s.players.some((p) => activeIds.has(p.playerId)));
+  }
+
+  if (!targetSession) return null;
+
+  const participatingActive = targetSession.players.filter((p) => activeIds.has(p.playerId));
+  if (participatingActive.length === 0) return null;
+
+  // Detect if this session used lowestScoreWins
+  let isLowScoreWins = false;
+  const winners = targetSession.players.filter((p) => p.isWinner);
+  const nonWinners = targetSession.players.filter((p) => !p.isWinner && typeof p.score === 'number');
+  if (winners.length > 0 && typeof winners[0].score === 'number' && nonWinners.length > 0) {
+    const winnerScore = winners[0].score as number;
+    const avgLoserScore = nonWinners.reduce((sum, p) => sum + (p.score as number), 0) / nonWinners.length;
+    if (winnerScore < avgLoserScore) {
+      isLowScoreWins = true;
+    }
+  }
+
+  let candidates: typeof participatingActive = [];
+
+  // 1. If ranks exist for all participating active players, maximum rank = last place (chót bảng)
+  const withRank = participatingActive.filter((p) => typeof p.rank === 'number');
+  if (withRank.length === participatingActive.length && withRank.length > 0) {
+    const maxRank = Math.max(...withRank.map((p) => p.rank as number));
+    candidates = withRank.filter((p) => p.rank === maxRank);
+  } else {
+    // 2. Check numeric scores
+    const withScores = participatingActive.filter((p) => typeof p.score === 'number');
+    if (withScores.length > 0) {
+      if (isLowScoreWins) {
+        // High score is worst in lowScoreWins
+        const worstScore = Math.max(...withScores.map((p) => p.score as number));
+        candidates = withScores.filter((p) => p.score === worstScore);
+      } else {
+        // Low score is worst in normal games
+        const worstScore = Math.min(...withScores.map((p) => p.score as number));
+        candidates = withScores.filter((p) => p.score === worstScore);
+      }
+    } else {
+      // 3. Cooperative or binary win/loss: players who didn't win
+      const losers = participatingActive.filter((p) => !p.isWinner);
+      candidates = losers.length > 0 ? losers : participatingActive;
+    }
+  }
+
+  if (candidates.length === 0) return null;
+
+  // Tie-breaker: random among tied last-place players
+  const chosenScore = candidates[Math.floor(Math.random() * candidates.length)];
+  const matchedPlayer = activePlayers.find((p) => p.id === chosenScore.playerId);
+  if (!matchedPlayer) return null;
+
+  let reason = `Ván trước (${targetSession.gameName})`;
+  if (typeof chosenScore.score === 'number') {
+    reason += `: ${chosenScore.score} điểm (chót bảng)`;
+  } else if (typeof chosenScore.rank === 'number') {
+    reason += `: hạng #${chosenScore.rank}`;
+  } else {
+    reason += `: không chiến thắng`;
+  }
+
+  return {
+    player: matchedPlayer,
+    session: targetSession,
+    reason,
+  };
+}
+
+/**
+ * Finds the previous winner from match history.
+ */
+export function findPreviousWinner(
+  activePlayers: Player[],
+  sessions: PlaySession[],
+  currentGameId?: string
+): PreviousMatchPlayerResult | null {
+  if (!activePlayers || activePlayers.length === 0 || !sessions || sessions.length === 0) return null;
+
+  const activeIds = new Set(activePlayers.map((p) => p.id));
+
+  const sortedSessions = [...sessions].sort((a, b) => {
+    const da = new Date(a.datePlayed || a.createdAt).getTime();
+    const db = new Date(b.datePlayed || b.createdAt).getTime();
+    return db - da;
+  });
+
+  // Prefer recent session of the same game with active winners
+  let targetSession = sortedSessions.find(
+    (s) => s.gameId === currentGameId && s.players.some((p) => activeIds.has(p.playerId) && p.isWinner)
+  );
+
+  if (!targetSession) {
+    targetSession = sortedSessions.find((s) => s.players.some((p) => activeIds.has(p.playerId) && p.isWinner));
+  }
+
+  if (!targetSession) return null;
+
+  const winningActive = targetSession.players.filter((p) => activeIds.has(p.playerId) && p.isWinner);
+  if (winningActive.length === 0) return null;
+
+  const chosenScore = winningActive[Math.floor(Math.random() * winningActive.length)];
+  const matchedPlayer = activePlayers.find((p) => p.id === chosenScore.playerId);
+  if (!matchedPlayer) return null;
+
+  let reason = `Ván trước (${targetSession.gameName})`;
+  if (typeof chosenScore.score === 'number') {
+    reason += `: ${chosenScore.score} điểm (thắng cuộc)`;
+  } else {
+    reason += `: quán quân`;
+  }
+
+  return {
+    player: matchedPlayer,
+    session: targetSession,
+    reason,
+  };
+}
 
 /**
  * Generates an inline SVG data URI cover illustration for any boardgame

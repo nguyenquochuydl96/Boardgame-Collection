@@ -314,9 +314,13 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
                 }}
                 className="absolute inset-0 rounded-3xl border-2 border-amber-400 bg-gradient-to-b from-[#1b2236] via-[#101422] to-[#07090f] p-4 shadow-2xl shadow-amber-500/40 flex flex-col items-center justify-between text-center overflow-hidden"
               >
-                {/* Floating Crown Gold Laurel Header */}
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-500/50 -mt-7 border-2 border-white/20 shrink-0">
-                  <Crown className="w-5 h-5 fill-current" />
+                {/* Floating 1ST / Starter Header Badge */}
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-500/50 -mt-7 border-2 border-white/20 shrink-0 font-display font-black text-xs">
+                  {mode === 'first_player' ? (
+                    <span className="font-mono font-black text-sm tracking-tighter">1ST</span>
+                  ) : (
+                    <Sparkles className="w-5 h-5 fill-current" />
+                  )}
                 </div>
 
                 {/* Card Face Body */}
@@ -325,7 +329,7 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
 
                   <div className="w-full min-w-0 px-1">
                     <div className="text-[10px] font-mono font-bold tracking-wider uppercase text-amber-300/80 mb-0.5">
-                      {mode === 'first_player' ? '👑 First Player' : '🎯 Game Tonight'}
+                      {mode === 'first_player' ? '🏁 First Player (1ST)' : '🎯 Game Tonight'}
                     </div>
                     <h3 className="font-display font-extrabold text-base sm:text-lg text-white truncate max-w-full">
                       {revealedItem.name}
@@ -349,6 +353,10 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
                     >
                       <Play className="w-3.5 h-3.5 mr-1 fill-current" /> Start Game Session
                     </Button>
+                  ) : mode === 'first_player' ? (
+                    <div className="text-[10px] font-mono text-amber-300 font-extrabold bg-amber-500/20 border border-amber-500/40 px-3.5 py-1 rounded-full shadow-sm">
+                      🏁 PLAYS FIRST
+                    </div>
                   ) : (
                     <div className="text-[10px] font-mono text-emerald-300 font-extrabold bg-emerald-500/20 border border-emerald-500/40 px-3.5 py-1 rounded-full shadow-sm">
                       ✨ LUCKY PICK ✨

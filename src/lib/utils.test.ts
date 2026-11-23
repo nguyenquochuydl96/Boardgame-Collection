@@ -14,6 +14,8 @@ import {
   isLowResBGGThumbnail,
   getGameThumbnail,
   BGG_OFFICIAL_IRON_CLAYS,
+  findPreviousLoser,
+  findPreviousWinner,
 } from './utils';
 import { healIncomingGames } from './supabaseSync';
 import { BoardGame, PlaySession, Player, SessionDraft } from '../types';
@@ -901,4 +903,90 @@ test('healIncomingGames repairs broken/low-res remote games and preserves local 
   assert.equal(wasHealed, true);
   assert.equal(healed.find((g) => g.id === 'g-iron')?.image, BGG_OFFICIAL_IRON_CLAYS);
   assert.match(healed.find((g) => g.id === 'g-zoo')?.image || '', /__original/);
+});
+
+test('findPreviousLoser identifies lowest score player in normal scoring sessions', () => {
+  const activePlayers: Player[] = [
+    { id: 'p1', name: 'Alice', color: '#ff0000', createdAt: '2026-01-01' },
+    { id: 'p2', name: 'Bob', color: '#00ff00', createdAt: '2026-01-01' },
+    { id: 'p3', name: 'Charlie', color: '#0000ff', createdAt: '2026-01-01' },
+  ];
+
+  const sessions: PlaySession[] = [
+    {
+      id: 's1',
+      gameId: 'g1',
+      gameName: 'Brass Birmingham',
+      gameThumbnail: '',
+      datePlayed: '2026-11-20T10:00:00Z',
+      createdAt: '2026-11-20T10:00:00Z',
+      firstPlayerMethod: 'random_wheel',
+      players: [
+        { playerId: 'p1', playerName: 'Alice', score: 142, isWinner: true, rank: 1 },
+        { playerId: 'p2', playerName: 'Bob', score: 120, isWinner: false, rank: 2 },
+        { playerId: 'p3', playerName: 'Charlie', score: 98, isWinner: false, rank: 3 },
+      ],
+    },
+  ];
+
+  const result = findPreviousLoser(activePlayers, sessions, 'g1');
+  assert.ok(result);
+  assert.equal(result.player.id, 'p3');
+  assert.match(result.reason, /98/);
+});
+
+test('findPreviousLoser identifies highest score player in lowestScoreWins sessions', () => {
+  const activePlayers: Player[] = [
+    { id: 'p1', name: 'Alice', color: '#ff0000', createdAt: '2026-01-01' },
+    { id: 'p2', name: 'Bob', color: '#00ff00', createdAt: '2026-01-01' },
+  ];
+
+  // In Golf/lowestScoreWins, winner has 12 pts, loser has 38 pts
+  const sessions: PlaySession[] = [
+    {
+      id: 's2',
+      gameId: 'g2',
+      gameName: 'No Thanks!',
+      gameThumbnail: '',
+      datePlayed: '2026-11-21T10:00:00Z',
+      createdAt: '2026-11-21T10:00:00Z',
+      firstPlayerMethod: 'random_wheel',
+      players: [
+        { playerId: 'p1', playerName: 'Alice', score: 12, isWinner: true },
+        { playerId: 'p2', playerName: 'Bob', score: 38, isWinner: false },
+      ],
+    },
+  ];
+
+  const result = findPreviousLoser(activePlayers, sessions, 'g2');
+  assert.ok(result);
+  assert.equal(result.player.id, 'p2');
+  assert.match(result.reason, /38/);
+});
+
+test('findPreviousWinner identifies previous winner among active players', () => {
+  const activePlayers: Player[] = [
+    { id: 'p1', name: 'Alice', color: '#ff0000', createdAt: '2026-01-01' },
+    { id: 'p2', name: 'Bob', color: '#00ff00', createdAt: '2026-01-01' },
+  ];
+
+  const sessions: PlaySession[] = [
+    {
+      id: 's3',
+      gameId: 'g1',
+      gameName: 'Catan',
+      gameThumbnail: '',
+      datePlayed: '2026-11-22T10:00:00Z',
+      createdAt: '2026-11-22T10:00:00Z',
+      firstPlayerMethod: 'manual',
+      players: [
+        { playerId: 'p1', playerName: 'Alice', score: 10, isWinner: true },
+        { playerId: 'p2', playerName: 'Bob', score: 8, isWinner: false },
+      ],
+    },
+  ];
+
+  const result = findPreviousWinner(activePlayers, sessions, 'g1');
+  assert.ok(result);
+  assert.equal(result.player.id, 'p1');
 });

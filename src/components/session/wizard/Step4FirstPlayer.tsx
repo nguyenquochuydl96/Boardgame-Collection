@@ -1,14 +1,13 @@
-import React from 'react';
-import { ArrowLeft, Crown } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import React, { useState } from 'react';
+import { ArrowLeft, Flag, Zap, Trophy, Dices } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { MysteryCardShuffle, PickerItem } from '../../picker/MysteryCardShuffle';
 import { PlayerAvatar } from '../../player/PlayerAvatar';
-import { PlayerChip } from '../../player/PlayerChip';
 import { cn } from '../../ui/cn';
 import { BoardGame, Player, FirstPlayerMethod } from '../../../types';
-import { FIRST_PLAYER_METHOD_LABELS } from '../../../lib/utils';
+import { findPreviousLoser, findPreviousWinner } from '../../../lib/utils';
+import { useSessionStore } from '../../../store/useSessionStore';
 
 interface Step4FirstPlayerProps {
   isRematchMode: boolean;
@@ -40,10 +39,54 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
     firstPlayerMethod,
     setFirstPlayerId,
     setFirstPlayerMethod,
-    firstPlayerObj,
+    firstPlayerObj: _firstPlayerObj,
     onBackToStep3,
     onContinueToStep5,
   }) => {
+    const sessions = useSessionStore((s) => s.sessions);
+    const [ruleReason, setRuleReason] = useState<string | null>(null);
+
+    const handleSelectPreviousLoser = () => {
+      const res = findPreviousLoser(activeSessionPlayers, sessions, selectedGame?.id);
+      if (res) {
+        setFirstPlayerId(res.player.id);
+        setFirstPlayerMethod('previous_loser');
+        setRuleReason(`${res.player.name} — ${res.reason}`);
+      } else {
+        const randomPlayer = activeSessionPlayers[Math.floor(Math.random() * activeSessionPlayers.length)];
+        if (randomPlayer) {
+          setFirstPlayerId(randomPlayer.id);
+          setFirstPlayerMethod('previous_loser');
+          setRuleReason(`${randomPlayer.name} (chưa có ván trước, đã chọn ngẫu nhiên)`);
+        }
+      }
+    };
+
+    const handleSelectPreviousWinner = () => {
+      const res = findPreviousWinner(activeSessionPlayers, sessions, selectedGame?.id);
+      if (res) {
+        setFirstPlayerId(res.player.id);
+        setFirstPlayerMethod('previous_winner');
+        setRuleReason(`${res.player.name} — ${res.reason}`);
+      } else {
+        const randomPlayer = activeSessionPlayers[Math.floor(Math.random() * activeSessionPlayers.length)];
+        if (randomPlayer) {
+          setFirstPlayerId(randomPlayer.id);
+          setFirstPlayerMethod('previous_winner');
+          setRuleReason(`${randomPlayer.name} (chưa có ván trước, đã chọn ngẫu nhiên)`);
+        }
+      }
+    };
+
+    const handleRandomPick = () => {
+      const randomPlayer = activeSessionPlayers[Math.floor(Math.random() * activeSessionPlayers.length)];
+      if (randomPlayer) {
+        setFirstPlayerId(randomPlayer.id);
+        setFirstPlayerMethod('random_wheel');
+        setRuleReason(`Đã bốc thăm ngẫu nhiên: ${randomPlayer.name}`);
+      }
+    };
+
     return (
       <Card className="p-4 sm:p-6 md:p-8 space-y-6">
         {isRematchMode && (
@@ -51,7 +94,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
             <div className="flex items-center gap-2.5">
               <span className="text-xl">🔄</span>
               <span>
-                <strong className="text-amber-300">Rematch:</strong> Kept <strong>{selectedGame?.name}</strong>, <strong>{activeSessionPlayers.length} players</strong> and venue <strong>{location}</strong>. Spin or draw to pick a new first player!
+                <strong className="text-amber-300">Rematch:</strong> Kept <strong>{selectedGame?.name}</strong>, <strong>{activeSessionPlayers.length} players</strong> and venue <strong>{location}</strong>. Draw cards or choose manually to pick a first player!
               </span>
             </div>
             <span className="font-mono text-emerald-400 font-bold shrink-0 flex items-center gap-1">
@@ -63,7 +106,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] flex items-center gap-2.5">
-              <span>👑</span>
+              <Flag className="w-6 h-6 text-amber-500 shrink-0" />
               Step 4 — Who Goes First?
             </h1>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
@@ -75,11 +118,14 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
           <div className="grid grid-cols-2 gap-1 sm:gap-1.5 p-1 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-full sm:w-auto shrink-0">
             <button
               type="button"
-              onClick={() => setFirstPlayerAnimStyle('card_shuffle')}
+              onClick={() => {
+                setFirstPlayerAnimStyle('card_shuffle');
+                setRuleReason(null);
+              }}
               className={cn(
                 'px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
                 firstPlayerAnimStyle !== 'manual'
-                  ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300 shadow-sm'
+                  ? 'bg-amber-500/20 border border-amber-500/40 text-amber-950 dark:text-amber-200 font-extrabold shadow-sm'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
@@ -88,11 +134,14 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
             </button>
             <button
               type="button"
-              onClick={() => setFirstPlayerAnimStyle('manual')}
+              onClick={() => {
+                setFirstPlayerAnimStyle('manual');
+                setRuleReason(null);
+              }}
               className={cn(
                 'px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
                 firstPlayerAnimStyle === 'manual'
-                  ? 'bg-[var(--accent-glow)] border border-[var(--border-glow)] text-[var(--accent-neon)] shadow-sm'
+                  ? 'bg-[var(--accent-glow)] border border-[var(--border-glow)] text-[var(--ink)] font-extrabold shadow-sm'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
@@ -124,7 +173,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
                 size="md"
               />
               <div className="text-left">
-                <span className="text-[10px] uppercase font-bold text-amber-400">Solo Mode</span>
+                <span className="text-[10px] uppercase font-bold text-amber-500">Solo Mode</span>
                 <p className="font-bold text-[var(--text-primary)] text-sm">{activeSessionPlayers[0].name} goes first</p>
               </div>
             </div>
@@ -134,163 +183,171 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
               </Button>
             </div>
           </div>
-        ) : (
-          <div className="p-4 sm:p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex flex-col items-center justify-center min-h-[380px] relative overflow-hidden">
-            {firstPlayerAnimStyle === 'manual' ? (
-              <div className="w-full max-w-md py-6 space-y-6 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-2xl mx-auto shadow-inner">
-                  👑
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-[var(--text-primary)]">Manually Assign First Player</h3>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">
-                    Choose directly below or use custom tabletop house rules
-                  </p>
-                </div>
-                <div className="flex flex-wrap justify-center gap-2.5">
-                  {activeSessionPlayers.map((p) => {
-                    const isChosen = firstPlayerId === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          setFirstPlayerId(p.id);
-                          setFirstPlayerMethod('manual');
-                        }}
-                        className={cn(
-                          'flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer',
-                          isChosen
-                            ? 'bg-amber-500/25 border-amber-400 text-[var(--ink)] shadow-lg ring-2 ring-amber-400/30'
-                            : 'bg-[var(--card)] border-[var(--line)] text-[var(--ink-2)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
-                        )}
-                      >
-                        <PlayerAvatar
-                          avatar={p.avatar}
-                          name={p.name}
-                          color={p.color}
-                          size="sm"
-                        />
-                        <span>{p.name}</span>
-                        {isChosen && <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />}
-                      </button>
-                    );
-                  })}
-                </div>
+        ) : firstPlayerAnimStyle === 'manual' ? (
+          /* TAB 2: MANUAL & HOUSE RULES STAGE (ISOLATED) */
+          <div className="p-4 sm:p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] space-y-6">
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center mx-auto shadow-inner">
+                <Flag className="w-6 h-6" />
               </div>
-            ) : (
-              <MysteryCardShuffle
-                items={playerPickerItems}
-                onSelect={(winner) => {
-                  setFirstPlayerId(winner.id);
-                  setFirstPlayerMethod('random_wheel');
-                }}
-                mode="first_player"
-              />
-            )}
+              <h3 className="font-bold text-base text-[var(--text-primary)]">
+                Manually Assign First Player
+              </h3>
+              <p className="text-xs text-[var(--text-secondary)] max-w-md mx-auto">
+                Select a player directly or use tabletop house rules from recent match history
+              </p>
+            </div>
 
-            {/* Spotlight Celebration Card when First Player is Picked */}
-            <AnimatePresence>
-              {firstPlayerObj && (
-                <motion.div
-                  initial={{ opacity: 0, y: 16, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 via-orange-500/25 to-amber-600/20 border-2 border-amber-400 shadow-2xl w-full max-w-lg flex flex-col sm:flex-row items-center justify-between gap-4"
+            {/* Quick Tabletop House Rules */}
+            <div className="p-3.5 rounded-xl bg-[var(--card)] border border-[var(--line)] space-y-2.5">
+              <div className="flex items-center justify-between text-xs font-semibold text-[var(--muted)]">
+                <span>Tabletop House Rules:</span>
+                {ruleReason && (
+                  <span className="text-[11px] text-amber-700 dark:text-amber-300 font-bold truncate max-w-[280px]">
+                    {ruleReason}
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={handleSelectPreviousLoser}
+                  className={cn(
+                    'p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2',
+                    firstPlayerMethod === 'previous_loser'
+                      ? 'bg-amber-500/20 border-amber-400 text-amber-950 dark:text-amber-200 shadow-sm'
+                      : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink-2)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
+                  )}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="relative">
-                      <PlayerAvatar
-                        avatar={firstPlayerObj.avatar}
-                        name={firstPlayerObj.name}
-                        color={firstPlayerObj.color}
-                        size="lg"
-                      />
-                      <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-lg font-bold">
-                        👑
-                      </div>
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300">
-                          First Player This Session!
-                        </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-[var(--text-primary)] font-medium">
-                          {FIRST_PLAYER_METHOD_LABELS[firstPlayerMethod]}
-                        </span>
-                      </div>
-                      <h4 className="font-display font-extrabold text-base sm:text-lg text-[var(--text-primary)] truncate">
-                        {firstPlayerObj.name}
-                      </h4>
-                    </div>
+                  <Zap className="w-4 h-4 text-amber-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold truncate">Previous Loser</p>
+                    <p className="text-[10px] text-[var(--muted)] truncate">Đứng chót bảng ván gần nhất</p>
                   </div>
+                </button>
 
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={onContinueToStep5}
-                    className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg shrink-0 w-full sm:w-auto"
-                  >
-                    Enter Scores 👉
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
+                <button
+                  type="button"
+                  onClick={handleSelectPreviousWinner}
+                  className={cn(
+                    'p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2',
+                    firstPlayerMethod === 'previous_winner'
+                      ? 'bg-amber-500/20 border-amber-400 text-amber-950 dark:text-amber-200 shadow-sm'
+                      : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink-2)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
+                  )}
+                >
+                  <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold truncate">Previous Winner</p>
+                    <p className="text-[10px] text-[var(--muted)] truncate">Quán quân ván gần nhất</p>
+                  </div>
+                </button>
 
-        {/* Alternative Quick Manual Rule Selector */}
-        {activeSessionPlayers.length > 1 && (
-          <div className="pt-4 border-t border-[var(--line)] space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-[var(--muted)]">
-                Alternative house rules:
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {(
-                  [
-                    'random_wheel',
-                    'manual',
-                    'previous_loser',
-                    'previous_winner',
-                  ] as FirstPlayerMethod[]
-                ).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setFirstPlayerMethod(m)}
-                    className={cn(
-                      'px-2.5 py-1 rounded-lg text-xs font-semibold border transition-colors cursor-pointer',
-                      firstPlayerMethod === m
-                        ? 'bg-amber-500/25 border-amber-400 text-amber-700 dark:text-amber-300'
-                        : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
-                    )}
-                  >
-                    {FIRST_PLAYER_METHOD_LABELS[m]}
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  onClick={handleRandomPick}
+                  className={cn(
+                    'p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2',
+                    firstPlayerMethod === 'random_wheel'
+                      ? 'bg-amber-500/20 border-amber-400 text-amber-950 dark:text-amber-200 shadow-sm'
+                      : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink-2)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
+                  )}
+                >
+                  <Dices className="w-4 h-4 text-amber-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold truncate">Random Pick</p>
+                    <p className="text-[10px] text-[var(--muted)] truncate">Bốc ngẫu nhiên 1 người</p>
+                  </div>
+                </button>
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {activeSessionPlayers.map((p) => (
-                <PlayerChip
-                  key={p.id}
-                  player={p}
-                  size="sm"
-                  selected={firstPlayerId === p.id}
-                  onClick={() => {
-                    setFirstPlayerId(p.id);
-                    if (firstPlayerMethod === 'random_wheel') {
-                      setFirstPlayerMethod('manual');
-                    }
-                  }}
-                />
-              ))}
+            {/* Direct Player Selection Chips */}
+            <div className="space-y-2">
+              <span className="text-xs font-semibold text-[var(--muted)] block text-center">
+                Or click directly to assign:
+              </span>
+              <div className="flex flex-wrap justify-center gap-2.5">
+                {activeSessionPlayers.map((p) => {
+                  const isChosen = firstPlayerId === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setFirstPlayerId(p.id);
+                        setFirstPlayerMethod('manual');
+                        setRuleReason(null);
+                      }}
+                      className={cn(
+                        'flex items-center gap-2.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer',
+                        isChosen
+                          ? 'bg-amber-500/25 border-amber-400 text-[var(--ink)] shadow-lg ring-2 ring-amber-400/30'
+                          : 'bg-[var(--card)] border-[var(--line)] text-[var(--ink-2)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
+                      )}
+                    >
+                      <PlayerAvatar
+                        avatar={p.avatar}
+                        name={p.name}
+                        color={p.color}
+                        size="sm"
+                      />
+                      <span>{p.name}</span>
+                      {isChosen && (
+                        <span className="font-mono font-black text-[10px] px-1.5 py-0.5 rounded bg-amber-400 text-slate-950">
+                          1ST
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+
+            {/* Action continue button when player selected */}
+            {firstPlayerId && (
+              <div className="pt-4 border-t border-[var(--line)] flex justify-center">
+                <Button
+                  variant="primary"
+                  onClick={onContinueToStep5}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg px-6"
+                >
+                  Enter Scores 👉
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* TAB 1: CARD SHUFFLE STAGE (100% CLEAN - ZERO DUPLICATION) */
+          <div className="p-4 sm:p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex flex-col items-center justify-center min-h-[380px] relative overflow-hidden">
+            <MysteryCardShuffle
+              items={playerPickerItems}
+              onSelect={(winner) => {
+                setFirstPlayerId(winner.id);
+                setFirstPlayerMethod('random_wheel');
+              }}
+              mode="first_player"
+            />
+
+            {/* Clean, Non-Duplicated Action Button when First Player is Drawn */}
+            {firstPlayerId && (
+              <div className="mt-4 flex flex-col items-center gap-1.5">
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={onContinueToStep5}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg px-6"
+                >
+                  Enter Scores 👉
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </Card>
     );
   }
 );
+
+export default Step4FirstPlayer;
