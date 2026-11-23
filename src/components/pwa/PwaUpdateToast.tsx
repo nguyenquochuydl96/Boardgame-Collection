@@ -48,9 +48,9 @@ export const PwaUpdateToast: React.FC = () => {
       aria-live="polite"
       className="fixed z-50 top-4 right-4 left-4 sm:left-auto sm:max-w-md animate-in fade-in slide-in-from-top-3 duration-300 pointer-events-auto"
     >
-      <div className="flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-[var(--card)] border-2 border-cyan-500/50 shadow-2xl backdrop-blur-md">
+      <div className="flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-[var(--card)] border border-[var(--line-2)] shadow-2xl backdrop-blur-md">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-500 shrink-0">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
             <Sparkles className="w-5 h-5 animate-spin-slow" />
           </div>
           <div className="min-w-0">
@@ -69,7 +69,7 @@ export const PwaUpdateToast: React.FC = () => {
             size="sm"
             disabled={isUpdating}
             onClick={handleUpdateNow}
-            className="text-xs font-bold py-1.5 px-3 h-8 shadow-sm flex items-center gap-1 bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer"
+            className="text-xs font-bold py-1.5 px-3 h-8 shadow-sm flex items-center gap-1 bg-[var(--accent)] hover:opacity-90 text-[var(--accent-ink)] rounded-full cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isUpdating ? 'animate-spin' : ''}`} />
             <span>{isUpdating ? 'Đang tải...' : 'Cập nhật ngay'}</span>

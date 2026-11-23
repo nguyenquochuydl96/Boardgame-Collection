@@ -68,13 +68,13 @@ export const Step5Scoring: React.FC<Step5ScoringProps> = React.memo(
 
         {/* Cooperative Game Banner */}
         {scoringTemplate.isCoop && (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-[var(--ink)]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[var(--good-soft)] border border-[var(--good)]/25 text-[var(--ink)]">
             <div className="flex items-center gap-3">
               <span className="text-2xl select-none">🤝</span>
               <div>
                 <div className="font-display font-bold text-sm sm:text-base flex items-center gap-2">
                   <span>Cooperative Game</span>
-                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-extrabold">
+                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-[var(--good-soft)] text-[var(--good)] font-extrabold border border-[var(--good)]/30">
                     Team Win / Loss
                   </span>
                 </div>
@@ -103,7 +103,7 @@ export const Step5Scoring: React.FC<Step5ScoringProps> = React.memo(
               className={cn(
                 'px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-sm shrink-0',
                 activeSessionPlayers.some((p) => computedPlayerScores.find((ps) => ps.playerId === p.id)?.isWinner)
-                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-600/20 font-black'
+                  ? 'bg-[var(--good)] text-white border-[var(--good)] shadow-xs font-black'
                   : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]'
               )}
             >

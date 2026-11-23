@@ -185,7 +185,7 @@ export const Step6Memories: React.FC<Step6MemoriesProps> = React.memo(
                   className={cn(
                     'text-xs font-bold px-2.5 py-1 rounded-lg border',
                     computedPlayerScores.some((ps) => ps.isWinner)
-                      ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                      ? 'bg-[var(--good-soft)] border-[var(--good)]/30 text-[var(--good)]'
                       : 'bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300'
                   )}
                 >
@@ -204,7 +204,7 @@ export const Step6Memories: React.FC<Step6MemoriesProps> = React.memo(
                     'inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold border',
                     ps.isWinner
                       ? scoringTemplate.isCoop
-                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-800 dark:text-emerald-300 font-bold'
+                        ? 'bg-[var(--good-soft)] border-[var(--good)]/40 text-[var(--good)] font-bold'
                         : 'bg-amber-500/20 border-amber-500/40 text-amber-800 dark:text-amber-300 font-bold'
                       : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink)]'
                   )}

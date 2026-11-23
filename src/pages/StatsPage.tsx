@@ -68,17 +68,17 @@ export const StatsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Navigation Tabs (5 Tabs with sliding spring pill) */}
+        {/* Navigation Tabs (5 Tabs with Warm Editorial pill) */}
         <div
           role="tablist"
-          className="flex p-1.5 rounded-2xl bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line)] max-w-full overflow-x-auto gap-1"
+          className="flex p-1.5 rounded-full bg-[var(--card)] border border-[var(--line)] max-w-full overflow-x-auto gap-1"
         >
           {[
             { id: 'overview', label: 'Overview & H-Index', icon: BarChart3, iconColor: 'text-[var(--accent)]' },
             { id: 'years', label: 'Years & Trends', icon: Calendar, iconColor: 'text-amber-500' },
             { id: 'locations', label: 'Venues & Locations', icon: MapPin, iconColor: 'text-rose-500' },
-            { id: 'by_player', label: 'Leaderboard & Rivalries', icon: Users, iconColor: 'text-cyan-500' },
-            { id: 'by_game', label: 'Game Breakdown', icon: Dices, iconColor: 'text-emerald-500' },
+            { id: 'by_player', label: 'Leaderboard & Rivalries', icon: Users, iconColor: 'text-cyan-600 dark:text-cyan-400' },
+            { id: 'by_game', label: 'Game Breakdown', icon: Dices, iconColor: 'text-[var(--accent)]' },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -88,10 +88,10 @@ export const StatsPage: React.FC = () => {
                 type="button"
                 onClick={() => setActiveTab(tab.id as StatsTab)}
                 className={cn(
-                  'min-h-[40px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 select-none active:scale-95',
+                  'min-h-[38px] px-4 py-1.5 rounded-full text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all duration-150 cursor-pointer whitespace-nowrap shrink-0 select-none active:scale-95',
                   isActive
-                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-sm'
-                    : 'text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
+                    ? 'bg-[#231F1D] text-white dark:bg-[#F4EFE6] dark:text-[#161311] shadow-xs'
+                    : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
                 )}
               >
                 <Icon className={cn('w-4 h-4 shrink-0', isActive ? 'text-current' : tab.iconColor)} />

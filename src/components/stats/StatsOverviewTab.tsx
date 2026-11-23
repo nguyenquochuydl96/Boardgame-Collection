@@ -625,26 +625,26 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
             {shortestSession ? (
               <Link
                 to={`/sessions/${shortestSession.id}`}
-                className="p-4 sm:p-5 rounded-2xl bg-[var(--card)] border border-[var(--line)] hover:border-emerald-500/60 hover:shadow-xl hover:shadow-emerald-500/10 transition-all group cursor-pointer flex gap-3.5 items-center select-none"
+                className="p-4 sm:p-5 rounded-2xl bg-[var(--card)] border border-[var(--line)] hover:border-[var(--accent)] hover:shadow-md transition-all group cursor-pointer flex gap-3.5 items-center select-none"
               >
                 <GameThumbBox
                   src={shortestSessionThumbnail}
                   alt={shortestSession.gameName}
-                  fallbackIcon={<Clock className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />}
-                  fallbackBg="bg-emerald-500/15 border-emerald-500/30"
+                  fallbackIcon={<Clock className="w-7 h-7 text-[var(--accent)]" />}
+                  fallbackBg="bg-[var(--accent)]/15 border-[var(--accent)]/30"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1">
+                    <span className="text-xs font-bold text-[var(--accent)] inline-flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
                       Shortest Play Session
                     </span>
-                    <ArrowRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                    <ArrowRight className="w-3.5 h-3.5 text-[var(--accent)] group-hover:translate-x-0.5 transition-transform shrink-0" />
                   </div>
                   <p className="font-display font-black text-2xl text-[var(--ink)] mt-0.5">
                     {formatDuration(shortestSession.durationMinutes)}
                   </p>
-                  <h4 className="font-display font-bold text-sm text-[var(--ink)] truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-300 transition-colors">
+                  <h4 className="font-display font-bold text-sm text-[var(--ink)] truncate group-hover:text-[var(--accent)] transition-colors">
                     {shortestSession.gameName}
                   </h4>
                   <p className="text-[11px] text-[var(--muted)] truncate mt-0.5">

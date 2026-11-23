@@ -543,7 +543,7 @@ export const SessionDetailPage: React.FC = () => {
               >
                 {session.gameName}
               </Link>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--good-soft)] text-[var(--good)] text-xs font-bold">
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
                 Completed
               </span>
@@ -615,7 +615,7 @@ export const SessionDetailPage: React.FC = () => {
                   return (
                     <tr
                       key={entry.playerId}
-                      className={isWin ? (scoringTemplate.isCoop ? 'bg-emerald-500/[0.08]' : 'bg-amber-500/[0.08]') : ''}
+                      className={isWin ? (scoringTemplate.isCoop ? 'bg-[var(--good-soft)]' : 'bg-amber-500/[0.08]') : ''}
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-[var(--text-secondary)]">
                         {scoringTemplate.isCoop ? '🤝' : `#${entry.rank || idx + 1}`}
@@ -639,7 +639,7 @@ export const SessionDetailPage: React.FC = () => {
                       <td className="py-3.5 px-4 text-right">
                         {isWin ? (
                           scoringTemplate.isCoop ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--good-soft)] text-[var(--good)] text-xs font-bold">
                               <span>🤝</span>
                               Team Win
                             </span>
@@ -765,7 +765,7 @@ export const SessionDetailPage: React.FC = () => {
                     <td className="py-3 px-4 font-extrabold text-[var(--text-primary)]">
                       <div>TOTAL SCORE</div>
                       {scoringTemplate.isCoop && (
-                        <div className="text-[10px] font-semibold text-emerald-400 mt-0.5">
+                        <div className="text-[10px] font-semibold text-[var(--good)] mt-0.5">
                           Team: {session.players.reduce((a, b) => a + (typeof b.score === 'number' ? b.score : 0), 0)}
                         </div>
                       )}

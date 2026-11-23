@@ -270,7 +270,7 @@ export const AddGamePage: React.FC = () => {
                             {item.name}
                           </p>
                           {isPicked && !isFetchingThis && (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                            <CheckCircle2 className="w-4 h-4 text-[var(--good)] shrink-0" />
                           )}
                           {isFetchingThis && (
                             <Loader2 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 animate-spin shrink-0" />

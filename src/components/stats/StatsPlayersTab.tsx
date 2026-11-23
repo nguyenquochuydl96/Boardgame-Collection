@@ -107,7 +107,7 @@ export const StatsPlayersTab: React.FC<StatsPlayersTabProps> = React.memo(
                         <td className="py-3 px-4 text-right font-mono font-bold text-amber-600 dark:text-amber-400">
                           {st.winsInShared}
                         </td>
-                        <td className="py-3 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                        <td className="py-3 px-4 text-right font-mono font-bold text-[var(--good)]">
                           {st.winRateInShared}%
                         </td>
                         <td className="py-3 px-4 text-right font-mono text-[var(--ink)]">

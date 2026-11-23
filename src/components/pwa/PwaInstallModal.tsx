@@ -64,7 +64,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+          className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
           onClick={onClose}
         >
           <motion.div
@@ -101,8 +101,8 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
             {/* Native 1-Click Install Button (Chrome / Edge / Android) */}
             {deferredPrompt ? (
               <div className="space-y-3">
-                <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/30 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <div className="p-3 bg-[var(--good-soft)] rounded-2xl border border-[var(--good)]/30 text-xs text-[var(--good)] flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-[var(--good)] shrink-0" />
                   <span>Your device is ready to install with 1 tap!</span>
                 </div>
                 <button
@@ -170,7 +170,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
                 <p className="text-[9px] text-[var(--muted)]">No browser bars</p>
               </div>
               <div className="p-2 rounded-xl bg-[var(--card-2)]">
-                <Wifi className="w-4 h-4 text-emerald-500 mx-auto mb-1" />
+                <Wifi className="w-4 h-4 text-[var(--good)] mx-auto mb-1" />
                 <p className="text-[10px] font-bold text-[var(--ink)]">Works Offline</p>
                 <p className="text-[9px] text-[var(--muted)]">Play anywhere</p>
               </div>

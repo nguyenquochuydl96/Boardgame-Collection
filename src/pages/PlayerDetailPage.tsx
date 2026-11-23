@@ -392,7 +392,7 @@ export const PlayerDetailPage: React.FC = () => {
             {/* 2. Win Rate */}
             <div className="p-3 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] text-center min-w-[95px]">
               <span className="text-[11px] text-[var(--muted)] block">Win Rate</span>
-              <p className="font-display font-extrabold text-xl text-emerald-700 dark:text-emerald-400 mt-0.5">
+              <p className="font-display font-extrabold text-xl text-[var(--good)] mt-0.5">
                 {overallWinRate}%
               </p>
               <span className="text-[10px] text-[var(--muted)]">({totalWins} wins)</span>
@@ -481,7 +481,7 @@ export const PlayerDetailPage: React.FC = () => {
                     <img
                       src={favoriteGame.thumbnail}
                       alt={favoriteGame.gameName}
-                      className="w-14 h-16 rounded-xl object-cover bg-slate-900 border border-amber-400/30 shrink-0"
+                      className="w-14 h-16 rounded-xl object-cover bg-[var(--card-2)] border border-amber-400/30 shrink-0"
                     />
                   ) : (
                     <div className="w-14 h-16 rounded-xl bg-amber-500/20 flex items-center justify-center text-2xl shrink-0">
@@ -497,7 +497,7 @@ export const PlayerDetailPage: React.FC = () => {
                     </Link>
                     <p className="text-xs text-[var(--muted)] mt-0.5 tabular-nums">
                       Played <strong className="text-[var(--ink)]">{favoriteGame.plays} {favoriteGame.plays === 1 ? 'play' : 'plays'}</strong> · Won{' '}
-                      <strong className="text-emerald-700 dark:text-emerald-400">{favoriteGame.winRate}%</strong>
+                      <strong className="text-[var(--good)]">{favoriteGame.winRate}%</strong>
                     </p>
                   </div>
                 </div>
@@ -521,15 +521,15 @@ export const PlayerDetailPage: React.FC = () => {
           </Card>
 
           {/* 2. SIGNATURE / STRONGEST GAME */}
-          <Card className="p-5 flex flex-col justify-between space-y-4 border border-emerald-500/30 bg-gradient-to-b from-emerald-500/10 via-[var(--card)] to-[var(--card)]">
+          <Card className="p-5 flex flex-col justify-between space-y-4 border border-[var(--good)]/30 bg-[var(--card)]">
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                <span className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[var(--good)]">
                   <Trophy className="w-4 h-4" />
                   Signature Game
                 </span>
                 {signatureGame?.isPinned && (
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--good-soft)] text-[var(--good)] border border-[var(--good)]/30">
                     Pinned
                   </span>
                 )}
@@ -541,22 +541,22 @@ export const PlayerDetailPage: React.FC = () => {
                     <img
                       src={signatureGame.thumbnail}
                       alt={signatureGame.gameName}
-                      className="w-14 h-16 rounded-xl object-cover bg-slate-900 border border-emerald-400/30 shrink-0"
+                      className="w-14 h-16 rounded-xl object-cover bg-[var(--card-2)] border border-[var(--good)]/30 shrink-0"
                     />
                   ) : (
-                    <div className="w-14 h-16 rounded-xl bg-emerald-500/20 flex items-center justify-center text-2xl shrink-0">
+                    <div className="w-14 h-16 rounded-xl bg-[var(--good-soft)] text-[var(--good)] flex items-center justify-center text-2xl shrink-0">
                       🏆
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
                     <Link
                       to={`/collection/${signatureGame.gameId}`}
-                      className="font-display font-bold text-base text-[var(--ink)] hover:text-emerald-600 dark:hover:text-emerald-300 transition-colors truncate block"
+                      className="font-display font-bold text-base text-[var(--ink)] hover:text-[var(--accent)] transition-colors truncate block"
                     >
                       {signatureGame.gameName}
                     </Link>
                     <p className="text-xs text-[var(--muted)] mt-0.5 tabular-nums">
-                      Win rate: <strong className="text-emerald-700 dark:text-emerald-400 font-bold">{signatureGame.winRate}%</strong>{' '}
+                      Win rate: <strong className="text-[var(--good)] font-bold">{signatureGame.winRate}%</strong>{' '}
                       ({signatureGame.wins}/{signatureGame.plays} plays)
                     </p>
                   </div>
@@ -578,7 +578,7 @@ export const PlayerDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsEditModalOpen(true)}
-                className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
+                className="text-[var(--accent)] font-bold hover:underline cursor-pointer"
               >
                 Pin specialty →
               </button>
@@ -606,7 +606,7 @@ export const PlayerDetailPage: React.FC = () => {
                     <img
                       src={nemesisGame.thumbnail}
                       alt={nemesisGame.gameName}
-                      className="w-14 h-16 rounded-xl object-cover bg-slate-900 border border-rose-400/30 shrink-0"
+                      className="w-14 h-16 rounded-xl object-cover bg-[var(--card-2)] border border-rose-400/30 shrink-0"
                     />
                   ) : (
                     <div className="w-14 h-16 rounded-xl bg-rose-500/20 flex items-center justify-center text-2xl shrink-0">
@@ -700,7 +700,7 @@ export const PlayerDetailPage: React.FC = () => {
                       <img
                         src={item.thumbnail}
                         alt={item.gameName}
-                        className="w-10 h-10 rounded-lg object-cover bg-slate-900 border border-[var(--line)] shrink-0"
+                        className="w-10 h-10 rounded-lg object-cover bg-[var(--card-2)] border border-[var(--line)] shrink-0"
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-[var(--card-3)] flex items-center justify-center text-lg shrink-0">
@@ -727,7 +727,7 @@ export const PlayerDetailPage: React.FC = () => {
                           className={cn(
                             'h-full rounded-full transition-all duration-500',
                             item.winRate >= 50
-                              ? 'bg-emerald-500'
+                              ? 'bg-[var(--good)]'
                               : item.winRate >= 30
                               ? 'bg-amber-500'
                               : 'bg-rose-500'
@@ -739,7 +739,7 @@ export const PlayerDetailPage: React.FC = () => {
                       className={cn(
                         'text-xs font-mono font-bold w-12 text-right',
                         item.winRate >= 50
-                          ? 'text-emerald-700 dark:text-emerald-400'
+                          ? 'text-[var(--good)]'
                           : item.winRate >= 30
                           ? 'text-amber-700 dark:text-amber-400'
                           : 'text-rose-700 dark:text-rose-400'

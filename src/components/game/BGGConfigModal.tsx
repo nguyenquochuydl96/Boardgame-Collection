@@ -152,7 +152,7 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
           <div
             className={`p-3.5 rounded-xl border flex items-start gap-2.5 ${
               testResult.success
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                ? 'bg-[var(--good-soft)] border-[var(--good)]/30 text-[var(--good)]'
                 : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
             }`}
           >
@@ -184,7 +184,7 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
               .
             </li>
             <li>Select your approved application and copy the <strong>Access Token (Bearer Token)</strong>.</li>
-            <li className="text-emerald-400">
+            <li className="text-[var(--good)]">
               ✓ The <strong>"Powered by BGG"</strong> badge is displayed across the app adhering to BGG terms of service.
             </li>
           </ol>

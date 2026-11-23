@@ -184,7 +184,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
                     Quick Edit Game
                   </h3>
                   {isSavedNotice && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--good)] bg-[var(--good-soft)] px-2 py-0.5 rounded-full border border-[var(--good)]/30">
                       <Check className="w-3 h-3" /> Saved!
                     </span>
                   )}

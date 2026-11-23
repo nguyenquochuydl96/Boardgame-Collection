@@ -143,7 +143,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
                           <img
                             src={session.gameThumbnail}
                             alt={session.gameName}
-                            className="w-12 h-14 rounded-xl object-cover bg-slate-900 border border-white/10 shrink-0"
+                            className="w-12 h-14 rounded-xl object-cover bg-[var(--card-2)] border border-[var(--line)] shrink-0"
                           />
                         ) : (
                           <div className="w-12 h-14 rounded-xl bg-[var(--bg-elevated)] border border-white/10 flex items-center justify-center text-xl shrink-0">

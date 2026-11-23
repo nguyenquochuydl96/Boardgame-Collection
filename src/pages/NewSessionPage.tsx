@@ -771,20 +771,20 @@ export const NewSessionPage: React.FC = () => {
                   if (!isLocked) setCurrentStep(s.step);
                 }}
                 className={cn(
-                  'min-w-[85px] sm:min-w-0 flex-1 p-2 sm:p-2.5 rounded-xl border text-left transition-all shrink-0 select-none',
+                  'min-w-[72px] sm:min-w-0 flex-1 p-1.5 sm:p-2.5 rounded-xl border text-left transition-all shrink-0 select-none',
                   isLocked
-                    ? 'opacity-40 cursor-not-allowed bg-[var(--bg-card)]/50 border-[var(--border-subtle)] text-[var(--text-secondary)]'
+                    ? 'opacity-40 cursor-not-allowed bg-[var(--card)]/50 border-[var(--line)] text-[var(--muted)]'
                     : 'cursor-pointer',
                   isActive
-                    ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[var(--text-primary)] shadow-sm'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-bold shadow-xs border-[var(--accent)]'
                     : isDone
-                    ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-400'
-                    : 'bg-[var(--bg-card)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    ? 'bg-[var(--good-soft)] border-[var(--good)]/30 text-[var(--good)]'
+                    : 'bg-[var(--card)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
               >
                 <div className="flex items-center justify-between text-[11px] font-mono">
                   <span>0{s.step}</span>
-                  {isDone && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                  {isDone && <Check className="w-3.5 h-3.5 text-[var(--good)]" />}
                 </div>
                 <p className="font-display font-bold text-xs truncate mt-0.5">
                   {s.title}
@@ -841,46 +841,46 @@ export const NewSessionPage: React.FC = () => {
           </div>
         )}
 
-        {/* Persistent Session Companion Bar (Always Active) */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-sm">
-          <div className="flex items-center gap-3 min-w-0">
+        {/* Persistent Session Companion Bar (Always Active, Compact on Mobile) */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:p-3.5 rounded-2xl bg-[var(--card)] border border-[var(--line)] shadow-xs">
+          <div className="flex items-center gap-2.5 min-w-0">
             {selectedGame ? (
               <img
                 src={selectedGame.thumbnail || selectedGame.image}
                 alt={selectedGame.name}
-                className="w-10 h-10 rounded-xl object-cover border border-[var(--border-subtle)] shrink-0"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover border border-[var(--line)] shrink-0"
               />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-[var(--bg-elevated)] flex items-center justify-center text-lg shrink-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--card-2)] flex items-center justify-center text-base sm:text-lg shrink-0">
                 🎲
               </div>
             )}
             <div className="min-w-0">
-              <span className="text-[10px] uppercase font-bold text-[var(--accent-neon)] tracking-wider block truncate">
+              <span className="text-[10px] uppercase font-bold text-[var(--accent)] tracking-wider block truncate">
                 {selectedGame ? selectedGame.name : 'Setting up game session'}
               </span>
-              <span className="text-xs text-[var(--text-secondary)] truncate block">
-                {location} · {activeSessionPlayers.length} players at table
+              <span className="text-xs text-[var(--muted)] truncate block">
+                {location} · {activeSessionPlayers.length} players
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             {/* Live Stopwatch with Pulsing Indicator */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
               <span
                 className={cn(
                   'w-2 h-2 rounded-full',
-                  isTimerRunning ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                  isTimerRunning ? 'bg-[var(--good)] animate-pulse' : 'bg-amber-400'
                 )}
               />
-              <Clock className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
+              <Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
               <SessionLiveTimer
                 sessionStartTime={sessionStartTime}
                 isTimerRunning={isTimerRunning}
                 pausedDurationMs={pausedDurationMs}
                 pauseStartTime={pauseStartTime}
-                className="font-mono font-extrabold text-sm text-[var(--text-primary)] tabular-nums"
+                className="font-mono font-extrabold text-xs sm:text-sm text-[var(--ink)] tabular-nums"
               />
             </div>
 

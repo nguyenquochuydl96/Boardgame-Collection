@@ -90,7 +90,7 @@ const VIBE_CONFIG: Record<
   },
   coop: {
     label: 'Co-op Adventure',
-    badgeClass: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30',
+    badgeClass: 'bg-[var(--good-soft)] text-[var(--good)] border-[var(--good-soft)]',
   },
 };
 
@@ -665,7 +665,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                       variant="primary"
                       size="lg"
                       onClick={() => handleStartSession(quickPickGame.id)}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-lg shadow-emerald-600/25 min-h-[44px]"
+                      className="flex-1 bg-[var(--accent)] hover:opacity-95 text-white font-black text-sm shadow-lg shadow-[var(--accent)]/25 min-h-[44px] rounded-full"
                     >
                       <Play className="w-4 h-4 fill-current mr-2" />
                       Play This Game
@@ -766,7 +766,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                     variant="primary"
                     size="lg"
                     onClick={() => handleStartSession(vetoWinner.id)}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm sm:text-base shadow-lg shadow-emerald-600/30 min-h-[46px] px-8"
+                    className="bg-[var(--accent)] hover:opacity-95 text-white font-black text-sm sm:text-base shadow-lg shadow-[var(--accent)]/30 min-h-[46px] px-8 rounded-full"
                   >
                     <Play className="w-4 h-4 fill-current mr-2" />
                     Play This Game Now

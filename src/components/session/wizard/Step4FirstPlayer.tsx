@@ -97,7 +97,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
                 <strong className="text-amber-300">Rematch:</strong> Kept <strong>{selectedGame?.name}</strong>, <strong>{activeSessionPlayers.length} players</strong> and venue <strong>{location}</strong>. Draw cards or choose manually to pick a first player!
               </span>
             </div>
-            <span className="font-mono text-emerald-400 font-bold shrink-0 flex items-center gap-1">
+            <span className="font-mono text-[var(--good)] font-bold shrink-0 flex items-center gap-1">
               <span>⏱️</span> New timer running
             </span>
           </div>

@@ -590,7 +590,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                 </div>
                 <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)]">
                   <span className="text-xs text-[var(--muted)] block font-medium">Venues</span>
-                  <span className="font-display font-black text-lg text-emerald-500">{locations.length}</span>
+                  <span className="font-display font-black text-lg text-[var(--accent)]">{locations.length}</span>
                 </div>
               </div>
 
@@ -619,7 +619,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
             {/* Export CSV for Excel / Sheets */}
             <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] space-y-3">
               <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-emerald-500" />
+                <FileText className="w-4 h-4 text-[var(--accent)]" />
                 <h4 className="font-bold text-xs uppercase tracking-wider text-[var(--muted)]">
                   Export CSV Spreadsheets (Excel / Google Sheets)
                 </h4>
@@ -669,7 +669,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
 
         {/* Success message */}
         {successMessage && (
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 text-xs flex items-center justify-between">
+          <div className="p-4 rounded-xl bg-[var(--good-soft)] border border-[var(--good)]/30 text-[var(--good)] text-xs flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Check className="w-4 h-4" />
               <span>{successMessage}</span>

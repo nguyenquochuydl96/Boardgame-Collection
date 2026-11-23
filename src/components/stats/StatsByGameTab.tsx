@@ -123,7 +123,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
         <Card className="p-4 sm:p-5 space-y-3.5 bg-[var(--card)] border border-[var(--line)]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-emerald-500" />
+              <Filter className="w-4 h-4 text-[var(--accent)]" />
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
                 Filter by Ownership Status:
               </span>
@@ -281,27 +281,27 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
               {activeGameStats.highestScore?.sessionId ? (
                 <Link
                   to={`/sessions/${activeGameStats.highestScore.sessionId}`}
-                  className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] hover:border-emerald-500/60 hover:shadow-lg hover:shadow-emerald-500/10 transition-all flex flex-col justify-between group cursor-pointer"
+                  className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] hover:border-[var(--accent)] hover:shadow-md transition-all flex flex-col justify-between group cursor-pointer"
                   title="View record session details"
                 >
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                      <span className="text-[11px] text-[var(--accent)] font-bold uppercase tracking-wider flex items-center gap-1">
                         <span>🏆</span> High Score
                       </span>
-                      <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                      <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-[var(--accent)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                     </div>
-                    <p className="font-mono font-black text-2xl text-emerald-600 dark:text-emerald-400 mt-1">
+                    <p className="font-mono font-black text-2xl text-[var(--accent)] mt-1">
                       {activeGameStats.highestScore.score} pts
                     </p>
                   </div>
                   <div className="mt-1 space-y-0.5">
-                    <span className="text-xs font-bold text-[var(--ink)] block truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    <span className="text-xs font-bold text-[var(--ink)] block truncate group-hover:text-[var(--accent)] transition-colors">
                       {activeGameStats.highestScore.playerName}
                     </span>
                     <div className="text-[10px] text-[var(--muted)] flex items-center justify-between gap-1">
                       <span className="truncate">{formatRecordTimeAgo(activeGameStats.highestScore.date)}</span>
-                      <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[9px] text-[var(--accent)] font-medium shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                         View session →
                       </span>
                     </div>
@@ -310,10 +310,10 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
               ) : (
                 <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex flex-col justify-between">
                   <div>
-                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                    <span className="text-[11px] text-[var(--accent)] font-bold uppercase tracking-wider flex items-center gap-1">
                       <span>🏆</span> High Score
                     </span>
-                    <p className="font-mono font-black text-2xl text-emerald-600 dark:text-emerald-400 mt-1">
+                    <p className="font-mono font-black text-2xl text-[var(--accent)] mt-1">
                       {activeGameStats.highestScore ? `${activeGameStats.highestScore.score} pts` : '—'}
                     </p>
                   </div>
@@ -553,7 +553,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h3 className="font-display font-bold text-lg text-[var(--ink)] flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5 text-emerald-500" />
+                  <BarChart3 className="w-5 h-5 text-[var(--accent)]" />
                   <span>
                     All Games Breakdown ({gamesBreakdownList.length} games)
                   </span>
@@ -641,7 +641,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                                 className="group/rec block text-right hover:opacity-90"
                                 title={`View record session of ${item.highestScore.playerName} (${item.highestScore.score} pts)`}
                               >
-                                <span className="font-bold text-emerald-600 dark:text-emerald-400 group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
+                                <span className="font-bold text-[var(--accent)] group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
                                   {item.highestScore.score} pts
                                   <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover/rec:opacity-100 transition-opacity" />
                                 </span>
@@ -650,7 +650,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                                 </span>
                                 {item.highestScore.date && (
                                   <span
-                                    className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto group-hover/rec:text-emerald-600 dark:group-hover/rec:text-emerald-400 transition-colors"
+                                    className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto group-hover/rec:text-[var(--accent)] transition-colors"
                                     title={formatRecordTimeAgo(item.highestScore.date)}
                                   >
                                     {formatRecordTimeAgo(item.highestScore.date)}
@@ -659,7 +659,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                               </Link>
                             ) : (
                               <div>
-                                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                <span className="font-bold text-[var(--accent)]">
                                   {item.highestScore.score} pts
                                 </span>
                                 <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">

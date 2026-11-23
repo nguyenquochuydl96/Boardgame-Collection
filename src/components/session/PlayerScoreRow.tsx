@@ -92,8 +92,8 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
         'flex items-center justify-between gap-3 p-3.5 rounded-2xl border transition-all duration-200',
         playerScore.isWinner
           ? isCoop
-            ? 'bg-emerald-500/15 border-emerald-500/40 shadow-md shadow-emerald-500/10'
-            : 'bg-amber-500/15 border-amber-500/45 shadow-md shadow-amber-500/10'
+            ? 'bg-[var(--good-soft)] border-[var(--good)]/40 shadow-sm'
+            : 'bg-amber-500/15 border-amber-500/45 shadow-sm'
           : 'bg-[var(--card)] border-[var(--line)]'
       )}
     >
@@ -167,8 +167,8 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
             'min-h-[38px] sm:min-h-[42px] min-w-[38px] sm:min-w-[42px] px-2 sm:px-3 rounded-xl border inline-flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer select-none',
             playerScore.isWinner
               ? isCoop
-                ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-600/25 font-black'
-                : 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/25 font-black'
+                ? 'bg-[var(--good)] text-white border-[var(--good)] shadow-sm font-black'
+                : 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm font-black'
               : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
           )}
         >

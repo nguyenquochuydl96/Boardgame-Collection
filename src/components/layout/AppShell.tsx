@@ -403,14 +403,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                     isSyncEnabled
                       ? syncStatus === 'error'
                         ? 'text-rose-600 bg-rose-500/10'
-                        : 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/10'
+                        : 'text-[var(--good)] bg-[var(--good-soft)]'
                       : 'opacity-70 hover:opacity-100'
                   )}
                   onClick={() => setShowSyncModal(true)}
                   title={isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}
                 >
                   {isSyncEnabled ? (
-                    <CloudCheck className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <CloudCheck className="w-3.5 h-3.5 mr-1 text-[var(--good)] shrink-0" />
                   ) : (
                     <Cloud className="w-3.5 h-3.5 mr-1 shrink-0" />
                   )}
@@ -448,7 +448,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                   className="w-full justify-center text-xs font-bold rounded-xl mt-1"
                   onClick={() => setShowInstallModal(true)}
                 >
-                  <Smartphone className="w-3.5 h-3.5 mr-1.5 text-emerald-600 dark:text-emerald-400" />
+                  <Smartphone className="w-3.5 h-3.5 mr-1.5 text-[var(--accent)]" />
                   Install App
                 </Button>
               )}
@@ -496,13 +496,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               isSyncEnabled
                 ? syncStatus === 'error'
                   ? 'text-rose-500 bg-rose-500/10'
-                  : 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/10'
+                  : 'text-[var(--good)] bg-[var(--good-soft)]'
                 : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
             )}
             title={isSyncEnabled ? 'Cloud Synced' : 'Connect Cloud Sync'}
           >
             {isSyncEnabled ? (
-              <CloudCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <CloudCheck className="w-4 h-4 text-[var(--good)]" />
             ) : (
               <Cloud className="w-4 h-4" />
             )}
@@ -526,10 +526,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             <button
               type="button"
               onClick={() => setShowInstallModal(true)}
-              className="hidden sm:inline-flex px-2.5 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold items-center gap-1 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+              className="hidden sm:inline-flex px-2.5 py-1.5 rounded-full bg-[var(--card-2)] hover:bg-[var(--card)] border border-[var(--line)] text-[var(--ink)] text-xs font-bold items-center gap-1 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
               title="Install on your mobile home screen"
             >
-              <Smartphone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <Smartphone className="w-3.5 h-3.5 text-[var(--accent)]" />
               <span>Install</span>
             </button>
           )}
@@ -606,12 +606,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                 isSyncEnabled
                   ? syncStatus === 'error'
                     ? 'bg-rose-500/10 border-rose-500/20 text-rose-600'
-                    : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                    : 'bg-[var(--good-soft)] border-[var(--good)]/20 text-[var(--good)]'
                   : 'bg-[var(--card)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
               )}
             >
               {isSyncEnabled ? (
-                <CloudCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <CloudCheck className="w-3.5 h-3.5 text-[var(--good)]" />
               ) : (
                 <Cloud className="w-3.5 h-3.5" />
               )}

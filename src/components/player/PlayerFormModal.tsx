@@ -457,14 +457,14 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
 
           {/* Specialty Game */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+            <label className="text-xs font-bold text-[var(--accent)] flex items-center gap-1">
               <Trophy className="w-3.5 h-3.5" />
               <span>Signature Game</span>
             </label>
             <select
               value={specialtyGameId}
               onChange={(e) => setSpecialtyGameId(e.target.value)}
-              className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-[var(--ink)] focus:outline-none focus:border-emerald-400 cursor-pointer"
+              className="w-full px-2.5 py-2 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] cursor-pointer"
             >
               <option value="">🏆 Auto (Highest Win Rate ≥ 5 plays)</option>
               {games.map((g) => (

@@ -77,7 +77,7 @@ export const PlayerCompareModal: React.FC<PlayerCompareModalProps> = ({
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--line)] text-xs tabular-nums">
                   <div>
                     <span className="text-[var(--muted)] block font-medium">Highest Score</span>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="font-mono font-bold text-[var(--good)]">
                       {st.highestScore !== null ? st.highestScore : '—'}
                     </span>
                   </div>

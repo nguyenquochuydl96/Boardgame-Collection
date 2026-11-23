@@ -330,7 +330,7 @@ export const GameDetailPage: React.FC = () => {
                   My Notes
                 </h2>
                 {notesSaved && (
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs font-semibold text-[var(--good)]">
                     Saved!
                   </span>
                 )}
@@ -395,24 +395,24 @@ export const GameDetailPage: React.FC = () => {
                 {stats.highestScore?.sessionId ? (
                   <Link
                     to={`/sessions/${stats.highestScore.sessionId}`}
-                    className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] hover:border-emerald-500/60 hover:shadow-md transition-all group block cursor-pointer"
+                    className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] hover:border-[var(--accent)] hover:shadow-md transition-all group block cursor-pointer"
                     title={`View record session of ${stats.highestScore.playerName} (${stats.highestScore.score} pts)`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-[var(--muted)]">Highest Score</span>
-                      <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-emerald-500 transition-colors" />
+                      <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
                     </div>
-                    <p className="font-mono font-extrabold text-xl text-emerald-600 dark:text-emerald-400 mt-1">
+                    <p className="font-mono font-extrabold text-xl text-[var(--accent)] mt-1">
                       {stats.highestScore.score}
                     </p>
-                    <span className="text-[11px] text-[var(--muted)] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 truncate block transition-colors">
+                    <span className="text-[11px] text-[var(--muted)] group-hover:text-[var(--accent)] truncate block transition-colors">
                       {stats.highestScore.playerName}
                     </span>
                   </Link>
                 ) : (
                   <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
                     <span className="text-xs text-[var(--muted)]">Highest Score</span>
-                    <p className="font-mono font-extrabold text-xl text-emerald-600 dark:text-emerald-400 mt-1">
+                    <p className="font-mono font-extrabold text-xl text-[var(--accent)] mt-1">
                       {stats.highestScore ? stats.highestScore.score : '—'}
                     </p>
                     {stats.highestScore && (
@@ -475,7 +475,7 @@ export const GameDetailPage: React.FC = () => {
                           <span className="text-[var(--muted)]">
                             {pw.wins}W / {pw.plays}G
                           </span>
-                          <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 w-12 text-right">
+                          <span className="font-mono font-bold text-[var(--good)] w-12 text-right">
                             {pw.winRate}%
                           </span>
                         </div>

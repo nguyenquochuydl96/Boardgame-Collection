@@ -99,7 +99,7 @@ export const Step2Setup: React.FC<Step2SetupProps> = React.memo(
                 <span
                   className={cn(
                     'w-2 h-2 rounded-full',
-                    isTimerRunning ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                    isTimerRunning ? 'bg-[var(--good)] animate-pulse' : 'bg-amber-400'
                   )}
                 />
                 Stopwatch Active

@@ -88,7 +88,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <Button variant="secondary" size="sm" onClick={this.handleCopyError}>
                 {this.state.copied ? (
                   <>
-                    <Check className="w-3.5 h-3.5 mr-1 text-emerald-400" />
+                    <Check className="w-3.5 h-3.5 mr-1 text-[var(--good)]" />
                     Copied Details!
                   </>
                 ) : (

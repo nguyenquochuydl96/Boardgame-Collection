@@ -358,7 +358,7 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
                       🏁 PLAYS FIRST
                     </div>
                   ) : (
-                    <div className="text-[10px] font-mono text-emerald-300 font-extrabold bg-emerald-500/20 border border-emerald-500/40 px-3.5 py-1 rounded-full shadow-sm">
+                    <div className="text-[10px] font-mono text-[var(--accent)] font-extrabold bg-[var(--accent)]/20 border border-[var(--accent)]/40 px-3.5 py-1 rounded-full shadow-xs">
                       ✨ LUCKY PICK ✨
                     </div>
                   )}

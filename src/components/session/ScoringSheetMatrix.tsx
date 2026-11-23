@@ -390,7 +390,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
               <td className="sticky left-0 bg-[var(--bg-elevated)] z-20 py-3.5 px-2 sm:px-4 text-xs sm:text-sm font-extrabold text-[var(--text-primary)] w-[125px] min-w-[115px] max-w-[130px] sm:w-[170px] sm:min-w-[160px] sm:max-w-[200px] shadow-[1px_0_0_0_var(--border-subtle)] truncate">
                 <div>TOTAL SCORE</div>
                 {isCoop && (
-                  <div className="text-[10px] font-semibold text-emerald-400 mt-0.5">
+                  <div className="text-[10px] font-semibold text-[var(--good)] mt-0.5">
                     Team: {Object.values(playerTotals).reduce((a, b) => a + b, 0)}
                   </div>
                 )}

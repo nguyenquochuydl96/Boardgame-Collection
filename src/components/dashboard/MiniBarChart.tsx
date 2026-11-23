@@ -14,12 +14,12 @@ export interface MiniBarChartProps {
   unit?: string;
 }
 
-const FITLO_BAR_COLORS = [
-  'var(--accent)',
-  '#1e7548',
-  '#f08a5d',
-  '#2c5d87',
-  '#b42318',
+const WARM_EDITORIAL_BAR_COLORS = [
+  'var(--accent)',    // Terracotta #E5734F
+  '#588157',          // Sage Green
+  '#DDA15E',          // Warm Amber
+  '#4A7C9D',          // Soft Slate Blue
+  '#BC6C25',          // Rust Earth
 ];
 
 export const MiniBarChart: React.FC<MiniBarChartProps> = memo(({
@@ -40,7 +40,7 @@ export const MiniBarChart: React.FC<MiniBarChartProps> = memo(({
     <div className="space-y-3.5">
       {items.map((item, idx) => {
         const widthPercent = Math.max(Math.round((item.value / maxVal) * 100), 8);
-        const barColor = item.color || FITLO_BAR_COLORS[idx % FITLO_BAR_COLORS.length];
+        const barColor = item.color || WARM_EDITORIAL_BAR_COLORS[idx % WARM_EDITORIAL_BAR_COLORS.length];
 
         const rowContent = (
           <div className="space-y-1.5 group">

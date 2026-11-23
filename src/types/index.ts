@@ -103,6 +103,7 @@ export interface PlaySession {
   durationMinutes?: number;
   players: PlayerScore[];
   winnerId?: string;
+  isCoop?: boolean;
   firstPlayerMethod: FirstPlayerMethod;
   firstPlayerId?: string;        // who was picked to go first
   photos?: string[];             // base64 or object URLs

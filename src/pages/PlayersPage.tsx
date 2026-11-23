@@ -432,7 +432,7 @@ export const PlayersPage: React.FC = () => {
                               <Trophy className="w-3 h-3 text-amber-400" />
                               Win Rate
                             </span>
-                            <p className="font-display font-extrabold text-lg text-emerald-400 mt-0.5">
+                            <p className="font-display font-extrabold text-lg text-[var(--good)] mt-0.5">
                               {winRate}%
                             </p>
                           </div>
@@ -492,7 +492,7 @@ export const PlayersPage: React.FC = () => {
               </div>
 
               <div className="p-4 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)] flex items-center gap-3.5 shadow-sm">
-                <div className="w-11 h-11 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0">
+                <div className="w-11 h-11 rounded-xl bg-[var(--accent)]/15 text-[var(--accent)] flex items-center justify-center shrink-0">
                   <Dices className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">

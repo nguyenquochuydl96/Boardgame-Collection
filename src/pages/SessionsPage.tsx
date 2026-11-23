@@ -425,16 +425,16 @@ export const SessionsPage: React.FC = () => {
                   setActiveFilterTab('games');
                 }}
                 className={cn(
-                  'px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border select-none',
+                  'px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border select-none',
                   selectedGameIds.length > 0
-                    ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-700 dark:text-emerald-300'
+                    ? 'bg-[var(--accent)]/15 border-[var(--accent)]/40 text-[var(--accent)]'
                     : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
               >
                 <Gamepad2 className="w-3.5 h-3.5" />
                 <span>Games</span>
                 {selectedGameIds.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500 text-slate-950 font-mono font-bold">
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)] text-[var(--accent-ink)] font-mono font-bold">
                     {selectedGameIds.length}
                   </span>
                 )}
@@ -642,7 +642,7 @@ export const SessionsPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedGameIds(gamesWithPlays.slice(0, 10).map((g) => g.id))}
-                        className="text-emerald-700 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
+                        className="text-[var(--accent)] font-bold hover:underline cursor-pointer"
                       >
                         Top 10 Popular
                       </button>
@@ -684,7 +684,7 @@ export const SessionsPage: React.FC = () => {
                           className={cn(
                             'p-2 rounded-xl border flex items-center justify-between gap-2.5 transition-all cursor-pointer select-none text-left',
                             isSelected
-                              ? 'bg-emerald-500/15 border-emerald-500/50 text-[var(--ink)] shadow-sm'
+                              ? 'bg-[var(--accent)]/15 border-[var(--accent)]/40 text-[var(--ink)] shadow-xs'
                               : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
                           )}
                         >
@@ -693,7 +693,7 @@ export const SessionsPage: React.FC = () => {
                               <img
                                 src={g.thumbnail}
                                 alt={g.name}
-                                className="w-8 h-8 rounded-lg object-cover bg-slate-900 shrink-0 border border-[var(--line)]"
+                                className="w-8 h-8 rounded-lg object-cover bg-[var(--card-2)] shrink-0 border border-[var(--line)]"
                               />
                             ) : (
                               <div className="w-8 h-8 rounded-lg bg-[var(--card-3)] flex items-center justify-center text-sm shrink-0">
@@ -711,7 +711,7 @@ export const SessionsPage: React.FC = () => {
                             className={cn(
                               'w-4 h-4 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold',
                               isSelected
-                                ? 'bg-emerald-500 text-slate-950'
+                                ? 'bg-[var(--accent)] text-[var(--accent-ink)]'
                                 : 'border border-[var(--line)]'
                             )}
                           >
@@ -891,7 +891,7 @@ export const SessionsPage: React.FC = () => {
                   return (
                     <span
                       key={gid}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30"
                     >
                       <span>🎲 {g ? g.name : 'Game'}</span>
                       <button

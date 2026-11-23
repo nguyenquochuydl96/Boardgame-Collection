@@ -86,7 +86,7 @@ export const ResumeSessionBanner: React.FC = () => {
           <Dices className="w-5 h-5" />
           <span
             className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[var(--card)] ${
-              isPaused ? 'bg-amber-400' : 'bg-emerald-400 animate-pulse'
+              isPaused ? 'bg-amber-400' : 'bg-[var(--good)] animate-pulse'
             }`}
             title={isPaused ? 'Đang tạm dừng' : 'Đang tính giờ'}
           />

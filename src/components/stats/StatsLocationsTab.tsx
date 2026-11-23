@@ -84,7 +84,7 @@ export const StatsLocationsTab: React.FC<StatsLocationsTabProps> = React.memo(
                       {loc.count} plays ({loc.percentage}%)
                     </span>
                     {loc.topWinnerWins > 0 && loc.topWinnerName && (
-                      <span className="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
+                      <span className="text-[var(--good)] font-bold flex items-center gap-1">
                         <span>👑</span> {loc.topWinnerName}: {loc.topWinnerWins} wins ({loc.topWinnerRate}%)
                       </span>
                     )}

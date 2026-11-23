@@ -16,6 +16,7 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
 }) => {
   const [imageError, setImageError] = useState(false);
   const players = session.players || [];
+  const isCoopSession = session.isCoop || (players.length > 1 && players.every((p) => p.isWinner));
   const winner = players.find(
     (p) => p.isWinner || p.playerId === session.winnerId
   );
@@ -24,10 +25,10 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
     <div className="transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.99]">
       <Link
         to={`/sessions/${session.id}`}
-        className="flex items-center gap-4 p-4 rounded-[18px] bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line),var(--shadow)] hover:shadow-lg transition-all duration-200 group"
+        className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--card)] border border-[var(--line)] hover:border-[var(--line-2)] hover:shadow-md transition-all duration-200 group"
       >
-        <div className="w-16 h-20 rounded-[12px] overflow-hidden shrink-0 bg-[var(--card-2)] shadow-[inset_0_0_0_1px_var(--line)] relative">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/40 to-transparent z-10" />
+        <div className="w-14 h-16 sm:w-16 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-[var(--card-2)] border border-[var(--line)] relative">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/25 to-transparent z-10" />
           {!imageError && session.gameThumbnail ? (
             <img
               src={session.gameThumbnail}
@@ -51,24 +52,29 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
                 {session.gameName}
               </h3>
               {session.status === 'draft' || session.status === 'in_progress' ? (
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-[10px] font-bold shrink-0">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
                   In Progress
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold shrink-0">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--good-soft)] text-[var(--good)] text-[10px] font-bold shrink-0">
                   <Check className="w-2.5 h-2.5 stroke-[3]" />
                   Completed
                 </span>
               )}
             </div>
-            {winner && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-semibold shrink-0">
+            {isCoopSession && winner ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--good-soft)] text-[var(--good)] border border-[var(--good)]/30 text-xs font-bold shrink-0">
+                <span>🤝</span>
+                <span>Team Win</span>
+              </span>
+            ) : winner ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-semibold shrink-0">
                 <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                 <span className="truncate max-w-[100px]">{winner.playerName}</span>
                 {typeof winner.score === 'number' ? ` · ${winner.score}` : ''}
               </span>
-            )}
+            ) : null}
           </div>
 
           <div className="mt-1 flex items-center gap-3 text-xs text-[var(--muted)] flex-wrap tabular-nums font-medium">

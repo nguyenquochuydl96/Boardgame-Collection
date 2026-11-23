@@ -90,8 +90,8 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     shortLabel: 'Total Wins',
     group: 'positive',
     icon: Crown,
-    iconColor: 'text-emerald-500 dark:text-emerald-400',
-    badgeBg: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300',
+    iconColor: 'text-amber-500',
+    badgeBg: 'bg-amber-500/15 border-amber-500/30 text-amber-700 dark:text-amber-400',
     badgeText: '👑 Champion',
     tagline: 'Most Trophies Collected',
     description: 'Total absolute match victories accumulated across all tabletop sessions.',
@@ -420,7 +420,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                 className={cn(
                   'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
                   activeGroup === 'positive'
-                    ? 'bg-emerald-600 text-white shadow-sm'
+                    ? 'bg-[var(--accent)] text-white shadow-xs'
                     : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
                 )}
               >
