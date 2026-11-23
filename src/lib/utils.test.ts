@@ -689,6 +689,145 @@ test('WhatToPlay: formatPlayHistoryBadge handles unplayed, recent, and dusty gam
   assert.equal(dusty.text, '2 plays · Last: 3 mos ago');
 });
 
+test('WhatToPlay: filterWhatToPlayGames strictly enforces ownedOnly and precise player count filtering', async () => {
+  const { filterWhatToPlayGames } = await import('../components/game/WhatToPlayModal');
+
+  const testCatalog: BoardGame[] = [
+    {
+      id: 'g-owned-4p',
+      name: 'Cascadia',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 1,
+      maxPlayers: 4,
+      playingTime: 45,
+      status: 'own',
+    },
+    {
+      id: 'g-rented-4p',
+      name: 'Terraforming Mars (Rented)',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 1,
+      maxPlayers: 5,
+      playingTime: 120,
+      status: 'rented',
+    },
+    {
+      id: 'g-borrowed-4p',
+      name: 'Dune: Imperium (Borrowed)',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 1,
+      maxPlayers: 4,
+      playingTime: 90,
+      status: 'borrowed',
+    },
+    {
+      id: 'g-owned-2p-only',
+      name: '7 Wonders Duel',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 2,
+      maxPlayers: 2,
+      playingTime: 30,
+      status: 'own',
+    },
+    {
+      id: 'g-owned-5p-plus',
+      name: 'Codenames',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 4,
+      maxPlayers: 8,
+      playingTime: 15,
+      status: 'own',
+    },
+    {
+      id: 'g-owned-missing-players',
+      name: 'Mystery Unconfigured Game',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 0,
+      maxPlayers: 0,
+      playingTime: 30,
+      status: 'own',
+    },
+    {
+      id: 'g-sold-game',
+      name: 'Old Sold Game',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 2,
+      maxPlayers: 4,
+      playingTime: 60,
+      status: 'sold',
+    },
+  ];
+
+  // 1. ownedOnly: true (default) strictly excludes 'rented', 'borrowed', and 'sold'
+  const ownedOnlyResults = filterWhatToPlayGames(testCatalog, { ownedOnly: true });
+  const ownedIds = ownedOnlyResults.map((g) => g.id);
+  assert.ok(ownedIds.includes('g-owned-4p'));
+  assert.ok(ownedIds.includes('g-owned-2p-only'));
+  assert.ok(ownedIds.includes('g-owned-5p-plus'));
+  assert.ok(ownedIds.includes('g-owned-missing-players'));
+  // rented, borrowed, sold MUST be excluded
+  assert.ok(!ownedIds.includes('g-rented-4p'), 'rented game must be excluded when ownedOnly is true');
+  assert.ok(!ownedIds.includes('g-borrowed-4p'), 'borrowed game must be excluded when ownedOnly is true');
+  assert.ok(!ownedIds.includes('g-sold-game'), 'sold game must be excluded');
+
+  // 2. ownedOnly: false (All Games) allows rented and borrowed, but still excludes sold
+  const allGamesResults = filterWhatToPlayGames(testCatalog, { ownedOnly: false });
+  const allIds = allGamesResults.map((g) => g.id);
+  assert.ok(allIds.includes('g-rented-4p'));
+  assert.ok(allIds.includes('g-borrowed-4p'));
+  assert.ok(!allIds.includes('g-sold-game'), 'sold game must remain excluded in All Games mode');
+
+  // 3. Player count filter '4': strictly matches games where minPlayers <= 4 and maxPlayers >= 4
+  const fourPlayersOwned = filterWhatToPlayGames(testCatalog, {
+    ownedOnly: true,
+    playerCountFilter: '4',
+  });
+  const fourPlayerIds = fourPlayersOwned.map((g) => g.id);
+  // Cascadia (1-4p) and Codenames (4-8p) match 4 players
+  assert.ok(fourPlayerIds.includes('g-owned-4p'));
+  assert.ok(fourPlayerIds.includes('g-owned-5p-plus'));
+  // 7 Wonders Duel (2p only) does NOT match 4 players
+  assert.ok(!fourPlayerIds.includes('g-owned-2p-only'));
+  // Mystery Unconfigured Game (0/0 players) must NOT match 4 players
+  assert.ok(!fourPlayerIds.includes('g-owned-missing-players'));
+
+  // 4. Player count filter '2': strictly matches games where minPlayers <= 2 and maxPlayers >= 2
+  const twoPlayersOwned = filterWhatToPlayGames(testCatalog, {
+    ownedOnly: true,
+    playerCountFilter: '2',
+  });
+  const twoPlayerIds = twoPlayersOwned.map((g) => g.id);
+  assert.ok(twoPlayerIds.includes('g-owned-4p')); // 1-4p supports 2p
+  assert.ok(twoPlayerIds.includes('g-owned-2p-only')); // 2-2p supports 2p
+  assert.ok(!twoPlayerIds.includes('g-owned-5p-plus')); // 4-8p does not support 2p
+  assert.ok(!twoPlayerIds.includes('g-owned-missing-players'));
+
+  // 5. Player count filter '5+': only matches maxPlayers >= 5
+  const fivePlusOwned = filterWhatToPlayGames(testCatalog, {
+    ownedOnly: true,
+    playerCountFilter: '5+',
+  });
+  const fivePlusIds = fivePlusOwned.map((g) => g.id);
+  assert.ok(fivePlusIds.includes('g-owned-5p-plus')); // 4-8p supports 5+
+  assert.ok(!fivePlusIds.includes('g-owned-4p')); // max 4p
+  assert.ok(!fivePlusIds.includes('g-owned-2p-only')); // max 2p
+  assert.ok(!fivePlusIds.includes('g-owned-missing-players'));
+});
+
 test('getScoringTemplateForGame resolves official Great Western Trail: Second Edition template with 11 categories', async () => {
   const { getScoringTemplateForGame } = await import('./scoringPresets');
   

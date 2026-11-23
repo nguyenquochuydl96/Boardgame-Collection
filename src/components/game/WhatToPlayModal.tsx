@@ -125,6 +125,106 @@ export function formatPlayHistoryBadge(metrics?: GamePlayMetrics): {
   };
 }
 
+export interface WhatToPlayFilterOptions {
+  shelfOnly?: boolean;
+  ownedOnly?: boolean;
+  searchQuery?: string;
+  playerCountFilter?: PlayerCountFilter;
+  durationFilter?: DurationFilter;
+  vibeFilter?: VibeFilter;
+  dustyOnly?: boolean;
+  gameMetricsMap?: Record<string, GamePlayMetrics>;
+}
+
+/**
+ * Pure filtering function for What to Play selection
+ */
+export function filterWhatToPlayGames(
+  allGames: BoardGame[],
+  options: WhatToPlayFilterOptions = {}
+): BoardGame[] {
+  const isOwnedOnly = options.ownedOnly ?? options.shelfOnly ?? true;
+  const {
+    searchQuery = '',
+    playerCountFilter = 'any',
+    durationFilter = 'any',
+    vibeFilter = 'all',
+    dustyOnly = false,
+    gameMetricsMap,
+  } = options;
+
+  return allGames.filter((g) => {
+    // 1. Ownership / Shelf availability:
+    // When isOwnedOnly is true (default): ONLY keep games with status 'own' / 'owned'.
+    // Strictly exclude 'rented', 'borrowed', 'sold', 'lent_out', 'wishlist', 'previously_owned'.
+    if (isOwnedOnly) {
+      if (g.status !== 'own' && (g.status as string) !== 'owned') {
+        return false;
+      }
+    } else {
+      // In All Games mode: exclude sold, wishlist, previously_owned
+      if (
+        g.status === 'sold' ||
+        g.status === 'wishlist' ||
+        g.status === 'previously_owned'
+      ) {
+        return false;
+      }
+    }
+
+    // 2. Search query filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      const matchName = g.name.toLowerCase().includes(q);
+      const matchTags = g.tags?.some((t) => t.toLowerCase().includes(q));
+      if (!matchName && !matchTags) return false;
+    }
+
+    // 3. Player count filter
+    if (playerCountFilter !== 'any') {
+      if (playerCountFilter === '5+') {
+        if (typeof g.maxPlayers !== 'number' || g.maxPlayers < 5) {
+          return false;
+        }
+      } else {
+        const target = Number(playerCountFilter);
+        const min = g.minPlayers;
+        const max = g.maxPlayers;
+        // Skip games with missing or non-positive minPlayers or maxPlayers
+        if (typeof min !== 'number' || typeof max !== 'number' || min <= 0 || max <= 0) {
+          return false;
+        }
+        if (min > target || max < target) {
+          return false;
+        }
+      }
+    }
+
+    // 4. Playtime filter
+    if (durationFilter !== 'any') {
+      const pt = g.playingTime || 0;
+      if (durationFilter === '<30m' && (pt <= 0 || pt > 30)) return false;
+      if (durationFilter === '30-60m' && (pt < 30 || pt > 60)) return false;
+      if (durationFilter === '60-120m' && (pt < 60 || pt > 120)) return false;
+      if (durationFilter === '120m+' && pt < 120) return false;
+    }
+
+    // 5. Vibe / Weight filter
+    if (vibeFilter !== 'all') {
+      const gVibe = getGameVibe(g);
+      if (gVibe !== vibeFilter) return false;
+    }
+
+    // 6. Dusty Gems mode
+    if (dustyOnly) {
+      const m = gameMetricsMap ? gameMetricsMap[g.id] : undefined;
+      if (!m || !m.isDusty) return false;
+    }
+
+    return true;
+  });
+}
+
 export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const allGames = useGameStore((s) => s.games);
@@ -191,58 +291,14 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
 
   // Filter available games based on smart criteria
   const filteredGames = useMemo(() => {
-    return allGames.filter((g) => {
-      // 1. Shelf availability (default: owned + borrowed, exclude sold, lent_out, wishlist, prev_owned)
-      if (shelfOnly) {
-        const availableStatuses: GameStatus[] = ['own', 'borrowed', 'rented'];
-        if (!availableStatuses.includes(g.status)) return false;
-      } else {
-        if (g.status === 'sold' || g.status === 'wishlist') return false;
-      }
-
-      // 2. Search query filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const matchName = g.name.toLowerCase().includes(q);
-        const matchTags = g.tags?.some((t) => t.toLowerCase().includes(q));
-        if (!matchName && !matchTags) return false;
-      }
-
-      // 3. Player count filter
-      if (playerCountFilter !== 'any') {
-        const target = playerCountFilter === '5+' ? 5 : Number(playerCountFilter);
-        if (target === 5) {
-          if ((g.maxPlayers || 0) < 5) return false;
-        } else {
-          if ((g.minPlayers || 1) > target || (g.maxPlayers || 99) < target) return false;
-        }
-      }
-
-      // 4. Playtime filter
-      if (durationFilter !== 'any') {
-        const pt = g.playingTime || 0;
-        if (durationFilter === '<30m' && (pt <= 0 || pt > 30)) return false;
-        if (durationFilter === '30-60m' && (pt < 30 || pt > 60)) return false;
-        if (durationFilter === '60-120m' && (pt < 60 || pt > 120)) return false;
-        if (durationFilter === '120m+' && pt < 120) return false;
-      }
-
-      // 5. Vibe / Weight filter
-      if (vibeFilter !== 'all') {
-        const gVibe = getGameVibe(g);
-        if (vibeFilter === 'coop' && gVibe !== 'coop') return false;
-        if (vibeFilter === 'light' && gVibe !== 'light') return false;
-        if (vibeFilter === 'mid' && gVibe !== 'mid') return false;
-        if (vibeFilter === 'heavy' && gVibe !== 'heavy') return false;
-      }
-
-      // 6. Dusty Gems mode
-      if (dustyOnly) {
-        const m = gameMetricsMap[g.id];
-        if (!m || !m.isDusty) return false;
-      }
-
-      return true;
+    return filterWhatToPlayGames(allGames, {
+      shelfOnly,
+      searchQuery,
+      playerCountFilter,
+      durationFilter,
+      vibeFilter,
+      dustyOnly,
+      gameMetricsMap,
     });
   }, [
     allGames,
@@ -255,7 +311,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
     gameMetricsMap,
   ]);
 
-  // Pick random game helper
+  // Pick random game helper (guaranteed 100% from pool)
   const pickRandomGame = useCallback(
     (pool: BoardGame[], currentId?: string): BoardGame | null => {
       if (pool.length === 0) return null;
@@ -268,7 +324,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
     []
   );
 
-  // Initialize Table Veto Pool with 4-5 candidate games
+  // Initialize Table Veto Pool with 2-5 candidate games
   const initVetoPool = useCallback((pool: BoardGame[]) => {
     if (pool.length < 2) {
       setVetoPool(pool);
@@ -281,7 +337,21 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
     setVetoedIds([]);
   }, []);
 
-  // Sync Quick Pick when filtered games change or on mount
+  // When modal is newly opened, pick a fresh candidate game and fresh veto pool
+  const prevIsOpenRef = React.useRef(isOpen);
+  useEffect(() => {
+    if (isOpen && !prevIsOpenRef.current) {
+      if (filteredGames.length > 0) {
+        setQuickPickGame(pickRandomGame(filteredGames));
+      } else {
+        setQuickPickGame(null);
+      }
+      initVetoPool(filteredGames);
+    }
+    prevIsOpenRef.current = isOpen;
+  }, [isOpen, filteredGames, pickRandomGame, initVetoPool]);
+
+  // Sync Quick Pick whenever filters change or displayed game falls outside filteredGames
   useEffect(() => {
     if (!isOpen) return;
     if (filteredGames.length === 0) {
@@ -413,7 +483,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
               title="Filter unplayed games or games not played in 60+ days"
             >
               <Sparkles className={cn('w-3.5 h-3.5', dustyOnly && 'fill-current text-amber-500')} />
-              <span>✨ Dusty Gems</span>
+              <span>Dusty Gems</span>
               {totalDustyCount > 0 && (
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 font-mono">
                   {totalDustyCount}
@@ -421,7 +491,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
               )}
             </button>
 
-            {/* Shelf Availability Toggle */}
+            {/* Owned Only Toggle */}
             <button
               type="button"
               onClick={() => setShelfOnly((prev) => !prev)}
@@ -431,10 +501,10 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                   ? 'bg-[var(--card-2)] border-[var(--line-2)] text-[var(--ink)] font-bold'
                   : 'bg-[var(--card)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
               )}
-              title="Show all collection games or only available shelf games"
+              title="Show all collection games or only owned games"
             >
               <Package className="w-3.5 h-3.5 opacity-70" />
-              <span>{shelfOnly ? '📦 On Shelf Only' : '🌐 All Games'}</span>
+              <span>{shelfOnly ? 'Owned Only' : 'All Games'}</span>
             </button>
           </div>
         </div>
