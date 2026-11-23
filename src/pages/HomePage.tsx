@@ -333,12 +333,18 @@ export const HomePage: React.FC = () => {
                     >
                       <div className="flex items-center gap-3.5 min-w-0">
                         {/* Square rounded album thumbnail */}
-                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-[var(--card)] shrink-0 border border-[var(--line)] shadow-xs">
+                        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-[var(--card)] shrink-0 border border-[var(--line)] shadow-xs flex items-center justify-center">
+                          <img
+                            src={session.gameThumbnail}
+                            alt=""
+                            aria-hidden="true"
+                            className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
+                          />
                           <img
                             src={session.gameThumbnail}
                             alt={session.gameName}
                             referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                            className="relative z-0 w-full h-full object-contain p-0.5 group-hover:scale-105 transition-transform duration-200"
                           />
                         </div>
 

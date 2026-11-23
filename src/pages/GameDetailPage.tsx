@@ -179,17 +179,25 @@ export const GameDetailPage: React.FC = () => {
         {/* Hero Cover Section */}
         <div className="relative rounded-3xl overflow-hidden border border-[var(--line)] bg-[var(--card)] shadow-xl">
           <div className="grid grid-cols-1 md:grid-cols-12 items-stretch">
-            <div className="md:col-span-4 relative aspect-[4/3] md:aspect-auto bg-[var(--card-2)]">
+            <div className="md:col-span-4 relative aspect-[4/3] md:aspect-auto bg-[var(--card-2)] overflow-hidden flex items-center justify-center min-h-[220px]">
               {!coverError && resolvedCover ? (
-                <img
-                  src={resolvedCover}
-                  alt={game.name}
-                  loading="lazy"
-                  decoding="async"
-                  referrerPolicy="no-referrer"
-                  onError={() => setCoverError(true)}
-                  className="w-full h-full object-cover"
-                />
+                <>
+                  <img
+                    src={resolvedCover}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-35 pointer-events-none"
+                  />
+                  <img
+                    src={resolvedCover}
+                    alt={game.name}
+                    loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    onError={() => setCoverError(true)}
+                    className="relative z-0 w-full h-full max-h-[380px] md:max-h-full object-contain p-3 sm:p-5"
+                  />
+                </>
               ) : (
                 <div className="w-full h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center text-[var(--muted)] bg-[var(--card-2)]">
                   <Dices className="w-12 h-12 text-[var(--accent)] mb-2" />

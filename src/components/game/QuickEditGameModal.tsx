@@ -165,13 +165,21 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
           {/* Header */}
           <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--line)] shrink-0">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-12 h-14 rounded-xl overflow-hidden bg-[var(--card-2)] shrink-0 border border-[var(--line)]">
+              <div className="relative w-12 h-14 rounded-xl overflow-hidden bg-[var(--card-2)] shrink-0 border border-[var(--line)] flex items-center justify-center">
                 {getGameThumbnail(game) ? (
-                  <img
-                    src={getGameThumbnail(game)}
-                    alt={game.name}
-                    className="w-full h-full object-cover"
-                  />
+                  <>
+                    <img
+                      src={getGameThumbnail(game)}
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
+                    />
+                    <img
+                      src={getGameThumbnail(game)}
+                      alt={game.name}
+                      className="relative z-0 w-full h-full object-contain p-0.5"
+                    />
+                  </>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[var(--muted)]">
                     🎲

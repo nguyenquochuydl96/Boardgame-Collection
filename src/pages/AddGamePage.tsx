@@ -349,11 +349,19 @@ export const AddGamePage: React.FC = () => {
                 </label>
                 <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[var(--card-2)] border border-[var(--line)] flex items-center justify-center p-2 relative">
                   {thumbnail ? (
-                    <img
-                      src={thumbnail}
-                      alt={name || 'Cover preview'}
-                      className="w-full h-full object-cover rounded-xl"
-                    />
+                    <>
+                      <img
+                        src={thumbnail}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
+                      />
+                      <img
+                        src={thumbnail}
+                        alt={name || 'Cover preview'}
+                        className="relative z-0 w-full h-full object-contain rounded-xl p-1"
+                      />
+                    </>
                   ) : (
                     <div className="text-center p-4 text-xs text-[var(--muted)]">
                       <Sparkles className="w-6 h-6 mx-auto mb-1 text-[var(--accent)]/50" />

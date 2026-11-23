@@ -845,11 +845,19 @@ export const NewSessionPage: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:p-3.5 rounded-2xl bg-[var(--card)] border border-[var(--line)] shadow-xs">
           <div className="flex items-center gap-2.5 min-w-0">
             {selectedGame ? (
-              <img
-                src={selectedGame.thumbnail || selectedGame.image}
-                alt={selectedGame.name}
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover border border-[var(--line)] shrink-0"
-              />
+              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden border border-[var(--line)] shrink-0 bg-[var(--card-2)] flex items-center justify-center">
+                <img
+                  src={selectedGame.thumbnail || selectedGame.image}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover blur-xs scale-110 opacity-35 pointer-events-none"
+                />
+                <img
+                  src={selectedGame.thumbnail || selectedGame.image}
+                  alt={selectedGame.name}
+                  className="relative z-0 w-full h-full object-contain p-0.5"
+                />
+              </div>
             ) : (
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--card-2)] flex items-center justify-center text-base sm:text-lg shrink-0">
                 🎲

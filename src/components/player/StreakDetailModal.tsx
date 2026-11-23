@@ -140,11 +140,19 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
                     <div className="p-3.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-amber-400/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group-hover:bg-[var(--bg-elevated)]/60">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         {session.gameThumbnail ? (
-                          <img
-                            src={session.gameThumbnail}
-                            alt={session.gameName}
-                            className="w-12 h-14 rounded-xl object-cover bg-[var(--card-2)] border border-[var(--line)] shrink-0"
-                          />
+                          <div className="relative w-12 h-14 rounded-xl overflow-hidden bg-[var(--card-2)] border border-[var(--line)] shrink-0 flex items-center justify-center">
+                            <img
+                              src={session.gameThumbnail}
+                              alt=""
+                              aria-hidden="true"
+                              className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
+                            />
+                            <img
+                              src={session.gameThumbnail}
+                              alt={session.gameName}
+                              className="relative z-0 w-full h-full object-contain p-0.5"
+                            />
+                          </div>
                         ) : (
                           <div className="w-12 h-14 rounded-xl bg-[var(--bg-elevated)] border border-white/10 flex items-center justify-center text-xl shrink-0">
                             🎲

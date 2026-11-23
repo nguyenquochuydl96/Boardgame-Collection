@@ -172,11 +172,19 @@ export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
                   #{idx + 1}
                 </div>
                 {g.thumbnail ? (
-                  <img
-                    src={g.thumbnail}
-                    alt={g.name}
-                    className="w-full aspect-[4/3] rounded-xl object-cover border border-[var(--line)]"
-                  />
+                  <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden border border-[var(--line)] bg-[var(--card-2)] flex items-center justify-center">
+                    <img
+                      src={g.thumbnail}
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
+                    />
+                    <img
+                      src={g.thumbnail}
+                      alt={g.name}
+                      className="relative z-0 w-full h-full object-contain p-1"
+                    />
+                  </div>
                 ) : (
                   <div className="w-full aspect-[4/3] rounded-xl bg-[var(--card-3)] flex items-center justify-center text-3xl">
                     🎲

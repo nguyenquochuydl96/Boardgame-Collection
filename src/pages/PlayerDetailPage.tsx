@@ -478,11 +478,19 @@ export const PlayerDetailPage: React.FC = () => {
               {favoriteGame ? (
                 <div className="flex items-center gap-3">
                   {favoriteGame.thumbnail ? (
-                    <img
-                      src={favoriteGame.thumbnail}
-                      alt={favoriteGame.gameName}
-                      className="w-14 h-16 rounded-xl object-cover bg-[var(--card-2)] border border-amber-400/30 shrink-0"
-                    />
+                    <div className="relative w-14 h-16 rounded-xl overflow-hidden bg-[var(--card-2)] border border-amber-400/30 shrink-0 flex items-center justify-center">
+                      <img
+                        src={favoriteGame.thumbnail}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
+                      />
+                      <img
+                        src={favoriteGame.thumbnail}
+                        alt={favoriteGame.gameName}
+                        className="relative z-0 w-full h-full object-contain p-0.5"
+                      />
+                    </div>
                   ) : (
                     <div className="w-14 h-16 rounded-xl bg-amber-500/20 flex items-center justify-center text-2xl shrink-0">
                       🎲
@@ -538,11 +546,19 @@ export const PlayerDetailPage: React.FC = () => {
               {signatureGame ? (
                 <div className="flex items-center gap-3">
                   {signatureGame.thumbnail ? (
-                    <img
-                      src={signatureGame.thumbnail}
-                      alt={signatureGame.gameName}
-                      className="w-14 h-16 rounded-xl object-cover bg-[var(--card-2)] border border-[var(--good)]/30 shrink-0"
-                    />
+                    <div className="relative w-14 h-16 rounded-xl overflow-hidden bg-[var(--card-2)] border border-[var(--good)]/30 shrink-0 flex items-center justify-center">
+                      <img
+                        src={signatureGame.thumbnail}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
+                      />
+                      <img
+                        src={signatureGame.thumbnail}
+                        alt={signatureGame.gameName}
+                        className="relative z-0 w-full h-full object-contain p-0.5"
+                      />
+                    </div>
                   ) : (
                     <div className="w-14 h-16 rounded-xl bg-[var(--good-soft)] text-[var(--good)] flex items-center justify-center text-2xl shrink-0">
                       🏆
@@ -603,11 +619,19 @@ export const PlayerDetailPage: React.FC = () => {
               {nemesisGame ? (
                 <div className="flex items-center gap-3">
                   {nemesisGame.thumbnail ? (
-                    <img
-                      src={nemesisGame.thumbnail}
-                      alt={nemesisGame.gameName}
-                      className="w-14 h-16 rounded-xl object-cover bg-[var(--card-2)] border border-rose-400/30 shrink-0"
-                    />
+                    <div className="relative w-14 h-16 rounded-xl overflow-hidden bg-[var(--card-2)] border border-rose-400/30 shrink-0 flex items-center justify-center">
+                      <img
+                        src={nemesisGame.thumbnail}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
+                      />
+                      <img
+                        src={nemesisGame.thumbnail}
+                        alt={nemesisGame.gameName}
+                        className="relative z-0 w-full h-full object-contain p-0.5"
+                      />
+                    </div>
                   ) : (
                     <div className="w-14 h-16 rounded-xl bg-rose-500/20 flex items-center justify-center text-2xl shrink-0">
                       💀
@@ -697,11 +721,19 @@ export const PlayerDetailPage: React.FC = () => {
                     className="flex items-center gap-3 min-w-0 flex-1"
                   >
                     {item.thumbnail ? (
-                      <img
-                        src={item.thumbnail}
-                        alt={item.gameName}
-                        className="w-10 h-10 rounded-lg object-cover bg-[var(--card-2)] border border-[var(--line)] shrink-0"
-                      />
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-[var(--card-2)] border border-[var(--line)] shrink-0 flex items-center justify-center">
+                        <img
+                          src={item.thumbnail}
+                          alt=""
+                          aria-hidden="true"
+                          className="absolute inset-0 w-full h-full object-cover blur-xs scale-110 opacity-35 pointer-events-none"
+                        />
+                        <img
+                          src={item.thumbnail}
+                          alt={item.gameName}
+                          className="relative z-0 w-full h-full object-contain p-0.5"
+                        />
+                      </div>
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-[var(--card-3)] flex items-center justify-center text-lg shrink-0">
                         🎲

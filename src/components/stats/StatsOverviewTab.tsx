@@ -36,16 +36,24 @@ export const GameThumbBox: React.FC<{
   const [hasError, setHasError] = useState(false);
 
   return (
-    <div className="w-16 h-20 rounded-xl overflow-hidden shrink-0 border border-[var(--line)] shadow-md relative group-hover:scale-105 transition-transform bg-[var(--card-3)]">
+    <div className="relative w-16 h-20 rounded-xl overflow-hidden shrink-0 border border-[var(--line)] shadow-md group-hover:scale-105 transition-transform bg-[var(--card-3)] flex items-center justify-center">
       {src && !hasError ? (
-        <img
-          src={src}
-          alt={alt}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          onError={() => setHasError(true)}
-          className="w-full h-full object-cover"
-        />
+        <>
+          <img
+            src={src}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
+          />
+          <img
+            src={src}
+            alt={alt}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setHasError(true)}
+            className="relative z-0 w-full h-full object-contain p-0.5"
+          />
+        </>
       ) : (
         <div
           className={cn(

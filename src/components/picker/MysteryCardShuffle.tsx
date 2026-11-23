@@ -49,12 +49,20 @@ const CardItemPortrait: React.FC<{ item: PickerItem; size?: number }> = ({ item,
         className="rounded-2xl border-2 border-amber-400/80 shadow-2xl bg-slate-950 overflow-hidden shrink-0 flex items-center justify-center"
         style={{ width: size, height: size }}
       >
-        <img
-          src={imageSrc}
-          alt={item.name}
-          onError={() => setImgError(true)}
-          className="w-full h-full object-cover"
-        />
+        <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+          <img
+            src={imageSrc}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
+          />
+          <img
+            src={imageSrc}
+            alt={item.name}
+            onError={() => setImgError(true)}
+            className="relative z-0 w-full h-full object-contain p-1"
+          />
+        </div>
       </div>
     );
   }

@@ -690,11 +690,19 @@ export const SessionsPage: React.FC = () => {
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             {g.thumbnail ? (
-                              <img
-                                src={g.thumbnail}
-                                alt={g.name}
-                                className="w-8 h-8 rounded-lg object-cover bg-[var(--card-2)] shrink-0 border border-[var(--line)]"
-                              />
+                              <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-[var(--card-2)] shrink-0 border border-[var(--line)] flex items-center justify-center">
+                                <img
+                                  src={g.thumbnail}
+                                  alt=""
+                                  aria-hidden="true"
+                                  className="absolute inset-0 w-full h-full object-cover blur-xs scale-110 opacity-35 pointer-events-none"
+                                />
+                                <img
+                                  src={g.thumbnail}
+                                  alt={g.name}
+                                  className="relative z-0 w-full h-full object-contain p-0.5"
+                                />
+                              </div>
                             ) : (
                               <div className="w-8 h-8 rounded-lg bg-[var(--card-3)] flex items-center justify-center text-sm shrink-0">
                                 🎲

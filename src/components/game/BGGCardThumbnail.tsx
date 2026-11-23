@@ -50,14 +50,20 @@ export const BGGCardThumbnail: React.FC<BGGCardThumbnailProps> = ({
     <div
       className={cn(
         className,
-        'relative rounded-xl overflow-hidden shrink-0 bg-[var(--card)] border border-[var(--line)] shadow-sm'
+        'relative rounded-xl overflow-hidden shrink-0 bg-[var(--card)] border border-[var(--line)] shadow-sm flex items-center justify-center'
       )}
     >
       {!isLoaded && (
-        <div className="absolute inset-0 bg-[var(--card-2)] animate-pulse flex items-center justify-center text-[9px] text-[var(--muted)] font-mono">
+        <div className="absolute inset-0 bg-[var(--card-2)] animate-pulse flex items-center justify-center text-[9px] text-[var(--muted)] font-mono z-10">
           {initials}
         </div>
       )}
+      <img
+        src={src}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
+      />
       <img
         src={src}
         alt={name}
@@ -66,7 +72,7 @@ export const BGGCardThumbnail: React.FC<BGGCardThumbnailProps> = ({
         onLoad={() => setIsLoaded(true)}
         onError={() => setHasError(true)}
         className={cn(
-          'w-full h-full object-cover transition-opacity duration-200',
+          'relative z-0 w-full h-full object-contain p-0.5 transition-opacity duration-200',
           isLoaded ? 'opacity-100' : 'opacity-0'
         )}
       />

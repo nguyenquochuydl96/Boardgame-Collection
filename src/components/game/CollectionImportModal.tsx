@@ -716,11 +716,19 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                     className="rounded border-[var(--line)] text-[var(--accent)] focus:ring-[var(--accent)]"
                   />
                   {item.thumbnail ? (
-                    <img
-                      src={item.thumbnail}
-                      alt={item.name}
-                      className="w-9 h-11 object-cover rounded bg-[var(--card-2)] border border-[var(--line)]"
-                    />
+                    <div className="relative w-9 h-11 overflow-hidden rounded bg-[var(--card-2)] border border-[var(--line)] shrink-0 flex items-center justify-center">
+                      <img
+                        src={item.thumbnail}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-xs scale-110 opacity-35 pointer-events-none"
+                      />
+                      <img
+                        src={item.thumbnail}
+                        alt={item.name}
+                        className="relative z-0 w-full h-full object-contain p-0.5"
+                      />
+                    </div>
                   ) : (
                     <div className="w-9 h-11 rounded bg-[var(--card-2)] border border-[var(--line)] flex items-center justify-center text-xs text-[var(--muted)]">
                       🎲

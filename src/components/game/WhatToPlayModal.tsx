@@ -642,13 +642,21 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                   <div className="flex items-start gap-3.5 sm:gap-4">
                     {/* Game Cover */}
                     {quickPickGame.thumbnail || quickPickGame.image ? (
-                      <img
-                        src={quickPickGame.thumbnail || quickPickGame.image}
-                        alt={quickPickGame.name}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-20 h-24 sm:w-24 sm:h-28 rounded-2xl object-cover shrink-0 border border-[var(--line)] shadow-md"
-                      />
+                      <div className="relative w-20 h-24 sm:w-24 sm:h-28 rounded-2xl overflow-hidden shrink-0 border border-[var(--line)] shadow-md bg-[var(--card-2)] flex items-center justify-center">
+                        <img
+                          src={quickPickGame.thumbnail || quickPickGame.image}
+                          alt=""
+                          aria-hidden="true"
+                          className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
+                        />
+                        <img
+                          src={quickPickGame.thumbnail || quickPickGame.image}
+                          alt={quickPickGame.name}
+                          loading="lazy"
+                          decoding="async"
+                          className="relative z-0 w-full h-full object-contain p-1"
+                        />
+                      </div>
                     ) : (
                       <div className="w-20 h-24 sm:w-24 sm:h-28 rounded-2xl bg-amber-500/15 border border-[var(--line)] flex items-center justify-center text-3xl shrink-0">
                         🎲
@@ -796,13 +804,21 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                 {/* Cover and details */}
                 <div className="flex items-center justify-center gap-4 py-2">
                   {vetoWinner.thumbnail || vetoWinner.image ? (
-                    <img
-                      src={vetoWinner.thumbnail || vetoWinner.image}
-                      alt={vetoWinner.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-24 h-32 rounded-2xl object-cover border-2 border-amber-400/60 shadow-xl"
-                    />
+                    <div className="relative w-24 h-32 rounded-2xl overflow-hidden shrink-0 border-2 border-amber-400/60 shadow-xl bg-[var(--card-2)] flex items-center justify-center">
+                      <img
+                        src={vetoWinner.thumbnail || vetoWinner.image}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
+                      />
+                      <img
+                        src={vetoWinner.thumbnail || vetoWinner.image}
+                        alt={vetoWinner.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="relative z-0 w-full h-full object-contain p-1"
+                      />
+                    </div>
                   ) : (
                     <div className="w-24 h-32 rounded-2xl bg-amber-500/20 text-4xl flex items-center justify-center border-2 border-amber-400/60">
                       🎲
@@ -898,13 +914,21 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             {g.thumbnail || g.image ? (
-                              <img
-                                src={g.thumbnail || g.image}
-                                alt={g.name}
-                                loading="lazy"
-                                decoding="async"
-                                className="w-12 h-14 rounded-xl object-cover shrink-0 border border-[var(--line)] shadow-sm"
-                              />
+                              <div className="relative w-12 h-14 rounded-xl overflow-hidden shrink-0 border border-[var(--line)] shadow-sm bg-[var(--card-2)] flex items-center justify-center">
+                                <img
+                                  src={g.thumbnail || g.image}
+                                  alt=""
+                                  aria-hidden="true"
+                                  className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
+                                />
+                                <img
+                                  src={g.thumbnail || g.image}
+                                  alt={g.name}
+                                  loading="lazy"
+                                  decoding="async"
+                                  className="relative z-0 w-full h-full object-contain p-0.5"
+                                />
+                              </div>
                             ) : (
                               <div className="w-12 h-14 rounded-xl bg-amber-500/15 border border-[var(--line)] flex items-center justify-center text-xl shrink-0">
                                 🎲

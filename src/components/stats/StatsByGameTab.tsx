@@ -202,12 +202,20 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
           <Card className="p-6 sm:p-8 space-y-6 bg-[var(--card)] border border-[var(--line)]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--line)] pb-5">
               <div className="flex items-center gap-4 min-w-0">
-                <img
-                  src={activeGame.thumbnail || activeGame.image}
-                  alt={activeGame.name}
-                  referrerPolicy="no-referrer"
-                  className="w-16 h-20 rounded-xl object-cover border border-[var(--line)] shrink-0 shadow-md"
-                />
+                <div className="relative w-16 h-20 rounded-xl overflow-hidden border border-[var(--line)] shrink-0 shadow-md bg-[var(--card-2)] flex items-center justify-center">
+                  <img
+                    src={activeGame.thumbnail || activeGame.image}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
+                  />
+                  <img
+                    src={activeGame.thumbnail || activeGame.image}
+                    alt={activeGame.name}
+                    referrerPolicy="no-referrer"
+                    className="relative z-0 w-full h-full object-contain p-1"
+                  />
+                </div>
                 <div className="min-w-0 space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="font-display font-extrabold text-xl sm:text-2xl text-[var(--ink)] truncate">
@@ -595,12 +603,20 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                       >
                         <td className="py-3 px-4 font-display font-bold text-[var(--ink)]">
                           <div className="flex items-center gap-3">
-                            <img
-                              src={item.game.thumbnail || item.game.image}
-                              alt={item.game.name}
-                              referrerPolicy="no-referrer"
-                              className="w-8 h-10 rounded-lg object-cover shrink-0 border border-[var(--line)] shadow-sm"
-                            />
+                            <div className="relative w-8 h-10 rounded-lg overflow-hidden shrink-0 border border-[var(--line)] shadow-sm bg-[var(--card-2)] flex items-center justify-center">
+                              <img
+                                src={item.game.thumbnail || item.game.image}
+                                alt=""
+                                aria-hidden="true"
+                                className="absolute inset-0 w-full h-full object-cover blur-xs scale-110 opacity-35 pointer-events-none"
+                              />
+                              <img
+                                src={item.game.thumbnail || item.game.image}
+                                alt={item.game.name}
+                                referrerPolicy="no-referrer"
+                                className="relative z-0 w-full h-full object-contain p-0.5"
+                              />
+                            </div>
                             <div className="min-w-0">
                               <span className="font-bold text-sm block truncate text-[var(--ink)]">
                                 {item.game.name}

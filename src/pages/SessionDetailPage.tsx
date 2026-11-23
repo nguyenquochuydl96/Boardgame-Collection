@@ -527,12 +527,20 @@ export const SessionDetailPage: React.FC = () => {
         {/* Hero Banner */}
         <div className="rounded-3xl overflow-hidden bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 shadow-2xl">
           <Link to={`/collection/${session.gameId}`} className="shrink-0">
-            <img
-              src={session.gameThumbnail}
-              alt={session.gameName}
-              referrerPolicy="no-referrer"
-              className="w-24 h-32 rounded-2xl object-cover border border-[var(--border-subtle)] hover:scale-105 transition-transform bg-[var(--bg-elevated)]"
-            />
+            <div className="relative w-24 h-32 rounded-2xl overflow-hidden border border-[var(--border-subtle)] hover:scale-105 transition-transform bg-[var(--bg-elevated)] flex items-center justify-center shadow-md">
+              <img
+                src={session.gameThumbnail}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
+              />
+              <img
+                src={session.gameThumbnail}
+                alt={session.gameName}
+                referrerPolicy="no-referrer"
+                className="relative z-0 w-full h-full object-contain p-1"
+              />
+            </div>
           </Link>
 
           <div className="space-y-3 flex-1 min-w-0">

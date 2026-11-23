@@ -137,15 +137,23 @@ const DraftSessionCardComponent: React.FC<DraftSessionCardProps> = ({
       <div className="mt-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           {/* Game Thumbnail */}
-          <div className="w-16 h-20 rounded-xl overflow-hidden shrink-0 bg-[var(--bg-elevated)] border border-amber-500/40 relative shadow-md">
+          <div className="relative w-16 h-20 rounded-xl overflow-hidden shrink-0 bg-[var(--bg-elevated)] border border-amber-500/40 shadow-md flex items-center justify-center">
             {gameThumbnail ? (
-              <img
-                src={gameThumbnail}
-                alt={gameName}
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                className="w-full h-full object-cover"
-              />
+              <>
+                <img
+                  src={gameThumbnail}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
+                />
+                <img
+                  src={gameThumbnail}
+                  alt={gameName}
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  className="relative z-0 w-full h-full object-contain p-0.5"
+                />
+              </>
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-amber-500/20 text-amber-400">
                 <Dices className="w-7 h-7" />

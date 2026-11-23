@@ -27,17 +27,25 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
         to={`/sessions/${session.id}`}
         className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--card)] border border-[var(--line)] hover:border-[var(--line-2)] hover:shadow-md transition-all duration-200 group"
       >
-        <div className="w-14 h-16 sm:w-16 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-[var(--card-2)] border border-[var(--line)] relative">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/25 to-transparent z-10" />
+        <div className="w-14 h-16 sm:w-16 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-[var(--card-2)] border border-[var(--line)] relative flex items-center justify-center">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/25 to-transparent z-10 pointer-events-none" />
           {!imageError && session.gameThumbnail ? (
-            <img
-              src={session.gameThumbnail}
-              alt={session.gameName}
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              onError={() => setImageError(true)}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            />
+            <>
+              <img
+                src={session.gameThumbnail}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
+              />
+              <img
+                src={session.gameThumbnail}
+                alt={session.gameName}
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                onError={() => setImageError(true)}
+                className="relative z-0 w-full h-full object-contain p-0.5 group-hover:scale-105 transition-transform duration-300"
+              />
+            </>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-[var(--card-2)] text-[var(--accent)]">
               <Dices className="w-6 h-6 text-current" />

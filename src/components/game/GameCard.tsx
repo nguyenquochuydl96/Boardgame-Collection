@@ -40,17 +40,25 @@ const GameCardComponent: React.FC<GameCardProps> = ({
           className="flex items-center gap-4 p-3.5 rounded-2xl bg-[var(--card)] border border-[var(--line)] hover:border-[var(--line-2)] hover:shadow-md transition-all duration-200 group"
         >
           {/* Cover thumbnail */}
-          <div className="relative w-16 h-20 rounded-xl overflow-hidden bg-[var(--card-2)] shrink-0 border border-[var(--line)]">
+          <div className="relative w-16 h-20 rounded-xl overflow-hidden bg-[var(--card-2)] shrink-0 border border-[var(--line)] flex items-center justify-center">
             {!imageError && resolvedCover ? (
-              <img
-                src={resolvedCover}
-                alt={game.name}
-                loading="lazy"
-                decoding="async"
-                referrerPolicy="no-referrer"
-                onError={() => setImageError(true)}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
+              <>
+                <img
+                  src={resolvedCover}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
+                />
+                <img
+                  src={resolvedCover}
+                  alt={game.name}
+                  loading="lazy"
+                  decoding="async"
+                  referrerPolicy="no-referrer"
+                  onError={() => setImageError(true)}
+                  className="relative z-0 w-full h-full object-contain p-0.5 group-hover:scale-105 transition-transform duration-300"
+                />
+              </>
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-[var(--card-2)] text-[var(--accent)]">
                 <Dices className="w-6 h-6 text-current" />
@@ -141,7 +149,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
         className="flex flex-col h-full focus:outline-none"
       >
         {/* Album Cover Art */}
-        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-[var(--card-2)] border border-[var(--line)]">
+        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-[var(--card-2)] border border-[var(--line)] flex items-center justify-center">
           {/* Authentic physical box spine highlight */}
           <div
             aria-hidden="true"
@@ -149,15 +157,24 @@ const GameCardComponent: React.FC<GameCardProps> = ({
           />
 
           {!imageError && resolvedCover ? (
-            <img
-              src={resolvedCover}
-              alt={game.name}
-              loading="lazy"
-              decoding="async"
-              referrerPolicy="no-referrer"
-              onError={() => setImageError(true)}
-              className="w-full h-full object-cover transition-transform duration-300 ease-out group-hover:scale-105"
-            />
+            <>
+              {/* Ambient blurred cover backdrop for wide/narrow physical boxes like Iron Clays */}
+              <img
+                src={resolvedCover}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-35 pointer-events-none"
+              />
+              <img
+                src={resolvedCover}
+                alt={game.name}
+                loading="lazy"
+                decoding="async"
+                referrerPolicy="no-referrer"
+                onError={() => setImageError(true)}
+                className="relative z-0 w-full h-full object-contain p-1.5 transition-transform duration-300 ease-out group-hover:scale-105"
+              />
+            </>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-[var(--card-2)] text-center">
               <Dices className="w-10 h-10 text-[var(--accent)] mb-2" />
@@ -211,7 +228,9 @@ const GameCardComponent: React.FC<GameCardProps> = ({
                 <span aria-hidden="true" className="opacity-40">·</span>
               )}
               <span>
-                {game.minPlayers === game.maxPlayers ? `${game.minPlayers} players` : `${game.minPlayers}–${game.maxPlayers} players`}
+                {game.minPlayers === game.maxPlayers
+                  ? `${game.minPlayers} ${game.minPlayers === 1 ? 'player' : 'players'}`
+                  : `${game.minPlayers}–${game.maxPlayers} players`}
               </span>
               {game.playingTime && (
                 <>
