@@ -93,10 +93,24 @@ if (typeof window !== 'undefined') {
     });
 
     (window as any).updatePwaSW = async (reloadPage = true) => {
-      if (updateServiceWorker) {
-        await updateServiceWorker(reloadPage);
-      } else {
-        await forceAppUpdate();
+      // Guaranteed fallback: force page reload after 1500ms if controllerchange does not fire (common on iOS Safari PWA)
+      if (reloadPage && typeof window !== 'undefined') {
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
+
+      try {
+        if (updateServiceWorker) {
+          await updateServiceWorker(reloadPage);
+        } else {
+          await forceAppUpdate();
+        }
+      } catch (err) {
+        console.warn('[PWA] updateServiceWorker error, falling back to reload:', err);
+        if (reloadPage && typeof window !== 'undefined') {
+          window.location.reload();
+        }
       }
     };
 

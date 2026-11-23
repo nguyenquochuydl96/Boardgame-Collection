@@ -21,7 +21,14 @@ export const PwaUpdateToast: React.FC = () => {
   if (!needRefresh) return null;
 
   const handleUpdateNow = async () => {
+    if (isUpdating) return;
     setIsUpdating(true);
+
+    // Guaranteed fallback: force page reload after 1500ms if controllerchange event hangs or fails to fire (common on iOS Safari PWA)
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+
     try {
       if (typeof window !== 'undefined' && (window as any).updatePwaSW) {
         await (window as any).updatePwaSW(true);

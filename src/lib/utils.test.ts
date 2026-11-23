@@ -588,6 +588,107 @@ test('getScoringTemplateForGame verifies Harmonies, Burgundy, Faraway, White Cas
   assert.ok(alliances?.description?.includes('Only add if not yet counted'));
 });
 
+test('WhatToPlay: getGameVibe categorizes games accurately into heavy, coop, light, and mid', async () => {
+  const { getGameVibe } = await import('../components/game/WhatToPlayModal');
+
+  const brassGame = {
+    id: 'g-brass',
+    name: 'Brass: Birmingham',
+    thumbnail: '',
+    image: '',
+    description: 'An economic strategy game set in the industrial revolution.',
+    minPlayers: 2,
+    maxPlayers: 4,
+    playingTime: 120,
+    yearPublished: 2018,
+    status: 'own' as const,
+    addedDate: '2024-01-01',
+    tags: ['Economic', 'Strategy'],
+  };
+
+  const stardewGame = {
+    id: 'g-stardew',
+    name: 'Stardew Valley: The Board Game',
+    thumbnail: '',
+    image: '',
+    description: 'A cooperative board game of farming and friendship.',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playingTime: 90,
+    yearPublished: 2021,
+    status: 'own' as const,
+    addedDate: '2024-01-01',
+    tags: ['Cooperative', 'Farming'],
+  };
+
+  const flip7Game = {
+    id: 'g-flip7',
+    name: 'Flip 7',
+    thumbnail: '',
+    image: '',
+    description: 'A quick push-your-luck card game.',
+    minPlayers: 2,
+    maxPlayers: 8,
+    playingTime: 20,
+    yearPublished: 2024,
+    status: 'own' as const,
+    addedDate: '2024-01-01',
+    tags: ['Party', 'Card Game'],
+  };
+
+  const cascadiaGame = {
+    id: 'g-cascadia',
+    name: 'Cascadia',
+    thumbnail: '',
+    image: '',
+    description: 'A puzzly tile-laying and token-drafting game of Pacific Northwest habitats.',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playingTime: 45,
+    yearPublished: 2021,
+    status: 'own' as const,
+    addedDate: '2024-01-01',
+    tags: ['Animals', 'Family'],
+  };
+
+  assert.equal(getGameVibe(brassGame), 'heavy');
+  assert.equal(getGameVibe(stardewGame), 'coop');
+  assert.equal(getGameVibe(flip7Game), 'light');
+  assert.equal(getGameVibe(cascadiaGame), 'mid');
+});
+
+test('WhatToPlay: formatPlayHistoryBadge handles unplayed, recent, and dusty games correctly', async () => {
+  const { formatPlayHistoryBadge } = await import('../components/game/WhatToPlayModal');
+
+  // Unplayed game
+  const unplayed = formatPlayHistoryBadge({ playCount: 0, isDusty: true });
+  assert.equal(unplayed.isUnplayed, true);
+  assert.equal(unplayed.isDusty, true);
+  assert.equal(unplayed.text, '✨ Unplayed');
+
+  // Recently played game (5 days ago)
+  const recent = formatPlayHistoryBadge({
+    playCount: 12,
+    lastPlayedDate: '2026-05-01',
+    daysSinceLastPlayed: 5,
+    isDusty: false,
+  });
+  assert.equal(recent.isUnplayed, false);
+  assert.equal(recent.isDusty, false);
+  assert.equal(recent.text, '12 plays · Last: 5d ago');
+
+  // Dusty game (> 60 days ago)
+  const dusty = formatPlayHistoryBadge({
+    playCount: 2,
+    lastPlayedDate: '2026-01-01',
+    daysSinceLastPlayed: 110,
+    isDusty: true,
+  });
+  assert.equal(dusty.isUnplayed, false);
+  assert.equal(dusty.isDusty, true);
+  assert.equal(dusty.text, '2 plays · Last: 3 mos ago');
+});
+
 test('getScoringTemplateForGame resolves official Great Western Trail: Second Edition template with 11 categories', async () => {
   const { getScoringTemplateForGame } = await import('./scoringPresets');
   
