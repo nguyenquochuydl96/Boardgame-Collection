@@ -75,6 +75,21 @@ if (typeof window !== 'undefined') {
       onOfflineReady() {
         console.info('[PWA] Boardgame Vault is ready for offline use');
       },
+      onRegisteredSW(_swUrl, registration) {
+        if (registration) {
+          // Check for SW updates whenever app returns to foreground on iOS PWA
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              registration.update().catch(() => {});
+            }
+          });
+
+          // Periodic background check every 15 minutes
+          setInterval(() => {
+            registration.update().catch(() => {});
+          }, 15 * 60 * 1000);
+        }
+      },
     });
 
     (window as any).updatePwaSW = async (reloadPage = true) => {

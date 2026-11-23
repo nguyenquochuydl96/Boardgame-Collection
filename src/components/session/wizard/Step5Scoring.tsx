@@ -66,6 +66,18 @@ export const Step5Scoring: React.FC<Step5ScoringProps> = React.memo(
         <div className="flex flex-wrap items-center gap-2 p-1.5 bg-[var(--card-2)] border border-[var(--line)] rounded-2xl w-fit">
           <button
             type="button"
+            onClick={() => setScoringMode('quick')}
+            className={cn(
+              'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
+              scoringMode === 'quick'
+                ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
+                : 'text-[var(--muted)] hover:text-[var(--ink)]'
+            )}
+          >
+            <span>⚡ Quick Total Entry</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setScoringMode('detailed')}
             className={cn(
               'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2',
@@ -76,18 +88,6 @@ export const Step5Scoring: React.FC<Step5ScoringProps> = React.memo(
           >
             <span>📊 Scoring Sheet:</span>
             <span className="font-extrabold">{scoringTemplate.displayName}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setScoringMode('quick')}
-            className={cn(
-              'px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
-              scoringMode === 'quick'
-                ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-md'
-                : 'text-[var(--muted)] hover:text-[var(--ink)]'
-            )}
-          >
-            <span>⚡ Quick Total Entry</span>
           </button>
         </div>
 

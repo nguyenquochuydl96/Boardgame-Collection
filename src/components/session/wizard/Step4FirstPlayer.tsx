@@ -3,7 +3,6 @@ import { ArrowLeft, Crown } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
-import { LuckyWheel } from '../../picker/LuckyWheel';
 import { MysteryCardShuffle, PickerItem } from '../../picker/MysteryCardShuffle';
 import { PlayerAvatar } from '../../player/PlayerAvatar';
 import { PlayerChip } from '../../player/PlayerChip';
@@ -16,8 +15,8 @@ interface Step4FirstPlayerProps {
   selectedGame?: BoardGame;
   activeSessionPlayers: Player[];
   location: string;
-  firstPlayerAnimStyle: 'wheel' | 'card_shuffle' | 'manual';
-  setFirstPlayerAnimStyle: (style: 'wheel' | 'card_shuffle' | 'manual') => void;
+  firstPlayerAnimStyle: 'card_shuffle' | 'manual' | string;
+  setFirstPlayerAnimStyle: (style: any) => void;
   playerPickerItems: PickerItem[];
   firstPlayerId?: string;
   firstPlayerMethod: FirstPlayerMethod;
@@ -68,43 +67,30 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
               Step 4 — Who Goes First?
             </h1>
             <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1">
-              Spin the lucky wheel, shuffle mystery cards, or choose house rules for {activeSessionPlayers.length} players
+              Shuffle mystery cards or choose tabletop house rules for {activeSessionPlayers.length} players
             </p>
           </div>
 
           {/* Mode Selector Tabs */}
-          <div className="grid grid-cols-3 gap-1 sm:gap-1.5 p-1 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-full sm:w-auto shrink-0">
-            <button
-              type="button"
-              onClick={() => setFirstPlayerAnimStyle('wheel')}
-              className={cn(
-                'px-2 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
-                firstPlayerAnimStyle === 'wheel'
-                  ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300 shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              )}
-            >
-              <span>🎡</span>
-              <span className="truncate">Wheel</span>
-            </button>
+          <div className="grid grid-cols-2 gap-1 sm:gap-1.5 p-1 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-full sm:w-auto shrink-0">
             <button
               type="button"
               onClick={() => setFirstPlayerAnimStyle('card_shuffle')}
               className={cn(
-                'px-2 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
-                firstPlayerAnimStyle === 'card_shuffle'
+                'px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
+                firstPlayerAnimStyle !== 'manual'
                   ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300 shadow-sm'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
               <span>🎴</span>
-              <span className="truncate">Card</span>
+              <span className="truncate">Card Shuffle</span>
             </button>
             <button
               type="button"
               onClick={() => setFirstPlayerAnimStyle('manual')}
               className={cn(
-                'px-2 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
+                'px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 sm:gap-1.5 select-none text-center',
                 firstPlayerAnimStyle === 'manual'
                   ? 'bg-[var(--accent-glow)] border border-[var(--border-glow)] text-[var(--accent-neon)] shadow-sm'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -150,24 +136,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
           </div>
         ) : (
           <div className="p-4 sm:p-6 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] flex flex-col items-center justify-center min-h-[380px] relative overflow-hidden">
-            {firstPlayerAnimStyle === 'wheel' ? (
-              <LuckyWheel
-                items={playerPickerItems}
-                onSelect={(winner) => {
-                  setFirstPlayerId(winner.id);
-                  setFirstPlayerMethod('random_wheel');
-                }}
-              />
-            ) : firstPlayerAnimStyle === 'card_shuffle' ? (
-              <MysteryCardShuffle
-                items={playerPickerItems}
-                onSelect={(winner) => {
-                  setFirstPlayerId(winner.id);
-                  setFirstPlayerMethod('random_wheel');
-                }}
-                mode="first_player"
-              />
-            ) : (
+            {firstPlayerAnimStyle === 'manual' ? (
               <div className="w-full max-w-md py-6 space-y-6 text-center">
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-2xl mx-auto shadow-inner">
                   👑
@@ -209,6 +178,15 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
                   })}
                 </div>
               </div>
+            ) : (
+              <MysteryCardShuffle
+                items={playerPickerItems}
+                onSelect={(winner) => {
+                  setFirstPlayerId(winner.id);
+                  setFirstPlayerMethod('random_wheel');
+                }}
+                mode="first_player"
+              />
             )}
 
             {/* Spotlight Celebration Card when First Player is Picked */}

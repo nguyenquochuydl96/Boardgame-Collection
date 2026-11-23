@@ -70,6 +70,20 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
 
   const [copiedSql, setCopiedSql] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isUpdatingApp, setIsUpdatingApp] = useState(false);
+
+  const handleForceAppUpdate = async () => {
+    setIsUpdatingApp(true);
+    try {
+      if (typeof window !== 'undefined' && (window as any).forceAppUpdate) {
+        await (window as any).forceAppUpdate();
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      window.location.reload();
+    }
+  };
 
   React.useEffect(() => {
     if (isOpen) {
@@ -545,6 +559,34 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
             </div>
           </div>
         )}
+
+        {/* PWA Cache Purge & App Update (Accessible on iPhone / Mobile & Desktop) */}
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+              <RefreshCw className={cn('w-4 h-4', isUpdatingApp && 'animate-spin')} />
+            </div>
+            <div className="min-w-0">
+              <h5 className="font-bold text-xs text-[var(--ink)]">
+                Kiểm tra cập nhật / Làm mới Cache
+              </h5>
+              <p className="text-[11px] text-[var(--text-secondary)]">
+                Tải bản build mới nhất từ GitHub Pages và xóa sạch Service Worker cache cũ trên iPhone / Safari.
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleForceAppUpdate}
+            disabled={isUpdatingApp}
+            className="shrink-0 justify-center bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-700 dark:text-cyan-200 border-cyan-500/40 font-bold"
+          >
+            <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', isUpdatingApp && 'animate-spin')} />
+            {isUpdatingApp ? 'Đang cập nhật...' : 'Cập nhật ngay'}
+          </Button>
+        </div>
 
         {/* Modal Bottom Status Bar */}
         <div className="pt-4 mt-2 border-t border-[var(--border-subtle)] flex items-center justify-between w-full">

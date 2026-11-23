@@ -234,11 +234,11 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
   return (
     <div className="space-y-4">
       {/* Scoring Matrix Table */}
-      <div className="overflow-x-auto rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-lg">
+      <div className="overflow-x-auto overscroll-x-contain touch-pan-x rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-lg">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)]">
-              <th className="sticky left-0 bg-[var(--bg-elevated)] z-20 py-3 px-3 sm:px-4 font-bold text-[var(--text-secondary)] min-w-[140px] sm:min-w-[180px] shadow-[1px_0_0_0_var(--border-subtle)]">
+              <th className="sticky left-0 bg-[var(--bg-elevated)] z-20 py-3 px-2 sm:px-4 font-bold text-[var(--text-secondary)] w-[125px] min-w-[115px] max-w-[130px] sm:w-[170px] sm:min-w-[160px] sm:max-w-[200px] shadow-[1px_0_0_0_var(--border-subtle)] truncate">
                 Scoring Categories
               </th>
               {players.map((p) => {
@@ -276,15 +276,15 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
               const isPenalty = (cat.multiplier ?? 1) < 0;
               return (
                 <tr key={cat.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="sticky left-0 bg-[var(--bg-surface)] z-10 py-2.5 px-3 sm:px-4 font-medium text-[var(--text-primary)] shadow-[1px_0_0_0_var(--border-subtle)]">
-                    <div className="flex items-start gap-2.5">
-                      <span className="text-base leading-none mt-0.5">{cat.icon || '🎲'}</span>
+                  <td className="sticky left-0 bg-[var(--bg-surface)] z-10 py-2.5 px-2 sm:px-4 font-medium text-[var(--text-primary)] w-[125px] min-w-[115px] max-w-[130px] sm:w-[170px] sm:min-w-[160px] sm:max-w-[200px] shadow-[1px_0_0_0_var(--border-subtle)]">
+                    <div className="flex items-start gap-1.5 sm:gap-2.5 min-w-0">
+                      <span className="text-base leading-none mt-0.5 shrink-0">{cat.icon || '🎲'}</span>
                       <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-semibold text-xs text-[var(--text-primary)] truncate">{cat.name}</span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="font-semibold text-xs text-[var(--text-primary)] truncate block">{cat.name}</span>
                           {isPenalty && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold shrink-0">
-                              - penalty
+                              -
                             </span>
                           )}
                         </div>
@@ -384,7 +384,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
           {/* TOTALS FOOTER */}
           <tfoot>
             <tr className="bg-[var(--bg-elevated)] border-t-2 border-[var(--border-glow)] font-bold">
-              <td className="sticky left-0 bg-[var(--bg-elevated)] z-20 py-3.5 px-3 sm:px-4 text-sm font-extrabold text-[var(--text-primary)] shadow-[1px_0_0_0_var(--border-subtle)]">
+              <td className="sticky left-0 bg-[var(--bg-elevated)] z-20 py-3.5 px-2 sm:px-4 text-xs sm:text-sm font-extrabold text-[var(--text-primary)] w-[125px] min-w-[115px] max-w-[130px] sm:w-[170px] sm:min-w-[160px] sm:max-w-[200px] shadow-[1px_0_0_0_var(--border-subtle)] truncate">
                 TOTAL SCORE
               </td>
               {players.map((p) => {

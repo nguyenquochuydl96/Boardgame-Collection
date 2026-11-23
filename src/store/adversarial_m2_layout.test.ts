@@ -172,10 +172,10 @@ test('CHALLENGE 4.1: PickerPage mode switcher and style switcher wrap/grid clean
     'PickerPage mode switcher must have compact mobile label "What to Play?"'
   );
 
-  // Verify style switcher is grid-cols-2 sm:flex
+  // Verify Mystery Card Shuffle banner / animation is present (LuckyWheel removed)
   assert.ok(
-    picker.includes('grid grid-cols-2 sm:flex'),
-    'PickerPage style switcher must be grid grid-cols-2 sm:flex'
+    picker.includes('MysteryCardShuffle') || picker.includes('Mystery Card Shuffle'),
+    'PickerPage must feature Mystery Card Shuffle picker'
   );
 
   // Verify stage card padding
@@ -234,18 +234,15 @@ test('CHALLENGE 6.1: NewSessionPage Step 4 tabs use responsive 3-col grid and st
     });
   }
 
-  // Verify Step 4 first player tabs use grid grid-cols-3
+  // Verify Step 4 first player tabs use grid grid-cols-2 (LuckyWheel removed)
   assert.ok(
-    sessionPage.includes('grid grid-cols-3 gap-1 sm:gap-1.5'),
-    'Step 4 first player tabs must use responsive 3-column grid (grid grid-cols-3)'
+    sessionPage.includes('grid grid-cols-2 gap-1 sm:gap-1.5'),
+    'Step 4 first player tabs must use responsive 2-column grid (grid grid-cols-2)'
   );
 
   // Verify labels have truncate
   assert.ok(
-    sessionPage.includes('<span className="truncate">Wheel</span>'),
-    'Step 4 Wheel tab must have truncate'
-  );
-  assert.ok(
+    sessionPage.includes('<span className="truncate">Card Shuffle</span>') ||
     sessionPage.includes('<span className="truncate">Card</span>'),
     'Step 4 Card tab must have truncate'
   );

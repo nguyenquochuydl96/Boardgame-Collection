@@ -842,6 +842,8 @@ test('healIncomingGames repairs broken/low-res remote games and preserves local 
     {
       id: 'g-iron',
       name: 'Iron Clays 200',
+      description: '',
+      addedDate: '2026-01-01',
       image: BGG_OFFICIAL_IRON_CLAYS,
       thumbnail: BGG_OFFICIAL_IRON_CLAYS,
       yearPublished: 2017,
@@ -853,6 +855,8 @@ test('healIncomingGames repairs broken/low-res remote games and preserves local 
     {
       id: 'g-zoo',
       name: 'Zoo Vadis',
+      description: '',
+      addedDate: '2026-01-01',
       image: 'https://cf.geekdo-images.com/Kl3NjtNKpuJNPjdBQtdsow__original/img/3ABkMQwQ-85hqaBO7gHP5ekBAQ0=/0x0/filters:format(jpeg)/pic6988937.jpg',
       thumbnail: 'https://cf.geekdo-images.com/Kl3NjtNKpuJNPjdBQtdsow__original/img/3ABkMQwQ-85hqaBO7gHP5ekBAQ0=/0x0/filters:format(jpeg)/pic6988937.jpg',
       yearPublished: 2023,
@@ -868,6 +872,8 @@ test('healIncomingGames repairs broken/low-res remote games and preserves local 
     {
       id: 'g-iron',
       name: 'Iron Clays 200',
+      description: '',
+      addedDate: '2026-01-01',
       image: '', // broken / empty remote
       thumbnail: 'data:image/svg+xml;base64,placeholder',
       yearPublished: 2017,
@@ -879,6 +885,8 @@ test('healIncomingGames repairs broken/low-res remote games and preserves local 
     {
       id: 'g-zoo',
       name: 'Zoo Vadis',
+      description: '',
+      addedDate: '2026-01-01',
       image: 'https://cf.geekdo-images.com/Kl3NjtNKpuJNPjdBQtdsow__small/img/fit-in/200x150/pic6988937.jpg', // low-res remote
       thumbnail: 'https://cf.geekdo-images.com/Kl3NjtNKpuJNPjdBQtdsow__small/img/fit-in/200x150/pic6988937.jpg',
       yearPublished: 2023,

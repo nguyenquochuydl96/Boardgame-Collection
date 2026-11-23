@@ -225,8 +225,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     return location.pathname.startsWith(path);
   };
 
+  const isNewSession = location.pathname.startsWith('/sessions/new');
+
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--bg)] text-[var(--ink)] transition-colors duration-200">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[var(--bg)] text-[var(--ink)] transition-colors duration-200 overflow-x-hidden max-w-full">
       {/* Desktop Sidebar Navigation */}
       <aside
         aria-label="Sidebar navigation"
@@ -491,7 +493,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 lg:pl-64 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-12">
+      <main
+        className={cn(
+          "flex-1 lg:pl-64 overflow-x-hidden max-w-full",
+          isNewSession
+            ? "pb-[calc(1.5rem+env(safe-area-inset-bottom))] lg:pb-8"
+            : "pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-12"
+        )}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
           {children}
 
@@ -504,7 +513,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       <ResumeSessionBanner />
       <PwaUpdateToast />
 
-      <BottomNavBar />
+      {!isNewSession && <BottomNavBar />}
 
       {/* Modals rendered on-demand */}
       {showBGGModal && (

@@ -5,7 +5,6 @@ import { Dices, Sparkles, Play, Check, Filter, Search } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { LuckyWheel } from '../picker/LuckyWheel';
 import { MysteryCardShuffle, PickerItem } from '../picker/MysteryCardShuffle';
 import { useGameStore } from '../../store/useGameStore';
 import { GameStatus } from '../../types';
@@ -23,7 +22,6 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
   const navigate = useNavigate();
   const allGames = useGameStore((s) => s.games);
 
-  const [animStyle, setAnimStyle] = useState<'wheel' | 'card_shuffle'>('wheel');
   const [statusFilters, setStatusFilters] = useState<GameStatus[]>(['own']);
   const [playerCountFilter, setPlayerCountFilter] = useState<'all' | '2' | '3' | '4' | '5+'>('all');
   const [durationFilter, setDurationFilter] = useState<'all' | 'short' | 'medium' | 'long'>('all');
@@ -98,47 +96,6 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
       maxWidthClass="max-w-4xl"
     >
       <div className="space-y-6">
-        {/* Style Selector */}
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
-          <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>Picker Mode:</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
-            <button
-              type="button"
-              onClick={() => {
-                setAnimStyle('wheel');
-                setChosenGame(null);
-              }}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
-                animStyle === 'wheel'
-                  ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
-              )}
-            >
-              <span>🎡 Lucky Wheel</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAnimStyle('card_shuffle');
-                setChosenGame(null);
-              }}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
-                animStyle === 'card_shuffle'
-                  ? 'bg-amber-500/25 border border-amber-500/50 text-amber-300'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
-              )}
-            >
-              <span>🎴 Mystery Card Shuffle</span>
-            </button>
-          </div>
-        </div>
-
         {/* Filters Row */}
         <div className="p-4 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] space-y-3">
           <div className="flex flex-col sm:flex-row gap-3">
@@ -257,11 +214,6 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({
                 Please loosen filters or select more games
               </p>
             </div>
-          ) : animStyle === 'wheel' ? (
-            <LuckyWheel
-              items={gameItems}
-              onSelect={(winner) => setChosenGame(winner)}
-            />
           ) : (
             <MysteryCardShuffle
               items={gameItems}

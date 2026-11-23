@@ -21,7 +21,6 @@ import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { LuckyWheel } from '../components/picker/LuckyWheel';
 import { MysteryCardShuffle, PickerItem } from '../components/picker/MysteryCardShuffle';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useGameStore } from '../store/useGameStore';
@@ -30,7 +29,6 @@ import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { resolveAvatarImage, getSafeDisplayAvatar } from '../lib/utils';
 
 type PickerMode = 'first_player' | 'what_to_play';
-type AnimationStyle = 'wheel' | 'card_shuffle';
 
 export const PickerPage: React.FC = () => {
   const navigate = useNavigate();
@@ -38,7 +36,6 @@ export const PickerPage: React.FC = () => {
   const allGames = useGameStore((s) => s.games);
 
   const [mode, setMode] = useState<PickerMode>('first_player');
-  const [animStyle, setAnimStyle] = useState<AnimationStyle>('wheel');
 
   // --- FIRST PLAYER STATE ---
   const [activePlayerIds, setActivePlayerIds] = useState<string[]>(() =>
@@ -225,52 +222,15 @@ export const PickerPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Animation Switcher Banner with sliding spring pill */}
+        {/* Animation Banner */}
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-3.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
           <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-secondary)]">
             <Sparkles className="w-4 h-4 text-[var(--accent-neon)]" />
-            <span>Picker Style:</span>
+            <span>Picker Mode:</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 p-1 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setAnimStyle('wheel')}
-              className={cn(
-                'relative isolate px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 select-none text-center',
-                animStyle === 'wheel'
-                  ? 'text-amber-900 dark:text-amber-200 font-extrabold'
-                  : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
-              )}
-            >
-              {animStyle === 'wheel' && (
-                <motion.span
-                  layoutId="picker-anim-pill"
-                  className="absolute inset-0 rounded-lg bg-amber-500/25 border border-amber-500/50 pointer-events-none z-0 shadow-sm"
-                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                />
-              )}
-              <span className="relative z-10">🎡 Lucky Wheel</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAnimStyle('card_shuffle')}
-              className={cn(
-                'relative isolate px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 select-none text-center',
-                animStyle === 'card_shuffle'
-                  ? 'text-amber-900 dark:text-amber-200 font-extrabold'
-                  : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
-              )}
-            >
-              {animStyle === 'card_shuffle' && (
-                <motion.span
-                  layoutId="picker-anim-pill"
-                  className="absolute inset-0 rounded-lg bg-amber-500/25 border border-amber-500/50 pointer-events-none z-0 shadow-sm"
-                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                />
-              )}
-              <span className="relative z-10">🎴 Card Shuffle</span>
-            </button>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold">
+            <span>🎴 Mystery Card Shuffle</span>
           </div>
         </div>
 
@@ -287,11 +247,9 @@ export const PickerPage: React.FC = () => {
                   No items in selection pool
                 </p>
                 <p className="text-xs text-[var(--text-secondary)] max-w-xs mx-auto">
-                  Please select at least 2 players or 2 board games on the right to start spinning!
+                  Please select at least 2 players or 2 board games on the right to start drawing!
                 </p>
               </div>
-            ) : animStyle === 'wheel' ? (
-              <LuckyWheel items={currentPool} onSelect={setChosenResult} />
             ) : (
               <MysteryCardShuffle
                 items={currentPool}
@@ -300,59 +258,6 @@ export const PickerPage: React.FC = () => {
                 mode={mode}
               />
             )}
-
-            {/* Chosen Result Spotlight Card (Floats over stage when chosen via Wheel) */}
-            <AnimatePresence>
-              {animStyle === 'wheel' && chosenResult && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-2 border-amber-400/50 w-full max-w-md shadow-2xl flex items-center justify-between gap-3 overflow-hidden"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    {chosenResult.thumbnail ? (
-                      <img
-                        src={chosenResult.thumbnail}
-                        alt={chosenResult.name}
-                        className="w-12 h-12 rounded-xl object-cover border border-amber-400/40 shrink-0"
-                      />
-                    ) : (
-                      <PlayerAvatar
-                        avatar={chosenResult.avatar}
-                        name={chosenResult.name}
-                        color={chosenResult.color}
-                        size="md"
-                        className="border-amber-400/50 shrink-0"
-                      />
-                    )}
-                    <div className="min-w-0">
-                      <div className="text-[10px] font-mono text-amber-700 dark:text-amber-300 font-bold uppercase tracking-wider">
-                        {mode === 'first_player' ? '👑 First Player' : '🎯 Game Tonight'}
-                      </div>
-                      <h4 className="font-display font-extrabold text-sm sm:text-base text-[var(--ink)] truncate">
-                        {chosenResult.name}
-                      </h4>
-                      {chosenResult.subtitle && (
-                        <p className="text-[11px] text-[var(--muted)] truncate">{chosenResult.subtitle}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {mode === 'what_to_play' && (
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={() => navigate(`/sessions/new?gameId=${chosenResult.id}`)}
-                      className="shrink-0 text-xs shadow-md"
-                    >
-                      <Play className="w-3.5 h-3.5 mr-1 fill-current" />
-                      Start Session
-                    </Button>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
           </Card>
 
           {/* RIGHT: POOL SELECTOR & FILTERS (5 COLS) */}

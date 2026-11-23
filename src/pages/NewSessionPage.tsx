@@ -119,11 +119,11 @@ export const NewSessionPage: React.FC = () => {
     isRematchMode ? undefined : (preselectedFirstPlayerId || savedPlayers[0]?.id)
   );
   const [firstPlayerMethod, setFirstPlayerMethod] = useState<FirstPlayerMethod>('random_wheel');
-  const [firstPlayerAnimStyle, setFirstPlayerAnimStyle] = useState<'wheel' | 'card_shuffle' | 'manual'>('wheel');
+  const [firstPlayerAnimStyle, setFirstPlayerAnimStyle] = useState<'card_shuffle' | 'manual'>('card_shuffle');
 
   // Step 5: Scores
   const [lowScoreWins, setLowScoreWins] = useState(false);
-  const [scoringMode, setScoringMode] = useState<'detailed' | 'quick'>('detailed');
+  const [scoringMode, setScoringMode] = useState<'detailed' | 'quick'>('quick');
   const [breakdownsByPlayerId, setBreakdownsByPlayerId] = useState<Record<string, Record<string, number>>>({});
   const [scoresByPlayerId, setScoresByPlayerId] = useState<Record<string, number | undefined>>({});
   const [manualWinnerIds, setManualWinnerIds] = useState<string[]>([]);
@@ -174,7 +174,7 @@ export const NewSessionPage: React.FC = () => {
             }
             setFirstPlayerId(parsed.firstPlayerId);
             setFirstPlayerMethod(parsed.firstPlayerMethod);
-            setFirstPlayerAnimStyle(parsed.firstPlayerAnimStyle);
+            setFirstPlayerAnimStyle(parsed.firstPlayerAnimStyle === 'wheel' ? 'card_shuffle' : (parsed.firstPlayerAnimStyle || 'card_shuffle'));
             setScoresByPlayerId(parsed.scoresByPlayerId || {});
             setBreakdownsByPlayerId(parsed.breakdownsByPlayerId || {});
             setManualWinnerIds(parsed.manualWinnerIds || []);
@@ -223,7 +223,7 @@ export const NewSessionPage: React.FC = () => {
     }
     setFirstPlayerId(existingDraft.firstPlayerId);
     setFirstPlayerMethod(existingDraft.firstPlayerMethod);
-    setFirstPlayerAnimStyle(existingDraft.firstPlayerAnimStyle);
+    setFirstPlayerAnimStyle(existingDraft.firstPlayerAnimStyle === 'wheel' ? 'card_shuffle' : (existingDraft.firstPlayerAnimStyle || 'card_shuffle'));
     setScoresByPlayerId(existingDraft.scoresByPlayerId);
     setBreakdownsByPlayerId(existingDraft.breakdownsByPlayerId);
     setManualWinnerIds(existingDraft.manualWinnerIds);
@@ -703,7 +703,7 @@ export const NewSessionPage: React.FC = () => {
 
   return (
     <PageTransition>
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6 overflow-x-hidden max-w-full">
         <div className="flex items-center justify-between">
           <Link
             to="/sessions"
