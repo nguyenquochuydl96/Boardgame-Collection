@@ -615,10 +615,10 @@ export const SessionDetailPage: React.FC = () => {
                   return (
                     <tr
                       key={entry.playerId}
-                      className={isWin ? 'bg-amber-500/[0.08]' : ''}
+                      className={isWin ? (scoringTemplate.isCoop ? 'bg-emerald-500/[0.08]' : 'bg-amber-500/[0.08]') : ''}
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-[var(--text-secondary)]">
-                        #{entry.rank || idx + 1}
+                        {scoringTemplate.isCoop ? '🤝' : `#${entry.rank || idx + 1}`}
                       </td>
                       <td className="py-3.5 px-4">
                         <Link
@@ -638,10 +638,17 @@ export const SessionDetailPage: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         {isWin ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">
-                            <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                            Winner
-                          </span>
+                          scoringTemplate.isCoop ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
+                              <span>🤝</span>
+                              Team Win
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">
+                              <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                              Winner
+                            </span>
+                          )
                         ) : (
                           <span className="text-xs text-[var(--text-secondary)]">Played</span>
                         )}
@@ -685,7 +692,7 @@ export const SessionDetailPage: React.FC = () => {
                     </th>
                     {session.players.map((p) => {
                       const savedPlayer = playersById[p.playerId];
-                      const isLeader = p.isWinner || session.winnerId === p.playerId;
+                      const isLeader = scoringTemplate.isCoop ? false : (p.isWinner || session.winnerId === p.playerId);
                       return (
                         <th
                           key={p.playerId}
@@ -756,10 +763,15 @@ export const SessionDetailPage: React.FC = () => {
                 <tfoot>
                   <tr className="bg-[var(--bg-elevated)] border-t-2 border-[var(--border-glow)] font-bold">
                     <td className="py-3 px-4 font-extrabold text-[var(--text-primary)]">
-                      TOTAL SCORE
+                      <div>TOTAL SCORE</div>
+                      {scoringTemplate.isCoop && (
+                        <div className="text-[10px] font-semibold text-emerald-400 mt-0.5">
+                          Team: {session.players.reduce((a, b) => a + (typeof b.score === 'number' ? b.score : 0), 0)}
+                        </div>
+                      )}
                     </td>
                     {session.players.map((p) => {
-                      const isLeader = p.isWinner || session.winnerId === p.playerId;
+                      const isLeader = scoringTemplate.isCoop ? false : (p.isWinner || session.winnerId === p.playerId);
                       return (
                         <td
                           key={p.playerId}

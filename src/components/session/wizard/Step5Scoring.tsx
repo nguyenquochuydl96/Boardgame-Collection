@@ -47,20 +47,74 @@ export const Step5Scoring: React.FC<Step5ScoringProps> = React.memo(
               Step 5 — Scores &amp; Scoring Sheet
             </h1>
             <p className="text-sm text-[var(--muted)]">
-              Automatically calculate category scores and crown table champions
+              {scoringTemplate.isCoop
+                ? 'Cooperative mode — track team and player contributions'
+                : 'Automatically calculate category scores and crown table champions'}
             </p>
           </div>
 
-          <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[var(--card-2)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] cursor-pointer">
-            <input
-              type="checkbox"
-              checked={lowScoreWins}
-              onChange={(e) => setLowScoreWins(e.target.checked)}
-              className="rounded border-[var(--line)] bg-[var(--card)] text-[var(--accent)]"
-            />
-            Lowest score wins
-          </label>
+          {!scoringTemplate.isCoop && (
+            <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[var(--card-2)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={lowScoreWins}
+                onChange={(e) => setLowScoreWins(e.target.checked)}
+                className="rounded border-[var(--line)] bg-[var(--card)] text-[var(--accent)]"
+              />
+              Lowest score wins
+            </label>
+          )}
         </div>
+
+        {/* Cooperative Game Banner */}
+        {scoringTemplate.isCoop && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-[var(--ink)]">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl select-none">🤝</span>
+              <div>
+                <div className="font-display font-bold text-sm sm:text-base flex items-center gap-2">
+                  <span>Cooperative Game</span>
+                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-extrabold">
+                    Team Win / Loss
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--muted)]">
+                  All players win or lose together as a team rather than competing for individual rank.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const anyWon = activeSessionPlayers.some((p) =>
+                  computedPlayerScores.find((ps) => ps.playerId === p.id)?.isWinner
+                );
+                // Toggle team victory: if any won, mark all defeat; if none won, mark all victory
+                activeSessionPlayers.forEach((p) => {
+                  const ps = computedPlayerScores.find((x) => x.playerId === p.id);
+                  if (anyWon) {
+                    if (ps?.isWinner) onToggleManualWinner(p.id);
+                  } else {
+                    if (!ps?.isWinner) onToggleManualWinner(p.id);
+                  }
+                });
+              }}
+              className={cn(
+                'px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-sm shrink-0',
+                activeSessionPlayers.some((p) => computedPlayerScores.find((ps) => ps.playerId === p.id)?.isWinner)
+                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-emerald-600/20 font-black'
+                  : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]'
+              )}
+            >
+              <span>
+                {activeSessionPlayers.some((p) => computedPlayerScores.find((ps) => ps.playerId === p.id)?.isWinner)
+                  ? '🏆 Team Victory (Won)'
+                  : '💀 Team Defeat'}
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Mode Selector Tabs */}
         <div className="flex flex-wrap items-center gap-2 p-1.5 bg-[var(--card-2)] border border-[var(--line)] rounded-2xl w-fit">
@@ -98,6 +152,7 @@ export const Step5Scoring: React.FC<Step5ScoringProps> = React.memo(
               initialCategories={scoringTemplate.categories}
               initialBreakdowns={breakdownsByPlayerId}
               lowScoreWins={lowScoreWins}
+              isCoop={scoringTemplate.isCoop}
               computeTotal={scoringTemplate.computeTotal}
               onScoresUpdate={onScoresUpdate}
             />
@@ -111,8 +166,25 @@ export const Step5Scoring: React.FC<Step5ScoringProps> = React.memo(
                   key={ps.playerId}
                   playerScore={ps}
                   player={pl}
+                  isCoop={scoringTemplate.isCoop}
                   onScoreChange={onScoreChange}
-                  onToggleWinner={onToggleManualWinner}
+                  onToggleWinner={(playerId) => {
+                    if (scoringTemplate.isCoop) {
+                      const anyWon = activeSessionPlayers.some((p) =>
+                        computedPlayerScores.find((x) => x.playerId === p.id)?.isWinner
+                      );
+                      activeSessionPlayers.forEach((p) => {
+                        const curr = computedPlayerScores.find((x) => x.playerId === p.id);
+                        if (anyWon) {
+                          if (curr?.isWinner) onToggleManualWinner(p.id);
+                        } else {
+                          if (!curr?.isWinner) onToggleManualWinner(p.id);
+                        }
+                      });
+                    } else {
+                      onToggleManualWinner(playerId);
+                    }
+                  }}
                 />
               );
             })}

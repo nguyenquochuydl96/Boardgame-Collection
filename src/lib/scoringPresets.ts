@@ -11,6 +11,7 @@ export interface GameScoringTemplate {
   aliases?: string[];
   displayName: string;
   categories: ScoringCategory[];
+  isCoop?: boolean;
   computeTotal?: (values: Record<string, number>) => number;
 }
 
@@ -89,7 +90,6 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
       { id: 'region_4_3', name: 'Regions 4 & 3', icon: '🏞️', multiplier: 1 },
       { id: 'region_2_1', name: 'Regions 2 & 1', icon: '🏕️', multiplier: 1 },
       { id: 'sanctuaries', name: 'Sanctuary Cards', icon: '🏛️', multiplier: 1 },
-      { id: 'clues_bonus', name: 'Clues & Color Bonus', icon: '📜', multiplier: 1 },
     ],
   },
 
@@ -170,11 +170,41 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
     gameNameKeyword: 'dune',
     displayName: 'Dune: Imperium / Uprising',
     categories: [
-      { id: 'vp_track', name: 'Victory Points Track', icon: '🏆', multiplier: 1 },
-      { id: 'alliances', name: 'Faction Alliances', icon: '🤝', multiplier: 1 },
-      { id: 'endgame_conflict', name: 'Final Conflict', icon: '⚔️', multiplier: 1 },
-      { id: 'intrigue', name: 'Endgame Intrigue Cards', icon: '🗡️', multiplier: 1 },
-      { id: 'uprising_bonus', name: 'Contracts & Sandworms', icon: '🪱', multiplier: 1 },
+      {
+        id: 'vp_track',
+        name: 'Victory Points Track',
+        description: 'Total VP already tracked on the board, including Alliances & Conflicts',
+        icon: '🏆',
+        multiplier: 1,
+      },
+      {
+        id: 'alliances',
+        name: 'Faction Alliances',
+        description: 'Only add if not yet counted on VP Track',
+        icon: '🤝',
+        multiplier: 1,
+      },
+      {
+        id: 'endgame_conflict',
+        name: 'Final Conflict',
+        description: 'Only add if not yet counted on VP Track',
+        icon: '⚔️',
+        multiplier: 1,
+      },
+      {
+        id: 'intrigue',
+        name: 'Endgame Intrigue Cards',
+        description: 'Only add if not yet counted on VP Track',
+        icon: '🗡️',
+        multiplier: 1,
+      },
+      {
+        id: 'uprising_bonus',
+        name: 'Contracts & Sandworms',
+        description: 'Only add if not yet counted on VP Track',
+        icon: '🪱',
+        multiplier: 1,
+      },
     ],
   },
 
@@ -207,10 +237,11 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
     gameNameKeyword: 'white castle',
     displayName: 'The White Castle',
     categories: [
+      { id: 'in_game_vp', name: 'In-Game VP Track', description: 'Points scored during the 3 rounds on the passage of time track', icon: '🧭', multiplier: 1 },
       { id: 'castle_rooms', name: 'Castle Chambers & Keep', icon: '🏯', multiplier: 1 },
       { id: 'gardens', name: 'Gardens & Bridges', icon: '🎋', multiplier: 1 },
       { id: 'daimyo_grounds', name: 'Daimyo Training Grounds', icon: '🥋', multiplier: 1 },
-      { id: 'clan_seals', name: 'Clan Seals Scoring', icon: '📜', multiplier: 1 },
+      { id: 'influence_track', name: 'Influence Track', icon: '📜', multiplier: 1 },
       { id: 'resources', name: 'Leftover Coins & Resources', icon: '🪙', multiplier: 1 },
     ],
   },
@@ -219,6 +250,7 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
   {
     gameNameKeyword: 'stardew',
     displayName: 'Stardew Valley: The Board Game',
+    isCoop: true,
     categories: [
       { id: 'grandpa_goals', name: "Grandpa's Goals Completed", icon: '👴', multiplier: 1 },
       { id: 'community_center', name: 'Community Center Bundles', icon: '📦', multiplier: 1 },
@@ -231,6 +263,7 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
   {
     gameNameKeyword: 'slay the spire',
     displayName: 'Slay the Spire: The Board Game',
+    isCoop: true,
     categories: [
       { id: 'boss_kills', name: 'Bosses Defeated', icon: '👹', multiplier: 1 },
       { id: 'relics_deck', name: 'Relics & Upgraded Cards', icon: '🔮', multiplier: 1 },
@@ -278,29 +311,29 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
     categories: [
       {
         id: 'canal_links',
-        name: 'Canal Era Links (Đường nối Kênh đào)',
-        description: 'Điểm đường nối kênh thời kỳ Kênh đào (1 VP mỗi biểu tượng link)',
+        name: 'Canal Era Links',
+        description: '1 VP per link icon connected during Canal Era',
         icon: '🚣',
         multiplier: 1,
       },
       {
         id: 'canal_industries',
-        name: 'Canal Era Industries (Công trình Kênh đào)',
-        description: 'Điểm các thẻ công trình đã lật thời kỳ Kênh đào',
+        name: 'Canal Era Industries',
+        description: 'VPs on flipped industry tiles during Canal Era',
         icon: '🏭',
         multiplier: 1,
       },
       {
         id: 'rail_links',
-        name: 'Rail Era Links (Đường nối Đường sắt)',
-        description: 'Điểm đường nối đường sắt thời kỳ Đường sắt (1 VP mỗi biểu tượng link)',
+        name: 'Rail Era Links',
+        description: '1 VP per link icon connected during Rail Era',
         icon: '🚂',
         multiplier: 1,
       },
       {
         id: 'rail_industries',
-        name: 'Rail Era Industries (Công trình Đường sắt)',
-        description: 'Điểm các thẻ công trình đã lật thời kỳ Đường sắt',
+        name: 'Rail Era Industries',
+        description: 'VPs on flipped industry tiles during Rail Era',
         icon: '🏗️',
         multiplier: 1,
       },
@@ -327,6 +360,7 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
     categories: [
       { id: 'placed_tiles', name: 'Placed Hex Tiles', icon: '🏰', multiplier: 1 },
       { id: 'regions_cleared', name: 'Completed Regions', icon: '🗺️', multiplier: 1 },
+      { id: 'bonus_tiles', name: 'Bonus Tiles (Color Completion)', icon: '🏅', multiplier: 1 },
       { id: 'goods_sold', name: 'Sold Goods', icon: '📦', multiplier: 1 },
       { id: 'yellow_monasteries', name: 'Yellow Monastery Tiles', icon: '⭐', multiplier: 1 },
       { id: 'silver_workers', name: 'Leftover Silver & Workers', icon: '🪙', multiplier: 1 },
@@ -341,6 +375,7 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
       { id: 'animals', name: 'Completed Animal Cards', icon: '🦊', multiplier: 1 },
       { id: 'trees', name: 'Trees & Foliage', icon: '🌲', multiplier: 1 },
       { id: 'mountains', name: 'Mountain Chains', icon: '⛰️', multiplier: 1 },
+      { id: 'fields', name: 'Fields (Yellow Cubes)', icon: '🌾', multiplier: 1 },
       { id: 'rivers', name: 'Rivers & Water', icon: '🌊', multiplier: 1 },
       { id: 'buildings', name: 'Buildings & Towns', icon: '🏠', multiplier: 1 },
     ],

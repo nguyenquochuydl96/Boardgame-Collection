@@ -6,6 +6,7 @@ import { cn } from '../../ui/cn';
 import { BoardGame, Player, PlayerScore } from '../../../types';
 import { formatDate, formatDuration } from '../../../lib/utils';
 import { useResolvedMedia } from '../../../hooks/useResolvedMedia';
+import { getScoringTemplateForGame } from '../../../lib/scoringPresets';
 
 const SessionPhotoThumb: React.FC<{
   src: string;
@@ -76,6 +77,10 @@ export const Step6Memories: React.FC<Step6MemoriesProps> = React.memo(
     activeSessionPlayers,
     computedPlayerScores,
   }) => {
+    const scoringTemplate = React.useMemo(
+      () => getScoringTemplateForGame(selectedGame?.name),
+      [selectedGame?.name]
+    );
     return (
       <div className="space-y-6">
         <Card className="p-4 sm:p-6 md:p-8 space-y-6">
@@ -173,19 +178,43 @@ export const Step6Memories: React.FC<Step6MemoriesProps> = React.memo(
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--line)]">
+            {scoringTemplate.isCoop && (
+              <div className="flex items-center gap-2 pt-2 border-t border-[var(--line)]">
+                <span className="text-base select-none">🤝</span>
+                <span
+                  className={cn(
+                    'text-xs font-bold px-2.5 py-1 rounded-lg border',
+                    computedPlayerScores.some((ps) => ps.isWinner)
+                      ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-300'
+                      : 'bg-rose-500/15 border-rose-500/30 text-rose-700 dark:text-rose-300'
+                  )}
+                >
+                  {computedPlayerScores.some((ps) => ps.isWinner)
+                    ? '🏆 Cooperative Victory — Team Won'
+                    : '💀 Cooperative Defeat'}
+                </span>
+              </div>
+            )}
+
+            <div className={cn('flex flex-wrap gap-2', !scoringTemplate.isCoop && 'pt-2 border-t border-[var(--line)]')}>
               {computedPlayerScores.map((ps) => (
                 <div
                   key={ps.playerId}
                   className={cn(
                     'inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold border',
                     ps.isWinner
-                      ? 'bg-amber-500/20 border-amber-500/40 text-amber-800 dark:text-amber-300 font-bold'
+                      ? scoringTemplate.isCoop
+                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-800 dark:text-emerald-300 font-bold'
+                        : 'bg-amber-500/20 border-amber-500/40 text-amber-800 dark:text-amber-300 font-bold'
                       : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink)]'
                   )}
                 >
                   {ps.isWinner && (
-                    <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    scoringTemplate.isCoop ? (
+                      <span className="text-xs">🤝</span>
+                    ) : (
+                      <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    )
                   )}
                   <span>{ps.playerName}</span>
                   {typeof ps.score === 'number' && (

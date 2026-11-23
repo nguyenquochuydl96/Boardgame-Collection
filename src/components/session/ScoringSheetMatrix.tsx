@@ -11,6 +11,7 @@ export interface ScoringSheetMatrixProps {
   initialCategories: ScoringCategory[];
   initialBreakdowns?: Record<string, Record<string, number>>;
   lowScoreWins?: boolean;
+  isCoop?: boolean;
   computeTotal?: (values: Record<string, number>) => number;
   onScoresUpdate: (
     totalScores: Record<string, number>,
@@ -23,6 +24,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
   initialCategories,
   initialBreakdowns = {},
   lowScoreWins = false,
+  isCoop = false,
   computeTotal,
   onScoresUpdate,
 }) => {
@@ -219,6 +221,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
 
   // Determine current winner IDs (Set of player IDs sharing the best score)
   const winnerIds = React.useMemo(() => {
+    if (isCoop) return new Set<string>(); // Cooperative mode: No individual competitive crowning
     if (players.length === 0 || !hasAnyScore) return new Set<string>();
     const scores = players.map((p) => playerTotals[p.id] ?? 0);
     const target = lowScoreWins ? Math.min(...scores) : Math.max(...scores);
@@ -229,7 +232,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
       }
     });
     return winners;
-  }, [players, playerTotals, lowScoreWins, hasAnyScore]);
+  }, [players, playerTotals, lowScoreWins, hasAnyScore, isCoop]);
 
   return (
     <div className="space-y-4">
@@ -239,7 +242,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
           <thead>
             <tr className="bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)]">
               <th className="sticky left-0 bg-[var(--bg-elevated)] z-20 py-3 px-2 sm:px-4 font-bold text-[var(--text-secondary)] w-[125px] min-w-[115px] max-w-[130px] sm:w-[170px] sm:min-w-[160px] sm:max-w-[200px] shadow-[1px_0_0_0_var(--border-subtle)] truncate">
-                Scoring Categories
+                {isCoop ? '🤝 Co-op Categories' : 'Scoring Categories'}
               </th>
               {players.map((p) => {
                 const isLeader = winnerIds.has(p.id);
@@ -385,7 +388,12 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
           <tfoot>
             <tr className="bg-[var(--bg-elevated)] border-t-2 border-[var(--border-glow)] font-bold">
               <td className="sticky left-0 bg-[var(--bg-elevated)] z-20 py-3.5 px-2 sm:px-4 text-xs sm:text-sm font-extrabold text-[var(--text-primary)] w-[125px] min-w-[115px] max-w-[130px] sm:w-[170px] sm:min-w-[160px] sm:max-w-[200px] shadow-[1px_0_0_0_var(--border-subtle)] truncate">
-                TOTAL SCORE
+                <div>TOTAL SCORE</div>
+                {isCoop && (
+                  <div className="text-[10px] font-semibold text-emerald-400 mt-0.5">
+                    Team: {Object.values(playerTotals).reduce((a, b) => a + b, 0)}
+                  </div>
+                )}
               </td>
               {players.map((p) => {
                 const total = playerTotals[p.id] ?? 0;

@@ -7,6 +7,7 @@ import { cn } from '../ui/cn';
 export interface PlayerScoreRowProps {
   playerScore: PlayerScore;
   player?: Player;
+  isCoop?: boolean;
   onScoreChange: (playerId: string, score: number | undefined) => void;
   onToggleWinner: (playerId: string) => void;
 }
@@ -14,6 +15,7 @@ export interface PlayerScoreRowProps {
 export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
   playerScore,
   player,
+  isCoop = false,
   onScoreChange,
   onToggleWinner,
 }) => {
@@ -89,7 +91,9 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
       className={cn(
         'flex items-center justify-between gap-3 p-3.5 rounded-2xl border transition-all duration-200',
         playerScore.isWinner
-          ? 'bg-amber-500/15 border-amber-500/45 shadow-md shadow-amber-500/10'
+          ? isCoop
+            ? 'bg-emerald-500/15 border-emerald-500/40 shadow-md shadow-emerald-500/10'
+            : 'bg-amber-500/15 border-amber-500/45 shadow-md shadow-amber-500/10'
           : 'bg-[var(--card)] border-[var(--line)]'
       )}
     >
@@ -154,21 +158,31 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
         <button
           type="button"
           onClick={() => onToggleWinner(playerScore.playerId)}
-          aria-label={`Mark ${playerScore.playerName} as winner`}
+          aria-label={
+            isCoop
+              ? `Toggle team victory for ${playerScore.playerName}`
+              : `Mark ${playerScore.playerName} as winner`
+          }
           className={cn(
             'min-h-[38px] sm:min-h-[42px] min-w-[38px] sm:min-w-[42px] px-2 sm:px-3 rounded-xl border inline-flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer select-none',
             playerScore.isWinner
-              ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/25 font-black'
+              ? isCoop
+                ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-600/25 font-black'
+                : 'bg-amber-500 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/25 font-black'
               : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
           )}
         >
-          <Crown
-            className={cn(
-              'w-4 h-4',
-              playerScore.isWinner ? 'fill-slate-950 text-slate-950' : ''
-            )}
-          />
-          <span className="hidden sm:inline">Winner</span>
+          {isCoop ? (
+            <span className="text-sm">🤝</span>
+          ) : (
+            <Crown
+              className={cn(
+                'w-4 h-4',
+                playerScore.isWinner ? 'fill-slate-950 text-slate-950' : ''
+              )}
+            />
+          )}
+          <span className="hidden sm:inline">{isCoop ? (playerScore.isWinner ? 'Team Won' : 'Team Defeat') : 'Winner'}</span>
         </button>
       </div>
     </div>

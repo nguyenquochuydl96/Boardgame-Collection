@@ -505,6 +505,29 @@ export const NewSessionPage: React.FC = () => {
       hasTouchedMatrix ||
       activeSessionPlayers.some((p) => typeof scoresByPlayerId[p.id] === 'number');
 
+    if (scoringTemplate.isCoop) {
+      // In cooperative games, all players share victory or defeat together; no individual competitive ranks
+      const isExplicitDefeat = manualWinnerIds.includes('__team_defeat__');
+      const isTeamWon = !isExplicitDefeat && (
+        manualWinnerIds.length > 0
+          ? activeSessionPlayers.some((p) => manualWinnerIds.includes(p.id))
+          : hasAnyNumericScore // Default to team win when scores are recorded unless marked defeat
+      );
+
+      return activeSessionPlayers.map((p) => {
+        const bd = breakdownsByPlayerId[p.id];
+        const hasBd = bd && Object.values(bd).some((v) => v !== 0);
+        return {
+          playerId: p.id,
+          playerName: p.name,
+          score: scoresByPlayerId[p.id],
+          rank: undefined,
+          isWinner: isTeamWon,
+          scoreBreakdown: hasBd ? bd : undefined,
+        };
+      });
+    }
+
     if (hasAnyNumericScore && manualWinnerIds.length === 0) {
       const validScores = activeSessionPlayers
         .map((p) => scoresByPlayerId[p.id])
@@ -575,6 +598,7 @@ export const NewSessionPage: React.FC = () => {
     manualWinnerIds,
     breakdownsByPlayerId,
     hasTouchedMatrix,
+    scoringTemplate.isCoop,
   ]);
 
   const handleTogglePlayer = (playerId: string) => {
@@ -627,6 +651,18 @@ export const NewSessionPage: React.FC = () => {
   };
 
   const handleToggleManualWinner = (playerId: string) => {
+    if (scoringTemplate.isCoop) {
+      const anyWon = activeSessionPlayers.some((p) =>
+        computedPlayerScores.find((x) => x.playerId === p.id)?.isWinner
+      );
+      if (anyWon) {
+        setManualWinnerIds(['__team_defeat__']);
+      } else {
+        setManualWinnerIds(activeSessionPlayers.map((p) => p.id));
+      }
+      return;
+    }
+
     setManualWinnerIds((prev) =>
       prev.includes(playerId)
         ? prev.filter((id) => id !== playerId)
@@ -666,8 +702,9 @@ export const NewSessionPage: React.FC = () => {
       registerGuestPlayer(g);
     });
 
-    const winnerEntry =
-      computedPlayerScores.find((p) => p.isWinner) || computedPlayerScores[0];
+    const winnerEntry = scoringTemplate.isCoop
+      ? (computedPlayerScores.some((p) => p.isWinner) ? computedPlayerScores[0] : undefined)
+      : (computedPlayerScores.find((p) => p.isWinner) || computedPlayerScores[0]);
 
     const cleanDate = (datePlayed || '').split('T')[0] || getLocalDateString();
     const computedIsoDate = buildLocalDateTimeISO(cleanDate, new Date());

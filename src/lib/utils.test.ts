@@ -525,8 +525,67 @@ test('getScoringTemplateForGame resolves official Brass Birmingham/Lancashire wi
   const catIds = templateBirm.categories.map((c) => c.id);
   assert.deepEqual(catIds, ['canal_links', 'canal_industries', 'rail_links', 'rail_industries']);
 
+  // Verify 100% English titles and descriptions
+  assert.equal(templateBirm.categories[0].name, 'Canal Era Links');
+  assert.equal(templateBirm.categories[0].description, '1 VP per link icon connected during Canal Era');
+  assert.equal(templateBirm.categories[1].name, 'Canal Era Industries');
+  assert.equal(templateBirm.categories[1].description, 'VPs on flipped industry tiles during Canal Era');
+  assert.equal(templateBirm.categories[2].name, 'Rail Era Links');
+  assert.equal(templateBirm.categories[2].description, '1 VP per link icon connected during Rail Era');
+  assert.equal(templateBirm.categories[3].name, 'Rail Era Industries');
+  assert.equal(templateBirm.categories[3].description, 'VPs on flipped industry tiles during Rail Era');
+
   // Endgame cash is strictly a tiebreaker and MUST NOT be scored as VP
   assert.ok(!templateBirm.categories.some((c) => c.id === 'cash_bonus'));
+});
+
+test('getScoringTemplateForGame sets isCoop flag for Stardew Valley and Slay the Spire', async () => {
+  const { getScoringTemplateForGame } = await import('./scoringPresets');
+  const stardew = getScoringTemplateForGame('Stardew Valley: The Board Game');
+  const slayTheSpire = getScoringTemplateForGame('Slay the Spire: The Board Game');
+  const brass = getScoringTemplateForGame('Brass: Birmingham');
+
+  assert.equal(stardew.isCoop, true);
+  assert.equal(slayTheSpire.isCoop, true);
+  assert.equal(brass.isCoop, undefined);
+});
+
+test('getScoringTemplateForGame verifies Harmonies, Burgundy, Faraway, White Castle, Dune updates', async () => {
+  const { getScoringTemplateForGame } = await import('./scoringPresets');
+
+  // 1. Harmonies has fields
+  const harmonies = getScoringTemplateForGame('Harmonies');
+  const harmoniesCatIds = harmonies.categories.map((c) => c.id);
+  assert.ok(harmoniesCatIds.includes('fields'));
+  assert.equal(harmonies.categories.find((c) => c.id === 'fields')?.name, 'Fields (Yellow Cubes)');
+
+  // 2. Castles of Burgundy has bonus_tiles
+  const burgundy = getScoringTemplateForGame('The Castles of Burgundy');
+  const burgundyCatIds = burgundy.categories.map((c) => c.id);
+  assert.ok(burgundyCatIds.includes('bonus_tiles'));
+  assert.equal(burgundy.categories.find((c) => c.id === 'bonus_tiles')?.name, 'Bonus Tiles (Color Completion)');
+
+  // 3. Faraway has 5 categories (clues_bonus removed)
+  const faraway = getScoringTemplateForGame('Faraway');
+  assert.equal(faraway.categories.length, 5);
+  assert.deepEqual(
+    faraway.categories.map((c) => c.id),
+    ['region_8_7', 'region_6_5', 'region_4_3', 'region_2_1', 'sanctuaries']
+  );
+
+  // 4. The White Castle has in_game_vp and influence_track, clan_seals removed
+  const whiteCastle = getScoringTemplateForGame('The White Castle');
+  const wcCatIds = whiteCastle.categories.map((c) => c.id);
+  assert.ok(wcCatIds.includes('in_game_vp'));
+  assert.ok(wcCatIds.includes('influence_track'));
+  assert.ok(!wcCatIds.includes('clan_seals'));
+
+  // 5. Dune has non-duplication guidance in descriptions
+  const dune = getScoringTemplateForGame('Dune: Imperium');
+  const vpTrack = dune.categories.find((c) => c.id === 'vp_track');
+  const alliances = dune.categories.find((c) => c.id === 'alliances');
+  assert.ok(vpTrack?.description?.includes('Total VP already tracked'));
+  assert.ok(alliances?.description?.includes('Only add if not yet counted'));
 });
 
 test('getScoringTemplateForGame resolves official Great Western Trail: Second Edition template with 11 categories', async () => {
