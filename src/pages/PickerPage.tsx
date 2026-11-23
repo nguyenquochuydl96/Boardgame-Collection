@@ -366,7 +366,7 @@ export const PickerPage: React.FC = () => {
                 <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
                   <div>
                     <h3 className="font-bold text-sm text-[var(--text-primary)]">
-                      Board Games Vault ({gameItems.length}/{filteredAvailableGames.length})
+                      Board Game Collection ({gameItems.length}/{filteredAvailableGames.length})
                     </h3>
                     <p className="text-[11px] text-[var(--text-secondary)]">
                       Filter games by player count &amp; duration
@@ -403,7 +403,7 @@ export const PickerPage: React.FC = () => {
 
                   {/* Status Filter */}
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] text-[var(--muted)] font-bold shrink-0">Vault:</span>
+                    <span className="text-[10px] text-[var(--muted)] font-bold shrink-0">Collection:</span>
                     {[
                       { id: 'own', label: 'Owned' },
                       { id: 'rented', label: 'Rented' },

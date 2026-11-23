@@ -5,7 +5,7 @@ import { cn } from '../ui/cn';
 
 export const NAV_ITEMS = [
   { to: '/', label: 'Home', icon: Home },
-  { to: '/collection', label: 'Vault', icon: Dices },
+  { to: '/collection', label: 'Collection', icon: Dices },
   { to: '/sessions', label: 'Plays', icon: Gamepad2 },
   { to: '/players', label: 'Players', icon: Users },
   { to: '/stats', label: 'Stats', icon: BarChart3 },

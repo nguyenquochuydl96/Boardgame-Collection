@@ -87,8 +87,12 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
 
             {/* Brand Header */}
             <div className="flex flex-col items-center text-center mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-xl shadow-[var(--accent)]/20 mb-3 border border-[var(--line-2)]">
-                <Dices className="w-7 h-7" />
+              <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-xl mb-3 border border-[var(--line-2)] bg-[#41241C]">
+                <img
+                  src="./logo-mark.png"
+                  alt="HEO Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <h3 className="text-lg font-display font-extrabold text-[var(--ink)] tracking-tight">
                 Install Heo&apos;s Board Game Collection

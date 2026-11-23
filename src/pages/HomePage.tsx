@@ -181,7 +181,7 @@ export const HomePage: React.FC = () => {
             </h1>
           </div>
           <div className="text-xs sm:text-sm text-[var(--muted)] font-medium">
-            <span className="font-bold text-[var(--ink)]">{ownedGamesCount}</span> games in vault ·{' '}
+            <span className="font-bold text-[var(--ink)]">{ownedGamesCount}</span> games in collection ·{' '}
             <span className="font-bold text-[var(--ink)]">{totalSessionsCount}</span> plays logged
           </div>
         </section>
@@ -206,7 +206,7 @@ export const HomePage: React.FC = () => {
             <div className="relative z-10 space-y-3 max-w-xl">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/10 dark:bg-white/10 text-xs font-extrabold uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5 text-[#E5734F]" />
-                Tabletop Vault
+                Tabletop Collection
               </div>
               <h2 className="font-display font-black text-2xl sm:text-3xl lg:text-4xl leading-tight tracking-tight">
                 Ready for game night?
@@ -252,7 +252,7 @@ export const HomePage: React.FC = () => {
               label="Games Owned"
               value={ownedGamesCount}
               icon={<Dices className="w-5 h-5" />}
-              subtitle={`${games.length} total in vault`}
+              subtitle={`${games.length} total in collection`}
               href="/collection?status=own"
               tileIndex={1}
             />

@@ -249,14 +249,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     if (location.pathname === '/') return 'Overview & Highlights';
     if (location.pathname.startsWith('/collection/add')) return 'Add New Game';
     if (location.pathname.startsWith('/collection/')) return 'Game Details';
-    if (location.pathname.startsWith('/collection')) return 'Boardgame Vault';
+    if (location.pathname.startsWith('/collection')) return 'Board Game Collection';
     if (location.pathname.startsWith('/sessions/new')) return 'New Session Wizard';
     if (location.pathname.startsWith('/sessions/')) return 'Session Details';
     if (location.pathname.startsWith('/sessions')) return 'Tabletop Plays';
     if (location.pathname.startsWith('/players/')) return 'Player Profile';
     if (location.pathname.startsWith('/players')) return 'Players & Rivals';
-    if (location.pathname.startsWith('/stats')) return 'Vault Analytics';
-    return 'Vault';
+    if (location.pathname.startsWith('/stats')) return 'Collection Analytics';
+    return 'Collection';
   };
 
   return (
@@ -279,24 +279,26 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           <Link
             to="/"
             className="flex items-center gap-3 group focus:outline-none min-w-0"
-            title="Heo's Board Game Vault"
+            title="Heo's Board Game Collection"
           >
-            {/* Terracotta / Soft Logo badge */}
-            <div className="relative w-10 h-10 rounded-2xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-md shadow-[var(--accent)]/20 group-hover:scale-105 transition-transform duration-200 shrink-0">
-              <Dices className="w-5 h-5 text-current drop-shadow-sm" />
-              <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-amber-400 border-2 border-[var(--sidebar)] flex items-center justify-center">
-                <Sparkles className="w-2 h-2 text-slate-950" />
-              </div>
+            {/* Logo Mark Badge */}
+            <div className="relative w-8 h-8 rounded-xl overflow-hidden shadow-xs border border-[var(--sidebar-line)] bg-[#41241C] group-hover:scale-105 transition-transform duration-200 shrink-0">
+              <img
+                src="./logo-mark.png"
+                alt="HEO Logo"
+                className="w-full h-full object-cover"
+                loading="eager"
+              />
             </div>
 
             {!isSidebarCollapsed && (
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span className="font-display font-black text-sm tracking-tight text-[var(--sidebar-ink)] uppercase">
-                    Heo's
+                    HEO
                   </span>
                   <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/15 text-[var(--sidebar-ink)]">
-                    Vault
+                    Collection
                   </span>
                 </div>
                 <span className="font-display font-semibold text-xs tracking-tight opacity-75 truncate leading-tight">
@@ -463,12 +465,17 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
           to="/"
           className="font-display font-bold text-sm tracking-tight text-[var(--ink)] whitespace-nowrap shrink-0 flex items-center gap-2"
         >
-          <span className="w-7 h-7 rounded-xl bg-[var(--accent)] text-[var(--accent-ink)] inline-flex items-center justify-center shrink-0 shadow-xs">
-            <Dices className="w-4 h-4 text-current" />
+          <span className="w-8 h-8 rounded-xl overflow-hidden shrink-0 shadow-xs border border-[var(--line)] bg-[#41241C]">
+            <img
+              src="./logo-mark.png"
+              alt="HEO Logo"
+              className="w-full h-full object-cover"
+              loading="eager"
+            />
           </span>
           <div className="flex flex-col">
-            <span className="font-extrabold text-xs leading-none text-[var(--ink)]">Heo's Vault</span>
-            <span className="text-[9px] font-bold text-[var(--muted)] uppercase tracking-tight">Board Games</span>
+            <span className="font-extrabold text-xs leading-none text-[var(--ink)]">HEO</span>
+            <span className="text-[9px] font-bold text-[var(--muted)] uppercase tracking-tight">Board Game Collection</span>
           </div>
         </Link>
 
@@ -568,7 +575,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <div className="hidden lg:flex items-center justify-between px-8 h-16 border-b border-[var(--line)] bg-[var(--bg)]/90 backdrop-blur-sm sticky top-0 z-20">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-              Vault
+              Collection
             </span>
             <span className="text-xs text-[var(--line)]">/</span>
             <h2 className="font-display font-bold text-sm text-[var(--ink)]">

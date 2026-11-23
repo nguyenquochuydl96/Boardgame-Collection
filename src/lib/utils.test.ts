@@ -702,6 +702,8 @@ test('WhatToPlay: filterWhatToPlayGames strictly enforces ownedOnly and precise 
       minPlayers: 1,
       maxPlayers: 4,
       playingTime: 45,
+      yearPublished: 2024,
+      addedDate: '2024-01-01',
       status: 'own',
     },
     {
@@ -713,6 +715,8 @@ test('WhatToPlay: filterWhatToPlayGames strictly enforces ownedOnly and precise 
       minPlayers: 1,
       maxPlayers: 5,
       playingTime: 120,
+      yearPublished: 2024,
+      addedDate: '2024-01-01',
       status: 'rented',
     },
     {
@@ -724,6 +728,8 @@ test('WhatToPlay: filterWhatToPlayGames strictly enforces ownedOnly and precise 
       minPlayers: 1,
       maxPlayers: 4,
       playingTime: 90,
+      yearPublished: 2024,
+      addedDate: '2024-01-01',
       status: 'borrowed',
     },
     {
@@ -735,6 +741,8 @@ test('WhatToPlay: filterWhatToPlayGames strictly enforces ownedOnly and precise 
       minPlayers: 2,
       maxPlayers: 2,
       playingTime: 30,
+      yearPublished: 2024,
+      addedDate: '2024-01-01',
       status: 'own',
     },
     {
@@ -746,6 +754,8 @@ test('WhatToPlay: filterWhatToPlayGames strictly enforces ownedOnly and precise 
       minPlayers: 4,
       maxPlayers: 8,
       playingTime: 15,
+      yearPublished: 2024,
+      addedDate: '2024-01-01',
       status: 'own',
     },
     {
@@ -757,6 +767,8 @@ test('WhatToPlay: filterWhatToPlayGames strictly enforces ownedOnly and precise 
       minPlayers: 0,
       maxPlayers: 0,
       playingTime: 30,
+      yearPublished: 2024,
+      addedDate: '2024-01-01',
       status: 'own',
     },
     {
@@ -768,6 +780,8 @@ test('WhatToPlay: filterWhatToPlayGames strictly enforces ownedOnly and precise 
       minPlayers: 2,
       maxPlayers: 4,
       playingTime: 60,
+      yearPublished: 2024,
+      addedDate: '2024-01-01',
       status: 'sold',
     },
   ];

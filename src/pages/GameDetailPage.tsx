@@ -279,7 +279,7 @@ export const GameDetailPage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
-                    <span className="text-xs text-[var(--muted)]">Added to Vault</span>
+                    <span className="text-xs text-[var(--muted)]">Added to Collection</span>
                     <p className="font-semibold text-sm text-[var(--ink)] mt-1">
                       {formatDate(game.addedDate)}
                     </p>
@@ -295,7 +295,7 @@ export const GameDetailPage: React.FC = () => {
                   <div>
                     <p className="text-xs text-amber-700 dark:text-amber-300 font-bold">Rented / Cafe Play</p>
                     <p className="text-xs text-[var(--muted)] mt-0.5">
-                      Tabletop game played at cafes or rented — excluded from total personal vault valuation.
+                      Tabletop game played at cafes or rented — excluded from total personal collection valuation.
                     </p>
                   </div>
                 </div>

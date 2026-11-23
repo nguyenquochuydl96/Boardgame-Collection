@@ -145,10 +145,10 @@ export const CollectionPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--ink)]">
-              Boardgame Vault
+              Board Game Collection
             </h1>
             <p className="text-sm text-[var(--muted)] tabular-nums font-medium">
-              Showing {visibleGames.length < filteredGames.length ? `${visibleGames.length} of ` : ''}{filteredGames.length} tabletop games in your vault
+              Showing {visibleGames.length < filteredGames.length ? `${visibleGames.length} of ` : ''}{filteredGames.length} tabletop games in your collection
             </p>
           </div>
 
@@ -324,7 +324,7 @@ export const CollectionPage: React.FC = () => {
               <p className="text-sm text-[var(--muted)]">
                 {searchQuery || activeFilter !== 'all'
                   ? 'No games match your current filter or search criteria.'
-                  : 'Your collection is currently empty. Start adding games to your vault!'}
+                  : 'Your collection is currently empty. Start adding games to your collection!'}
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">

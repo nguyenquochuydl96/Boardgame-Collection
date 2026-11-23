@@ -138,7 +138,7 @@ export const AddGamePage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--ink)]">
-              Add Game to Vault
+              Add Game to Collection
             </h1>
             <p className="text-sm text-[var(--muted)]">
               Import box details from BoardGameGeek or enter a custom title manually
@@ -508,7 +508,7 @@ export const AddGamePage: React.FC = () => {
                 size="lg"
                 isLoading={isSaving}
               >
-                Save to Vault
+                Save to Collection
               </Button>
             </div>
           </form>
