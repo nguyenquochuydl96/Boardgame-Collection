@@ -425,6 +425,20 @@ export interface PreviousMatchPlayerResult {
  * Identifies the last-place player (lowest rank / lowest score, or highest score if lowestScoreWins).
  * If multiple players tied for last place, picks randomly among them.
  */
+/**
+ * Detects whether a play session is cooperative.
+ * Evaluates:
+ * 1. Explicit session.isCoop flag === true
+ * 2. Board game metadata/scoring template is marked isCoop (e.g. Pandemic, Spirit Island, Stardew Valley, The Mind)
+ * 3. All players in a multi-player session (> 1 players) won together as a team
+ */
+export function isCoopSession(session: PlaySession): boolean {
+  if (session.isCoop === true) return true;
+  if (getScoringTemplateForGame(session.gameName)?.isCoop === true) return true;
+  if (session.players && session.players.length > 1 && session.players.every((p) => p.isWinner)) return true;
+  return false;
+}
+
 export function findPreviousLoser(
   activePlayers: Player[],
   sessions: PlaySession[],
@@ -433,12 +447,6 @@ export function findPreviousLoser(
   if (!activePlayers || activePlayers.length === 0 || !sessions || sessions.length === 0) return null;
 
   const activeIds = new Set(activePlayers.map((p) => p.id));
-
-  const isCoopSession = (s: PlaySession): boolean => {
-    if (s.isCoop === true) return true;
-    if (s.isCoop === false) return false;
-    return getScoringTemplateForGame(s.gameName)?.isCoop === true;
-  };
 
   // Skip co-op sessions where players win or lose together as a team
   const competitiveSessions = [...sessions]

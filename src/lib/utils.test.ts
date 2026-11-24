@@ -20,6 +20,8 @@ import {
   findPreviousWinner,
   STATUS_CONFIG,
   resolveCoopWinnerIds,
+  isCoopSession,
+  calculatePlayerStreaks,
 } from './utils';
 import { healIncomingGames, isRealtimeSelfReflection } from './supabaseSync';
 import { BoardGame, PlaySession, Player, SessionDraft } from '../types';
@@ -1102,7 +1104,7 @@ test('isDraftMatchingCompletedSession detects when a draft matches a session alr
   assert.equal(isDraftMatchingCompletedSession({ gameId: null } as any, completedSessions), false);
 });
 
-test('calculateMinRequiredPlays computes dynamic 5% qualification threshold with ceiling', () => {
+test('calculateMinRequiredPlays computes dynamic 5% qualification threshold with ceiling (uncapped)', () => {
   assert.equal(calculateMinRequiredPlays(0), 0);
   assert.equal(calculateMinRequiredPlays(-5), 0);
   assert.equal(calculateMinRequiredPlays(1), 1);
@@ -1113,6 +1115,130 @@ test('calculateMinRequiredPlays computes dynamic 5% qualification threshold with
   assert.equal(calculateMinRequiredPlays(100), 5); // 100 * 0.05 = 5
   assert.equal(calculateMinRequiredPlays(500), 25); // 500 * 0.05 = 25
   assert.equal(calculateMinRequiredPlays(1400), 70); // 1400 * 0.05 = 70
+  assert.equal(calculateMinRequiredPlays(1454), 73); // 1454 * 0.05 = 72.7 -> 73 (uncapped 5% rule)
+});
+
+test('isCoopSession accurately detects cooperative sessions and competitive filtering excludes them from streaks', () => {
+  const baseSession: PlaySession = {
+    id: 's-base',
+    gameId: 'g-dummy',
+    gameName: '',
+    gameThumbnail: '',
+    datePlayed: '2026-01-01',
+    firstPlayerMethod: 'random_wheel',
+    createdAt: '2026-01-01T00:00:00Z',
+    players: [],
+  };
+
+  // 1. Explicit isCoop === true
+  const sessionExplicitCoop: PlaySession = {
+    ...baseSession,
+    id: 's-coop-1',
+    gameName: 'Custom Co-op Game',
+    isCoop: true,
+    players: [
+      { playerId: 'p1', playerName: 'Alice', isWinner: true },
+      { playerId: 'p2', playerName: 'Bob', isWinner: true },
+    ],
+  };
+  assert.equal(isCoopSession(sessionExplicitCoop), true);
+
+  // 2. Known scoring template marked as isCoop (e.g. Stardew Valley, Slay the Spire)
+  const sessionStardewLoss: PlaySession = {
+    ...baseSession,
+    id: 's-coop-2',
+    gameName: 'Stardew Valley: The Board Game',
+    players: [
+      { playerId: 'p1', playerName: 'Alice', isWinner: false },
+      { playerId: 'p2', playerName: 'Bob', isWinner: false },
+    ],
+  };
+  assert.equal(isCoopSession(sessionStardewLoss), true);
+
+  const sessionSlayTheSpire: PlaySession = {
+    ...baseSession,
+    id: 's-coop-3',
+    gameName: 'Slay the Spire: The Board Game',
+    players: [
+      { playerId: 'p1', playerName: 'Alice', isWinner: false },
+      { playerId: 'p2', playerName: 'Bob', isWinner: false },
+    ],
+  };
+  assert.equal(isCoopSession(sessionSlayTheSpire), true);
+
+  // 3. Multi-player team win (all players are marked isWinner: true)
+  const sessionTeamWin: PlaySession = {
+    ...baseSession,
+    id: 's-coop-4',
+    gameName: 'Unknown Mystery Escape Game',
+    players: [
+      { playerId: 'p1', playerName: 'Alice', isWinner: true },
+      { playerId: 'p2', playerName: 'Bob', isWinner: true },
+      { playerId: 'p3', playerName: 'Charlie', isWinner: true },
+    ],
+  };
+  assert.equal(isCoopSession(sessionTeamWin), true);
+
+  // 4. Competitive match (only 1 winner among multiple players)
+  const sessionCompetitive: PlaySession = {
+    ...baseSession,
+    id: 's-comp-1',
+    gameName: 'Catan',
+    winnerId: 'p1',
+    players: [
+      { playerId: 'p1', playerName: 'Alice', isWinner: true, rank: 1 },
+      { playerId: 'p2', playerName: 'Bob', isWinner: false, rank: 2 },
+    ],
+  };
+  assert.equal(isCoopSession(sessionCompetitive), false);
+
+  // 5. Competitive filtering excludes co-op from player streaks
+  const sampleSessions: PlaySession[] = [
+    {
+      ...baseSession,
+      id: 'sess-1',
+      datePlayed: '2026-01-01',
+      gameName: 'Catan',
+      winnerId: 'p1',
+      players: [
+        { playerId: 'p1', playerName: 'Alice', isWinner: true },
+        { playerId: 'p2', playerName: 'Bob', isWinner: false },
+      ],
+    },
+    {
+      ...baseSession,
+      id: 'sess-2',
+      datePlayed: '2026-01-02',
+      gameName: 'Pandemic', // Co-op win
+      players: [
+        { playerId: 'p1', playerName: 'Alice', isWinner: true },
+        { playerId: 'p2', playerName: 'Bob', isWinner: true },
+      ],
+    },
+    {
+      ...baseSession,
+      id: 'sess-3',
+      datePlayed: '2026-01-03',
+      gameName: 'Catan',
+      winnerId: 'p2',
+      players: [
+        { playerId: 'p1', playerName: 'Alice', isWinner: false },
+        { playerId: 'p2', playerName: 'Bob', isWinner: true },
+      ],
+    },
+  ];
+
+  const competitiveSessions = sampleSessions.filter((s) => !isCoopSession(s));
+  assert.equal(competitiveSessions.length, 2);
+  assert.equal(competitiveSessions.some((s) => s.gameName === 'Pandemic'), false);
+
+  // When All (incl. Co-op) is selected: Alice won sess-1 and sess-2 consecutively -> Win Streak = 2
+  const allStreaks = calculatePlayerStreaks('p1', sampleSessions);
+  assert.equal(allStreaks.longestWinStreak.count, 2);
+
+  // When Competitive Only is selected: Alice won sess-1, then lost sess-3 -> Win Streak = 1
+  const compStreaks = calculatePlayerStreaks('p1', competitiveSessions);
+  assert.equal(compStreaks.longestWinStreak.count, 1);
 });
 
 test('PHASE 3: Ark Nova official scoring formula calculates correctly (c <= 10, c > 10, negative scores, penalties)', async () => {

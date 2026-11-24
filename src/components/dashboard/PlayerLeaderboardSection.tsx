@@ -10,8 +10,15 @@ import {
   HeartCrack,
 } from 'lucide-react';
 import { Player, PlaySession } from '../../types';
-import { calculateMinRequiredPlays, formatNumber, formatCount, pluralize } from '../../lib/utils';
-import { getScoringTemplateForGame } from '../../lib/scoringPresets';
+import {
+  calculateMinRequiredPlays,
+  formatNumber,
+  formatCount,
+  isCoopSession,
+  calculatePlayerStreaks,
+  StreakData,
+} from '../../lib/utils';
+import { StreakDetailModal } from '../player/StreakDetailModal';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { Card } from '../ui/Card';
 import { cn } from '../ui/cn';
@@ -82,7 +89,7 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     metricHeader: 'Win Rate',
     contextHeader: 'Match Record',
     getPrimaryMetric: (st) => `${st.winRate}%`,
-    getSecondaryMetric: (st) => `${pluralize(st.wins, 'win')} / ${pluralize(st.plays, 'play')}`,
+    getSecondaryMetric: (st) => `${formatCount(st.wins, 'win')} / ${formatCount(st.plays, 'play')}`,
     sortFn: (a, b) => b.winRate - a.winRate || b.wins - a.wins,
   },
   {
@@ -98,8 +105,8 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     description: 'Total absolute match victories accumulated across all tabletop sessions.',
     metricHeader: 'Total Wins',
     contextHeader: 'Win Rate & Plays',
-    getPrimaryMetric: (st) => pluralize(st.wins, 'win'),
-    getSecondaryMetric: (st) => `Win rate: ${st.winRate}% (across ${pluralize(st.plays, 'play')})`,
+    getPrimaryMetric: (st) => formatCount(st.wins, 'win'),
+    getSecondaryMetric: (st) => `Win rate: ${st.winRate}% (across ${formatCount(st.plays, 'play')})`,
     sortFn: (a, b) => b.wins - a.wins || b.winRate - a.winRate,
     filterFn: (st) => st.wins > 0,
   },
@@ -116,8 +123,8 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     description: 'Longest consecutive match winning streak ever achieved by a player.',
     metricHeader: 'Record Streak',
     contextHeader: 'Current Streak Status',
-    getPrimaryMetric: (st) => pluralize(st.maxWinStreak, 'game'),
-    getSecondaryMetric: (st) => `Current streak: ${pluralize(st.currentWinStreak, 'consecutive win')}`,
+    getPrimaryMetric: (st) => formatCount(st.maxWinStreak, 'game'),
+    getSecondaryMetric: (st) => `Current streak: ${formatCount(st.currentWinStreak, 'consecutive win')}`,
     sortFn: (a, b) => b.maxWinStreak - a.maxWinStreak || b.wins - a.wins,
     filterFn: (st) => st.maxWinStreak > 0,
   },
@@ -134,8 +141,8 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     description: 'Number of unique tabletop games played across the collection.',
     metricHeader: 'Games Played',
     contextHeader: 'Total Plays Logged',
-    getPrimaryMetric: (st) => pluralize(st.uniqueGamesCount, 'game'),
-    getSecondaryMetric: (st) => `${pluralize(st.plays, 'total play')} logged`,
+    getPrimaryMetric: (st) => formatCount(st.uniqueGamesCount, 'game'),
+    getSecondaryMetric: (st) => `${formatCount(st.plays, 'total play')} logged`,
     sortFn: (a, b) => b.uniqueGamesCount - a.uniqueGamesCount || b.plays - a.plays,
     filterFn: (st) => st.uniqueGamesCount > 0,
   },
@@ -155,7 +162,7 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     metricHeader: 'Runner-Up Rate',
     contextHeader: '2nd Places / Total Plays',
     getPrimaryMetric: (st) => `${st.secondRate}%`,
-    getSecondaryMetric: (st) => `${pluralize(st.secondPlaces, 'time')} / ${pluralize(st.plays, 'play')}`,
+    getSecondaryMetric: (st) => `${formatCount(st.secondPlaces, 'time')} / ${formatCount(st.plays, 'play')}`,
     sortFn: (a, b) => b.secondRate - a.secondRate || b.secondPlaces - a.secondPlaces || b.plays - a.plays,
     filterFn: (st) => st.secondPlaces > 0,
   },
@@ -173,7 +180,7 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     metricHeader: 'Last Place Rate',
     contextHeader: 'Last Places / Total Plays',
     getPrimaryMetric: (st) => `${st.lastRate}%`,
-    getSecondaryMetric: (st) => `${pluralize(st.lastPlaces, 'time')} / ${pluralize(st.plays, 'play')}`,
+    getSecondaryMetric: (st) => `${formatCount(st.lastPlaces, 'time')} / ${formatCount(st.plays, 'play')}`,
     sortFn: (a, b) => b.lastRate - a.lastRate || b.lastPlaces - a.lastPlaces || b.plays - a.plays,
     filterFn: (st) => st.lastPlaces > 0,
   },
@@ -190,8 +197,8 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     description: 'Longest consecutive match drought without a single victory.',
     metricHeader: 'Longest Drought',
     contextHeader: 'Current Drought Status',
-    getPrimaryMetric: (st) => pluralize(st.maxColdStreak, 'game'),
-    getSecondaryMetric: (st) => `Current drought: ${pluralize(st.currentColdStreak, 'game')} without a win`,
+    getPrimaryMetric: (st) => formatCount(st.maxColdStreak, 'game'),
+    getSecondaryMetric: (st) => `Current drought: ${formatCount(st.currentColdStreak, 'game')} without a win`,
     sortFn: (a, b) => b.maxColdStreak - a.maxColdStreak || b.plays - a.plays,
     filterFn: (st) => st.maxColdStreak > 0,
   },
@@ -208,8 +215,8 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     description: 'Finished 2nd place by an agonizing margin of just 1 or 2 points behind the winner!',
     metricHeader: 'Narrow Losses (≤ 2 pts)',
     contextHeader: 'Of All 2nd Places',
-    getPrimaryMetric: (st) => pluralize(st.closeLosses, 'game'),
-    getSecondaryMetric: (st) => `${(st.secondPlaces > 0 ? Math.round((st.closeLosses / st.secondPlaces) * 100) : 0)}% of 2nd places (${pluralize(st.secondPlaces, 'time')})`,
+    getPrimaryMetric: (st) => formatCount(st.closeLosses, 'game'),
+    getSecondaryMetric: (st) => `${(st.secondPlaces > 0 ? Math.round((st.closeLosses / st.secondPlaces) * 100) : 0)}% of 2nd places (${formatCount(st.secondPlaces, 'time')})`,
     sortFn: (a, b) => b.closeLosses - a.closeLosses || b.secondPlaces - a.secondPlaces,
     filterFn: (st) => st.closeLosses > 0,
   },
@@ -227,29 +234,29 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
     const [showAllPlayers, setShowAllPlayers] = useState(false);
     const [sessionScope, setSessionScope] = useState<'competitive' | 'all'>('all');
 
-    const scopedSessions = useMemo(() => {
+    // Modal state for streak inspection
+    const [selectedStreakPlayer, setSelectedStreakPlayer] = useState<Player | null>(null);
+    const [selectedStreakType, setSelectedStreakType] = useState<'win' | 'loss'>('win');
+    const [selectedStreakData, setSelectedStreakData] = useState<StreakData | null>(null);
+    const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
+
+    // Filter sessions at the first level based on sessionScope
+    const activeSessions = useMemo(() => {
       if (sessionScope === 'all') return sessions;
-      return sessions.filter(
-        (s) => s.isCoop !== true && getScoringTemplateForGame(s.gameName).isCoop !== true
-      );
+      return sessions.filter((s) => !isCoopSession(s));
     }, [sessions, sessionScope]);
 
-    // Dynamic qualification threshold: capped at 5 plays so large vaults (e.g. 1,400+ sessions)
-    // don't lock regular group players out of the leaderboard.
-    const calculatedThreshold = useMemo(
-      () => calculateMinRequiredPlays(scopedSessions.length, 0.05),
-      [scopedSessions.length]
-    );
+    // Dynamic qualification threshold: >= 5% of total recorded sessions (uncapped)
     const minRequiredPlays = useMemo(
-      () => Math.min(5, Math.max(1, calculatedThreshold)),
-      [calculatedThreshold]
+      () => Math.max(1, calculateMinRequiredPlays(activeSessions.length, 0.05)),
+      [activeSessions.length]
     );
     const effectiveMinPlays = showAllPlayers ? 1 : minRequiredPlays;
 
     // 1. Compute comprehensive stats for all players from session history
     const allStats = useMemo(() => {
       // Sort sessions chronologically for accurate streak calculations (string compare is O(1) per pair)
-      const chrono = [...scopedSessions].sort(
+      const chrono = [...activeSessions].sort(
         (a, b) =>
           (a.datePlayed || '').localeCompare(b.datePlayed || '') ||
           (a.createdAt || '').localeCompare(b.createdAt || '')
@@ -342,7 +349,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
       });
 
       return Array.from(statsMap.values()).filter((st) => st.plays > 0);
-    }, [players, scopedSessions]);
+    }, [players, activeSessions]);
 
     // 2. Filter criteria options by group (All, Positive, Negative)
     const availableCriteria = useMemo(() => {
@@ -375,6 +382,19 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
       return [...list].sort(activeCriterion.sortFn);
     }, [allStats, effectiveMinPlays, activeCriterion]);
 
+    const isStreakCriterion = activeCriterion.id === 'win_streak' || activeCriterion.id === 'cold_streak';
+    const currentStreakType: 'win' | 'loss' = activeCriterion.id === 'cold_streak' ? 'loss' : 'win';
+
+    const handleStreakClick = (player: Player) => {
+      const streaks = calculatePlayerStreaks(player.id, activeSessions);
+      setSelectedStreakPlayer(player);
+      setSelectedStreakType(currentStreakType);
+      setSelectedStreakData(
+        currentStreakType === 'win' ? streaks.longestWinStreak : streaks.longestLossStreak
+      );
+      setIsStreakModalOpen(true);
+    };
+
     const IconComponent = activeCriterion.icon;
     const top1 = rankedStats[0];
     const top2 = rankedStats[1];
@@ -382,91 +402,94 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
 
     return (
       <Card className="p-4 sm:p-6 space-y-6 bg-[var(--card)] border border-[var(--line)]">
-        {/* HEADER */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--line)]">
-          <div>
+        {/* HEADER - TIER 1: TITLE & SUBTITLE */}
+        <div className="space-y-1 pb-4 border-b border-[var(--line)]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display font-bold text-xl sm:text-2xl text-[var(--ink)] flex items-center gap-2.5">
-              <Trophy className="w-6 h-6 text-amber-500" />
+              <Trophy className="w-6 h-6 text-amber-500 shrink-0" />
               <span>Multi-Dimensional Leaderboards</span>
             </h2>
-            <p className="text-xs sm:text-sm text-[var(--muted)] mt-1">
-              Rankings across all dimensions ·{' '}
-              {showAllPlayers ? (
-                <span className="text-amber-500 font-medium">All Players view (≥ 1 play)</span>
-              ) : (
-                <span>
-                  Qualification: ≥ {formatCount(minRequiredPlays, 'play')} min
-                  {calculatedThreshold > 5 && ` (capped from ${formatNumber(calculatedThreshold)})`}
-                </span>
+          </div>
+          <p className="text-xs sm:text-sm text-[var(--muted)] font-medium">
+            Rankings across all dimensions ·{' '}
+            {showAllPlayers ? (
+              <span className="text-amber-500 font-semibold">All Players view (≥ 1 play)</span>
+            ) : (
+              <span>
+                Qualification: ≥ {formatCount(minRequiredPlays, 'play')} (5% of {formatNumber(activeSessions.length)})
+              </span>
+            )}
+          </p>
+        </div>
+
+        {/* CONTROLS TOOLBAR - TIER 2: STABLE DEDICATED TOOLBAR */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pt-0">
+          {/* GROUP FILTER TABS */}
+          <div className="inline-flex items-center p-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)] self-start sm:self-auto overflow-x-auto max-w-full">
+            <button
+              type="button"
+              onClick={() => setActiveGroup('all')}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none whitespace-nowrap min-h-[34px] inline-flex items-center',
+                activeGroup === 'all'
+                  ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
+                  : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
-            </p>
+            >
+              🌟 All ({CRITERIA_CONFIG.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveGroup('positive');
+                const first = CRITERIA_CONFIG.find((c) => c.group === 'positive');
+                if (first && !CRITERIA_CONFIG.filter((c) => c.group === 'positive').some((c) => c.id === activeCriterionId)) {
+                  setActiveCriterionId(first.id);
+                }
+              }}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none whitespace-nowrap min-h-[34px] inline-flex items-center',
+                activeGroup === 'positive'
+                  ? 'bg-[var(--accent)] text-white shadow-xs'
+                  : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
+              )}
+            >
+              🏆 Hall of Fame ({positiveCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveGroup('negative');
+                const first = CRITERIA_CONFIG.find((c) => c.group === 'negative');
+                if (first && !CRITERIA_CONFIG.filter((c) => c.group === 'negative').some((c) => c.id === activeCriterionId)) {
+                  setActiveCriterionId(first.id);
+                }
+              }}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none whitespace-nowrap min-h-[34px] inline-flex items-center',
+                activeGroup === 'negative'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
+              )}
+            >
+              😈 Spicy &amp; Fun ({negativeCount})
+            </button>
           </div>
 
-          {/* GROUP FILTER TABS & QUALIFICATION TOGGLE */}
-          <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
-            <div className="inline-flex items-center p-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
-              <button
-                type="button"
-                onClick={() => setActiveGroup('all')}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
-                  activeGroup === 'all'
-                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
-                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
-                )}
-              >
-                🌟 All ({CRITERIA_CONFIG.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveGroup('positive');
-                  const first = CRITERIA_CONFIG.find((c) => c.group === 'positive');
-                  if (first && !CRITERIA_CONFIG.filter((c) => c.group === 'positive').some((c) => c.id === activeCriterionId)) {
-                    setActiveCriterionId(first.id);
-                  }
-                }}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
-                  activeGroup === 'positive'
-                    ? 'bg-[var(--accent)] text-white shadow-xs'
-                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
-                )}
-              >
-                🏆 Hall of Fame ({positiveCount})
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveGroup('negative');
-                  const first = CRITERIA_CONFIG.find((c) => c.group === 'negative');
-                  if (first && !CRITERIA_CONFIG.filter((c) => c.group === 'negative').some((c) => c.id === activeCriterionId)) {
-                    setActiveCriterionId(first.id);
-                  }
-                }}
-                className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none',
-                  activeGroup === 'negative'
-                    ? 'bg-rose-600 text-white shadow-sm'
-                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
-                )}
-              >
-                😈 Spicy &amp; Fun ({negativeCount})
-              </button>
-            </div>
-
+          {/* SCOPE & QUALIFICATION CONTROLS */}
+          <div className="flex flex-wrap items-center gap-2">
             {/* Competitive Only vs All (incl. Co-op) Scope Toggle */}
             <div className="inline-flex items-center p-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
               <button
                 type="button"
                 onClick={() => setSessionScope('competitive')}
                 className={cn(
-                  'px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer select-none',
+                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none whitespace-nowrap min-h-[34px] inline-flex items-center',
                   sessionScope === 'competitive'
                     ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
                     : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
                 )}
-                title="Exclude cooperative games from Win Rate and Win Streak rankings"
+                title="Exclude cooperative games from all leaderboard calculations"
               >
                 Competitive Only
               </button>
@@ -474,7 +497,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                 type="button"
                 onClick={() => setSessionScope('all')}
                 className={cn(
-                  'px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer select-none',
+                  'px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none whitespace-nowrap min-h-[34px] inline-flex items-center',
                   sessionScope === 'all'
                     ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
                     : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
@@ -485,16 +508,21 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               </button>
             </div>
 
+            {/* Qualified vs All Players Toggle */}
             <button
               type="button"
               onClick={() => setShowAllPlayers((prev) => !prev)}
               className={cn(
-                'px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none inline-flex items-center gap-1.5 border',
+                'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none inline-flex items-center gap-1.5 border min-h-[34px] whitespace-nowrap',
                 showAllPlayers
-                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-500 shadow-sm'
+                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-400 shadow-xs'
                   : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
-              title={showAllPlayers ? 'Showing all players with at least 1 play' : `Filter by qualified (≥ ${pluralize(minRequiredPlays, 'play')})`}
+              title={
+                showAllPlayers
+                  ? 'Showing all players with at least 1 play'
+                  : `Filter by qualified (≥ ${formatCount(minRequiredPlays, 'play')})`
+              }
             >
               <span>{showAllPlayers ? '👥 All Players' : `🏆 Qualified (≥ ${formatNumber(minRequiredPlays)})`}</span>
             </button>
@@ -560,12 +588,12 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
             </span>
             <div className="flex items-center sm:justify-end gap-1.5 mt-0.5">
               <span className="text-xs font-semibold text-[var(--ink-2)]">
-                {pluralize(rankedStats.length, 'qualified player')}
+                {formatCount(rankedStats.length, 'qualified player')}
               </span>
               <span className="text-[11px] text-[var(--muted)] font-mono">
                 {showAllPlayers
                   ? '(≥ 1 play)'
-                  : `(≥ 5% · min ${pluralize(minRequiredPlays, 'play')})`}
+                  : `(≥ 5% · min ${formatCount(minRequiredPlays, 'play')})`}
               </span>
             </div>
           </div>
@@ -576,7 +604,14 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
             {/* 1st Place */}
             {top1 && (
-              <div className="order-1 sm:order-2 p-4 rounded-2xl bg-gradient-to-b from-amber-500/15 via-[var(--card-2)] to-[var(--card)] border-2 border-amber-500/50 shadow-lg relative flex flex-col items-center text-center">
+              <div
+                onClick={isStreakCriterion ? () => handleStreakClick(top1.player) : undefined}
+                className={cn(
+                  'order-1 sm:order-2 p-4 rounded-2xl bg-gradient-to-b from-amber-500/15 via-[var(--card-2)] to-[var(--card)] border-2 border-amber-500/50 shadow-lg relative flex flex-col items-center text-center',
+                  isStreakCriterion && 'cursor-pointer hover:border-amber-500 hover:shadow-xl transition-all'
+                )}
+                title={isStreakCriterion ? 'Click to inspect streak match history' : undefined}
+              >
                 <span className="absolute -top-3 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-stone-900 font-black text-[11px] shadow">
                   🥇 TOP 1
                 </span>
@@ -598,7 +633,14 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
 
             {/* 2nd Place */}
             {top2 && (
-              <div className="order-2 sm:order-1 p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] shadow relative flex flex-col items-center text-center sm:mt-4">
+              <div
+                onClick={isStreakCriterion ? () => handleStreakClick(top2.player) : undefined}
+                className={cn(
+                  'order-2 sm:order-1 p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] shadow relative flex flex-col items-center text-center sm:mt-4',
+                  isStreakCriterion && 'cursor-pointer hover:border-[var(--accent)] hover:shadow-lg transition-all'
+                )}
+                title={isStreakCriterion ? 'Click to inspect streak match history' : undefined}
+              >
                 <span className="absolute -top-3 px-2.5 py-0.5 rounded-full bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-[10px] border border-slate-400/40">
                   🥈 TOP 2
                 </span>
@@ -619,7 +661,14 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
 
             {/* 3rd Place */}
             {top3 && (
-              <div className="order-3 p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] shadow relative flex flex-col items-center text-center sm:mt-6">
+              <div
+                onClick={isStreakCriterion ? () => handleStreakClick(top3.player) : undefined}
+                className={cn(
+                  'order-3 p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] shadow relative flex flex-col items-center text-center sm:mt-6',
+                  isStreakCriterion && 'cursor-pointer hover:border-amber-600/60 hover:shadow-lg transition-all'
+                )}
+                title={isStreakCriterion ? 'Click to inspect streak match history' : undefined}
+              >
                 <span className="absolute -top-3 px-2.5 py-0.5 rounded-full bg-amber-800/30 text-amber-600 dark:text-amber-400 font-bold text-[10px] border border-amber-600/40">
                   🥉 TOP 3
                 </span>
@@ -655,7 +704,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               {rankedStats.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-sm text-[var(--muted)]">
-                    No players qualified for this leaderboard yet (requires ≥ 5% of all sessions: min {formatCount(minRequiredPlays, 'play')}).
+                    No players qualified for this leaderboard yet (requires ≥ 5% of sessions: min {formatCount(minRequiredPlays, 'play')}).
                   </td>
                 </tr>
               ) : (
@@ -667,10 +716,13 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                   return (
                     <tr
                       key={st.player.id}
+                      onClick={isStreakCriterion ? () => handleStreakClick(st.player) : undefined}
                       className={cn(
                         'transition-colors hover:bg-[var(--card-2)]/50',
-                        isTop1 && 'bg-amber-500/5'
+                        isTop1 && 'bg-amber-500/5',
+                        isStreakCriterion && 'cursor-pointer hover:bg-[var(--card-2)]'
                       )}
+                      title={isStreakCriterion ? 'Click to inspect streak match history' : undefined}
                     >
                       {/* RANK */}
                       <td className="py-3.5 px-4 font-mono font-bold text-[var(--muted)]">
@@ -721,6 +773,20 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
             </tbody>
           </table>
         </div>
+
+        {/* STREAK DETAIL MODAL */}
+        {isStreakModalOpen && selectedStreakPlayer && (
+          <StreakDetailModal
+            isOpen={isStreakModalOpen}
+            onClose={() => {
+              setIsStreakModalOpen(false);
+              setSelectedStreakPlayer(null);
+            }}
+            player={selectedStreakPlayer}
+            type={selectedStreakType}
+            streakData={selectedStreakData}
+          />
+        )}
       </Card>
     );
   }
