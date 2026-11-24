@@ -486,3 +486,260 @@ test('buildSessionShareCardData: truncates smoothly for tables with > 8 players'
   assert.equal(data.leaderboard?.length, 7); // Top 7
   assert.equal(data.overflowPlayerCount, 3); // 10 - 7 = 3 more players
 });
+
+// ---------------------------------------------------------------------------
+// DUAL DESIGNS & EXPANDED DATA TESTS (POSTER & TICKET)
+// ---------------------------------------------------------------------------
+
+test('buildSessionShareCardData: computes calloutBadge for BLOWOUT, PHOTO FINISH, NEW RECORD, SHARED VICTORY and WINNERS', () => {
+  const game = {
+    id: 'g-castle',
+    name: 'Castle Combo',
+    bggId: '420361',
+    status: 'own',
+  } as unknown as BoardGame;
+
+  // 1. BLOWOUT · +32 (108 vs 76 -> margin 32 >= 15)
+  const blowoutSession: PlaySession = {
+    id: 's-castle-1',
+    gameId: 'g-castle',
+    gameName: 'Castle Combo',
+    gameThumbnail: '',
+    datePlayed: '2026-11-22',
+    createdAt: '2026-11-22T14:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Heo', score: 108, isWinner: true },
+      { playerId: 'p2', playerName: 'Hằng', score: 76, isWinner: false },
+    ],
+  };
+
+  const dataBlowout = buildSessionShareCardData(blowoutSession, {
+    game,
+    allSessions: [blowoutSession],
+  });
+  assert.equal(dataBlowout.calloutBadge, 'BLOWOUT · +32');
+  assert.equal(dataBlowout.leaderboard?.[1].gapFromLeaderText, '-32');
+
+  // 2. PHOTO FINISH · +1 (10 vs 9 -> margin 1 <= 2)
+  const photoSession: PlaySession = {
+    id: 's-castle-2',
+    gameId: 'g-castle',
+    gameName: 'Castle Combo',
+    gameThumbnail: '',
+    datePlayed: '2026-11-23',
+    createdAt: '2026-11-23T14:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Heo', score: 10, isWinner: true },
+      { playerId: 'p2', playerName: 'Huy', score: 9, isWinner: false },
+    ],
+  };
+  const dataPhoto = buildSessionShareCardData(photoSession, {
+    game,
+    allSessions: [blowoutSession, photoSession],
+  });
+  assert.equal(dataPhoto.calloutBadge, 'PHOTO FINISH · +1');
+  assert.equal(dataPhoto.leaderboard?.[1].gapFromLeaderText, '-1');
+
+  // 3. ★ NEW RECORD (150 beats 108 with >= 2 points sessions)
+  const recordSession: PlaySession = {
+    id: 's-castle-3',
+    gameId: 'g-castle',
+    gameName: 'Castle Combo',
+    gameThumbnail: '',
+    datePlayed: '2026-11-24',
+    createdAt: '2026-11-24T14:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Heo', score: 150, isWinner: true },
+      { playerId: 'p2', playerName: 'Hằng', score: 80, isWinner: false },
+    ],
+  };
+  const dataRecord = buildSessionShareCardData(recordSession, {
+    game,
+    allSessions: [blowoutSession, photoSession, recordSession],
+  });
+  assert.equal(dataRecord.calloutBadge, '★ NEW RECORD');
+
+  // 4. SHARED VICTORY (tie for rank 1)
+  const tieSession: PlaySession = {
+    id: 's-castle-4',
+    gameId: 'g-castle',
+    gameName: 'Castle Combo',
+    gameThumbnail: '',
+    datePlayed: '2026-11-25',
+    createdAt: '2026-11-25T14:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Heo', score: 90, isWinner: true },
+      { playerId: 'p2', playerName: 'Hằng', score: 90, isWinner: true },
+    ],
+  };
+  const dataTie = buildSessionShareCardData(tieSession, {
+    game,
+    allSessions: [blowoutSession, photoSession, recordSession, tieSession],
+  });
+  assert.equal(dataTie.calloutBadge, 'SHARED VICTORY');
+});
+
+test('buildSessionShareCardData: computes winnerGameStreak accurately for consecutive game wins', () => {
+  const game = {
+    id: 'g-catan',
+    name: 'Catan',
+    status: 'own',
+  } as unknown as BoardGame;
+
+  // Session 1: Heo wins
+  const s1: PlaySession = {
+    id: 's1',
+    gameId: 'g-catan',
+    gameName: 'Catan',
+    gameThumbnail: '',
+    datePlayed: '2026-05-01',
+    createdAt: '2026-05-01T10:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p-heo', playerName: 'Heo', score: 10, isWinner: true },
+      { playerId: 'p-huy', playerName: 'Huy', score: 8, isWinner: false },
+    ],
+  };
+
+  // Session 2: Heo wins again (streak = 2)
+  const s2: PlaySession = {
+    id: 's2',
+    gameId: 'g-catan',
+    gameName: 'Catan',
+    gameThumbnail: '',
+    datePlayed: '2026-05-02',
+    createdAt: '2026-05-02T10:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p-heo', playerName: 'Heo', score: 10, isWinner: true },
+      { playerId: 'p-huy', playerName: 'Huy', score: 7, isWinner: false },
+    ],
+  };
+
+  // Session 3: Heo wins 3rd time (streak = 3)
+  const s3: PlaySession = {
+    id: 's3',
+    gameId: 'g-catan',
+    gameName: 'Catan',
+    gameThumbnail: '',
+    datePlayed: '2026-05-03',
+    createdAt: '2026-05-03T10:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p-heo', playerName: 'Heo', score: 10, isWinner: true },
+      { playerId: 'p-huy', playerName: 'Huy', score: 6, isWinner: false },
+    ],
+  };
+
+  // Session 4: Huy wins (streak breaks, returns undefined since 1 win < 2)
+  const s4: PlaySession = {
+    id: 's4',
+    gameId: 'g-catan',
+    gameName: 'Catan',
+    gameThumbnail: '',
+    datePlayed: '2026-05-04',
+    createdAt: '2026-05-04T10:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p-huy', playerName: 'Huy', score: 10, isWinner: true },
+      { playerId: 'p-heo', playerName: 'Heo', score: 9, isWinner: false },
+    ],
+  };
+
+  const all = [s1, s2, s3, s4];
+
+  // s1 alone: streak is 1, so winnerGameStreak is undefined (< 2)
+  const data1 = buildSessionShareCardData(s1, { game, allSessions: [s1] });
+  assert.equal(data1.winnerGameStreak, undefined);
+
+  // s2: streak is 2
+  const data2 = buildSessionShareCardData(s2, { game, allSessions: [s1, s2] });
+  assert.equal(data2.winnerGameStreak, 2);
+
+  // s3: streak is 3
+  const data3 = buildSessionShareCardData(s3, { game, allSessions: all });
+  assert.equal(data3.winnerGameStreak, 3);
+
+  // s4: Huy won only 1 game, streak is undefined (< 2)
+  const data4 = buildSessionShareCardData(s4, { game, allSessions: all });
+  assert.equal(data4.winnerGameStreak, undefined);
+});
+
+test('buildSessionShareCardData: ticketSerial and ticketBarcode format correctly', () => {
+  const game = {
+    id: 'g-castle',
+    name: 'Castle Combo',
+    status: 'own',
+  } as unknown as BoardGame;
+
+  // Simulate play #41
+  const fakeOldSessions: PlaySession[] = Array.from({ length: 40 }, (_, i) => ({
+    id: `s-old-${i}`,
+    gameId: 'g-castle',
+    gameName: 'Castle Combo',
+    gameThumbnail: '',
+    datePlayed: '2026-01-01',
+    createdAt: `2026-01-01T${String(i % 24).padStart(2, '0')}:00:00Z`,
+    firstPlayerMethod: 'manual',
+    players: [{ playerId: 'p1', playerName: 'Heo', score: 10, isWinner: true }],
+  }));
+
+  const session41: PlaySession = {
+    id: 's-castle-41',
+    gameId: 'g-castle',
+    gameName: 'Castle Combo',
+    gameThumbnail: '',
+    datePlayed: '2026-11-22',
+    createdAt: '2026-11-22T15:30:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Heo', score: 108, isWinner: true },
+      { playerId: 'p2', playerName: 'Hằng', score: 76, isWinner: false },
+    ],
+  };
+
+  const data = buildSessionShareCardData(session41, {
+    game,
+    allSessions: [...fakeOldSessions, session41],
+  });
+
+  assert.equal(data.playNumber, 41);
+  assert.equal(data.playIndexFormatted, 'Play #41');
+  assert.equal(data.ticketSerial, 'NO. 0041');
+  assert.equal(data.ticketBarcode, 'HEO-41-20261122');
+});
+
+test('buildSessionShareCardData: lowestScoreWins formats gapFromLeaderText with positive sign', () => {
+  const durianGame = {
+    id: 'g-durian',
+    name: 'Durian',
+    bggId: '307963',
+    status: 'own',
+  } as unknown as BoardGame;
+
+  const session: PlaySession = {
+    id: 's-dur-1',
+    gameId: 'g-durian',
+    gameName: 'Durian',
+    gameThumbnail: '',
+    datePlayed: '2026-04-10',
+    createdAt: '2026-04-10T10:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Heo', score: 3, isWinner: true },
+      { playerId: 'p2', playerName: 'Huy', score: 7, isWinner: false },
+    ],
+  };
+
+  const data = buildSessionShareCardData(session, {
+    game: durianGame,
+    allSessions: [session],
+  });
+
+  // Runner up has score 7, leader has 3. In lowestScoreWins, gap is +4!
+  assert.equal(data.leaderboard?.[1].gapFromLeaderText, '+4');
+});

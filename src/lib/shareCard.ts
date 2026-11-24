@@ -30,6 +30,7 @@ export interface ShareCardPointsPlayer extends ShareCardPlayerAvatar {
   isWinner: boolean;
   scorePercentage: number; // 0 to 100
   microTag?: string; // e.g. "+32 pts margin", "Photo Finish · +1 pt", "Shared Victory"
+  gapFromLeaderText?: string; // e.g. "-32" or "+4"
 }
 
 export interface ShareCardWinnerPlayer extends ShareCardPlayerAvatar {
@@ -55,8 +56,13 @@ export interface SessionShareCardData {
   durationFormatted?: string;
   playerCountFormatted: string;
   playIndexFormatted: string; // e.g. "Play #42"
+  playNumber: number;
   isNewRecord: boolean;
   lowestScoreWins: boolean;
+  calloutBadge: string; // e.g. "★ NEW RECORD", "BLOWOUT · +32", "PHOTO FINISH · +1", "3 WINNERS"
+  winnerGameStreak?: number; // e.g. 3 for 3-win streak on this specific game
+  ticketSerial: string; // e.g. "NO. 0041"
+  ticketBarcode: string; // e.g. "HEO-41-20261122"
 
   // Points mode
   leaderboard?: ShareCardPointsPlayer[];
@@ -223,6 +229,30 @@ export function buildSessionShareCardData(
   const playNumber = sessionIndex >= 0 ? sessionIndex + 1 : orderedSessions.length;
   const playIndexFormatted = `Play #${formatNumber(playNumber)}`;
 
+  // Ticket serial and barcode
+  const ticketSerial = `NO. ${String(playNumber).padStart(4, '0')}`;
+  const dateCompact = (session.datePlayed || '').replace(/-/g, '') || '20261124';
+  const ticketBarcode = `HEO-${playNumber}-${dateCompact}`;
+
+  // Helper to compute consecutive winnerGameStreak specifically on this game
+  const computeWinnerGameStreak = (singleWinnerPlayerId?: string): number | undefined => {
+    if (!singleWinnerPlayerId) return undefined;
+    const currIdx = orderedSessions.findIndex((s) => s.id === session.id);
+    if (currIdx < 0) return undefined;
+
+    let streak = 0;
+    for (let i = currIdx; i >= 0; i--) {
+      const histSession = orderedSessions[i];
+      const winners = getSessionWinners(histSession, game);
+      if (winners.some((w) => w.playerId === singleWinnerPlayerId)) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak >= 2 ? streak : undefined;
+  };
+
   // Lowest score wins resolution
   const lowestScoreWins = resolveLowestScoreWins(game);
 
@@ -246,6 +276,7 @@ export function buildSessionShareCardData(
     // Compute standard ranks with tie breaking
     const rankedPlayersWithoutPct: Array<{
       rank: number;
+      playerId: string;
       playerName: string;
       score: number;
       scoreFormatted: string;
@@ -273,79 +304,13 @@ export function buildSessionShareCardData(
 
       rankedPlayersWithoutPct.push({
         rank: typeof p.rank === 'number' ? p.rank : currentRank,
+        playerId: p.playerId,
         playerName: resolvedName,
         score: typeof p.score === 'number' ? p.score : 0,
         scoreFormatted: typeof p.score === 'number' ? formatNumber(p.score) : '—',
         isWinner,
         avatar,
       });
-    }
-
-    // Determine Winner Micro-Tag
-    const rank1Players = rankedPlayersWithoutPct.filter((p) => p.rank === 1);
-    let rank1MicroTag: string | undefined;
-    if (rank1Players.length > 1) {
-      rank1MicroTag = 'Shared Victory';
-    } else if (
-      rankedPlayersWithoutPct.length > 1 &&
-      typeof rankedPlayersWithoutPct[0].score === 'number' &&
-      typeof rankedPlayersWithoutPct[1].score === 'number'
-    ) {
-      const margin = Math.abs(
-        rankedPlayersWithoutPct[0].score - rankedPlayersWithoutPct[1].score
-      );
-      if (margin <= 2) {
-        rank1MicroTag = `Photo Finish · +${formatNumber(margin)}${margin === 1 ? ' pt' : ' pts'}`;
-      } else {
-        rank1MicroTag = `+${formatNumber(margin)} pts margin`;
-      }
-    }
-
-    // Determine Proportional Score Bar Percentage for each player
-    const topScore = rankedPlayersWithoutPct[0]?.score ?? 100;
-    const rankedPlayers: ShareCardPointsPlayer[] = rankedPlayersWithoutPct.map((p) => {
-      let scorePercentage = 100;
-      if (lowestScoreWins) {
-        if (topScore <= 0 && p.score <= 0) {
-          scorePercentage = 100;
-        } else {
-          scorePercentage = Math.max(
-            15,
-            Math.min(100, Math.round((Math.max(1, topScore) / Math.max(1, p.score)) * 100))
-          );
-        }
-      } else {
-        if (topScore <= 0) {
-          scorePercentage = 100;
-        } else {
-          scorePercentage = Math.max(
-            15,
-            Math.min(100, Math.round((Math.max(0, p.score) / topScore) * 100))
-          );
-        }
-      }
-
-      return {
-        rank: p.rank,
-        playerName: p.playerName,
-        score: p.score,
-        scoreFormatted: p.scoreFormatted,
-        isWinner: p.isWinner,
-        scorePercentage,
-        microTag: p.rank === 1 ? rank1MicroTag : undefined,
-        avatarUrl: p.avatar.avatarUrl,
-        avatarEmoji: p.avatar.avatarEmoji,
-        color: p.avatar.color,
-        monogram: p.avatar.monogram,
-      };
-    });
-
-    // Overflow protection: max 8 rows
-    let leaderboard = rankedPlayers;
-    let overflowPlayerCount: number | undefined;
-    if (rankedPlayers.length > 8) {
-      leaderboard = rankedPlayers.slice(0, 7);
-      overflowPlayerCount = rankedPlayers.length - 7;
     }
 
     // NEW RECORD calculation
@@ -388,6 +353,113 @@ export function buildSessionShareCardData(
       }
     }
 
+    // Determine Callout Badge & Winner Micro-Tag
+    const rank1Players = rankedPlayersWithoutPct.filter((p) => p.rank === 1);
+    let rank1MicroTag: string | undefined;
+    let calloutBadge = 'SOLO VICTORY';
+
+    if (isNewRecord) {
+      calloutBadge = '★ NEW RECORD';
+    } else if (rank1Players.length > 1) {
+      calloutBadge = 'SHARED VICTORY';
+    } else if (
+      rankedPlayersWithoutPct.length > 1 &&
+      typeof rankedPlayersWithoutPct[0].score === 'number' &&
+      typeof rankedPlayersWithoutPct[1].score === 'number'
+    ) {
+      const margin = Math.abs(
+        rankedPlayersWithoutPct[0].score - rankedPlayersWithoutPct[1].score
+      );
+      const runnerUpScore = rankedPlayersWithoutPct[1].score;
+
+      if (margin <= 2) {
+        calloutBadge = `PHOTO FINISH · +${formatNumber(margin)}`;
+      } else if (
+        margin >= 15 ||
+        (runnerUpScore > 0 && margin / runnerUpScore >= 0.25)
+      ) {
+        calloutBadge = `BLOWOUT · +${formatNumber(margin)}`;
+      } else {
+        calloutBadge = `+${formatNumber(margin)} PTS MARGIN`;
+      }
+    }
+
+    // Micro-tag for player leaderboard item
+    if (rank1Players.length > 1) {
+      rank1MicroTag = 'Shared Victory';
+    } else if (
+      rankedPlayersWithoutPct.length > 1 &&
+      typeof rankedPlayersWithoutPct[0].score === 'number' &&
+      typeof rankedPlayersWithoutPct[1].score === 'number'
+    ) {
+      const margin = Math.abs(
+        rankedPlayersWithoutPct[0].score - rankedPlayersWithoutPct[1].score
+      );
+      if (margin <= 2) {
+        rank1MicroTag = `Photo Finish · +${formatNumber(margin)}${margin === 1 ? ' pt' : ' pts'}`;
+      } else {
+        rank1MicroTag = `+${formatNumber(margin)} pts margin`;
+      }
+    }
+
+    // Winner Game Streak (only when single winner)
+    const singleWinnerPlayerId = rank1Players.length === 1 ? rank1Players[0].playerId : undefined;
+    const winnerGameStreak = computeWinnerGameStreak(singleWinnerPlayerId);
+
+    // Determine Proportional Score Bar Percentage & Gap for each player
+    const topScore = rankedPlayersWithoutPct[0]?.score ?? 100;
+    const rankedPlayers: ShareCardPointsPlayer[] = rankedPlayersWithoutPct.map((p) => {
+      let scorePercentage = 100;
+      if (lowestScoreWins) {
+        if (topScore <= 0 && p.score <= 0) {
+          scorePercentage = 100;
+        } else {
+          scorePercentage = Math.max(
+            15,
+            Math.min(100, Math.round((Math.max(1, topScore) / Math.max(1, p.score)) * 100))
+          );
+        }
+      } else {
+        if (topScore <= 0) {
+          scorePercentage = 100;
+        } else {
+          scorePercentage = Math.max(
+            15,
+            Math.min(100, Math.round((Math.max(0, p.score) / topScore) * 100))
+          );
+        }
+      }
+
+      let gapFromLeaderText: string | undefined;
+      if (p.rank > 1 && typeof topScore === 'number' && typeof p.score === 'number') {
+        const diff = Math.abs(p.score - topScore);
+        gapFromLeaderText = lowestScoreWins ? `+${formatNumber(diff)}` : `-${formatNumber(diff)}`;
+      }
+
+      return {
+        rank: p.rank,
+        playerName: p.playerName,
+        score: p.score,
+        scoreFormatted: p.scoreFormatted,
+        isWinner: p.isWinner,
+        scorePercentage,
+        microTag: p.rank === 1 ? rank1MicroTag : undefined,
+        gapFromLeaderText,
+        avatarUrl: p.avatar.avatarUrl,
+        avatarEmoji: p.avatar.avatarEmoji,
+        color: p.avatar.color,
+        monogram: p.avatar.monogram,
+      };
+    });
+
+    // Overflow protection: max 8 rows
+    let leaderboard = rankedPlayers;
+    let overflowPlayerCount: number | undefined;
+    if (rankedPlayers.length > 8) {
+      leaderboard = rankedPlayers.slice(0, 7);
+      overflowPlayerCount = rankedPlayers.length - 7;
+    }
+
     return {
       mode: 'points',
       gameTitle,
@@ -399,8 +471,13 @@ export function buildSessionShareCardData(
       durationFormatted,
       playerCountFormatted,
       playIndexFormatted,
+      playNumber,
       isNewRecord,
       lowestScoreWins,
+      calloutBadge,
+      winnerGameStreak,
+      ticketSerial,
+      ticketBarcode,
       leaderboard,
       overflowPlayerCount,
     };
@@ -442,6 +519,16 @@ export function buildSessionShareCardData(
       }
     }
 
+    let calloutBadge = 'SOLO VICTORY';
+    if (winners.length > 1) {
+      calloutBadge = `${formatNumber(winners.length)} WINNERS`;
+    } else if (winners.length === 0) {
+      calloutBadge = 'NO WINNER';
+    }
+
+    const singleWinnerPlayerId = winners.length === 1 ? winnerRecords[0]?.playerId : undefined;
+    const winnerGameStreak = computeWinnerGameStreak(singleWinnerPlayerId);
+
     return {
       mode: 'win_only',
       gameTitle,
@@ -453,8 +540,13 @@ export function buildSessionShareCardData(
       durationFormatted,
       playerCountFormatted,
       playIndexFormatted,
+      playNumber,
       isNewRecord: false,
       lowestScoreWins: false,
+      calloutBadge,
+      winnerGameStreak,
+      ticketSerial,
+      ticketBarcode,
       winners,
       otherPlayers: finalOther,
       overflowOtherCount,
@@ -465,6 +557,7 @@ export function buildSessionShareCardData(
   const isWon =
     session.coopOutcome === 'won' || rawPlayers.some((p) => p.isWinner);
   const coopOutcome: 'won' | 'lost' = isWon ? 'won' : 'lost';
+  const calloutBadge = isWon ? 'TEAM VICTORY' : 'TEAM DEFEAT';
 
   let teamScoreFormatted: string | undefined;
   const rawTeamScore =
@@ -506,8 +599,13 @@ export function buildSessionShareCardData(
     durationFormatted,
     playerCountFormatted,
     playIndexFormatted,
+    playNumber,
     isNewRecord: false,
     lowestScoreWins: false,
+    calloutBadge,
+    winnerGameStreak: undefined,
+    ticketSerial,
+    ticketBarcode,
     coopOutcome,
     teamScoreFormatted,
     teamPlayers: finalTeam,

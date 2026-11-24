@@ -10,12 +10,18 @@ import {
   Sun,
   Image as ImageIcon,
   Camera,
+  Layout,
+  Ticket,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { PlaySession, BoardGame } from '../../types';
 import { buildSessionShareCardData } from '../../lib/shareCard';
-import { renderSessionShareCard, ShareCardTheme } from '../../lib/shareCardRenderer';
+import {
+  renderSessionShareCard,
+  ShareCardTheme,
+  ShareCardStyle,
+} from '../../lib/shareCardRenderer';
 import { useSessionStore } from '../../store/useSessionStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { useLocationStore } from '../../store/useLocationStore';
@@ -33,6 +39,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
   session,
   game,
 }) => {
+  const [style, setStyle] = useState<ShareCardStyle>('poster');
   const [theme, setTheme] = useState<ShareCardTheme>('dark');
   const [backdropSource, setBackdropSource] = useState<'cover' | 'photo'>('cover');
   const [isRendering, setIsRendering] = useState(false);
@@ -63,7 +70,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
     };
   }, []);
 
-  // Generate share card on open, theme, or backdrop source change
+  // Generate share card on open, style, theme, or backdrop source change
   useEffect(() => {
     if (!isOpen) {
       cleanupUrl();
@@ -89,17 +96,18 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
         });
 
         const blob = await renderSessionShareCard(cardData, {
+          style,
           theme,
           useTablePhoto,
         });
         if (isCancelled) return;
 
+        const newUrl = URL.createObjectURL(blob);
         cleanupUrl();
-        const url = URL.createObjectURL(blob);
-        activeUrlRef.current = url;
+        activeUrlRef.current = newUrl;
 
         setCardBlob(blob);
-        setPreviewUrl(url);
+        setPreviewUrl(newUrl);
       } catch (err: any) {
         if (!isCancelled) {
           console.error('Failed to generate session share card:', err);
@@ -117,13 +125,13 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [isOpen, theme, backdropSource, session, game, allSessions, players, locations, hasPhotos]);
+  }, [isOpen, style, theme, backdropSource, session, game, allSessions, players, locations, hasPhotos]);
 
   const fileNameSlug = (session.gameName || 'session')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-  const fileName = `heo-session-${fileNameSlug}-${session.datePlayed || 'play'}.png`;
+  const fileName = `heo-${style}-${fileNameSlug}-${session.datePlayed || 'play'}.png`;
 
   // Native share sheet support check
   const canNativeShare =
@@ -190,10 +198,44 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
       maxWidthClass="max-w-xl"
     >
       <div className="space-y-3.5 pt-1">
-        {/* Controls Row: Palette & Optional Photo Switcher */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-[var(--border-subtle)]">
-          {/* Theme Selector */}
-          <div className="flex items-center gap-2">
+        {/* Controls Row: Style, Palette & Optional Photo Switcher */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 pb-2 border-b border-[var(--border-subtle)]">
+          {/* Style Selector Tabs */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-[var(--text-muted)] flex items-center gap-1">
+              <Layout className="w-3.5 h-3.5 text-[var(--accent)]" />
+              Style:
+            </span>
+            <div className="inline-flex p-0.5 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)]">
+              <button
+                type="button"
+                onClick={() => setStyle('poster')}
+                className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold transition-all min-h-[32px] ${
+                  style === 'poster'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <Sparkles className="w-3 h-3" />
+                Poster
+              </button>
+              <button
+                type="button"
+                onClick={() => setStyle('ticket')}
+                className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold transition-all min-h-[32px] ${
+                  style === 'ticket'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <Ticket className="w-3 h-3" />
+                Ticket
+              </button>
+            </div>
+          </div>
+
+          {/* Palette Selector */}
+          <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold text-[var(--text-muted)] flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
               Palette:
@@ -202,7 +244,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
               <button
                 type="button"
                 onClick={() => setTheme('dark')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[30px] ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[32px] ${
                   theme === 'dark'
                     ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -214,7 +256,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
               <button
                 type="button"
                 onClick={() => setTheme('light')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[30px] ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[32px] ${
                   theme === 'light'
                     ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -228,7 +270,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
 
           {/* Optional Table Photo Toggle */}
           {hasPhotos && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-[var(--text-muted)] flex items-center gap-1">
                 <Camera className="w-3.5 h-3.5 text-[var(--accent)]" />
                 Backdrop:
@@ -237,7 +279,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setBackdropSource('cover')}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[30px] ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[32px] ${
                     backdropSource === 'cover'
                       ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
                       : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -249,7 +291,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setBackdropSource('photo')}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[30px] ${
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[32px] ${
                     backdropSource === 'photo'
                       ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
                       : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -263,12 +305,14 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
           )}
         </div>
 
-        {/* Card Preview Area */}
+        {/* Card Preview Area with Anti-Flash Transition */}
         <div className="relative rounded-2xl overflow-hidden bg-[var(--bg-canvas)] border border-[var(--border-subtle)] p-2 sm:p-4 flex items-center justify-center min-h-[360px] max-h-[58vh]">
-          {isRendering ? (
+          {isRendering && !previewUrl ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-[var(--text-muted)]">
               <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
-              <p className="text-sm font-medium">Crafting Warm Editorial Poster...</p>
+              <p className="text-sm font-medium">
+                {style === 'ticket' ? 'Crafting Game Night Ticket...' : 'Crafting Warm Editorial Poster...'}
+              </p>
             </div>
           ) : error ? (
             <div className="text-center py-12 px-4 text-[var(--bad)] text-sm">
@@ -283,11 +327,23 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
               </Button>
             </div>
           ) : previewUrl ? (
-            <img
-              src={previewUrl}
-              alt="Session share card preview"
-              className="max-h-[54vh] w-auto max-w-full object-contain rounded-xl shadow-2xl transition-opacity duration-200"
-            />
+            <div className="relative flex items-center justify-center max-h-[54vh] w-auto">
+              <img
+                src={previewUrl}
+                alt="Session share card preview"
+                className={`max-h-[54vh] w-auto max-w-full object-contain rounded-xl shadow-2xl transition-opacity duration-200 ${
+                  isRendering ? 'opacity-40 filter blur-[1px]' : 'opacity-100'
+                }`}
+              />
+              {isRendering && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 backdrop-blur-[2px] rounded-xl text-white">
+                  <Loader2 className="w-7 h-7 animate-spin text-[var(--accent)]" />
+                  <span className="text-xs font-semibold tracking-wide uppercase">
+                    Updating {style === 'ticket' ? 'Ticket' : 'Poster'}...
+                  </span>
+                </div>
+              )}
+            </div>
           ) : null}
         </div>
 
