@@ -1,26 +1,40 @@
 import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Crown, ChevronRight, Check } from 'lucide-react';
-import { PlaySession, Player } from '../../types';
-import { formatDate, formatDuration, formatCount, isCoopSession, isWinOnlySession, formatWinnerBadgeText } from '../../lib/utils';
+import { PlaySession, Player, BoardGame } from '../../types';
+import {
+  formatDate,
+  formatDuration,
+  formatCount,
+  isCoopSession,
+  isWinOnlySession,
+  getSessionWinners,
+  formatWinnerBadgeText,
+} from '../../lib/utils';
+import { useGameStore } from '../../store/useGameStore';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { GameCoverImage } from '../game/GameCoverImage';
 
 export interface SessionCardProps {
   session: PlaySession;
   playersById?: Record<string, Player>;
+  game?: BoardGame;
 }
 
 export const SessionCard: React.FC<SessionCardProps> = memo(({
   session,
   playersById = {},
+  game: propGame,
 }) => {
-  const players = session.players || [];
-  const isCoop = isCoopSession(session);
-  const isWinOnly = isWinOnlySession(session);
-  const winners = players.filter(
-    (p) => Boolean(p.isWinner || (session.winnerId && p.playerId === session.winnerId))
+  const storeGame = useGameStore((s) =>
+    session.gameId ? s.games.find((g) => g.id === session.gameId) : undefined
   );
+  const game = propGame || storeGame;
+
+  const players = session.players || [];
+  const isCoop = isCoopSession(session, game);
+  const isWinOnly = isWinOnlySession(session, game);
+  const winners = getSessionWinners(session, game);
   const winnerBadge = formatWinnerBadgeText(winners);
   const scoreSuffix =
     !isWinOnly &&

@@ -31,14 +31,16 @@ import { cn } from '../components/ui/cn';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useLocationStore } from '../store/useLocationStore';
+import { useGameStore } from '../store/useGameStore';
 import { getPlayStyleInfo } from '../lib/boardgameAvatars';
-import { formatNumber, formatCount, normalizeLocationKey, sortVenuesByPlayCount, sortPlayersByPlayCount } from '../lib/utils';
+import { formatNumber, formatCount, normalizeLocationKey, sortVenuesByPlayCount, sortPlayersByPlayCount, getSessionWinners } from '../lib/utils';
 import { Player, GameLocation } from '../types';
 
 export const PlayersPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const players = usePlayerStore((s) => s.players);
   const sessions = useSessionStore((s) => s.sessions);
+  const games = useGameStore((s) => s.games);
   const locations = useLocationStore((s) => s.locations);
   const addLocation = useLocationStore((s) => s.addLocation);
   const deleteLocation = useLocationStore((s) => s.deleteLocation);
@@ -87,6 +89,14 @@ export const PlayersPage: React.FC = () => {
     );
   };
 
+  const gamesById = useMemo(() => {
+    const map = new Map<string, typeof games[0]>();
+    for (const g of games) {
+      if (g.id) map.set(g.id, g);
+    }
+    return map;
+  }, [games]);
+
   // 1. Precompute player stats in a single pass O(S) to avoid heavy re-filtering on mobile
   const playerStatsMap = useMemo(() => {
     const stats: Record<string, { totalGames: number; wins: number; winRate: number }> = {};
@@ -95,12 +105,14 @@ export const PlayersPage: React.FC = () => {
     }
     for (const s of sessions) {
       if (!s.players) continue;
+      const game = gamesById.get(s.gameId);
+      const winners = getSessionWinners(s, game);
       for (const p of s.players) {
         if (!stats[p.playerId]) {
           stats[p.playerId] = { totalGames: 0, wins: 0, winRate: 0 };
         }
         stats[p.playerId].totalGames += 1;
-        if (p.isWinner || s.winnerId === p.playerId) {
+        if (winners.some((w) => w.playerId === p.playerId)) {
           stats[p.playerId].wins += 1;
         }
       }
@@ -110,7 +122,7 @@ export const PlayersPage: React.FC = () => {
       entry.winRate = entry.totalGames > 0 ? Math.round((entry.wins / entry.totalGames) * 100) : 0;
     }
     return stats;
-  }, [players, sessions]);
+  }, [players, sessions, gamesById]);
 
   // 1b. Sort players descending by play count with wins/winRate/name tie-breaking
   const sortedPlayers = useMemo(

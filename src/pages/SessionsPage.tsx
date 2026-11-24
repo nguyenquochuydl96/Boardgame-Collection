@@ -27,7 +27,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useGameStore } from '../store/useGameStore';
 import { formatMonthYear, isDraftMatchingCompletedSession, formatNumber } from '../lib/utils';
-import { PlaySession, SessionDraft } from '../types';
+import { PlaySession, SessionDraft, BoardGame } from '../types';
 import { cn } from '../components/ui/cn';
 
 const PAGE_SIZE = 30;
@@ -164,6 +164,14 @@ export const SessionsPage: React.FC = () => {
       }))
       .sort((a, b) => b.plays - a.plays || a.name.localeCompare(b.name));
   }, [sessions, games]);
+
+  const gamesById = useMemo(() => {
+    const map = new Map<string, BoardGame>();
+    for (const g of games) {
+      if (g.id) map.set(g.id, g);
+    }
+    return map;
+  }, [games]);
 
   // Available years from session history (optimized O(S) string slicing without Date instantiations)
   const availableYears = useMemo(() => {
@@ -976,6 +984,7 @@ export const SessionsPage: React.FC = () => {
                       key={session.id}
                       session={session}
                       playersById={playersById}
+                      game={gamesById.get(session.gameId)}
                     />
                   ))}
                 </div>

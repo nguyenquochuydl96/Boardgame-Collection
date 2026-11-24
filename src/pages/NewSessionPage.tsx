@@ -935,7 +935,7 @@ export const NewSessionPage: React.FC = () => {
       durationMinutes: Math.max(5, Number(durationMinutes) || 60),
       players: computedPlayerScores,
       winnerId: winnerEntry?.playerId,
-      isCoop: isCoop || undefined,
+      isCoop: isCoop,
       scoringMode: activeScoringMode,
       coopOutcome: isCoop ? coopOutcome : undefined,
       firstPlayerMethod: isCoop ? 'manual' : firstPlayerMethod,

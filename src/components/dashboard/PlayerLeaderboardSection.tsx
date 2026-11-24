@@ -16,9 +16,11 @@ import {
   formatCount,
   isCoopSession,
   isWinOnlySession,
+  getSessionWinners,
   calculatePlayerStreaks,
   StreakData,
 } from '../../lib/utils';
+import { useGameStore } from '../../store/useGameStore';
 import { StreakDetailModal } from '../player/StreakDetailModal';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { Card } from '../ui/Card';
@@ -235,6 +237,15 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
     const [showAllPlayers, setShowAllPlayers] = useState(false);
     const [sessionScope, setSessionScope] = useState<'competitive' | 'all'>('all');
 
+    const games = useGameStore((s) => s.games);
+    const gamesById = useMemo(() => {
+      const map = new Map<string, typeof games[0]>();
+      for (const g of games) {
+        if (g.id) map.set(g.id, g);
+      }
+      return map;
+    }, [games]);
+
     // Modal state for streak inspection
     const [selectedStreakPlayer, setSelectedStreakPlayer] = useState<Player | null>(null);
     const [selectedStreakType, setSelectedStreakType] = useState<'win' | 'loss'>('win');
@@ -244,8 +255,8 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
     // Filter sessions at the first level based on sessionScope
     const activeSessions = useMemo(() => {
       if (sessionScope === 'all') return sessions;
-      return sessions.filter((s) => !isCoopSession(s));
-    }, [sessions, sessionScope]);
+      return sessions.filter((s) => !isCoopSession(s, gamesById.get(s.gameId)));
+    }, [sessions, sessionScope, gamesById]);
 
     // Dynamic qualification threshold: >= 5% of total recorded sessions (uncapped)
     const minRequiredPlays = useMemo(
@@ -289,12 +300,10 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
 
       chrono.forEach((s) => {
         const totalPlayers = s.players.length;
-        // Determine actual winner's score in this session
-        const winningPlayer = s.players.find(
-          (p) => p.isWinner || (s.winnerId && p.playerId === s.winnerId)
-        );
+        const game = gamesById.get(s.gameId);
+        const winners = getSessionWinners(s, game);
         const winnerScore =
-          typeof winningPlayer?.score === 'number' ? winningPlayer.score : undefined;
+          typeof winners[0]?.score === 'number' ? winners[0].score : undefined;
 
         s.players.forEach((ps) => {
           const st = statsMap.get(ps.playerId);
@@ -303,7 +312,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
           st.plays += 1;
           uniqueGamesMap.get(ps.playerId)?.add(s.gameName);
 
-          const isWin = ps.isWinner || s.winnerId === ps.playerId;
+          const isWin = winners.some((w) => w.playerId === ps.playerId);
           if (isWin) {
             st.wins += 1;
             st.currentWinStreak += 1;
@@ -318,7 +327,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
             }
             st.currentWinStreak = 0;
 
-            if (!isWinOnlySession(s)) {
+            if (!isWinOnlySession(s, game)) {
               if (ps.rank === 2) {
                 st.secondPlaces += 1;
                 if (

@@ -129,6 +129,10 @@ export const SessionDetailPage: React.FC = () => {
   const savedPlayers = usePlayerStore((s) => s.players);
   const games = useGameStore((s) => s.games);
 
+  const game = React.useMemo(
+    () => (session?.gameId ? games.find((g) => g.id === session.gameId) : undefined),
+    [games, session?.gameId]
+  );
   const gameExists = Boolean(session?.gameId && games.some((g) => g.id === session.gameId));
 
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
@@ -151,8 +155,8 @@ export const SessionDetailPage: React.FC = () => {
     () => getScoringTemplateForGame(session?.gameName),
     [session?.gameName]
   );
-  const isCoopSession = resolveIsCoopSession(session);
-  const isWinOnly = isWinOnlySession(session);
+  const isCoopSession = resolveIsCoopSession(session, game);
+  const isWinOnly = isWinOnlySession(session, game);
 
   const hasBreakdown = React.useMemo(() => {
     return (
@@ -326,7 +330,7 @@ export const SessionDetailPage: React.FC = () => {
 
     const initialMode: GameScoringMode =
       session.scoringMode ||
-      (resolveIsCoopSession(session) ? 'coop' : isWinOnlySession(session) ? 'win_only' : 'points');
+      (resolveIsCoopSession(session, game) ? 'coop' : isWinOnlySession(session, game) ? 'win_only' : 'points');
     setEditScoringMode(initialMode);
 
     setIsEditOpen(true);
@@ -508,7 +512,7 @@ export const SessionDetailPage: React.FC = () => {
         ? (anyWinner ? editPlayers[0]?.playerId : undefined)
         : (activeWinner ? activeWinner.playerId : undefined),
       firstPlayerId: isEditingCoop ? undefined : (activeFirstPlayer ? activeFirstPlayer.playerId : undefined),
-      isCoop: isEditingCoop || undefined,
+      isCoop: isEditingCoop,
       scoringMode: editScoringMode,
       coopOutcome: isEditingCoop ? (anyWinner ? 'won' : 'lost') : undefined,
     });
@@ -665,7 +669,7 @@ export const SessionDetailPage: React.FC = () => {
                       className={isWin ? (isCoopSession ? 'bg-[var(--good-soft)]' : 'bg-amber-500/[0.08]') : ''}
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-[var(--text-secondary)]">
-                        {isCoopSession ? '🤝' : `#${entry.rank || idx + 1}`}
+                        {isCoopSession ? '🤝' : isWinOnly ? (isWin ? '#1' : '—') : `#${entry.rank || idx + 1}`}
                       </td>
                       <td className="py-3.5 px-4">
                         <Link

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { PlaySession, Player } from '../../types';
-import { formatCount, formatNumber, normalizeLocationKey, sortVenuesByPlayCount } from '../../lib/utils';
+import { formatCount, formatNumber, normalizeLocationKey, sortVenuesByPlayCount, getSessionWinners } from '../../lib/utils';
 
 interface StatsLocationsTabProps {
   sessions: PlaySession[];
@@ -23,10 +23,9 @@ export const StatsLocationsTab: React.FC<StatsLocationsTabProps> = React.memo(
           map.set(key, entry);
         }
         entry.count += 1;
-        s.players?.forEach((p) => {
-          if (p.isWinner || s.winnerId === p.playerId) {
-            entry!.playerWins.set(p.playerId, (entry!.playerWins.get(p.playerId) || 0) + 1);
-          }
+        const winners = getSessionWinners(s);
+        winners.forEach((p) => {
+          entry!.playerWins.set(p.playerId, (entry!.playerWins.get(p.playerId) || 0) + 1);
         });
       });
 

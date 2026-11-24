@@ -11,16 +11,31 @@ export interface GameScoringPreset {
 
 /**
  * Normalizes a game title for robust accent, dash, quote, and case-insensitive matching.
+ * Converts Unicode NFC, curly double quotes [“”] -> ", curly single quotes [‘’] -> ',
+ * dashes [–—−] -> -, normalizes whitespace, and lowercases.
  */
-export function normalizeGameKey(name: string): string {
+export function normalizeGameKey(name?: string | null): string {
   if (!name) return '';
   return name
     .normalize('NFC')
     .trim()
-    .replace(/['"“”‘’]/g, '')
-    .replace(/[–—−-]/g, '-')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[–—−]/g, '-')
     .replace(/\s+/g, ' ')
     .toLocaleLowerCase('vi');
+}
+
+/**
+ * Secondary stripped key (no quotes, no punctuation) for resilient fuzzy matching.
+ */
+export function cleanGameKey(name?: string | null): string {
+  if (!name) return '';
+  return normalizeGameKey(name)
+    .replace(/['"]/g, '')
+    .replace(/[:-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 /**
@@ -108,53 +123,76 @@ export const GAME_SCORING_PRESETS: GameScoringPreset[] = [
 // Pre-indexed lookup maps for instant O(1) matching
 const PRESET_BY_BGG_ID = new Map<string, GameScoringPreset>();
 const PRESET_BY_NAME_KEY = new Map<string, GameScoringPreset>();
+const PRESET_BY_CLEAN_KEY = new Map<string, GameScoringPreset>();
 
 for (const p of GAME_SCORING_PRESETS) {
   if (p.bggId) {
-    PRESET_BY_BGG_ID.set(String(p.bggId), p);
+    PRESET_BY_BGG_ID.set(String(p.bggId).trim(), p);
   }
   const mainKey = normalizeGameKey(p.name);
   if (mainKey) {
     PRESET_BY_NAME_KEY.set(mainKey, p);
   }
+  const cleanKey = cleanGameKey(p.name);
+  if (cleanKey) {
+    PRESET_BY_CLEAN_KEY.set(cleanKey, p);
+  }
+
   if (Array.isArray(p.aliases)) {
     for (const alias of p.aliases) {
       const aliasKey = normalizeGameKey(alias);
       if (aliasKey) {
         PRESET_BY_NAME_KEY.set(aliasKey, p);
       }
+      const aliasClean = cleanGameKey(alias);
+      if (aliasClean) {
+        PRESET_BY_CLEAN_KEY.set(aliasClean, p);
+      }
     }
   }
 }
 
 /**
- * Finds a matching preset by bggId, then by normalized name (with alias support).
+ * Finds a matching preset by bggId, then by normalized / clean name (with alias support).
  */
 export function getGameScoringPreset(
-  game?: { bggId?: string; id?: string; name?: string } | null
+  game?: { bggId?: string | number; id?: string; name?: string } | null
 ): GameScoringPreset | undefined {
   if (!game) return undefined;
 
-  // 1. Match by bggId
-  if (game.bggId && PRESET_BY_BGG_ID.has(String(game.bggId))) {
-    return PRESET_BY_BGG_ID.get(String(game.bggId));
+  // 1. Match by bggId (safe string & number trimming)
+  if (game.bggId !== undefined && game.bggId !== null) {
+    const rawBgg = String(game.bggId).trim();
+    if (rawBgg && PRESET_BY_BGG_ID.has(rawBgg)) {
+      return PRESET_BY_BGG_ID.get(rawBgg);
+    }
   }
-  if (game.id && game.id.startsWith('bgg-')) {
-    const rawId = game.id.replace('bgg-', '');
-    if (PRESET_BY_BGG_ID.has(rawId)) {
+  if (game.id && typeof game.id === 'string' && game.id.startsWith('bgg-')) {
+    const rawId = game.id.replace('bgg-', '').trim();
+    if (rawId && PRESET_BY_BGG_ID.has(rawId)) {
       return PRESET_BY_BGG_ID.get(rawId);
     }
   }
 
-  // 2. Match by normalized name
+  // 2. Match by normalized name and clean name
   if (game.name) {
     const key = normalizeGameKey(game.name);
     if (PRESET_BY_NAME_KEY.has(key)) {
       return PRESET_BY_NAME_KEY.get(key);
     }
+    const clean = cleanGameKey(game.name);
+    if (PRESET_BY_CLEAN_KEY.has(clean)) {
+      return PRESET_BY_CLEAN_KEY.get(clean);
+    }
+
     // Prefix match for game titles with subtitle variants (e.g. "Mind MGMT")
     for (const [presetKey, preset] of PRESET_BY_NAME_KEY.entries()) {
       if (key.startsWith(presetKey) || presetKey.startsWith(key)) {
+        return preset;
+      }
+    }
+    for (const [presetClean, preset] of PRESET_BY_CLEAN_KEY.entries()) {
+      if (clean.startsWith(presetClean) || presetClean.startsWith(clean)) {
         return preset;
       }
     }
@@ -330,22 +368,48 @@ export function isWinOnlySession(
     return session.scoringMode === 'win_only';
   }
 
-  // If session has no explicit scoringMode, check if game is win_only preset
-  // and all players have no score / score === 0 while at least one winner exists
-  const preset = getGameScoringPreset(game || (session.gameName ? { name: session.gameName } : null));
-  const isPresetWinOnly = preset?.scoringMode === 'win_only' || (game && resolveGameScoringMode(game) === 'win_only');
+  // If session is cooperative, it is not competitive win-only
+  if (isCoopSession(session, game)) {
+    return false;
+  }
 
-  if (isPresetWinOnly && Array.isArray(session.players) && session.players.length > 0) {
-    const allZeroOrUndefined = session.players.every(
-      (p) => p.score === undefined || p.score === 0
-    );
-    const hasWinner = session.players.some((p) => p.isWinner);
-    if (allZeroOrUndefined && hasWinner) {
-      return true;
-    }
+  // Canonical preset check
+  const targetGame = game || (session.gameName ? { name: session.gameName } : null);
+  const preset = getGameScoringPreset(targetGame);
+  if (preset?.scoringMode === 'win_only') {
+    return true;
+  }
+  if (game && resolveGameScoringMode(game) === 'win_only') {
+    return true;
   }
 
   return false;
+}
+
+/**
+ * Resolves all winner(s) for a session as a full array.
+ * Guaranteed to return ALL winners (for multi-winner competitive matches, ties, and team wins),
+ * NEVER truncating to just the first winner.
+ */
+export function getSessionWinners<T extends { playerId: string; isWinner?: boolean; rank?: number } = any>(
+  session?: PlaySession | null,
+  game?: BoardGame | null
+): T[] {
+  if (!session || !Array.isArray(session.players) || session.players.length === 0) {
+    return [];
+  }
+
+  const isCoop = isCoopSession(session, game);
+  if (isCoop) {
+    const isTeamWin = session.coopOutcome === 'won' || session.players.some((p) => p.isWinner);
+    if (!isTeamWin) return [];
+    return session.players.filter((p) => p.isWinner || session.coopOutcome === 'won') as unknown as T[];
+  }
+
+  // Competitive (points or win_only)
+  return session.players.filter(
+    (p) => Boolean(p.isWinner || (session.winnerId && p.playerId === session.winnerId))
+  ) as unknown as T[];
 }
 
 /**

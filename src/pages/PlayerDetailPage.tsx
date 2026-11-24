@@ -31,7 +31,7 @@ import { GameCoverImage } from '../components/game/GameCoverImage';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useGameStore } from '../store/useGameStore';
-import { calculatePlayerStreaks, formatDate, formatNumber, formatCount } from '../lib/utils';
+import { calculatePlayerStreaks, formatDate, formatNumber, formatCount, getSessionWinners } from '../lib/utils';
 import { getPlayStyleInfo } from '../lib/boardgameAvatars';
 import { cn } from '../components/ui/cn';
 
@@ -65,11 +65,10 @@ export const PlayerDetailPage: React.FC = () => {
   const totalPlays = playerSessions.length;
   const totalWins = useMemo(() => {
     if (!player) return 0;
-    return playerSessions.filter((s) => {
-      const entry = s.players?.find((p) => p.playerId === player.id);
-      return Boolean(entry?.isWinner || s.winnerId === player.id);
-    }).length;
-  }, [playerSessions, player?.id]);
+    return playerSessions.filter((s) =>
+      getSessionWinners(s, gamesById.get(s.gameId)).some((w) => w.playerId === player.id)
+    ).length;
+  }, [playerSessions, player?.id, gamesById]);
 
   const overallWinRate =
     totalPlays > 0 ? Math.round((totalWins / totalPlays) * 100) : 0;
@@ -104,8 +103,8 @@ export const PlayerDetailPage: React.FC = () => {
         wins: 0,
       };
       existing.plays += 1;
-      const entry = s.players?.find((p) => p.playerId === player.id);
-      if (entry?.isWinner || s.winnerId === player.id) {
+      const isWin = getSessionWinners(s, gamesById.get(s.gameId)).some((w) => w.playerId === player.id);
+      if (isWin) {
         existing.wins += 1;
       }
       gameMap.set(s.gameId, existing);
@@ -206,8 +205,8 @@ export const PlayerDetailPage: React.FC = () => {
     >();
 
     for (const s of playerSessions) {
-      const isPlayerWin =
-        s.players?.find((p) => p.playerId === player.id)?.isWinner || s.winnerId === player.id;
+      const winners = getSessionWinners(s, gamesById.get(s.gameId));
+      const isPlayerWin = winners.some((w) => w.playerId === player.id);
 
       for (const p of s.players || []) {
         if (p.playerId === player.id) continue;
@@ -218,7 +217,7 @@ export const PlayerDetailPage: React.FC = () => {
         };
         cur.plays += 1;
         if (isPlayerWin) cur.playerWins += 1;
-        if (p.isWinner || s.winnerId === p.playerId) cur.opponentWins += 1;
+        if (winners.some((w) => w.playerId === p.playerId)) cur.opponentWins += 1;
         opponentCounts.set(p.playerId, cur);
       }
     }
@@ -756,6 +755,7 @@ export const PlayerDetailPage: React.FC = () => {
                   key={session.id}
                   session={session}
                   playersById={playersById}
+                  game={gamesById.get(session.gameId)}
                 />
               ))}
             </div>

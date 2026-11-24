@@ -33,6 +33,8 @@ import {
   resolveLowestScoreWins,
   GAME_SCORING_PRESETS,
   formatWinnerBadgeText,
+  getSessionWinners,
+  normalizeGameKey,
 } from './utils';
 import { healIncomingGames, isRealtimeSelfReflection } from './supabaseSync';
 import { BoardGame, PlaySession, Player, SessionDraft, GameLocation } from '../types';
@@ -2395,5 +2397,103 @@ test('Explicit session.scoringMode takes absolute precedence over preset or heur
   assert.equal(isCoopSession(customSession), false);
   assert.equal(isWinOnlySession(customSession), false);
 });
+
+test('getSessionWinners returns full array of all winners across competitive and coop sessions', () => {
+  // 1. Multi-winner competitive match (e.g. Mind MGMT with 3 rogue agents winning)
+  const competitive3Winners: PlaySession = {
+    id: 's-multi',
+    gameId: 'bgg-284653',
+    gameName: 'Mind MGMT: The Psychic Espionage “Game.”',
+    gameThumbnail: '',
+    datePlayed: '2026-05-23',
+    createdAt: '2026-05-23T13:45:20Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Anh Huy', isWinner: true },
+      { playerId: 'p2', playerName: 'Chị Quyên', isWinner: true },
+      { playerId: 'p3', playerName: 'Heo', isWinner: true },
+      { playerId: 'p4', playerName: 'Hằng', isWinner: false },
+    ],
+  };
+
+  const compWinners = getSessionWinners(competitive3Winners);
+  assert.equal(compWinners.length, 3);
+  assert.deepEqual(
+    compWinners.map((w) => w.playerName),
+    ['Anh Huy', 'Chị Quyên', 'Heo']
+  );
+
+  // 2. Co-op victory returns all winners
+  const coopWonSession: PlaySession = {
+    id: 's-coop-won',
+    gameId: 'bgg-162886',
+    gameName: 'Spirit Island',
+    gameThumbnail: '',
+    scoringMode: 'coop',
+    coopOutcome: 'won',
+    datePlayed: '2026-05-20',
+    createdAt: '2026-05-20T10:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Anh Huy', isWinner: true },
+      { playerId: 'p2', playerName: 'Heo', isWinner: true },
+    ],
+  };
+
+  const coopWonWinners = getSessionWinners(coopWonSession);
+  assert.equal(coopWonWinners.length, 2);
+
+  // 3. Co-op defeat returns empty array
+  const coopLostSession: PlaySession = {
+    id: 's-coop-lost',
+    gameId: 'bgg-162886',
+    gameName: 'Spirit Island',
+    gameThumbnail: '',
+    scoringMode: 'coop',
+    coopOutcome: 'lost',
+    datePlayed: '2026-05-20',
+    createdAt: '2026-05-20T11:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Anh Huy', isWinner: false },
+      { playerId: 'p2', playerName: 'Heo', isWinner: false },
+    ],
+  };
+
+  const coopLostWinners = getSessionWinners(coopLostSession);
+  assert.equal(coopLostWinners.length, 0);
+
+  // 4. Single winner competitive match
+  const singleWinnerSession: PlaySession = {
+    id: 's-single',
+    gameId: 'bgg-284653',
+    gameName: 'Mind MGMT: The Psychic Espionage “Game.”',
+    gameThumbnail: '',
+    datePlayed: '2026-05-23',
+    createdAt: '2026-05-23T14:57:15Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Anh Huy', isWinner: false },
+      { playerId: 'p2', playerName: 'Chị Quyên', isWinner: false },
+      { playerId: 'p3', playerName: 'Heo', isWinner: false },
+      { playerId: 'p4', playerName: 'Hằng', isWinner: true },
+    ],
+  };
+
+  const singleWinners = getSessionWinners(singleWinnerSession);
+  assert.equal(singleWinners.length, 1);
+  assert.equal(singleWinners[0].playerName, 'Hằng');
+});
+
+test('normalizeGameKey normalizes curly quotes, straight quotes, and dashes identically', () => {
+  const curly = 'Mind MGMT: The Psychic Espionage “Game.”';
+  const straight = 'Mind MGMT: The Psychic Espionage "Game."';
+  const dash1 = 'Compile – Main 1';
+  const dash2 = 'Compile - Main 1';
+
+  assert.equal(normalizeGameKey(curly), normalizeGameKey(straight));
+  assert.equal(normalizeGameKey(dash1), normalizeGameKey(dash2));
+});
+
 
 

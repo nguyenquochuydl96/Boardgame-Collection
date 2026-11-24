@@ -3,7 +3,7 @@ import { Trophy } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { GameCoverImage } from '../game/GameCoverImage';
 import { cn } from '../ui/cn';
-import { getTotalPlayHours, pluralize } from '../../lib/utils';
+import { getTotalPlayHours, pluralize, getSessionWinners } from '../../lib/utils';
 import { PlaySession } from '../../types';
 
 interface StatsYearsTabProps {
@@ -49,16 +49,15 @@ export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
         { playerId: string; playerName: string; wins: number }
       >();
       yearFilteredSessions.forEach((s) => {
-        s.players.forEach((p) => {
-          if (p.isWinner || s.winnerId === p.playerId) {
-            const entry = winnerMap.get(p.playerId) || {
-              playerId: p.playerId,
-              playerName: p.playerName,
-              wins: 0,
-            };
-            entry.wins += 1;
-            winnerMap.set(p.playerId, entry);
-          }
+        const winners = getSessionWinners(s);
+        winners.forEach((p) => {
+          const entry = winnerMap.get(p.playerId) || {
+            playerId: p.playerId,
+            playerName: p.playerName,
+            wins: 0,
+          };
+          entry.wins += 1;
+          winnerMap.set(p.playerId, entry);
         });
       });
       const topWinners = Array.from(winnerMap.values())

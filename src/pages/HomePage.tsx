@@ -35,6 +35,7 @@ import {
   pluralize,
   isCoopSession,
   isWinOnlySession,
+  getSessionWinners,
   formatWinnerBadgeText,
 } from '../lib/utils';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
@@ -48,6 +49,14 @@ export const HomePage: React.FC = () => {
   const games = useGameStore((s) => s.games);
   const sessions = useSessionStore((s) => s.sessions);
   const players = usePlayerStore((s) => s.players);
+
+  const gamesById = useMemo(() => {
+    const map = new Map<string, typeof games[0]>();
+    for (const g of games) {
+      if (g.id) map.set(g.id, g);
+    }
+    return map;
+  }, [games]);
 
   const [isWhatToPlayOpen, setIsWhatToPlayOpen] = useState(false);
 
@@ -331,11 +340,10 @@ export const HomePage: React.FC = () => {
             <div className="space-y-2.5">
               {recentSessions.length > 0 ? (
                 recentSessions.map((session) => {
-                  const isCoop = isCoopSession(session);
-                  const isWinOnly = isWinOnlySession(session);
-                  const winners = (session.players || []).filter(
-                    (p) => Boolean(p.isWinner || (session.winnerId && p.playerId === session.winnerId))
-                  );
+                  const game = gamesById.get(session.gameId);
+                  const isCoop = isCoopSession(session, game);
+                  const isWinOnly = isWinOnlySession(session, game);
+                  const winners = getSessionWinners(session, game);
                   const winnerBadge = formatWinnerBadgeText(winners);
                   const scoreSuffix =
                     !isWinOnly &&

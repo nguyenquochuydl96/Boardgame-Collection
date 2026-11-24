@@ -4,6 +4,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import { useLocationStore } from '../store/useLocationStore';
 import { BoardGame, Player, PlaySession, GameLocation } from '../types';
 import { isIdbMediaRef, getMediaImage } from './mediaStorage';
+import { getSessionWinners } from './utils';
 
 export interface VaultBackupData {
   app: 'BoardGameVault';
@@ -184,7 +185,8 @@ export function exportSessionsCSV() {
   ];
 
   const rows = sessions.map((s) => {
-    const winnerPlayer = s.players.find((p) => p.isWinner || p.playerId === s.winnerId);
+    const winners = getSessionWinners(s);
+    const winnerNames = winners.map((p) => p.playerName).filter(Boolean).join(', ');
     const playersSummary = s.players
       .map((p) => `${p.playerName}: ${typeof p.score === 'number' ? p.score : 'N/A'}`)
       .join('; ');
@@ -195,7 +197,7 @@ export function exportSessionsCSV() {
       `"${s.datePlayed}"`,
       s.durationMinutes ?? '',
       `"${(s.location || '').replace(/"/g, '""')}"`,
-      `"${(winnerPlayer?.playerName || '').replace(/"/g, '""')}"`,
+      `"${winnerNames.replace(/"/g, '""')}"`,
       `"${playersSummary.replace(/"/g, '""')}"`,
       `"${(s.notes || '').replace(/"/g, '""')}"`,
     ];

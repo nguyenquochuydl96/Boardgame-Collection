@@ -607,6 +607,7 @@ export const GameDetailPage: React.FC = () => {
                       key={session.id}
                       session={session}
                       playersById={playersById}
+                      game={game}
                     />
                   ))}
                   {visibleSessionsCount < gameSessions.length && (

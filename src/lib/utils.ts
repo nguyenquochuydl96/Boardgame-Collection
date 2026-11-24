@@ -10,6 +10,7 @@ import {
   isCoopGame,
   isCoopSession,
   isWinOnlySession,
+  getSessionWinners,
   resolveLowestScoreWins,
 } from './gameScoringPresets';
 export {
@@ -21,6 +22,7 @@ export {
   isCoopGame,
   isCoopSession,
   isWinOnlySession,
+  getSessionWinners,
   resolveLowestScoreWins,
 };
 export type { GameScoringPreset } from './gameScoringPresets';
@@ -880,6 +882,7 @@ export function calculateGameStats(
   for (const session of chrono) {
     const sDate = session.datePlayed;
     const isWinOnly = isWinOnlySession(session);
+    const winners = getSessionWinners(session);
     for (const p of (session.players || [])) {
       if (!isWinOnly && typeof p.score === 'number' && !Number.isNaN(p.score)) {
         if (!highestScore || p.score > highestScore.score) {
@@ -917,7 +920,7 @@ export function calculateGameStats(
       existing.lastPlayedDate = sDate || existing.lastPlayedDate;
       existing.lastPlayedSessionId = session.id;
 
-      const isWin = p.isWinner || session.winnerId === p.playerId;
+      const isWin = winners.some((w) => w.playerId === p.playerId);
       if (isWin) {
         existing.wins += 1;
         existing.lastWonDate = sDate || existing.lastWonDate;
@@ -1049,8 +1052,8 @@ export function calculatePlayerStreaks(
   let maxLosses: PlaySession[] = [];
 
   for (const s of sorted) {
-    const p = s.players?.find((pl) => pl.playerId === playerId);
-    const won = Boolean(p?.isWinner || s.winnerId === playerId);
+    const winners = getSessionWinners(s);
+    const won = winners.some((w) => w.playerId === playerId);
 
     if (won) {
       curWins.push(s);
@@ -1150,7 +1153,8 @@ export function calculateHeadToHead(
     for (const session of sharedSessions) {
       const entry = (session.players || []).find((p) => p.playerId === player.id);
       if (!entry) continue;
-      if (entry.isWinner || session.winnerId === player.id) {
+      const winners = getSessionWinners(session);
+      if (winners.some((w) => w.playerId === player.id)) {
         winsInShared += 1;
       }
       if (typeof entry.score === 'number') {
@@ -1195,9 +1199,9 @@ export function calculateHeadToHead(
       winsByPlayerId: {},
     };
     existing.plays += 1;
+    const winners = getSessionWinners(session);
     for (const id of selectedIds) {
-      const pEntry = session.players.find((p) => p.playerId === id);
-      if (pEntry?.isWinner || session.winnerId === id) {
+      if (winners.some((w) => w.playerId === id)) {
         existing.winsByPlayerId[id] = (existing.winsByPlayerId[id] || 0) + 1;
       }
     }
@@ -1457,9 +1461,10 @@ export function sortPlayersByPlayCount<T extends { id: string; name: string }>(
   if (Array.isArray(statsMapOrSessions)) {
     for (const s of statsMapOrSessions) {
       if (!s.players) continue;
+      const winners = getSessionWinners(s);
       for (const p of s.players) {
         playCounts[p.playerId] = (playCounts[p.playerId] || 0) + 1;
-        if (p.isWinner || s.winnerId === p.playerId) {
+        if (winners.some((w) => w.playerId === p.playerId)) {
           winsMap[p.playerId] = (winsMap[p.playerId] || 0) + 1;
         }
       }
@@ -1652,8 +1657,8 @@ export function buildRematchDraftFromSession(
   }
 ): RematchDraftResult {
   const matchedGame = options?.games?.find((g) => g.id === session.gameId);
-  const scoringMode: GameScoringMode = session.scoringMode || resolveGameScoringMode(matchedGame);
-  const isCoop = scoringMode === 'coop' || isCoopSession(session, matchedGame);
+  const isCoop = isCoopSession(session, matchedGame);
+  const scoringMode: GameScoringMode = session.scoringMode || (isCoop ? 'coop' : resolveGameScoringMode(matchedGame));
   const targetStep: 4 | 5 = isCoop ? 5 : 4;
   const template = getScoringTemplateForGame(session.gameName);
   const lowScoreWins = resolveLowestScoreWins(matchedGame);
