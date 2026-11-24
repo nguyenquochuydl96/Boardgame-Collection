@@ -1374,6 +1374,8 @@ export function compressImage(
 /**
  * Normalizes a location/venue name into a canonical deduplication key.
  * - Decomposes/precomposes into Unicode NFC (handles iPhone/Mac NFD vs Windows/Web NFC).
+ * - Strips invisible zero-width characters (ZWSP, ZWJ, ZWNJ, BOM).
+ * - Normalizes en-dash / em-dash to regular hyphen.
  * - Trims leading/trailing whitespace and compresses consecutive spaces.
  * - Converts to lower-case using Vietnamese locale ('vi').
  */
@@ -1381,9 +1383,66 @@ export function normalizeLocationKey(name: string | null | undefined): string {
   if (!name) return '';
   return name
     .normalize('NFC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/[–—]/g, '-')
     .trim()
     .replace(/\s+/g, ' ')
     .toLocaleLowerCase('vi');
+}
+
+/**
+ * Sorts players by play count descending.
+ * Ties in play count are broken by wins descending, winRate descending, then Vietnamese collation ('vi') on player name.
+ *
+ * @param players Array of players to sort
+ * @param statsMapOrSessions Optional playerStatsMap or PlaySession[] to calculate play counts
+ */
+export function sortPlayersByPlayCount<T extends { id: string; name: string }>(
+  players: T[],
+  statsMapOrSessions?:
+    | Record<string, { totalGames?: number; plays?: number; wins?: number; winRate?: number }>
+    | PlaySession[]
+): T[] {
+  const playCounts: Record<string, number> = {};
+  const winsMap: Record<string, number> = {};
+  const winRateMap: Record<string, number> = {};
+
+  if (Array.isArray(statsMapOrSessions)) {
+    for (const s of statsMapOrSessions) {
+      if (!s.players) continue;
+      for (const p of s.players) {
+        playCounts[p.playerId] = (playCounts[p.playerId] || 0) + 1;
+        if (p.isWinner || s.winnerId === p.playerId) {
+          winsMap[p.playerId] = (winsMap[p.playerId] || 0) + 1;
+        }
+      }
+    }
+    for (const id in playCounts) {
+      winRateMap[id] = playCounts[id] > 0 ? (winsMap[id] || 0) / playCounts[id] : 0;
+    }
+  } else if (statsMapOrSessions) {
+    for (const [id, stat] of Object.entries(statsMapOrSessions)) {
+      playCounts[id] = stat.totalGames ?? stat.plays ?? 0;
+      winsMap[id] = stat.wins ?? 0;
+      winRateMap[id] = stat.winRate ?? 0;
+    }
+  }
+
+  return [...players].sort((a, b) => {
+    const countA = playCounts[a.id] ?? 0;
+    const countB = playCounts[b.id] ?? 0;
+    if (countB !== countA) return countB - countA;
+
+    const winsA = winsMap[a.id] ?? 0;
+    const winsB = winsMap[b.id] ?? 0;
+    if (winsB !== winsA) return winsB - winsA;
+
+    const rateA = winRateMap[a.id] ?? 0;
+    const rateB = winRateMap[b.id] ?? 0;
+    if (rateB !== rateA) return rateB - rateA;
+
+    return (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' });
+  });
 }
 
 /**
@@ -1494,6 +1553,23 @@ export function deduplicateLocationsList(
       notes: mergedNotes?.trim() || undefined,
       isDefault: isAnyDefault,
     });
+  }
+
+  // Ensure AT MOST ONE location is marked as default across the entire collection.
+  // If multiple locations have isDefault === true, keep isDefault only on the first/highest-scoring candidate.
+  let defaultAssigned = false;
+  for (const loc of result) {
+    if (loc.isDefault) {
+      if (!defaultAssigned) {
+        defaultAssigned = true;
+      } else {
+        loc.isDefault = false;
+      }
+    }
+  }
+  // If no default exists and the list is not empty, ensure the first venue is default
+  if (!defaultAssigned && result.length > 0) {
+    result[0].isDefault = true;
   }
 
   return result;

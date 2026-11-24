@@ -71,7 +71,12 @@ export const useLocationStore = create<LocationStore>()(
         });
       },
       addLocation: (name, address, notes, isDefault) => {
-        const trimmed = name.trim().normalize('NFC').replace(/\s+/g, ' ');
+        const trimmed = name
+          .normalize('NFC')
+          .replace(/[\u200B-\u200D\uFEFF]/g, '')
+          .replace(/[–—]/g, '-')
+          .trim()
+          .replace(/\s+/g, ' ');
         const key = normalizeLocationKey(trimmed);
         const currentLocs = get().locations;
         const existing = currentLocs.find(
@@ -104,19 +109,24 @@ export const useLocationStore = create<LocationStore>()(
         };
 
         set((state) => ({
-          locations: [
+          locations: deduplicateLocationsList([
             ...state.locations.map((loc) =>
               shouldBeDefault ? { ...loc, isDefault: false } : loc
             ),
             newLoc,
-          ],
+          ]),
         }));
         return newLoc;
       },
       updateLocation: (id, updates) => {
         set((state) => {
           const isSettingDefault = updates.isDefault === true;
-          const cleanName = updates.name.trim().normalize('NFC').replace(/\s+/g, ' ');
+          const cleanName = updates.name
+            .normalize('NFC')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .replace(/[–—]/g, '-')
+            .trim()
+            .replace(/\s+/g, ' ');
           return {
             locations: state.locations.map((loc) => {
               if (loc.id === id) {
@@ -167,7 +177,12 @@ export const useLocationStore = create<LocationStore>()(
         // Check real sessions in history (ignore any fake location names)
         for (const s of sessions) {
           if (!s.location || !s.location.trim()) continue;
-          const trimmed = s.location.trim().normalize('NFC').replace(/\s+/g, ' ');
+          const trimmed = s.location
+            .normalize('NFC')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .replace(/[–—]/g, '-')
+            .trim()
+            .replace(/\s+/g, ' ');
           const key = normalizeLocationKey(trimmed);
           if (!key || FAKE_LOCATION_NAMES.has(key)) continue;
 
@@ -184,7 +199,7 @@ export const useLocationStore = create<LocationStore>()(
         }
 
         set((state) => ({
-          locations: newLocs.length > 0 ? deduplicateLocationsList([...state.locations, ...newLocs], sessions) : state.locations,
+          locations: deduplicateLocationsList([...state.locations, ...newLocs], sessions),
           hasSyncedHistory: true,
         }));
       },

@@ -11,6 +11,7 @@ import {
   getGameThumbnail,
   isLowResBGGThumbnail,
   BGG_OFFICIAL_IRON_CLAYS,
+  deduplicateLocationsList,
 } from './utils';
 
 export { isSyncApplyingRemote };
@@ -424,12 +425,15 @@ async function executeSinglePushToCloud(): Promise<{ success: boolean; error?: s
       })
     );
 
+    const rawLocations = useLocationStore.getState().locations;
+    const cleanLocations = deduplicateLocationsList(rawLocations, latestSessions);
+
     const payload: VaultPayload = {
       vault_id: vaultId,
       games: latestGames,
       sessions: cloudSessions,
       players: cloudPlayers,
-      locations,
+      locations: cleanLocations,
       updated_at: nowIso,
     };
 
@@ -519,12 +523,12 @@ export async function pullVaultFromCloud(mode: 'replace' | 'merge' = 'replace'):
       const remoteGames = (data.games || []) as BoardGame[];
       const rawSessions = (data.sessions || []) as PlaySession[];
       const rawPlayers = (data.players || []) as Player[];
-      const remoteLocations = (data.locations || []) as GameLocation[];
-
+      const rawLocations = (data.locations || []) as GameLocation[];
       const { players: remotePlayers, sessions: remoteSessions } = await processIncomingMedia(
         rawPlayers,
         rawSessions
       );
+      const remoteLocations = deduplicateLocationsList(rawLocations, remoteSessions);
 
       const localGames = useGameStore.getState().games;
       const localSessions = useSessionStore.getState().sessions;
@@ -545,7 +549,10 @@ export async function pullVaultFromCloud(mode: 'replace' | 'merge' = 'replace'):
       } else {
         const mergedSessions = mergeById(localSessions, remoteSessions);
         const mergedPlayers = mergeById(usePlayerStore.getState().players, remotePlayers);
-        const mergedLocations = mergeById(useLocationStore.getState().locations, remoteLocations);
+        const mergedLocations = deduplicateLocationsList(
+          mergeById(useLocationStore.getState().locations, remoteLocations),
+          remoteSessions
+        );
 
         useSessionStore.getState().bulkAddSessions(mergedSessions, true);
         usePlayerStore.getState().bulkAddPlayers(mergedPlayers, true);

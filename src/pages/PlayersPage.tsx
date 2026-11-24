@@ -32,7 +32,7 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useLocationStore } from '../store/useLocationStore';
 import { getPlayStyleInfo } from '../lib/boardgameAvatars';
-import { formatNumber, formatCount, normalizeLocationKey, sortVenuesByPlayCount } from '../lib/utils';
+import { formatNumber, formatCount, normalizeLocationKey, sortVenuesByPlayCount, sortPlayersByPlayCount } from '../lib/utils';
 import { Player, GameLocation } from '../types';
 
 export const PlayersPage: React.FC = () => {
@@ -87,10 +87,6 @@ export const PlayersPage: React.FC = () => {
     );
   };
 
-  const selectedComparePlayers = players.filter((p) =>
-    selectedCompareIds.includes(p.id)
-  );
-
   // 1. Precompute player stats in a single pass O(S) to avoid heavy re-filtering on mobile
   const playerStatsMap = useMemo(() => {
     const stats: Record<string, { totalGames: number; wins: number; winRate: number }> = {};
@@ -115,6 +111,21 @@ export const PlayersPage: React.FC = () => {
     }
     return stats;
   }, [players, sessions]);
+
+  // 1b. Sort players descending by play count with wins/winRate/name tie-breaking
+  const sortedPlayers = useMemo(
+    () => sortPlayersByPlayCount(players, playerStatsMap),
+    [players, playerStatsMap]
+  );
+
+  const selectedComparePlayers = useMemo(
+    () =>
+      sortPlayersByPlayCount(
+        players.filter((p) => selectedCompareIds.includes(p.id)),
+        playerStatsMap
+      ),
+    [players, selectedCompareIds, playerStatsMap]
+  );
 
   // 2. Precomputed per-venue metrics in a single O(S) pass, keyed by normalizeLocationKey
   const venueMetricsByKey = useMemo(() => {
@@ -370,9 +381,9 @@ export const PlayersPage: React.FC = () => {
             )}
 
             {/* Players Grid */}
-            {players.length > 0 ? (
+            {sortedPlayers.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {players.map((player) => {
+                {sortedPlayers.map((player) => {
                   const pStat = playerStatsMap[player.id] || { totalGames: 0, wins: 0, winRate: 0 };
                   const totalGames = pStat.totalGames;
                   const winRate = pStat.winRate;

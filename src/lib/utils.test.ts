@@ -25,6 +25,7 @@ import {
   normalizeLocationKey,
   sortVenuesByPlayCount,
   deduplicateLocationsList,
+  sortPlayersByPlayCount,
 } from './utils';
 import { healIncomingGames, isRealtimeSelfReflection } from './supabaseSync';
 import { BoardGame, PlaySession, Player, SessionDraft, GameLocation } from '../types';
@@ -1261,13 +1262,17 @@ test('normalizeLocationKey normalizes NFC/NFD Unicode, whitespace, and Vietnames
   assert.equal(normalizeLocationKey('Lafam Coffee'), 'lafam coffee');
   assert.equal(normalizeLocationKey('  LAFAM   '), 'lafam');
 
-  // 4. Empty / Null / Undefined
+  // 4. Zero-width invisible characters and dashes
+  assert.equal(normalizeLocationKey('Lafam\u200B Coffee\uFEFF'), 'lafam coffee');
+  assert.equal(normalizeLocationKey('Quán Cafe – Trà Sữa — Quận 1'), 'quán cafe - trà sữa - quận 1');
+
+  // 5. Empty / Null / Undefined
   assert.equal(normalizeLocationKey(''), '');
   assert.equal(normalizeLocationKey(null), '');
   assert.equal(normalizeLocationKey(undefined), '');
 });
 
-test('deduplicateLocationsList merges duplicate venues and preserves richest metadata & default status', () => {
+test('deduplicateLocationsList merges duplicate venues and preserves richest metadata & single default status', () => {
   const duplicateLocs: GameLocation[] = [
     {
       id: 'loc-1',
@@ -1291,6 +1296,7 @@ test('deduplicateLocationsList merges duplicate venues and preserves richest met
       id: 'loc-4',
       name: 'Nhà Lộc',
       address: 'Binh Thanh',
+      isDefault: true, // Another venue has isDefault=true, should ensure only 1 default exists
       createdAt: '2026-01-04',
     },
   ];
@@ -1309,6 +1315,75 @@ test('deduplicateLocationsList merges duplicate venues and preserves richest met
   const nhaLoc = deduped.find((l) => normalizeLocationKey(l.name) === 'nhà lộc');
   assert.ok(nhaLoc);
   assert.equal(nhaLoc.address, 'Binh Thanh');
+  // Exactly one venue should be default across the entire list
+  const defaults = deduped.filter((l) => l.isDefault);
+  assert.equal(defaults.length, 1);
+});
+
+test('sortPlayersByPlayCount sorts descending by play count with wins/rate/name tie-breaking', () => {
+  const players = [
+    { id: 'p-ak', name: 'A Kha' },
+    { id: 'p-heo', name: 'Heo' },
+    { id: 'p-hang', name: 'Hằng' },
+    { id: 'p-linh', name: 'Linh' },
+    { id: 'p-an', name: 'An' },
+  ];
+
+  const statsMap = {
+    'p-ak': { totalGames: 1, wins: 0, winRate: 0 },
+    'p-heo': { totalGames: 1450, wins: 500, winRate: 34 },
+    'p-hang': { totalGames: 1391, wins: 480, winRate: 35 },
+    'p-linh': { totalGames: 50, wins: 20, winRate: 40 },
+    'p-an': { totalGames: 50, wins: 25, winRate: 50 }, // same plays as Linh, but more wins
+  };
+
+  const sorted = sortPlayersByPlayCount(players, statsMap);
+
+  assert.equal(sorted[0].name, 'Heo');
+  assert.equal(sorted[1].name, 'Hằng');
+  assert.equal(sorted[2].name, 'An'); // 50 plays, 25 wins
+  assert.equal(sorted[3].name, 'Linh'); // 50 plays, 20 wins
+  assert.equal(sorted[4].name, 'A Kha'); // 1 play, bottom
+});
+
+test('sortPlayersByPlayCount works directly from PlaySession[] array', () => {
+  const players = [
+    { id: 'p1', name: 'Player One' },
+    { id: 'p2', name: 'Player Two' },
+  ];
+
+  const sessions: PlaySession[] = [
+    {
+      id: 's1',
+      gameId: 'g1',
+      gameName: 'Catan',
+      gameThumbnail: '',
+      firstPlayerMethod: 'manual',
+      datePlayed: '2026-11-20',
+      createdAt: '2026-11-20',
+      players: [
+        { playerId: 'p2', playerName: 'Player Two', isWinner: true },
+        { playerId: 'p1', playerName: 'Player One', isWinner: false },
+      ],
+    },
+    {
+      id: 's2',
+      gameId: 'g1',
+      gameName: 'Catan',
+      gameThumbnail: '',
+      firstPlayerMethod: 'manual',
+      datePlayed: '2026-11-21',
+      createdAt: '2026-11-21',
+      players: [
+        { playerId: 'p2', playerName: 'Player Two', isWinner: true },
+      ],
+    },
+  ];
+
+  // p2 has 2 plays, p1 has 1 play
+  const sorted = sortPlayersByPlayCount(players, sessions);
+  assert.equal(sorted[0].id, 'p2');
+  assert.equal(sorted[1].id, 'p1');
 });
 
 test('sortVenuesByPlayCount sorts descending by play count with Vietnamese alphabetical tie-breaking', () => {
