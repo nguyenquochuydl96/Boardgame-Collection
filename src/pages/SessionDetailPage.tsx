@@ -555,7 +555,6 @@ export const SessionDetailPage: React.FC = () => {
             <GameCoverImage
               game={{ name: session.gameName, thumbnail: session.gameThumbnail }}
               className="w-24 h-32 rounded-2xl border border-[var(--border-subtle)] hover:scale-105 transition-transform shadow-md"
-              paddingClass="p-1.5"
               fallbackIconSize="text-3xl"
             />
           </Link>

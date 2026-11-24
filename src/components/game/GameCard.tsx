@@ -36,7 +36,6 @@ const GameCardComponent: React.FC<GameCardProps> = ({
           <GameCoverImage
             game={game}
             className="w-16 h-20 rounded-xl shrink-0 border border-[var(--line)]"
-            paddingClassName="p-1"
             imgClassName="group-hover:scale-105 transition-transform duration-300"
             fallbackIconClassName="w-6 h-6"
           />
@@ -126,8 +125,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
         {/* Album Cover Art */}
         <GameCoverImage
           game={game}
-          className="aspect-[3/4] w-full rounded-2xl border border-[var(--line)]"
-          paddingClassName="p-2"
+          className="aspect-square w-full rounded-2xl border border-[var(--line)]"
           imgClassName="transition-transform duration-300 ease-out group-hover:scale-105"
           fallbackIconClassName="w-10 h-10"
         >

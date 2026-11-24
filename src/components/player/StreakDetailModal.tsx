@@ -143,7 +143,6 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
                         <GameCoverImage
                           game={{ name: session.gameName, thumbnail: session.gameThumbnail }}
                           className="w-12 h-14 rounded-xl border border-[var(--line)] shrink-0"
-                          paddingClass="p-0.5"
                           fallbackIconSize="text-xl"
                         />
 

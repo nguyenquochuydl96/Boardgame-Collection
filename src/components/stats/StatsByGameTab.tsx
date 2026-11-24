@@ -212,7 +212,6 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                 <GameCoverImage
                   game={activeGame}
                   className="w-16 h-20 rounded-xl border border-[var(--line)] shrink-0 shadow-md"
-                  paddingClass="p-1"
                   fallbackIconSize="text-2xl"
                 />
                 <div className="min-w-0 space-y-1.5">
@@ -605,7 +604,6 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                             <GameCoverImage
                               game={item.game}
                               className="w-8 h-10 rounded-lg shrink-0 border border-[var(--line)] shadow-sm"
-                              paddingClass="p-0.5"
                               fallbackIconSize="text-sm"
                             />
                             <div className="min-w-0">

@@ -247,7 +247,6 @@ export const GameDetailPage: React.FC = () => {
               game={game}
               loading="eager"
               className="md:col-span-4 aspect-[4/3] md:aspect-auto min-h-[240px]"
-              paddingClassName="p-4 sm:p-6"
               fallbackIconClassName="w-12 h-12"
             >
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)]/70 via-transparent to-transparent md:hidden pointer-events-none" />

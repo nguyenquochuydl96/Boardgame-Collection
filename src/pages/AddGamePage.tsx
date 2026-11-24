@@ -353,7 +353,6 @@ export const AddGamePage: React.FC = () => {
                     src={thumbnail}
                     alt={name || 'Cover preview'}
                     className="w-full aspect-square rounded-2xl border border-[var(--line)]"
-                    paddingClassName="p-3"
                     fallbackIconClassName="w-8 h-8"
                   />
                 ) : (

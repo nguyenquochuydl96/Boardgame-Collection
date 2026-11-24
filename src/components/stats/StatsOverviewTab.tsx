@@ -40,7 +40,6 @@ export const GameThumbBox: React.FC<{
       <GameCoverImage
         game={{ name: alt, thumbnail: src }}
         className="w-16 h-20 rounded-xl shrink-0 border border-[var(--line)] shadow-md group-hover:scale-105 transition-transform"
-        paddingClass="p-1"
         fallbackIconSize="text-2xl"
       />
     );

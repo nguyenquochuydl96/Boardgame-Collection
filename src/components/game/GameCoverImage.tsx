@@ -13,11 +13,13 @@ export interface GameCoverImageProps {
   alt?: string;
   /** Classes applied to the outer relative container (e.g. aspect-square, w-12 h-12 rounded-xl) */
   className?: string;
-  /** Padding inside the inner absolute framing layer (default: 'p-2') */
+  /** Image sizing/fit mode: 'cover' (default, full-bleed 100% frame fill) or 'contain' (framed with padding) */
+  fit?: 'cover' | 'contain';
+  /** Padding inside the framing layer when fit='contain' (default: 'p-2' when contain, '' when cover) */
   paddingClassName?: string;
   /** Shorthand alias for paddingClassName */
   paddingClass?: string;
-  /** Additional classes applied to the <img> element (never pass w-full h-full here) */
+  /** Additional classes applied to the <img> element */
   imgClassName?: string;
   /** Loading strategy for the image */
   loading?: 'lazy' | 'eager';
@@ -31,16 +33,16 @@ export interface GameCoverImageProps {
 
 /**
  * Distortion-free board game box cover renderer.
- * Uses a non-flex outer container with an absolute inset flex framing layer
- * and `max-w-full max-h-full w-auto h-auto object-contain` on `<img>`,
- * preventing iOS Safari/WebKit replaced-element aspect-ratio stretching
- * and avoiding blurred backdrops behind transparent PNG covers.
+ * Defaults to full-bleed `object-cover object-center` filling 100% of the frame
+ * with zero aspect-ratio distortion on WebKit/iOS Safari.
+ * Supports optional `fit="contain"` for padded framing if explicitly requested.
  */
 export const GameCoverImage: React.FC<GameCoverImageProps> = ({
   game,
   src,
   alt,
   className = '',
+  fit = 'cover',
   paddingClassName,
   paddingClass,
   imgClassName = '',
@@ -49,7 +51,7 @@ export const GameCoverImage: React.FC<GameCoverImageProps> = ({
   fallbackIconSize,
   children,
 }) => {
-  const effectivePadding = paddingClassName ?? paddingClass ?? 'p-2';
+  const effectivePadding = paddingClassName ?? paddingClass ?? (fit === 'contain' ? 'p-2' : '');
   const effectiveFallbackIconClass = fallbackIconClassName ?? fallbackIconSize ?? 'w-6 h-6';
   const rawSrc = game
     ? getGameThumbnail(game) || src || ''
@@ -65,8 +67,20 @@ export const GameCoverImage: React.FC<GameCoverImageProps> = ({
 
   return (
     <div className={`relative overflow-hidden bg-[var(--card-2)] ${className}`}>
-      <div className={`absolute inset-0 flex items-center justify-center ${effectivePadding}`}>
-        {resolvedSrc && !hasError ? (
+      {resolvedSrc && !hasError ? (
+        fit === 'contain' ? (
+          <div className={`absolute inset-0 flex items-center justify-center ${effectivePadding}`}>
+            <img
+              src={resolvedSrc}
+              alt={resolvedAlt}
+              loading={loading}
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onError={() => setHasError(true)}
+              className={`max-w-full max-h-full w-auto h-auto object-contain select-none ${imgClassName}`}
+            />
+          </div>
+        ) : (
           <img
             src={resolvedSrc}
             alt={resolvedAlt}
@@ -74,14 +88,14 @@ export const GameCoverImage: React.FC<GameCoverImageProps> = ({
             decoding="async"
             referrerPolicy="no-referrer"
             onError={() => setHasError(true)}
-            className={`max-w-full max-h-full w-auto h-auto object-contain select-none ${imgClassName}`}
+            className={`absolute inset-0 w-full h-full object-cover object-center select-none ${imgClassName}`}
           />
-        ) : (
-          <div className="flex flex-col items-center justify-center text-[var(--muted)]/50">
-            <Dices className={effectiveFallbackIconClass} />
-          </div>
-        )}
-      </div>
+        )
+      ) : (
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-[var(--muted)]/50">
+          <Dices className={effectiveFallbackIconClass} />
+        </div>
+      )}
       {children}
     </div>
   );

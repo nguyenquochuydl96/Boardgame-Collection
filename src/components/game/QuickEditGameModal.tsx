@@ -179,7 +179,6 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
               <GameCoverImage
                 game={game}
                 className="w-12 h-14 rounded-xl shrink-0 border border-[var(--line)]"
-                paddingClassName="p-1"
                 fallbackIconClassName="w-5 h-5"
               />
               <div className="min-w-0">

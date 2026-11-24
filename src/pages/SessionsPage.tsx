@@ -693,7 +693,6 @@ export const SessionsPage: React.FC = () => {
                             <GameCoverImage
                               game={{ name: g.name, thumbnail: g.thumbnail }}
                               className="w-8 h-8 rounded-lg shrink-0 border border-[var(--line)]"
-                              paddingClass="p-0.5"
                               fallbackIconSize="text-sm"
                             />
                             <div className="min-w-0">

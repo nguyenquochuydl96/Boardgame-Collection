@@ -140,7 +140,6 @@ const DraftSessionCardComponent: React.FC<DraftSessionCardProps> = ({
           <GameCoverImage
             game={game || { name: gameName, thumbnail: gameThumbnail }}
             className="w-16 h-20 rounded-xl shrink-0 border border-amber-500/40 shadow-md"
-            paddingClass="p-1"
             fallbackIconSize="text-2xl"
           />
 

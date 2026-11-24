@@ -656,7 +656,6 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                     <GameCoverImage
                       game={quickPickGame}
                       className="w-20 h-24 sm:w-24 sm:h-28 rounded-2xl shrink-0 border border-[var(--line)] shadow-md"
-                      paddingClassName="p-1.5"
                       fallbackIconClassName="w-8 h-8"
                     />
 
@@ -803,7 +802,6 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                   <GameCoverImage
                     game={vetoWinner}
                     className="w-24 h-32 rounded-2xl shrink-0 border-2 border-amber-400/60 shadow-xl"
-                    paddingClassName="p-1.5"
                     fallbackIconClassName="w-9 h-9"
                   />
 
@@ -898,7 +896,6 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                             <GameCoverImage
                               game={g}
                               className="w-12 h-14 rounded-xl shrink-0 border border-[var(--line)] shadow-sm"
-                              paddingClassName="p-1"
                               fallbackIconClassName="w-5 h-5"
                             />
 

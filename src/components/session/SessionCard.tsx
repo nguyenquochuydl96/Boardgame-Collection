@@ -30,7 +30,6 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
         <GameCoverImage
           game={{ name: session.gameName, thumbnail: session.gameThumbnail }}
           className="w-14 h-16 sm:w-16 sm:h-20 rounded-xl shrink-0 border border-[var(--line)]"
-          paddingClass="p-1"
           imgClassName="group-hover:scale-105 transition-transform duration-300"
           fallbackIconSize="text-xl"
         />

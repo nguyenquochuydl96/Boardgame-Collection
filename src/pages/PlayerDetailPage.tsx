@@ -481,7 +481,6 @@ export const PlayerDetailPage: React.FC = () => {
                   <GameCoverImage
                     game={{ name: favoriteGame.gameName, thumbnail: favoriteGame.thumbnail }}
                     className="w-14 h-16 rounded-xl border border-amber-400/30 shrink-0"
-                    paddingClass="p-1"
                     fallbackIconSize="text-2xl"
                   />
                   <div className="min-w-0 flex-1">
@@ -536,7 +535,6 @@ export const PlayerDetailPage: React.FC = () => {
                   <GameCoverImage
                     game={{ name: signatureGame.gameName, thumbnail: signatureGame.thumbnail }}
                     className="w-14 h-16 rounded-xl border border-[var(--good)]/30 shrink-0"
-                    paddingClass="p-1"
                     fallbackIconSize="text-2xl"
                   />
                   <div className="min-w-0 flex-1">
@@ -596,7 +594,6 @@ export const PlayerDetailPage: React.FC = () => {
                   <GameCoverImage
                     game={{ name: nemesisGame.gameName, thumbnail: nemesisGame.thumbnail }}
                     className="w-14 h-16 rounded-xl border border-rose-400/30 shrink-0"
-                    paddingClass="p-1"
                     fallbackIconSize="text-2xl"
                   />
                   <div className="min-w-0 flex-1">
@@ -685,7 +682,6 @@ export const PlayerDetailPage: React.FC = () => {
                     <GameCoverImage
                       game={{ name: item.gameName, thumbnail: item.thumbnail }}
                       className="w-10 h-10 rounded-lg border border-[var(--line)] shrink-0"
-                      paddingClass="p-0.5"
                       fallbackIconSize="text-lg"
                     />
 

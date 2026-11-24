@@ -162,7 +162,6 @@ export const Step6Memories: React.FC<Step6MemoriesProps> = React.memo(
               <GameCoverImage
                 game={selectedGame}
                 className="w-16 h-20 rounded-xl shrink-0 border border-[var(--line)]"
-                paddingClass="p-1"
               />
               <div className="space-y-1">
                 <h2 className="font-display font-extrabold text-xl text-[var(--ink)]">

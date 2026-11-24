@@ -511,7 +511,6 @@ export const PickerPage: React.FC = () => {
                           <GameCoverImage
                             game={g}
                             className="w-7 h-7 rounded-lg shrink-0 border border-[var(--line)]"
-                            paddingClass="p-0.5"
                             fallbackIconSize="text-xs"
                           />
                           <div className="min-w-0">

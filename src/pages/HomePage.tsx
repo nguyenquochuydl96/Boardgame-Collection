@@ -343,7 +343,6 @@ export const HomePage: React.FC = () => {
                         <GameCoverImage
                           game={{ name: session.gameName, thumbnail: session.gameThumbnail }}
                           className="w-12 h-12 rounded-xl shrink-0 border border-[var(--line)] shadow-xs"
-                          paddingClass="p-0.5"
                           imgClassName="group-hover:scale-105 transition-transform duration-200"
                           fallbackIconSize="text-lg"
                         />

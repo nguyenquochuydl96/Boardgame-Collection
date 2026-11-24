@@ -719,7 +719,6 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                   <GameCoverImage
                     game={{ name: item.name, bggId: item.bggId, thumbnail: item.thumbnail }}
                     className="w-9 h-11 rounded border border-[var(--line)] shrink-0"
-                    paddingClass="p-0.5"
                     fallbackIconSize="text-xs"
                   />
                   <div className="min-w-0 flex-1">

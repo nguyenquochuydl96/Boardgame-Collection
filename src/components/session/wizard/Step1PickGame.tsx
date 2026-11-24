@@ -42,7 +42,6 @@ export const Step1PickGame: React.FC<Step1PickGameProps> = React.memo(
                 key={selectedGame.id}
                 game={selectedGame}
                 loading="eager"
-                paddingClass="p-0.5"
                 className="w-12 h-14 rounded-lg border border-[var(--line)] shrink-0"
               />
               <div>
@@ -86,7 +85,6 @@ export const Step1PickGame: React.FC<Step1PickGameProps> = React.memo(
                 <GameCoverImage
                   game={game}
                   className="aspect-[4/3] w-full"
-                  paddingClass="p-2"
                   imgClassName="group-hover:scale-105 transition-transform duration-300"
                 >
                   {active && (

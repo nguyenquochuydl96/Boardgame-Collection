@@ -874,7 +874,6 @@ export const NewSessionPage: React.FC = () => {
               <GameCoverImage
                 game={selectedGame}
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-[var(--line)] shrink-0"
-                paddingClass="p-0.5"
                 fallbackIconSize="text-base"
               />
             ) : (
