@@ -308,7 +308,15 @@ export function isCoopSession(
     return session.scoringMode === 'coop';
   }
 
-  // 2. Canonical preset lookup: if game is definitively win_only or points, it is NOT co-op
+  // 2. Manual override on Game (game.scoringMode)
+  if (game?.scoringMode === 'coop') {
+    return true;
+  }
+  if (game?.scoringMode === 'points' || game?.scoringMode === 'win_only') {
+    return false;
+  }
+
+  // 3. Canonical preset lookup: if game is definitively win_only or points, it is NOT co-op
   const targetGame = game || (session.gameName ? { name: session.gameName } : null);
   const preset = getGameScoringPreset(targetGame);
   if (preset) {
@@ -370,6 +378,14 @@ export function isWinOnlySession(
 
   // If session is cooperative, it is not competitive win-only
   if (isCoopSession(session, game)) {
+    return false;
+  }
+
+  // Manual override on Game (game.scoringMode)
+  if (game?.scoringMode === 'win_only') {
+    return true;
+  }
+  if (game?.scoringMode === 'points' || game?.scoringMode === 'coop') {
     return false;
   }
 

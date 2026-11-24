@@ -17,6 +17,7 @@ import {
   Trophy,
   RotateCcw,
   ImageOff,
+  Share2,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
@@ -26,6 +27,7 @@ import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Input } from '../components/ui/Input';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { GameCoverImage } from '../components/game/GameCoverImage';
+import { SessionShareModal } from '../components/session/SessionShareModal';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
@@ -137,6 +139,7 @@ export const SessionDetailPage: React.FC = () => {
 
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Edit Modal State
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -553,7 +556,7 @@ export const SessionDetailPage: React.FC = () => {
             Back to Sessions
           </Link>
 
-          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant="primary"
               size="sm"
@@ -565,11 +568,21 @@ export const SessionDetailPage: React.FC = () => {
               <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
               Play Again
             </Button>
-            <Button variant="secondary" size="sm" onClick={handleOpenEdit} className="text-xs sm:text-sm px-2.5 sm:px-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setIsShareModalOpen(true)}
+              className="text-xs sm:text-sm min-h-[40px] px-3 border border-[var(--border-subtle)] font-medium"
+              title="Generate shareable session card image"
+            >
+              <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 text-[var(--accent)]" />
+              Share Card
+            </Button>
+            <Button variant="secondary" size="sm" onClick={handleOpenEdit} className="text-xs sm:text-sm min-h-[40px] px-2.5 sm:px-3">
               <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 text-[var(--accent-neon)]" />
               Edit
             </Button>
-            <Button variant="danger" size="sm" onClick={() => setIsDeleteConfirmOpen(true)} className="text-xs sm:text-sm px-2.5 sm:px-3">
+            <Button variant="danger" size="sm" onClick={() => setIsDeleteConfirmOpen(true)} className="text-xs sm:text-sm min-h-[40px] px-2.5 sm:px-3">
               <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
               Delete
             </Button>
@@ -1271,6 +1284,15 @@ export const SessionDetailPage: React.FC = () => {
           cancelLabel="Keep Session"
           variant="danger"
         />
+
+        {session && (
+          <SessionShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            session={session}
+            game={game}
+          />
+        )}
       </div>
     </PageTransition>
   );
