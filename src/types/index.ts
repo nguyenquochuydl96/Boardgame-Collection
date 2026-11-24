@@ -7,6 +7,8 @@ export type GameStatus =
   | 'wishlist'
   | 'previously_owned';
 
+export type GameScoringMode = 'points' | 'win_only' | 'coop';
+
 export interface BoardGame {
   id: string;                    // local uuid
   bggId?: string;                // BGG game ID (if imported)
@@ -20,6 +22,8 @@ export interface BoardGame {
   yearPublished: number;
   bggRating?: number;            // 1-10
   status: GameStatus;
+  scoringMode?: GameScoringMode; // optional manual override
+  lowestScoreWins?: boolean;     // optional lowest score wins override
   purchasePrice?: number;        // VND
   sellPrice?: number;            // VND (shown when status = 'sold')
   lentToName?: string;           // name of borrower
@@ -60,6 +64,9 @@ export interface SessionDraft {
   hasManualDuration?: boolean;
   lowScoreWins: boolean;
   scoringMode: 'detailed' | 'quick';
+  gameScoringMode?: GameScoringMode;
+  logTeamScore?: boolean;
+  teamScore?: number;
   photos: string[];
   notes: string;
   currentStep: number;
@@ -106,6 +113,8 @@ export interface PlaySession {
   players: PlayerScore[];
   winnerId?: string;
   isCoop?: boolean;
+  scoringMode?: GameScoringMode;
+  coopOutcome?: 'won' | 'lost';
   firstPlayerMethod: FirstPlayerMethod;
   firstPlayerId?: string;        // who was picked to go first
   photos?: string[];             // base64 or object URLs

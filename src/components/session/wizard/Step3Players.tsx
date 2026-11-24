@@ -1,5 +1,5 @@
-import React from 'react';
-import { UserPlus, Sparkles } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { UserPlus, Sparkles, Search, X } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { Input } from '../../ui/Input';
 import { Button } from '../../ui/Button';
@@ -38,6 +38,14 @@ export const Step3Players: React.FC<Step3PlayersProps> = React.memo(
     setSaveGuestToVault,
     onAddGuestPlayer,
   }) => {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredPlayers = useMemo(() => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return allAvailablePlayers;
+      return allAvailablePlayers.filter((p) => p.name.toLowerCase().includes(q));
+    }, [allAvailablePlayers, searchQuery]);
+
     return (
       <Card className="p-4 sm:p-6 md:p-8 space-y-6">
         <div>
@@ -76,35 +84,66 @@ export const Step3Players: React.FC<Step3PlayersProps> = React.memo(
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-1">
+        {/* Player Counter & Search Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
           <span className="text-xs font-semibold text-[var(--text-secondary)]">
             {activeSessionPlayers.length === 0
               ? 'No players selected yet'
               : `${activeSessionPlayers.length} ${activeSessionPlayers.length === 1 ? 'player' : 'players'} selected`}
           </span>
-          {selectedPlayerIds.length > 0 && (
-            <button
-              type="button"
-              onClick={onClearSelection}
-              className="text-xs text-[var(--muted)] hover:text-[var(--bad)] transition-colors cursor-pointer"
-            >
-              Clear all
-            </button>
-          )}
+
+          <div className="flex items-center gap-3">
+            <div className="relative min-w-[200px] sm:min-w-[240px]">
+              <Search className="w-3.5 h-3.5 text-[var(--muted)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search players..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] p-0.5 rounded cursor-pointer"
+                  title="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {selectedPlayerIds.length > 0 && (
+              <button
+                type="button"
+                onClick={onClearSelection}
+                className="text-xs text-[var(--muted)] hover:text-[var(--bad)] transition-colors cursor-pointer shrink-0 font-medium"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
-          {allAvailablePlayers.map((player) => {
-            const isSelected = selectedPlayerIds.includes(player.id);
-            return (
-              <PlayerChip
-                key={player.id}
-                player={player}
-                selected={isSelected}
-                onClick={() => onTogglePlayer(player.id)}
-              />
-            );
-          })}
+          {filteredPlayers.length > 0 ? (
+            filteredPlayers.map((player) => {
+              const isSelected = selectedPlayerIds.includes(player.id);
+              return (
+                <PlayerChip
+                  key={player.id}
+                  player={player}
+                  selected={isSelected}
+                  onClick={() => onTogglePlayer(player.id)}
+                />
+              );
+            })
+          ) : (
+            <p className="text-xs text-[var(--muted)] py-2">
+              No players matching &quot;{searchQuery}&quot;. Add as a new friend below!
+            </p>
+          )}
         </div>
 
         {/* Add Guest or New Player */}

@@ -27,6 +27,11 @@ import {
   deduplicateLocationsList,
   sortPlayersByPlayCount,
   buildRematchDraftFromSession,
+  resolveGameScoringMode,
+  isCoopGame,
+  isWinOnlySession,
+  resolveLowestScoreWins,
+  GAME_SCORING_PRESETS,
 } from './utils';
 import { healIncomingGames, isRealtimeSelfReflection } from './supabaseSync';
 import { BoardGame, PlaySession, Player, SessionDraft, GameLocation } from '../types';
@@ -1773,7 +1778,7 @@ test('findPreviousLoser emits Technical English reason strings without Vietnames
     {
       id: 's-en',
       gameId: 'g-en',
-      gameName: 'Spirit Island',
+      gameName: 'Brass: Birmingham',
       gameThumbnail: '',
       datePlayed: '2026-11-23T10:00:00Z',
       createdAt: '2026-11-23T10:00:00Z',
@@ -1787,7 +1792,7 @@ test('findPreviousLoser emits Technical English reason strings without Vietnames
   const result = findPreviousLoser(activePlayers, sessions, 'g-en');
   assert.ok(result);
   assert.equal(result.player.id, 'p2');
-  assert.match(result.reason, /Previous session \(Spirit Island\)/);
+  assert.match(result.reason, /Previous session \(Brass: Birmingham\)/);
   assert.doesNotMatch(result.reason, /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i);
 });
 
@@ -1965,5 +1970,301 @@ test('buildRematchDraftFromSession resets custom categories for Ark Nova and han
   assert.deepEqual(result.draft.scoresByPlayerId, {});
   assert.equal(result.draft.notes, '');
   assert.deepEqual(result.draft.photos, []);
+});
+
+test('resolveGameScoringMode canonical presets for 107 games + aliases + bggId lookup', () => {
+  // Co-op games
+  assert.equal(resolveGameScoringMode({ name: 'Spirit Island', bggId: '162886' } as BoardGame), 'coop');
+  assert.equal(resolveGameScoringMode({ name: 'Pandemic', bggId: '30549' } as BoardGame), 'coop');
+  assert.equal(resolveGameScoringMode({ name: 'Sail', bggId: '377470' } as BoardGame), 'coop');
+  assert.equal(resolveGameScoringMode({ name: 'Stardew Valley: The Board Game', bggId: '332290' } as BoardGame), 'coop');
+  assert.equal(resolveGameScoringMode({ name: 'Slay the Spire: The Board Game', bggId: '338960' } as BoardGame), 'coop');
+  assert.equal(resolveGameScoringMode({ name: 'Keep the Heroes Out!', bggId: '333255' } as BoardGame), 'coop');
+  assert.equal(resolveGameScoringMode({ name: 'Regicide', bggId: '307002' } as BoardGame), 'coop');
+  assert.equal(isCoopGame({ name: 'Spirit Island' } as BoardGame), true);
+
+  // Win-Only games
+  assert.equal(resolveGameScoringMode({ name: 'MIND MGMT: The Psychic Espionage “Game.”', bggId: '284653' } as BoardGame), 'win_only');
+  // Check alias / Vietnamese catalog name
+  assert.equal(resolveGameScoringMode({ name: 'Mind MGMT (Thám tử tâm linh)' } as BoardGame), 'win_only');
+  assert.equal(resolveGameScoringMode({ name: 'Compile: Main 1', bggId: '406652' } as BoardGame), 'win_only');
+  assert.equal(resolveGameScoringMode({ name: 'Santorini', bggId: '194655' } as BoardGame), 'win_only');
+  assert.equal(resolveGameScoringMode({ name: 'Secret Hitler', bggId: '188834' } as BoardGame), 'win_only');
+  assert.equal(resolveGameScoringMode({ name: 'Challengers!', bggId: '359970' } as BoardGame), 'win_only');
+  assert.equal(resolveGameScoringMode({ name: 'Splendor Duel', bggId: '364073' } as BoardGame), 'win_only');
+
+  // Lowest score wins
+  assert.equal(resolveLowestScoreWins({ name: 'Durian', bggId: '307963' } as BoardGame), true);
+  assert.equal(resolveLowestScoreWins({ name: 'Rebel Princess', bggId: '381249' } as BoardGame), true);
+  assert.equal(resolveLowestScoreWins({ name: 'Brass: Birmingham' } as BoardGame), false);
+});
+
+test('resolveGameScoringMode strictly adheres to 5-tier resolution priority', () => {
+  // Tier 1: Manual override on game.scoringMode takes absolute precedence
+  const overriddenGame: BoardGame = {
+    id: 'g-overridden',
+    name: 'Spirit Island', // Naturally co-op preset
+    scoringMode: 'points', // User manually set to points
+    thumbnail: '',
+    image: '',
+    description: '',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playingTime: 90,
+    yearPublished: 2017,
+    status: 'own',
+    addedDate: '2026-01-01',
+  };
+  assert.equal(resolveGameScoringMode(overriddenGame), 'points');
+
+  // Tier 2: Self-learning from latest session with explicit scoringMode
+  const customGame: BoardGame = {
+    id: 'g-custom-arena',
+    name: 'Custom New Arena 2026',
+    thumbnail: '',
+    image: '',
+    description: '',
+    minPlayers: 2,
+    maxPlayers: 4,
+    playingTime: 45,
+    yearPublished: 2026,
+    status: 'own',
+    addedDate: '2026-01-01',
+  };
+  const historicalSessions: PlaySession[] = [
+    {
+      id: 'sess-old',
+      gameId: 'g-custom-arena',
+      gameName: 'Custom New Arena 2026',
+      gameThumbnail: '',
+      datePlayed: '2026-02-01',
+      createdAt: '2026-02-01T10:00:00Z',
+      scoringMode: 'points',
+      firstPlayerMethod: 'manual',
+      players: [],
+    },
+    {
+      id: 'sess-latest',
+      gameId: 'g-custom-arena',
+      gameName: 'Custom New Arena 2026',
+      gameThumbnail: '',
+      datePlayed: '2026-03-01',
+      createdAt: '2026-03-01T12:00:00Z',
+      scoringMode: 'win_only', // Latest session changed to win_only
+      firstPlayerMethod: 'manual',
+      players: [],
+    },
+  ];
+  assert.equal(resolveGameScoringMode(customGame, historicalSessions), 'win_only');
+
+  // Tier 4: Pure co-op tags vs semi-cooperative tags
+  const pureCoopNewGame: BoardGame = {
+    id: 'g-coop-tags',
+    name: 'Alien Infiltration 2027',
+    tags: ['Sci-Fi', 'Cooperative Game', 'Miniatures'],
+    thumbnail: '',
+    image: '',
+    description: '',
+    minPlayers: 1,
+    maxPlayers: 4,
+    playingTime: 60,
+    yearPublished: 2027,
+    status: 'own',
+    addedDate: '2026-01-01',
+  };
+  assert.equal(resolveGameScoringMode(pureCoopNewGame), 'coop');
+
+  const semiCoopNewGame: BoardGame = {
+    id: 'g-semi-coop',
+    name: 'Nemesis Clone',
+    tags: ['Sci-Fi', 'Semi-Cooperative', 'Survival'],
+    thumbnail: '',
+    image: '',
+    description: '',
+    minPlayers: 1,
+    maxPlayers: 5,
+    playingTime: 120,
+    yearPublished: 2027,
+    status: 'own',
+    addedDate: '2026-01-01',
+  };
+  // Semi-coop must NOT be classified as pure coop; defaults to points
+  assert.equal(resolveGameScoringMode(semiCoopNewGame), 'points');
+
+  // Tier 5: Default to points
+  assert.equal(resolveGameScoringMode({ name: 'Totally Unknown Game XYZ' } as BoardGame), 'points');
+});
+
+test('buildRematchDraftFromSession sets targetStep=5 for Spirit Island co-op and targetStep=4 for Mind MGMT win-only', () => {
+  const games: BoardGame[] = [
+    {
+      id: 'g-spirit',
+      name: 'Spirit Island',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 1,
+      maxPlayers: 4,
+      playingTime: 90,
+      yearPublished: 2017,
+      status: 'own',
+      addedDate: '2026-01-01',
+    },
+    {
+      id: 'g-mindmgmt',
+      name: 'MIND MGMT: The Psychic Espionage “Game.”',
+      thumbnail: '',
+      image: '',
+      description: '',
+      minPlayers: 1,
+      maxPlayers: 5,
+      playingTime: 60,
+      yearPublished: 2021,
+      status: 'own',
+      addedDate: '2026-01-01',
+    },
+  ];
+
+  // 1. Co-op rematch (Spirit Island)
+  const coopSession: PlaySession = {
+    id: 's-coop-rematch',
+    gameId: 'g-spirit',
+    gameName: 'Spirit Island',
+    gameThumbnail: '',
+    datePlayed: '2026-11-20',
+    createdAt: '2026-11-20T10:00:00Z',
+    firstPlayerMethod: 'manual',
+    isCoop: true,
+    players: [
+      { playerId: 'p1', playerName: 'Heo', isWinner: true },
+      { playerId: 'p2', playerName: 'Hang', isWinner: true },
+    ],
+  };
+  const coopResult = buildRematchDraftFromSession(coopSession, { games, locations: [] });
+  assert.equal(coopResult.isCoop, true);
+  assert.equal(coopResult.scoringMode, 'coop');
+  assert.equal(coopResult.targetStep, 5); // Bypasses Step 4 First Player
+  assert.equal(coopResult.draft.gameScoringMode, 'coop');
+  assert.equal(coopResult.draft.logTeamScore, false);
+
+  // 2. Win-Only rematch (Mind MGMT)
+  const winOnlySession: PlaySession = {
+    id: 's-winonly-rematch',
+    gameId: 'g-mindmgmt',
+    gameName: 'MIND MGMT: The Psychic Espionage “Game.”',
+    gameThumbnail: '',
+    datePlayed: '2026-11-21',
+    createdAt: '2026-11-21T10:00:00Z',
+    firstPlayerMethod: 'random_wheel',
+    scoringMode: 'win_only',
+    players: [
+      { playerId: 'p1', playerName: 'Heo', isWinner: true, rank: 1 },
+      { playerId: 'p2', playerName: 'Hang', isWinner: false, rank: 2 },
+    ],
+  };
+  const winOnlyResult = buildRematchDraftFromSession(winOnlySession, { games, locations: [] });
+  assert.equal(winOnlyResult.isCoop, false);
+  assert.equal(winOnlyResult.scoringMode, 'win_only');
+  assert.equal(winOnlyResult.targetStep, 4); // Competitive game picks first player
+  assert.equal(winOnlyResult.draft.gameScoringMode, 'win_only');
+});
+
+test('calculateGameStats excludes win-only sessions from highestScore and lowestScore calculations', () => {
+  const sessions: PlaySession[] = [
+    {
+      id: 'sess-points-1',
+      gameId: 'g-test',
+      gameName: 'Test Game',
+      gameThumbnail: '',
+      datePlayed: '2026-01-01',
+      createdAt: '2026-01-01T10:00:00Z',
+      scoringMode: 'points',
+      firstPlayerMethod: 'manual',
+      durationMinutes: 60,
+      players: [
+        { playerId: 'p1', playerName: 'Alice', score: 85, isWinner: true },
+        { playerId: 'p2', playerName: 'Bob', score: 45, isWinner: false },
+      ],
+    },
+    {
+      id: 'sess-winonly-2',
+      gameId: 'g-test',
+      gameName: 'Test Game',
+      gameThumbnail: '',
+      datePlayed: '2026-01-02',
+      createdAt: '2026-01-02T10:00:00Z',
+      scoringMode: 'win_only',
+      firstPlayerMethod: 'manual',
+      durationMinutes: 30,
+      players: [
+        { playerId: 'p1', playerName: 'Alice', score: 0, isWinner: true },
+        { playerId: 'p2', playerName: 'Bob', score: 0, isWinner: false },
+      ],
+    },
+  ];
+
+  const stats = calculateGameStats(sessions);
+  assert.equal(stats.totalPlays, 2);
+  // Highest score must be 85 from points session, not polluted
+  assert.equal(stats.highestScore?.score, 85);
+  // Lowest score must be 45 from points session, NOT 0 from win-only session!
+  assert.equal(stats.lowestScore?.score, 45);
+});
+
+test('sortPlayersByPlayCount in NewSessionPage Step 3 orders players descending by play count', () => {
+  const players: Player[] = [
+    { id: 'p-akha', name: 'A Kha', color: '#ff0000', createdAt: '2026-01-01' },
+    { id: 'p-hang', name: 'Hằng', color: '#00ff00', createdAt: '2026-01-01' },
+    { id: 'p-heo', name: 'Heo', color: '#0000ff', createdAt: '2026-01-01' },
+  ];
+
+  const sessions: PlaySession[] = [
+    // Heo played 3 times
+    {
+      id: 's1',
+      gameId: 'g1',
+      gameName: 'Game 1',
+      gameThumbnail: '',
+      datePlayed: '2026-01-01',
+      firstPlayerMethod: 'manual',
+      createdAt: '2026-01-01T00:00:00Z',
+      players: [
+        { playerId: 'p-heo', playerName: 'Heo', isWinner: true },
+        { playerId: 'p-hang', playerName: 'Hằng', isWinner: false },
+      ],
+    },
+    {
+      id: 's2',
+      gameId: 'g1',
+      gameName: 'Game 1',
+      gameThumbnail: '',
+      datePlayed: '2026-01-02',
+      firstPlayerMethod: 'manual',
+      createdAt: '2026-01-02T00:00:00Z',
+      players: [
+        { playerId: 'p-heo', playerName: 'Heo', isWinner: true },
+        { playerId: 'p-hang', playerName: 'Hằng', isWinner: false },
+      ],
+    },
+    {
+      id: 's3',
+      gameId: 'g1',
+      gameName: 'Game 1',
+      gameThumbnail: '',
+      datePlayed: '2026-01-03',
+      firstPlayerMethod: 'manual',
+      createdAt: '2026-01-03T00:00:00Z',
+      players: [
+        { playerId: 'p-heo', playerName: 'Heo', isWinner: false },
+        { playerId: 'p-akha', playerName: 'A Kha', isWinner: true },
+      ],
+    },
+  ];
+
+  const sorted = sortPlayersByPlayCount(players, sessions);
+  // Heo (3 plays) -> Hằng (2 plays) -> A Kha (1 play)
+  assert.equal(sorted[0].name, 'Heo');
+  assert.equal(sorted[1].name, 'Hằng');
+  assert.equal(sorted[2].name, 'A Kha');
 });
 

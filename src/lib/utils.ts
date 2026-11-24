@@ -1,6 +1,29 @@
-import { BoardGame, GameStatus, PlaySession, Player, SessionDraft, GameLocation } from '../types';
+import { BoardGame, GameStatus, GameScoringMode, PlaySession, Player, SessionDraft, GameLocation } from '../types';
 import { EXPANDED_BGG_CATALOG } from './bggCatalogData';
 import { getScoringTemplateForGame } from './scoringPresets';
+import {
+  GAME_SCORING_PRESETS,
+  KNOWN_COOP_FRANCHISE_KEYWORDS,
+  normalizeGameKey,
+  getGameScoringPreset,
+  resolveGameScoringMode,
+  isCoopGame,
+  isCoopSession,
+  isWinOnlySession,
+  resolveLowestScoreWins,
+} from './gameScoringPresets';
+export {
+  GAME_SCORING_PRESETS,
+  KNOWN_COOP_FRANCHISE_KEYWORDS,
+  normalizeGameKey,
+  getGameScoringPreset,
+  resolveGameScoringMode,
+  isCoopGame,
+  isCoopSession,
+  isWinOnlySession,
+  resolveLowestScoreWins,
+};
+export type { GameScoringPreset } from './gameScoringPresets';
 
 const catalogByBggId = new Map<string, string>();
 const catalogByName = new Map<string, string>();
@@ -425,20 +448,6 @@ export interface PreviousMatchPlayerResult {
  * Identifies the last-place player (lowest rank / lowest score, or highest score if lowestScoreWins).
  * If multiple players tied for last place, picks randomly among them.
  */
-/**
- * Detects whether a play session is cooperative.
- * Evaluates:
- * 1. Explicit session.isCoop flag === true
- * 2. Board game metadata/scoring template is marked isCoop (e.g. Pandemic, Spirit Island, Stardew Valley, The Mind)
- * 3. All players in a multi-player session (> 1 players) won together as a team
- */
-export function isCoopSession(session: PlaySession): boolean {
-  if (session.isCoop === true) return true;
-  if (getScoringTemplateForGame(session.gameName)?.isCoop === true) return true;
-  if (session.players && session.players.length > 1 && session.players.every((p) => p.isWinner)) return true;
-  return false;
-}
-
 export function findPreviousLoser(
   activePlayers: Player[],
   sessions: PlaySession[],
@@ -833,8 +842,9 @@ export function calculateGameStats(
 
   for (const session of chrono) {
     const sDate = session.datePlayed;
+    const isWinOnly = isWinOnlySession(session);
     for (const p of (session.players || [])) {
-      if (typeof p.score === 'number' && !Number.isNaN(p.score)) {
+      if (!isWinOnly && typeof p.score === 'number' && !Number.isNaN(p.score)) {
         if (!highestScore || p.score > highestScore.score) {
           highestScore = {
             score: p.score,
@@ -879,7 +889,7 @@ export function calculateGameStats(
         existing.losses += 1;
       }
 
-      if (typeof p.score === 'number' && !Number.isNaN(p.score)) {
+      if (!isWinOnly && typeof p.score === 'number' && !Number.isNaN(p.score)) {
         existing.lowestScore =
           existing.lowestScore === undefined
             ? p.score
@@ -1579,6 +1589,7 @@ export interface RematchDraftResult {
   draft: SessionDraft;
   targetStep: 4 | 5;
   isCoop: boolean;
+  scoringMode: GameScoringMode;
   gameExists: boolean;
 }
 
@@ -1603,9 +1614,12 @@ export function buildRematchDraftFromSession(
     now?: number;
   }
 ): RematchDraftResult {
-  const template = getScoringTemplateForGame(session.gameName);
-  const isCoop = isCoopSession(session) || Boolean(session.isCoop) || Boolean(template?.isCoop);
+  const matchedGame = options?.games?.find((g) => g.id === session.gameId);
+  const scoringMode: GameScoringMode = session.scoringMode || resolveGameScoringMode(matchedGame);
+  const isCoop = scoringMode === 'coop' || isCoopSession(session, matchedGame);
   const targetStep: 4 | 5 = isCoop ? 5 : 4;
+  const template = getScoringTemplateForGame(session.gameName);
+  const lowScoreWins = resolveLowestScoreWins(matchedGame);
 
   const gameExists = options?.games
     ? options.games.some((g) => g.id === session.gameId)
@@ -1670,8 +1684,10 @@ export function buildRematchDraftFromSession(
     manualWinnerIds: [], // Reset clean
     coopOutcome: 'won', // Reset to default clean state
     hasManualDuration: false,
-    lowScoreWins: template?.lowestScoreWins ?? false,
+    lowScoreWins,
     scoringMode: (template && template.categories && template.categories.length > 0) ? 'detailed' : 'quick',
+    gameScoringMode: scoringMode,
+    logTeamScore: false,
     photos: [], // Reset clean
     notes: '', // Reset clean
     currentStep: targetStep,
@@ -1682,6 +1698,7 @@ export function buildRematchDraftFromSession(
     draft,
     targetStep,
     isCoop,
+    scoringMode,
     gameExists,
   };
 }

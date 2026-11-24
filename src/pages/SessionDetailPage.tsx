@@ -94,6 +94,8 @@ import {
   formatDuration,
   formatNumber,
   formatCount,
+  isCoopSession as resolveIsCoopSession,
+  isWinOnlySession,
 } from '../lib/utils';
 import { PlayerScore, Player } from '../types';
 import { ScoringSheetMatrix } from '../components/session/ScoringSheetMatrix';
@@ -148,7 +150,8 @@ export const SessionDetailPage: React.FC = () => {
     () => getScoringTemplateForGame(session?.gameName),
     [session?.gameName]
   );
-  const isCoopSession = Boolean(session?.isCoop ?? scoringTemplate.isCoop);
+  const isCoopSession = resolveIsCoopSession(session);
+  const isWinOnly = isWinOnlySession(session);
 
   const hasBreakdown = React.useMemo(() => {
     return (
@@ -662,7 +665,7 @@ export const SessionDetailPage: React.FC = () => {
                         </Link>
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-bold text-base text-[var(--text-primary)]">
-                        {typeof entry.score === 'number' ? formatNumber(entry.score) : '—'}
+                        {!isWinOnly && typeof entry.score === 'number' ? formatNumber(entry.score) : '—'}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         {isWin ? (
@@ -672,8 +675,8 @@ export const SessionDetailPage: React.FC = () => {
                               Team Win
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-800 dark:text-amber-300 text-xs font-bold">
-                              <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#E5734F]/20 border border-[#E5734F]/40 text-[#E5734F] text-xs font-bold">
+                              <Crown className="w-3.5 h-3.5 fill-[#E5734F] text-[#E5734F]" />
                               Winner
                             </span>
                           )
@@ -810,11 +813,11 @@ export const SessionDetailPage: React.FC = () => {
                           key={p.playerId}
                           className={cn(
                             'py-3 px-3 text-center font-mono text-sm font-extrabold',
-                            isLeader ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300' : 'text-[var(--text-primary)]'
+                            isLeader ? 'bg-[#E5734F]/20 text-[#E5734F]' : 'text-[var(--text-primary)]'
                           )}
                         >
                           <div className="flex items-center justify-center gap-1">
-                            {isLeader && <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />}
+                            {isLeader && <Crown className="w-3.5 h-3.5 fill-[#E5734F] text-[#E5734F]" />}
                             <span>{typeof p.score === 'number' ? formatNumber(p.score) : '—'}</span>
                           </div>
                         </td>

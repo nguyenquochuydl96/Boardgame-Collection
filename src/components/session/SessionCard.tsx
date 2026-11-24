@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Crown, ChevronRight, Check } from 'lucide-react';
 import { PlaySession, Player } from '../../types';
-import { formatDate, formatDuration, formatCount } from '../../lib/utils';
+import { formatDate, formatDuration, formatCount, isCoopSession, isWinOnlySession } from '../../lib/utils';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { GameCoverImage } from '../game/GameCoverImage';
 
@@ -16,7 +16,8 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
   playersById = {},
 }) => {
   const players = session.players || [];
-  const isCoopSession = session.isCoop || (players.length > 1 && players.every((p) => p.isWinner));
+  const isCoop = isCoopSession(session);
+  const isWinOnly = isWinOnlySession(session);
   const winner = players.find(
     (p) => p.isWinner || p.playerId === session.winnerId
   );
@@ -52,21 +53,21 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
                 </span>
               )}
             </div>
-            {isCoopSession && winner ? (
+            {isCoop && winner ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--good-soft)] text-[var(--good)] border border-[var(--good)]/30 text-xs font-bold shrink-0">
                 <span>🤝</span>
                 <span>Team Win</span>
               </span>
-            ) : isCoopSession && !winner ? (
+            ) : isCoop && !winner ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--bad-soft)] text-[var(--bad)] border border-[var(--bad)]/30 text-xs font-bold shrink-0">
                 <span>💀</span>
                 <span>Team Defeat</span>
               </span>
             ) : winner ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-semibold shrink-0">
-                <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E5734F]/15 text-[#E5734F] border border-[#E5734F]/30 text-xs font-semibold shrink-0">
+                <Crown className="w-3.5 h-3.5 fill-[#E5734F] text-[#E5734F]" />
                 <span className="truncate max-w-[100px]">{winner.playerName}</span>
-                {typeof winner.score === 'number' ? ` · ${winner.score}` : ''}
+                {typeof winner.score === 'number' && !isWinOnly ? ` · ${winner.score}` : ''}
               </span>
             ) : null}
           </div>

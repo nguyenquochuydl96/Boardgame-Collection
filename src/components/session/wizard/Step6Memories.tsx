@@ -3,7 +3,7 @@ import { Camera, Sparkles, Crown, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Card } from '../../ui/Card';
 import { cn } from '../../ui/cn';
-import { BoardGame, Player, PlayerScore } from '../../../types';
+import { BoardGame, GameScoringMode, Player, PlayerScore } from '../../../types';
 import { formatDate, formatDuration } from '../../../lib/utils';
 import { useResolvedMedia } from '../../../hooks/useResolvedMedia';
 import { getScoringTemplateForGame } from '../../../lib/scoringPresets';
@@ -60,6 +60,7 @@ interface Step6MemoriesProps {
   allAvailablePlayers: Player[];
   activeSessionPlayers: Player[];
   computedPlayerScores: PlayerScore[];
+  scoringMode?: GameScoringMode;
 }
 
 export const Step6Memories: React.FC<Step6MemoriesProps> = React.memo(
@@ -77,11 +78,14 @@ export const Step6Memories: React.FC<Step6MemoriesProps> = React.memo(
     allAvailablePlayers,
     activeSessionPlayers,
     computedPlayerScores,
+    scoringMode,
   }) => {
     const scoringTemplate = React.useMemo(
       () => getScoringTemplateForGame(selectedGame?.name),
       [selectedGame?.name]
     );
+    const isCoop = scoringMode === 'coop' || scoringTemplate.isCoop;
+    const isWinOnly = scoringMode === 'win_only';
     return (
       <div className="space-y-6">
         <Card className="p-4 sm:p-6 md:p-8 space-y-6">
@@ -168,16 +172,21 @@ export const Step6Memories: React.FC<Step6MemoriesProps> = React.memo(
                   {selectedGame.name}
                 </h2>
                 <p className="text-xs text-[var(--muted)]">
-                  {location || 'Home Table'} · First turn:{' '}
-                  <strong className="text-[var(--ink)]">
-                    {allAvailablePlayers.find((p) => p.id === firstPlayerId)?.name ||
-                      activeSessionPlayers[0]?.name}
-                  </strong>
+                  {location || 'Home Table'}
+                  {!isCoop && (
+                    <>
+                      {' · '}First turn:{' '}
+                      <strong className="text-[var(--ink)]">
+                        {allAvailablePlayers.find((p) => p.id === firstPlayerId)?.name ||
+                          activeSessionPlayers[0]?.name}
+                      </strong>
+                    </>
+                  )}
                 </p>
               </div>
             </div>
 
-            {scoringTemplate.isCoop && (
+            {isCoop && (
               <div className="flex items-center gap-2 pt-2 border-t border-[var(--line)]">
                 <span className="text-base select-none">🤝</span>
                 <span
@@ -195,24 +204,24 @@ export const Step6Memories: React.FC<Step6MemoriesProps> = React.memo(
               </div>
             )}
 
-            <div className={cn('flex flex-wrap gap-2', !scoringTemplate.isCoop && 'pt-2 border-t border-[var(--line)]')}>
+            <div className={cn('flex flex-wrap gap-2', !isCoop && 'pt-2 border-t border-[var(--line)]')}>
               {computedPlayerScores.map((ps) => (
                 <div
                   key={ps.playerId}
                   className={cn(
                     'inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold border',
                     ps.isWinner
-                      ? scoringTemplate.isCoop
+                      ? isCoop
                         ? 'bg-[var(--good-soft)] border-[var(--good)]/40 text-[var(--good)] font-bold'
-                        : 'bg-amber-500/20 border-amber-500/40 text-amber-800 dark:text-amber-300 font-bold'
+                        : 'bg-[#E5734F]/15 border-[#E5734F]/40 text-[#E5734F] font-bold'
                       : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink)]'
                   )}
                 >
                   {ps.isWinner && (
-                    scoringTemplate.isCoop ? (
+                    isCoop ? (
                       <span className="text-xs">🤝</span>
                     ) : (
-                      <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      <Crown className="w-3.5 h-3.5 fill-[#E5734F] text-[#E5734F]" />
                     )
                   )}
                   <span>{ps.playerName}</span>

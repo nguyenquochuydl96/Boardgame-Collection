@@ -15,6 +15,7 @@ import {
   formatNumber,
   formatCount,
   isCoopSession,
+  isWinOnlySession,
   calculatePlayerStreaks,
   StreakData,
 } from '../../lib/utils';
@@ -317,20 +318,22 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
             }
             st.currentWinStreak = 0;
 
-            if (ps.rank === 2) {
-              st.secondPlaces += 1;
-              if (
-                typeof ps.score === 'number' &&
-                winnerScore !== undefined &&
-                Math.abs(winnerScore - ps.score) <= 2 &&
-                Math.abs(winnerScore - ps.score) > 0
-              ) {
-                st.closeLosses += 1;
+            if (!isWinOnlySession(s)) {
+              if (ps.rank === 2) {
+                st.secondPlaces += 1;
+                if (
+                  typeof ps.score === 'number' &&
+                  winnerScore !== undefined &&
+                  Math.abs(winnerScore - ps.score) <= 2 &&
+                  Math.abs(winnerScore - ps.score) > 0
+                ) {
+                  st.closeLosses += 1;
+                }
               }
-            }
 
-            if (totalPlayers > 1 && ps.rank === totalPlayers) {
-              st.lastPlaces += 1;
+              if (totalPlayers > 1 && ps.rank === totalPlayers) {
+                st.lastPlaces += 1;
+              }
             }
           }
         });

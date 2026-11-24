@@ -316,6 +316,13 @@ function parseBGGThingXml(xmlText: string, bggId: string): BGGGameDetail | null 
       thumbnailCache.set(bggId, { thumbnail, image });
     }
 
+    const tags: string[] = [];
+    const linkEls = item.querySelectorAll('link[type="boardgamecategory"], link[type="boardgamemechanic"]');
+    linkEls.forEach((link) => {
+      const val = link.getAttribute('value');
+      if (val) tags.push(decodeHtml(val.trim()));
+    });
+
     return {
       bggId,
       name: decodedName,
@@ -327,7 +334,7 @@ function parseBGGThingXml(xmlText: string, bggId: string): BGGGameDetail | null 
       description,
       thumbnail,
       image,
-      tags: ['Strategy', 'Boardgame'],
+      tags: tags.length > 0 ? tags.slice(0, 10) : ['Strategy', 'Boardgame'],
     };
   } catch {
     return null;

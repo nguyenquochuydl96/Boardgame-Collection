@@ -26,6 +26,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
@@ -41,8 +42,9 @@ import {
   parseNumberInput,
   pluralize,
   STATUS_CONFIG,
+  resolveGameScoringMode,
 } from '../lib/utils';
-import { GameStatus } from '../types';
+import { GameStatus, GameScoringMode } from '../types';
 
 export const GameDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -79,7 +81,15 @@ export const GameDetailPage: React.FC = () => {
   );
   const [editTags, setEditTags] = useState<string>((game?.tags || []).join(', '));
   const [editCoverUrl, setEditCoverUrl] = useState<string>(game?.image || game?.thumbnail || '');
+  const [editScoringMode, setEditScoringMode] = useState<GameScoringMode | 'auto'>(
+    game?.scoringMode || 'auto'
+  );
   const [editError, setEditError] = useState<string | null>(null);
+
+  const autoResolvedMode = React.useMemo(() => {
+    if (!game) return 'points';
+    return resolveGameScoringMode({ ...game, scoringMode: undefined }, allSessions);
+  }, [game, allSessions]);
 
   const gameSessions = React.useMemo(() => {
     if (!game) return [];
@@ -97,7 +107,10 @@ export const GameDetailPage: React.FC = () => {
 
   useEffect(() => {
     setNotesDraft(game?.notes || '');
-  }, [game?.id, game?.notes]);
+    if (game) {
+      setEditScoringMode(game.scoringMode || 'auto');
+    }
+  }, [game?.id, game?.notes, game?.scoringMode]);
 
   if (!game) {
     return (
@@ -170,6 +183,7 @@ export const GameDetailPage: React.FC = () => {
       playingTime: parsedPlaytime,
       bggRating: parsedBgg,
       tags: parsedTags.length > 0 ? parsedTags : undefined,
+      scoringMode: editScoringMode === 'auto' ? undefined : editScoringMode,
       image: trimmedCover || undefined,
       thumbnail: trimmedCover || undefined,
     });
@@ -759,6 +773,63 @@ export const GameDetailPage: React.FC = () => {
               value={editTags}
               onChange={(e) => setEditTags(e.target.value)}
             />
+
+            {/* Scoring Style */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-[var(--muted)]">
+                Scoring Style
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
+                <button
+                  type="button"
+                  onClick={() => setEditScoringMode('auto')}
+                  className={cn(
+                    'px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer',
+                    editScoringMode === 'auto'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                  )}
+                >
+                  Auto ({autoResolvedMode === 'coop' ? 'Co-op' : autoResolvedMode === 'win_only' ? 'Win-Loss' : 'Points'})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditScoringMode('points')}
+                  className={cn(
+                    'px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer',
+                    editScoringMode === 'points'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                  )}
+                >
+                  🎯 Points
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditScoringMode('win_only')}
+                  className={cn(
+                    'px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer',
+                    editScoringMode === 'win_only'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                  )}
+                >
+                  🏆 Win / Loss
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditScoringMode('coop')}
+                  className={cn(
+                    'px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer',
+                    editScoringMode === 'coop'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)]'
+                  )}
+                >
+                  🤝 Co-op
+                </button>
+              </div>
+            </div>
 
             {/* Cover Image URL or Upload */}
             <div className="space-y-2">
