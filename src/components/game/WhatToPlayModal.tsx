@@ -155,10 +155,12 @@ export function filterWhatToPlayGames(
 
   return allGames.filter((g) => {
     // 1. Ownership / Shelf availability:
-    // When isOwnedOnly is true (default): ONLY keep games with status 'own' / 'owned'.
-    // Strictly exclude 'rented', 'borrowed', 'sold', 'lent_out', 'wishlist', 'previously_owned'.
+    // When isOwnedOnly / isShelfOnly is true (default): keep games currently on shelf ('own', 'owned', 'borrowed').
+    // Strictly exclude 'rented', 'lent_out', 'sold', 'wishlist', 'previously_owned'.
     if (isOwnedOnly) {
-      if (g.status !== 'own' && (g.status as string) !== 'owned') {
+      const isOwned = g.status === 'own' || (g.status as string) === 'owned';
+      const isBorrowed = g.status === 'borrowed';
+      if (!isOwned && !isBorrowed) {
         return false;
       }
     } else {
@@ -226,7 +228,7 @@ export function filterWhatToPlayGames(
 }
 
 /**
- * Count Dusty Gems strictly within the active ownership scope (Owned Only vs All Games),
+ * Count Dusty Gems strictly within the active shelf scope (On Shelf vs All Games),
  * never counting sold / wishlist / previously_owned titles.
  */
 export function countDustyGames(
@@ -299,7 +301,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
     return result;
   }, [allGames, sessions]);
 
-  // Count total dusty gems scoped to active ownership filter (Owned Only vs All Games)
+  // Count total dusty gems scoped to active shelf filter (On Shelf vs All Games)
   const totalDustyCount = useMemo(() => {
     return countDustyGames(allGames, shelfOnly, gameMetricsMap);
   }, [allGames, shelfOnly, gameMetricsMap]);
@@ -501,7 +503,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
               )}
             </button>
 
-            {/* Owned Only Toggle */}
+            {/* On Shelf Toggle */}
             <button
               type="button"
               onClick={() => setShelfOnly((prev) => !prev)}
@@ -511,10 +513,10 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                   ? 'bg-[var(--card-2)] border-[var(--line-2)] text-[var(--ink)] font-bold'
                   : 'bg-[var(--card)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
               )}
-              title="Show all collection games or only owned games"
+              title="Show all collection games or only games on shelf"
             >
               <Package className="w-3.5 h-3.5 opacity-70" />
-              <span>{shelfOnly ? 'Owned Only' : 'All Games'}</span>
+              <span>{shelfOnly ? 'On Shelf' : 'All Games'}</span>
             </button>
           </div>
         </div>

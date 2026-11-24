@@ -259,11 +259,13 @@ test('filterWhatToPlayGames uses strictly non-overlapping duration buckets', () 
   assert.equal(new Set(allBucketed).size, 6);
 });
 
-test('countDustyGames strictly respects Owned Only vs All Games and excludes sold/wishlist/prev_owned', () => {
+test('countDustyGames strictly respects On Shelf vs All Games and excludes sold/wishlist/prev_owned', () => {
   const games: BoardGame[] = [
     makeGame({ id: 'own-dusty', status: 'own' }),
     makeGame({ id: 'own-fresh', status: 'own' }),
+    makeGame({ id: 'borrowed-dusty', status: 'borrowed' }),
     makeGame({ id: 'rented-dusty', status: 'rented' }),
+    makeGame({ id: 'lent-dusty', status: 'lent_out' }),
     makeGame({ id: 'sold-dusty', status: 'sold' }),
     makeGame({ id: 'wish-dusty', status: 'wishlist' }),
     makeGame({ id: 'prev-dusty', status: 'previously_owned' }),
@@ -272,17 +274,20 @@ test('countDustyGames strictly respects Owned Only vs All Games and excludes sol
   const metrics: Record<string, GamePlayMetrics> = {
     'own-dusty': { playCount: 0, isDusty: true },
     'own-fresh': { playCount: 5, daysSinceLastPlayed: 2, isDusty: false },
+    'borrowed-dusty': { playCount: 0, isDusty: true },
     'rented-dusty': { playCount: 0, isDusty: true },
+    'lent-dusty': { playCount: 0, isDusty: true },
     'sold-dusty': { playCount: 0, isDusty: true },
     'wish-dusty': { playCount: 0, isDusty: true },
     'prev-dusty': { playCount: 0, isDusty: true },
   };
 
-  assert.equal(countDustyGames(games, true, metrics), 1, 'Owned Only counts only own dusty games');
+  // On Shelf (shelfOnly = true): keeps own and borrowed dusty games (2 total), excludes rented, lent_out, sold, wishlist, prev_owned
+  assert.equal(countDustyGames(games, true, metrics), 2, 'On Shelf counts own and borrowed dusty games');
   assert.equal(
     countDustyGames(games, false, metrics),
-    2,
-    'All Games includes rented/borrowed dusty games but excludes sold/wishlist/previously_owned'
+    4,
+    'All Games includes own/borrowed/rented/lent dusty games but excludes sold/wishlist/previously_owned'
   );
 });
 
