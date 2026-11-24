@@ -32,6 +32,7 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useLocationStore } from '../store/useLocationStore';
 import { getPlayStyleInfo } from '../lib/boardgameAvatars';
+import { formatNumber, formatCount } from '../lib/utils';
 import { Player, GameLocation } from '../types';
 
 export const PlayersPage: React.FC = () => {
@@ -224,7 +225,7 @@ export const PlayersPage: React.FC = () => {
                     : 'bg-[var(--card-2)] text-[var(--muted)]'
                 )}
               >
-                {players.length}
+                {formatNumber(players.length)}
               </span>
             </button>
 
@@ -248,7 +249,7 @@ export const PlayersPage: React.FC = () => {
                     : 'bg-[var(--card-2)] text-[var(--muted)]'
                 )}
               >
-                {locations.length}
+                {formatNumber(locations.length)}
               </span>
             </button>
           </div>
@@ -262,7 +263,7 @@ export const PlayersPage: React.FC = () => {
             {/* Top Action Bar for Players */}
             <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--bg-card)]/90 border border-[var(--border-subtle)]">
               <div className="text-xs text-[var(--text-secondary)]">
-                Total of <strong className="text-[var(--text-primary)]">{players.length}</strong> players in your tabletop crew.
+                Total of <strong className="text-[var(--text-primary)]">{formatNumber(players.length)}</strong> players in your tabletop crew.
               </div>
 
               <div className="flex flex-wrap items-center gap-2.5">
@@ -437,7 +438,7 @@ export const PlayersPage: React.FC = () => {
                               Plays
                             </span>
                             <p className="font-display font-extrabold text-lg text-[var(--text-primary)] mt-0.5">
-                              {totalGames}
+                              {formatNumber(totalGames)}
                             </p>
                           </div>
 
@@ -500,7 +501,7 @@ export const PlayersPage: React.FC = () => {
                     Total Saved Venues
                   </span>
                   <p className="text-xl font-display font-extrabold text-[var(--text-primary)] tabular-nums">
-                    {locationStats.totalVenues} venues
+                    {formatNumber(locationStats.totalVenues)} venues
                   </p>
                 </div>
               </div>
@@ -515,7 +516,7 @@ export const PlayersPage: React.FC = () => {
                   </span>
                   <p className="text-sm font-display font-bold text-[var(--text-primary)] truncate">
                     {locationStats.topVenueName
-                      ? `${locationStats.topVenueName} (${locationStats.topVenueCount} plays)`
+                      ? `${locationStats.topVenueName} (${formatNumber(locationStats.topVenueCount)} plays)`
                       : 'No data yet'}
                   </p>
                 </div>

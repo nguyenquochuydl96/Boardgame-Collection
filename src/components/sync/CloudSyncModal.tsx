@@ -31,6 +31,7 @@ import {
 } from '../../lib/supabaseSync';
 import { useGameStore } from '../../store/useGameStore';
 import { useSessionStore } from '../../store/useSessionStore';
+import { formatNumber } from '../../lib/utils';
 
 interface CloudSyncModalProps {
   isOpen: boolean;
@@ -146,7 +147,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
     setIsSyncing(false);
 
     if (res.success) {
-      setActionSuccess(`Uploaded ${games.length} games and ${sessions.length} sessions to Cloud!`);
+      setActionSuccess(`Uploaded ${formatNumber(games.length)} games and ${formatNumber(sessions.length)} sessions to Cloud!`);
     } else {
       setActionError(res.error || 'Upload failed.');
     }
@@ -162,7 +163,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
 
     if (res.success) {
       setActionSuccess(
-        `Downloaded ${res.count?.games ?? 0} games and ${res.count?.sessions ?? 0} sessions from Cloud!`
+        `Downloaded ${formatNumber(res.count?.games ?? 0)} games and ${formatNumber(res.count?.sessions ?? 0)} sessions from Cloud!`
       );
     } else {
       setActionError(res.error || 'Download failed.');

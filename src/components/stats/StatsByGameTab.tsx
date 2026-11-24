@@ -11,6 +11,7 @@ import {
   formatPlayerRange,
   formatRecordTimeAgo,
   getTotalPlayDurationMinutes,
+  formatNumber,
   pluralize,
   GameStatsSummary,
 } from '../../lib/utils';
@@ -196,7 +197,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                         : 'bg-[var(--card-3)] text-[var(--muted)]'
                     )}
                   >
-                    {count}
+                    {formatNumber(count)}
                   </span>
                 </button>
               );
@@ -298,7 +299,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                       <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-[var(--accent)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                     </div>
                     <p className="font-mono font-black text-2xl text-[var(--accent)] mt-1">
-                      {activeGameStats.highestScore.score} pts
+                      {formatNumber(activeGameStats.highestScore.score)} pts
                     </p>
                   </div>
                   <div className="mt-1 space-y-0.5">
@@ -320,7 +321,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                       <span>🏆</span> High Score
                     </span>
                     <p className="font-mono font-black text-2xl text-[var(--accent)] mt-1">
-                      {activeGameStats.highestScore ? `${activeGameStats.highestScore.score} pts` : '—'}
+                      {activeGameStats.highestScore ? `${formatNumber(activeGameStats.highestScore.score)} pts` : '—'}
                     </p>
                   </div>
                   {activeGameStats.highestScore ? (
@@ -353,7 +354,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                       <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-rose-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                     </div>
                     <p className="font-mono font-black text-2xl text-rose-500 mt-1">
-                      {activeGameStats.lowestScore.score} pts
+                      {formatNumber(activeGameStats.lowestScore.score)} pts
                     </p>
                   </div>
                   <div className="mt-1 space-y-0.5">
@@ -375,7 +376,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                       <span>📉</span> Lowest Score
                     </span>
                     <p className="font-mono font-black text-2xl text-rose-500 mt-1">
-                      {activeGameStats.lowestScore ? `${activeGameStats.lowestScore.score} pts` : '—'}
+                      {activeGameStats.lowestScore ? `${formatNumber(activeGameStats.lowestScore.score)} pts` : '—'}
                     </p>
                   </div>
                   {activeGameStats.lowestScore ? (
@@ -644,10 +645,10 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                                 to={`/sessions/${item.highestScore.sessionId}`}
                                 onClick={(e) => e.stopPropagation()}
                                 className="group/rec block text-right hover:opacity-90"
-                                title={`View record session of ${item.highestScore.playerName} (${item.highestScore.score} pts)`}
+                                title={`View record session of ${item.highestScore.playerName} (${formatNumber(item.highestScore.score)} pts)`}
                               >
                                 <span className="font-bold text-[var(--accent)] group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
-                                  {item.highestScore.score} pts
+                                  {formatNumber(item.highestScore.score)} pts
                                   <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover/rec:opacity-100 transition-opacity" />
                                 </span>
                                 <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
@@ -665,7 +666,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                             ) : (
                               <div>
                                 <span className="font-bold text-[var(--accent)]">
-                                  {item.highestScore.score} pts
+                                  {formatNumber(item.highestScore.score)} pts
                                 </span>
                                 <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
                                   {item.highestScore.playerName}
@@ -688,10 +689,10 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                                 to={`/sessions/${item.lowestScore.sessionId}`}
                                 onClick={(e) => e.stopPropagation()}
                                 className="group/rec block text-right hover:opacity-90"
-                                title={`View session of ${item.lowestScore.playerName} (${item.lowestScore.score} pts)`}
+                                title={`View session of ${item.lowestScore.playerName} (${formatNumber(item.lowestScore.score)} pts)`}
                               >
                                 <span className="font-bold text-rose-500 group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
-                                  {item.lowestScore.score} pts
+                                  {formatNumber(item.lowestScore.score)} pts
                                   <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover/rec:opacity-100 transition-opacity" />
                                 </span>
                                 <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
@@ -709,7 +710,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                             ) : (
                               <div>
                                 <span className="font-bold text-rose-500">
-                                  {item.lowestScore.score} pts
+                                  {formatNumber(item.lowestScore.score)} pts
                                 </span>
                                 <span className="text-[10px] text-[var(--muted)] block truncate max-w-[120px] ml-auto">
                                   {item.lowestScore.playerName}

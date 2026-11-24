@@ -26,7 +26,7 @@ import { GameCoverImage } from '../components/game/GameCoverImage';
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useGameStore } from '../store/useGameStore';
-import { formatMonthYear, isDraftMatchingCompletedSession } from '../lib/utils';
+import { formatMonthYear, isDraftMatchingCompletedSession, formatNumber } from '../lib/utils';
 import { PlaySession, SessionDraft } from '../types';
 import { cn } from '../components/ui/cn';
 
@@ -352,7 +352,7 @@ export const SessionsPage: React.FC = () => {
               Play Sessions History
             </h1>
             <p className="text-sm text-[var(--text-secondary)] tabular-nums">
-              {sessions.length.toLocaleString()} tabletop sessions logged with friends
+              {formatNumber(sessions.length)} tabletop sessions logged with friends
             </p>
           </div>
 
@@ -414,7 +414,7 @@ export const SessionsPage: React.FC = () => {
                 <span>Players</span>
                 {selectedPlayerIds.length > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-[#161311] font-mono font-bold">
-                    {selectedPlayerIds.length}
+                    {formatNumber(selectedPlayerIds.length)}
                   </span>
                 )}
               </button>
@@ -436,7 +436,7 @@ export const SessionsPage: React.FC = () => {
                 <span>Games</span>
                 {selectedGameIds.length > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)] text-[var(--accent-ink)] font-mono font-bold">
-                    {selectedGameIds.length}
+                    {formatNumber(selectedGameIds.length)}
                   </span>
                 )}
               </button>
@@ -458,7 +458,7 @@ export const SessionsPage: React.FC = () => {
                 <span>Date &amp; Time</span>
                 {selectedYears.length + selectedMonths.length > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-sky-500 text-[#161311] font-mono font-bold">
-                    {selectedYears.length + selectedMonths.length}
+                    {formatNumber(selectedYears.length + selectedMonths.length)}
                   </span>
                 )}
               </button>
@@ -501,7 +501,7 @@ export const SessionsPage: React.FC = () => {
                   )}
                 >
                   <Users className="w-3.5 h-3.5" />
-                  <span>👥 Players ({selectedPlayerIds.length})</span>
+                  <span>👥 Players ({formatNumber(selectedPlayerIds.length)})</span>
                 </button>
                 <button
                   type="button"
@@ -514,7 +514,7 @@ export const SessionsPage: React.FC = () => {
                   )}
                 >
                   <Gamepad2 className="w-3.5 h-3.5" />
-                  <span>🎲 Games ({selectedGameIds.length})</span>
+                  <span>🎲 Games ({formatNumber(selectedGameIds.length)})</span>
                 </button>
                 <button
                   type="button"
@@ -527,7 +527,7 @@ export const SessionsPage: React.FC = () => {
                   )}
                 >
                   <Calendar className="w-3.5 h-3.5" />
-                  <span>📅 Period ({selectedYears.length + selectedMonths.length})</span>
+                  <span>📅 Period ({formatNumber(selectedYears.length + selectedMonths.length)})</span>
                 </button>
               </div>
 
@@ -575,7 +575,7 @@ export const SessionsPage: React.FC = () => {
                         onClick={() => setSelectedPlayerIds(players.map((p) => p.id))}
                         className="text-[var(--accent)] font-bold hover:underline cursor-pointer"
                       >
-                        Select All ({players.length})
+                        Select All ({formatNumber(players.length)})
                       </button>
                       <span className="text-[var(--muted)]">|</span>
                       <button
@@ -653,7 +653,7 @@ export const SessionsPage: React.FC = () => {
                         onClick={() => setSelectedGameIds(gamesWithPlays.map((g) => g.id))}
                         className="text-[var(--accent)] font-bold hover:underline cursor-pointer"
                       >
-                        Select All ({gamesWithPlays.length})
+                        Select All ({formatNumber(gamesWithPlays.length)})
                       </button>
                       <span className="text-[var(--muted)]">|</span>
                       <button
@@ -949,7 +949,7 @@ export const SessionsPage: React.FC = () => {
               </div>
 
               <div className="text-xs text-[var(--muted)]">
-                Showing <strong className="text-[var(--ink)] font-bold">{filteredSessions.length}</strong> of {sessions.length} sessions
+                Showing <strong className="text-[var(--ink)] font-bold">{formatNumber(filteredSessions.length)}</strong> of {formatNumber(sessions.length)} sessions
               </div>
             </div>
           )}
@@ -966,7 +966,7 @@ export const SessionsPage: React.FC = () => {
                     {group.monthLabel}
                   </h2>
                   <span className="text-xs font-mono text-[var(--muted)] tabular-nums">
-                    ({group.items.length})
+                    ({formatNumber(group.items.length)})
                   </span>
                 </div>
 
@@ -986,7 +986,7 @@ export const SessionsPage: React.FC = () => {
             {hasMore ? (
               <div className="p-6 rounded-2xl bg-[var(--bg-card)]/80 border border-[var(--border-subtle)] text-center space-y-3">
                 <p className="text-xs text-[var(--text-secondary)] tabular-nums">
-                  Showing {visibleSessions.length} of {filteredSessions.length} sessions
+                  Showing {formatNumber(visibleSessions.length)} of {formatNumber(filteredSessions.length)} sessions
                 </p>
                 <Button
                   variant="secondary"
@@ -1001,7 +1001,7 @@ export const SessionsPage: React.FC = () => {
             ) : (
               filteredSessions.length > PAGE_SIZE && (
                 <p className="text-center text-xs text-[var(--text-muted)] py-4">
-                  All {filteredSessions.length} sessions displayed
+                  All {formatNumber(filteredSessions.length)} sessions displayed
                 </p>
               )
             )}

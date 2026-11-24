@@ -4,7 +4,7 @@ import { Users, Clock, Star, Edit3 } from 'lucide-react';
 import { BoardGame } from '../../types';
 import { GameStatusBadge } from './GameStatusBadge';
 import { GameCoverImage } from './GameCoverImage';
-import { formatPlayerRange, formatVND } from '../../lib/utils';
+import { formatPlayerRange, formatVND, formatCount, formatNumber } from '../../lib/utils';
 
 export interface GameCardProps {
   game: BoardGame;
@@ -104,7 +104,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
               )}
             </div>
             <span className="text-xs font-semibold text-[var(--muted)] tabular-nums">
-              {playCount} {playCount === 1 ? 'play' : 'plays'}
+              {formatCount(playCount, 'play')}
             </span>
           </div>
         </Link>
@@ -184,7 +184,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
               {game.playingTime && (
                 <>
                   <span aria-hidden="true" className="opacity-40">·</span>
-                  <span>{game.playingTime}m</span>
+                  <span>{formatNumber(game.playingTime)}m</span>
                 </>
               )}
             </div>

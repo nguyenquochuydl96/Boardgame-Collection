@@ -29,6 +29,7 @@ import {
   getLocalDateString,
   buildLocalDateTimeISO,
   resolveCoopWinnerIds,
+  formatCount,
 } from '../lib/utils';
 import { getScoringTemplateForGame } from '../lib/scoringPresets';
 import { pushVaultToCloud } from '../lib/supabaseSync';
@@ -886,7 +887,7 @@ export const NewSessionPage: React.FC = () => {
                 {selectedGame ? selectedGame.name : 'Setting up game session'}
               </span>
               <span className="text-xs text-[var(--muted)] truncate block">
-                {location} · {activeSessionPlayers.length} players
+                {location ? `${location} · ` : ''}{formatCount(activeSessionPlayers.length, 'player')}
               </span>
             </div>
           </div>

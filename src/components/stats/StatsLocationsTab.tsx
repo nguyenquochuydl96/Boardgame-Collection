@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { PlaySession, Player } from '../../types';
+import { formatCount } from '../../lib/utils';
 
 interface StatsLocationsTabProps {
   sessions: PlaySession[];
@@ -81,11 +82,11 @@ export const StatsLocationsTab: React.FC<StatsLocationsTabProps> = React.memo(
 
                   <div className="flex items-center gap-4 text-xs tabular-nums font-mono">
                     <span className="text-amber-600 dark:text-amber-400 font-bold">
-                      {loc.count} plays ({loc.percentage}%)
+                      {formatCount(loc.count, 'play')} ({loc.percentage}%)
                     </span>
                     {loc.topWinnerWins > 0 && loc.topWinnerName && (
                       <span className="text-[var(--good)] font-bold flex items-center gap-1">
-                        <span>👑</span> {loc.topWinnerName}: {loc.topWinnerWins} wins ({loc.topWinnerRate}%)
+                        <span>👑</span> {loc.topWinnerName}: {formatCount(loc.topWinnerWins, 'win')} ({loc.topWinnerRate}%)
                       </span>
                     )}
                   </div>

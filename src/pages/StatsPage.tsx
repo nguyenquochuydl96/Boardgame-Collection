@@ -11,7 +11,7 @@ import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
-import { getTotalPlayHours } from '../lib/utils';
+import { getTotalPlayHours, formatNumber } from '../lib/utils';
 
 import { StatsOverviewTab } from '../components/stats/StatsOverviewTab';
 import { StatsYearsTab } from '../components/stats/StatsYearsTab';
@@ -59,7 +59,7 @@ export const StatsPage: React.FC = () => {
           </div>
 
           <div className="text-xs font-mono px-3 py-1.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] text-[var(--accent)] font-semibold w-fit">
-            Total: <strong>{sessions.length}</strong> {sessions.length === 1 ? 'session' : 'sessions'} · <strong>{totalHoursPlayed}h</strong> played
+            Total: <strong>{formatNumber(sessions.length)}</strong> {sessions.length === 1 ? 'session' : 'sessions'} · <strong>{formatNumber(totalHoursPlayed)}h</strong> played
           </div>
         </div>
 

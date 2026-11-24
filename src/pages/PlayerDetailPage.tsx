@@ -31,7 +31,7 @@ import { GameCoverImage } from '../components/game/GameCoverImage';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useGameStore } from '../store/useGameStore';
-import { calculatePlayerStreaks, formatDate } from '../lib/utils';
+import { calculatePlayerStreaks, formatDate, formatNumber, formatCount } from '../lib/utils';
 import { getPlayStyleInfo } from '../lib/boardgameAvatars';
 import { cn } from '../components/ui/cn';
 
@@ -386,7 +386,7 @@ export const PlayerDetailPage: React.FC = () => {
             <div className="p-3 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] text-center min-w-[95px]">
               <span className="text-[11px] text-[var(--muted)] block">Total Plays</span>
               <p className="font-display font-extrabold text-xl text-[var(--ink)] mt-0.5">
-                {totalPlays}
+                {formatNumber(totalPlays)}
               </p>
             </div>
 
@@ -396,7 +396,7 @@ export const PlayerDetailPage: React.FC = () => {
               <p className="font-display font-extrabold text-xl text-[var(--good)] mt-0.5">
                 {overallWinRate}%
               </p>
-              <span className="text-[10px] text-[var(--muted)]">({totalWins} wins)</span>
+              <span className="text-[10px] text-[var(--muted)]">({formatNumber(totalWins)} wins)</span>
             </div>
 
             {/* 3. Win Streak (Clickable) */}
@@ -410,7 +410,7 @@ export const PlayerDetailPage: React.FC = () => {
                 <span>Win Streak</span>
               </div>
               <p className="font-display font-black text-xl text-[var(--ink)] mt-0.5 group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors">
-                {streaks.longestWinStreak.count}W
+                {formatNumber(streaks.longestWinStreak.count)}W
               </p>
               <span className="text-[10px] text-amber-700 dark:text-amber-400/90 group-hover:underline flex items-center justify-center gap-0.5 mt-0.5 font-medium">
                 Details <ChevronRight className="w-2.5 h-2.5" />
@@ -428,7 +428,7 @@ export const PlayerDetailPage: React.FC = () => {
                 <span>Loss Streak</span>
               </div>
               <p className="font-display font-black text-xl text-[var(--ink)] mt-0.5 group-hover:text-rose-600 dark:group-hover:text-rose-300 transition-colors">
-                {streaks.longestLossStreak.count}L
+                {formatNumber(streaks.longestLossStreak.count)}L
               </p>
               <span className="text-[10px] text-rose-700 dark:text-rose-400/90 group-hover:underline flex items-center justify-center gap-0.5 mt-0.5 font-medium">
                 Details <ChevronRight className="w-2.5 h-2.5" />
@@ -445,14 +445,14 @@ export const PlayerDetailPage: React.FC = () => {
                   {rivalInfo.player.name}
                 </p>
                 <span className="text-[10px] text-amber-700 dark:text-amber-300 font-mono">
-                  {rivalInfo.playerWins} - {rivalInfo.rivalWins}
+                  {formatNumber(rivalInfo.playerWins)} - {formatNumber(rivalInfo.rivalWins)}
                 </span>
               </div>
             ) : (
               <div className="p-3 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] text-center min-w-[95px]">
                 <span className="text-[11px] text-[var(--muted)] block">Total Wins</span>
                 <p className="font-display font-extrabold text-xl text-amber-700 dark:text-amber-400 mt-0.5">
-                  {totalWins}
+                  {formatNumber(totalWins)}
                 </p>
               </div>
             )}
@@ -491,7 +491,7 @@ export const PlayerDetailPage: React.FC = () => {
                       {favoriteGame.gameName}
                     </Link>
                     <p className="text-xs text-[var(--muted)] mt-0.5 tabular-nums">
-                      Played <strong className="text-[var(--ink)]">{favoriteGame.plays} {favoriteGame.plays === 1 ? 'play' : 'plays'}</strong> · Won{' '}
+                      Played <strong className="text-[var(--ink)]">{formatCount(favoriteGame.plays, 'play')}</strong> · Won{' '}
                       <strong className="text-[var(--good)]">{favoriteGame.winRate}%</strong>
                     </p>
                   </div>
@@ -546,7 +546,7 @@ export const PlayerDetailPage: React.FC = () => {
                     </Link>
                     <p className="text-xs text-[var(--muted)] mt-0.5 tabular-nums">
                       Win rate: <strong className="text-[var(--good)] font-bold">{signatureGame.winRate}%</strong>{' '}
-                      ({signatureGame.wins}/{signatureGame.plays} plays)
+                      ({formatNumber(signatureGame.wins)}/{formatNumber(signatureGame.plays)} plays)
                     </p>
                   </div>
                 </div>
@@ -604,7 +604,7 @@ export const PlayerDetailPage: React.FC = () => {
                       {nemesisGame.gameName}
                     </Link>
                     <p className="text-xs text-[var(--muted)] mt-0.5 tabular-nums">
-                      Win rate: {nemesisGame.winRate}% ({nemesisGame.wins}/{nemesisGame.plays} plays) · Time for revenge!
+                      Win rate: {nemesisGame.winRate}% ({formatNumber(nemesisGame.wins)}/{formatNumber(nemesisGame.plays)} plays) · Time for revenge!
                     </p>
                   </div>
                 </div>
@@ -641,7 +641,7 @@ export const PlayerDetailPage: React.FC = () => {
                 Detailed Per-Game Performance
               </h2>
               <p className="text-xs text-[var(--muted)]">
-                Competed across {perGameStats.length} different boardgame titles
+                Competed across {formatNumber(perGameStats.length)} different boardgame titles
               </p>
             </div>
 
@@ -690,7 +690,7 @@ export const PlayerDetailPage: React.FC = () => {
                         {item.gameName}
                       </h4>
                       <p className="text-[11px] text-[var(--muted)] tabular-nums">
-                        {item.plays} {item.plays === 1 ? 'play' : 'plays'} · {item.wins} {item.wins === 1 ? 'win' : 'wins'}
+                        {formatCount(item.plays, 'play')} · {formatCount(item.wins, 'win')}
                       </p>
                     </div>
                   </Link>
@@ -745,7 +745,7 @@ export const PlayerDetailPage: React.FC = () => {
               to={`/sessions?playerId=${player.id}`}
               className="text-xs font-bold text-[var(--accent)] hover:underline flex items-center gap-1"
             >
-              View all {playerSessions.length} sessions <ArrowRight className="w-3.5 h-3.5" />
+              View all {formatNumber(playerSessions.length)} sessions <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 

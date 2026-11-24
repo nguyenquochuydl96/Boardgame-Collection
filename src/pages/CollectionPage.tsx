@@ -17,7 +17,7 @@ import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { BoardGame, GameStatus } from '../types';
-import { getPlayCountsByGameId } from '../lib/utils';
+import { getPlayCountsByGameId, formatNumber } from '../lib/utils';
 
 // Lazy-load heavy modals so the main collection loads instantly
 const QuickEditGameModal = React.lazy(() =>
@@ -148,7 +148,7 @@ export const CollectionPage: React.FC = () => {
               Board Game Collection
             </h1>
             <p className="text-sm text-[var(--muted)] tabular-nums font-medium">
-              Showing {visibleGames.length < filteredGames.length ? `${visibleGames.length} of ` : ''}{filteredGames.length} tabletop games in your collection
+              Showing {visibleGames.length < filteredGames.length ? `${formatNumber(visibleGames.length)} of ` : ''}{formatNumber(filteredGames.length)} tabletop games in your collection
             </p>
           </div>
 
@@ -220,7 +220,7 @@ export const CollectionPage: React.FC = () => {
                       : 'bg-[var(--card-2)] text-[var(--muted)]'
                   )}
                 >
-                  {count}
+                  {formatNumber(count)}
                 </span>
               </button>
             );
@@ -306,7 +306,7 @@ export const CollectionPage: React.FC = () => {
                   onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
                   className="px-6 py-2 text-xs font-bold rounded-full"
                 >
-                  Load More Games ({filteredGames.length - visibleCount} remaining)
+                  Load More Games ({formatNumber(filteredGames.length - visibleCount)} remaining)
                 </Button>
               </div>
             )}

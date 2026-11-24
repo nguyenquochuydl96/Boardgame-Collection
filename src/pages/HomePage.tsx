@@ -25,6 +25,8 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import {
   formatDate,
   formatDuration,
+  formatNumber,
+  formatCount,
   getCollectionTotalValue,
   getTotalPlayDurationMinutes,
   getTotalPlayHours,
@@ -184,9 +186,9 @@ export const HomePage: React.FC = () => {
             </h1>
           </div>
           <div className="text-xs sm:text-sm text-[var(--muted)] font-medium">
-            <span className="font-bold text-[var(--ink)]">{ownedGamesCount}</span>{' '}
+            <span className="font-bold text-[var(--ink)]">{formatNumber(ownedGamesCount)}</span>{' '}
             {ownedGamesCount === 1 ? 'game' : 'games'} in collection ·{' '}
-            <span className="font-bold text-[var(--ink)]">{totalSessionsCount}</span>{' '}
+            <span className="font-bold text-[var(--ink)]">{formatNumber(totalSessionsCount)}</span>{' '}
             {totalSessionsCount === 1 ? 'play' : 'plays'} logged
           </div>
         </section>
@@ -257,7 +259,7 @@ export const HomePage: React.FC = () => {
               label="Games Owned"
               value={ownedGamesCount}
               icon={<Dices className="w-5 h-5" />}
-              subtitle={`${games.length} total in collection`}
+              subtitle={`${formatNumber(games.length)} total in collection`}
               href="/collection?status=own"
               tileIndex={1}
             />
@@ -274,7 +276,7 @@ export const HomePage: React.FC = () => {
               value={totalHoursPlayed}
               suffix="h"
               icon={<Clock className="w-5 h-5" />}
-              subtitle={`${totalMinutesPlayed}m at the table`}
+              subtitle={`${formatNumber(totalMinutesPlayed)}m at the table`}
               href="/stats"
               tileIndex={3}
             />
@@ -419,21 +421,21 @@ export const HomePage: React.FC = () => {
                 className="px-3 py-1.5 rounded-full bg-[var(--card-2)] hover:bg-[var(--line)]/50 text-[var(--ink)] font-semibold transition-colors flex items-center gap-1.5"
               >
                 <span>Owned</span>
-                <span className="font-mono font-bold text-[var(--accent)]">{statusCounts.own}</span>
+                <span className="font-mono font-bold text-[var(--accent)]">{formatNumber(statusCounts.own)}</span>
               </Link>
               <Link
                 to="/collection?status=borrowed"
                 className="px-3 py-1.5 rounded-full bg-[var(--card-2)] hover:bg-[var(--line)]/50 text-[var(--ink)] font-semibold transition-colors flex items-center gap-1.5"
               >
                 <span>Borrowed</span>
-                <span className="font-mono font-bold">{statusCounts.borrowed}</span>
+                <span className="font-mono font-bold">{formatNumber(statusCounts.borrowed)}</span>
               </Link>
               <Link
                 to="/collection?status=wishlist"
                 className="px-3 py-1.5 rounded-full bg-[var(--card-2)] hover:bg-[var(--line)]/50 text-[var(--ink)] font-semibold transition-colors flex items-center gap-1.5"
               >
                 <span>Wishlist</span>
-                <span className="font-mono font-bold">{statusCounts.wishlist}</span>
+                <span className="font-mono font-bold">{formatNumber(statusCounts.wishlist)}</span>
               </Link>
             </div>
           </div>

@@ -20,7 +20,7 @@ import { useGameStore } from '../../store/useGameStore';
 import { useSessionStore } from '../../store/useSessionStore';
 import { BoardGame } from '../../types';
 import { getScoringTemplateForGame } from '../../lib/scoringPresets';
-import { formatPlayerRange, shuffleArray } from '../../lib/utils';
+import { formatPlayerRange, shuffleArray, formatNumber, formatCount } from '../../lib/utils';
 import { playTickSound, playFanfareSound, triggerConfetti } from '../../lib/soundEffects';
 import { GameCoverImage } from './GameCoverImage';
 import { cn } from '../ui/cn';
@@ -119,7 +119,7 @@ export function formatPlayHistoryBadge(metrics?: GamePlayMetrics): {
   }
 
   return {
-    text: `${playCount} ${playCount === 1 ? 'play' : 'plays'} · Last: ${timeStr}`,
+    text: `${formatCount(playCount, 'play')} · Last: ${timeStr}`,
     isUnplayed: false,
     isDusty: metrics.isDusty,
   };
@@ -498,7 +498,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
               <span>Dusty Gems</span>
               {totalDustyCount > 0 && (
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 font-mono">
-                  {totalDustyCount}
+                  {formatNumber(totalDustyCount)}
                 </span>
               )}
             </button>
@@ -606,7 +606,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
             <span className="text-[var(--muted)]">
               {filteredGames.length > 0 ? (
                 <>
-                  <strong className="text-[var(--ink)] font-extrabold">{filteredGames.length}</strong>{' '}
+                  <strong className="text-[var(--ink)] font-extrabold">{formatNumber(filteredGames.length)}</strong>{' '}
                   {filteredGames.length === 1 ? 'game matches' : 'games match'} your criteria
                 </>
               ) : (
@@ -857,7 +857,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                     <span className="text-base select-none">🗳️</span>
                     <div>
                       <span className="font-extrabold text-[var(--ink)]">
-                        {activeVetoCandidates.length} Candidates Remaining
+                        {formatNumber(activeVetoCandidates.length)} Candidates Remaining
                       </span>
                       <p className="text-[11px] text-[var(--muted)]">
                         Take turns tapping &quot;Veto&quot; on games you don&apos;t want until 1 remains.

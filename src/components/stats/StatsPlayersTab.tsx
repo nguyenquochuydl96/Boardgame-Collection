@@ -4,7 +4,7 @@ import { Card } from '../ui/Card';
 import { PlayerChip } from '../player/PlayerChip';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { PlayerLeaderboardSection } from '../dashboard/PlayerLeaderboardSection';
-import { calculateHeadToHead, pluralize } from '../../lib/utils';
+import { calculateHeadToHead, formatNumber, pluralize } from '../../lib/utils';
 import { PlaySession, Player } from '../../types';
 
 interface StatsPlayersTabProps {
@@ -122,16 +122,16 @@ export const StatsPlayersTab: React.FC<StatsPlayersTabProps> = React.memo(
                           </div>
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-amber-600 dark:text-amber-400">
-                          {st.winsInShared}
+                          {formatNumber(st.winsInShared)}
                         </td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-[var(--good)]">
                           {st.winRateInShared}%
                         </td>
                         <td className="py-3 px-4 text-right font-mono text-[var(--ink)]">
-                          {st.highestScore !== null ? st.highestScore : '—'}
+                          {st.highestScore !== null ? formatNumber(st.highestScore) : '—'}
                         </td>
                         <td className="py-3 px-4 text-right font-mono text-[var(--muted)]">
-                          {st.lowestScore !== null ? st.lowestScore : '—'}
+                          {st.lowestScore !== null ? formatNumber(st.lowestScore) : '—'}
                         </td>
                       </tr>
                     ))}
@@ -163,7 +163,7 @@ export const StatsPlayersTab: React.FC<StatsPlayersTabProps> = React.memo(
                           <tr key={row.gameId}>
                             <td className="py-2.5 px-4 font-bold text-[var(--ink)]">{row.gameName}</td>
                             <td className="py-2.5 px-3 text-right font-mono text-[var(--muted)]">
-                              {row.plays}
+                              {formatNumber(row.plays)}
                             </td>
                             {activeComparisonPlayers.map((p) => {
                               const w = row.winsByPlayerId[p.id] || 0;
@@ -172,7 +172,7 @@ export const StatsPlayersTab: React.FC<StatsPlayersTabProps> = React.memo(
                                   {w > 0 ? (
                                     <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-bold">
                                       <Trophy className="w-3 h-3" />
-                                      {w}
+                                      {formatNumber(w)}
                                     </span>
                                   ) : (
                                     '0'

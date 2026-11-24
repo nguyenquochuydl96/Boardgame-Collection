@@ -3,6 +3,7 @@ import { Plus, Trash2, Crown, Sparkles, AlertCircle } from 'lucide-react';
 import { Player } from '../../types';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { ScoringCategory, computeSheetPlayerTotal } from '../../lib/scoringPresets';
+import { formatNumber } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { cn } from '../ui/cn';
 
@@ -388,7 +389,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                 <div>TOTAL SCORE</div>
                 {isCoop && (
                   <div className="text-[10px] font-semibold text-[var(--good)] mt-0.5">
-                    Team: {Object.values(playerTotals).reduce((a, b) => a + b, 0)}
+                    Team: {formatNumber(Object.values(playerTotals).reduce((a, b) => a + b, 0))}
                   </div>
                 )}
               </td>
@@ -405,7 +406,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                   >
                     <div className="flex items-center justify-center gap-1.5 font-mono text-base font-extrabold text-[var(--text-primary)]">
                       {isLeader && <Crown className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />}
-                      <span className={isLeader ? 'text-[var(--warn)]' : ''}>{total}</span>
+                      <span className={isLeader ? 'text-[var(--warn)]' : ''}>{formatNumber(total)}</span>
                     </div>
                   </td>
                 );

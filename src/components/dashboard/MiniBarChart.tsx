@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
+import { formatNumber } from '../../lib/utils';
 
 export interface MiniBarItem {
   id: string;
@@ -49,7 +50,7 @@ export const MiniBarChart: React.FC<MiniBarChartProps> = memo(({
                 {idx + 1}. {item.label}
               </span>
               <span className="font-mono font-bold text-[var(--muted)] tabular-nums shrink-0">
-                {item.value} {unit}
+                {formatNumber(item.value)} {unit}
               </span>
             </div>
             <div className="h-2.5 w-full rounded-full bg-[var(--card-3)] overflow-hidden shadow-[inset_0_0_0_1px_var(--line)]">

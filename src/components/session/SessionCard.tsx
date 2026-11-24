@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Crown, ChevronRight, Check } from 'lucide-react';
 import { PlaySession, Player } from '../../types';
-import { formatDate, formatDuration } from '../../lib/utils';
+import { formatDate, formatDuration, formatCount } from '../../lib/utils';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { GameCoverImage } from '../game/GameCoverImage';
 
@@ -114,7 +114,7 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
                 })}
               </div>
               <span className="text-xs text-[var(--muted)] font-medium">
-                {players.length} {players.length === 1 ? 'player' : 'players'}
+                {formatCount(players.length, 'player')}
               </span>
             </div>
           )}

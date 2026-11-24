@@ -27,7 +27,7 @@ import { useGameStore } from '../store/useGameStore';
 import { cn } from '../components/ui/cn';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { GameCoverImage } from '../components/game/GameCoverImage';
-import { resolveAvatarImage, getSafeDisplayAvatar } from '../lib/utils';
+import { resolveAvatarImage, getSafeDisplayAvatar, formatNumber, formatCount } from '../lib/utils';
 
 type PickerMode = 'first_player' | 'what_to_play';
 
@@ -269,7 +269,7 @@ export const PickerPage: React.FC = () => {
                 <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
                   <div>
                     <h3 className="font-bold text-sm text-[var(--ink)]">
-                      Players at Table ({playerItems.length}/{allPlayers.length + guestPlayers.length})
+                      Players at Table ({formatNumber(playerItems.length)}/{formatNumber(allPlayers.length + guestPlayers.length)})
                     </h3>
                     <p className="text-[11px] text-[var(--muted)]">
                       Select everyone attending game night
@@ -367,7 +367,7 @@ export const PickerPage: React.FC = () => {
                 <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
                   <div>
                     <h3 className="font-bold text-sm text-[var(--text-primary)]">
-                      Board Game Collection ({gameItems.length}/{filteredAvailableGames.length})
+                      Board Game Collection ({formatNumber(gameItems.length)}/{formatNumber(filteredAvailableGames.length)})
                     </h3>
                     <p className="text-[11px] text-[var(--text-secondary)]">
                       Filter games by player count &amp; duration
@@ -517,9 +517,9 @@ export const PickerPage: React.FC = () => {
                             <span className="font-bold text-xs truncate block">{g.name}</span>
                             <span className="text-[10px] text-[var(--text-secondary)] block">
                               {g.minPlayers === g.maxPlayers
-                                ? `${g.minPlayers} ${g.minPlayers === 1 ? 'player' : 'players'}`
+                                ? formatCount(g.minPlayers, 'player')
                                 : `${g.minPlayers}–${g.maxPlayers} players`}{' '}
-                              · {g.playingTime}m
+                              · {formatNumber(g.playingTime)}m
                             </span>
                           </div>
                         </div>

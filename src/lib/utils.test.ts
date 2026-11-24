@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   formatVND,
+  formatNumber,
+  formatCount,
   formatNumberInput,
   parseNumberInput,
   formatDuration,
@@ -42,6 +44,32 @@ test('formatVND formats Vietnamese Dong with dot separators and symbol', () => {
   assert.equal(formatVND(950000), '950.000 ₫');
   assert.equal(formatVND(0), '0 ₫');
   assert.equal(formatVND(undefined), '0 ₫');
+});
+
+test('formatNumber formats numbers with en-US comma thousands separators and safe fallbacks', () => {
+  assert.equal(formatNumber(1454), '1,454');
+  assert.equal(formatNumber('92921'), '92,921');
+  assert.equal(formatNumber(1000000), '1,000,000');
+  assert.equal(formatNumber(-1454), '-1,454');
+  assert.equal(formatNumber(0), '0');
+  assert.equal(formatNumber(1454.5), '1,454.5');
+  assert.equal(formatNumber(null), '0');
+  assert.equal(formatNumber(undefined), '0');
+  assert.equal(formatNumber(''), '0');
+  assert.equal(formatNumber('not-a-number'), '0');
+  assert.equal(formatNumber(Number.NaN), '0');
+});
+
+test('formatCount formats count with thousands separator and singular/plural suffix', () => {
+  assert.equal(formatCount(0, 'play'), '0 plays');
+  assert.equal(formatCount(1, 'play'), '1 play');
+  assert.equal(formatCount(1454, 'play'), '1,454 plays');
+  assert.equal(formatCount('92921', 'point'), '92,921 points');
+  assert.equal(formatCount(2, 'match', 'matches'), '2 matches');
+  assert.equal(formatCount(1, 'match', 'matches'), '1 match');
+  assert.equal(formatCount(-1, 'point'), '-1 point');
+  assert.equal(formatCount(null, 'session'), '0 sessions');
+  assert.equal(formatCount(undefined, 'hour'), '0 hours');
 });
 
 test('formatDuration converts minutes to readable hours and minutes', () => {

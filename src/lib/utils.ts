@@ -46,6 +46,42 @@ export function formatVND(amount?: number | null): string {
 }
 
 /**
+ * Formats a number with standard thousands separators (en-US, e.g. 1454 -> "1,454", 92921 -> "92,921").
+ * Safely handles null, undefined, strings, NaN, and infinite values returning '0'.
+ */
+export function formatNumber(
+  value: number | string | null | undefined,
+  options?: Intl.NumberFormatOptions
+): string {
+  if (value === undefined || value === null || value === '') {
+    return '0';
+  }
+  const num = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(num)) {
+    return '0';
+  }
+  return new Intl.NumberFormat('en-US', options).format(num);
+}
+
+/**
+ * Combines number formatting with singular/plural label suffix (e.g. formatCount(1, 'play') -> "1 play", formatCount(1454, 'play') -> "1,454 plays").
+ */
+export function formatCount(
+  value: number | string | null | undefined,
+  singular: string,
+  plural?: string
+): string {
+  if (value === undefined || value === null || value === '') {
+    const word = plural ?? `${singular}s`;
+    return `0 ${word}`;
+  }
+  const num = typeof value === 'number' ? value : Number(value);
+  const safeCount = Number.isFinite(num) ? num : 0;
+  const word = Math.abs(safeCount) === 1 ? singular : (plural ?? `${singular}s`);
+  return `${formatNumber(safeCount)} ${word}`;
+}
+
+/**
  * Formats a raw number or input string with comma separators for clean financial inputs (e.g. 1800000 -> "1,800,000")
  */
 export function formatNumberInput(value: number | string | undefined | null): string {
@@ -237,8 +273,8 @@ export function formatDuration(minutes?: number): string {
   const hrs = Math.floor(minutes / 60);
   const mins = minutes % 60;
   if (hrs === 0) return `${mins}m`;
-  if (mins === 0) return `${hrs}h`;
-  return `${hrs}h ${mins}m`;
+  if (mins === 0) return `${formatNumber(hrs)}h`;
+  return `${formatNumber(hrs)}h ${mins}m`;
 }
 
 /**
@@ -262,12 +298,10 @@ export function getTotalPlayHours(sessions: readonly PlaySession[]): number {
 }
 
 /**
- * Formats singular/plural count cleanly (e.g. pluralize(1, 'play') => '1 play', pluralize(3, 'play') => '3 plays')
+ * Formats singular/plural count cleanly (e.g. pluralize(1, 'play') => '1 play', pluralize(1454, 'play') => '1,454 plays')
  */
 export function pluralize(count: number, singular: string, plural?: string): string {
-  const safeCount = Number.isFinite(count) ? count : 0;
-  const word = Math.abs(safeCount) === 1 ? singular : (plural ?? `${singular}s`);
-  return `${safeCount} ${word}`;
+  return formatCount(count, singular, plural);
 }
 
 /**

@@ -10,7 +10,7 @@ import {
   HeartCrack,
 } from 'lucide-react';
 import { Player, PlaySession } from '../../types';
-import { calculateMinRequiredPlays, pluralize } from '../../lib/utils';
+import { calculateMinRequiredPlays, formatNumber, formatCount, pluralize } from '../../lib/utils';
 import { getScoringTemplateForGame } from '../../lib/scoringPresets';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { Card } from '../ui/Card';
@@ -395,8 +395,8 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                 <span className="text-amber-500 font-medium">All Players view (≥ 1 play)</span>
               ) : (
                 <span>
-                  Qualification: ≥ {minRequiredPlays} {minRequiredPlays === 1 ? 'play' : 'plays'} min
-                  {calculatedThreshold > 5 && ` (capped from ${calculatedThreshold})`}
+                  Qualification: ≥ {formatCount(minRequiredPlays, 'play')} min
+                  {calculatedThreshold > 5 && ` (capped from ${formatNumber(calculatedThreshold)})`}
                 </span>
               )}
             </p>
@@ -496,7 +496,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               )}
               title={showAllPlayers ? 'Showing all players with at least 1 play' : `Filter by qualified (≥ ${pluralize(minRequiredPlays, 'play')})`}
             >
-              <span>{showAllPlayers ? '👥 All Players' : `🏆 Qualified (≥ ${minRequiredPlays})`}</span>
+              <span>{showAllPlayers ? '👥 All Players' : `🏆 Qualified (≥ ${formatNumber(minRequiredPlays)})`}</span>
             </button>
           </div>
         </div>
@@ -655,7 +655,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               {rankedStats.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-sm text-[var(--muted)]">
-                    No players qualified for this leaderboard yet (requires ≥ 5% of all sessions: min {minRequiredPlays} {minRequiredPlays === 1 ? 'play' : 'plays'}).
+                    No players qualified for this leaderboard yet (requires ≥ 5% of all sessions: min {formatCount(minRequiredPlays, 'play')}).
                   </td>
                 </tr>
               ) : (

@@ -33,6 +33,7 @@ import {
   calculateGameStats,
   formatDate,
   formatDuration,
+  formatNumber,
   formatPlayerRange,
   formatVND,
   formatNumberInput,
@@ -423,14 +424,14 @@ export const GameDetailPage: React.FC = () => {
                       <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
                     </div>
                     <p className="font-display font-extrabold text-2xl text-[var(--accent)] mt-1">
-                      {stats.totalPlays}
+                      {formatNumber(stats.totalPlays)}
                     </p>
                   </Link>
                 ) : (
                   <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
                     <span className="text-xs text-[var(--muted)]">Total Plays</span>
                     <p className="font-display font-extrabold text-2xl text-[var(--accent)] mt-1">
-                      {stats.totalPlays}
+                      {formatNumber(stats.totalPlays)}
                     </p>
                   </div>
                 )}
@@ -446,14 +447,14 @@ export const GameDetailPage: React.FC = () => {
                   <Link
                     to={`/sessions/${stats.highestScore.sessionId}`}
                     className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] hover:border-[var(--accent)] hover:shadow-md transition-all group block cursor-pointer"
-                    title={`View record session of ${stats.highestScore.playerName} (${stats.highestScore.score} pts)`}
+                    title={`View record session of ${stats.highestScore.playerName} (${formatNumber(stats.highestScore.score)} pts)`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-[var(--muted)]">Highest Score</span>
                       <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors" />
                     </div>
                     <p className="font-mono font-extrabold text-xl text-[var(--accent)] mt-1">
-                      {stats.highestScore.score}
+                      {formatNumber(stats.highestScore.score)}
                     </p>
                     <span className="text-[11px] text-[var(--muted)] group-hover:text-[var(--accent)] truncate block transition-colors">
                       {stats.highestScore.playerName}
@@ -463,7 +464,7 @@ export const GameDetailPage: React.FC = () => {
                   <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
                     <span className="text-xs text-[var(--muted)]">Highest Score</span>
                     <p className="font-mono font-extrabold text-xl text-[var(--accent)] mt-1">
-                      {stats.highestScore ? stats.highestScore.score : '—'}
+                      {stats.highestScore ? formatNumber(stats.highestScore.score) : '—'}
                     </p>
                     {stats.highestScore && (
                       <span className="text-[11px] text-[var(--muted)] truncate block">
@@ -477,14 +478,14 @@ export const GameDetailPage: React.FC = () => {
                   <Link
                     to={`/sessions/${stats.lowestScore.sessionId}`}
                     className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] hover:border-rose-500/60 hover:shadow-md transition-all group block cursor-pointer"
-                    title={`View session of ${stats.lowestScore.playerName} (${stats.lowestScore.score} pts)`}
+                    title={`View session of ${stats.lowestScore.playerName} (${formatNumber(stats.lowestScore.score)} pts)`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-[var(--muted)]">Lowest Score</span>
                       <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-rose-500 transition-colors" />
                     </div>
                     <p className="font-mono font-extrabold text-xl text-rose-600 dark:text-rose-400 mt-1">
-                      {stats.lowestScore.score}
+                      {formatNumber(stats.lowestScore.score)}
                     </p>
                     <span className="text-[11px] text-[var(--muted)] group-hover:text-rose-500 truncate block transition-colors">
                       {stats.lowestScore.playerName}
@@ -494,7 +495,7 @@ export const GameDetailPage: React.FC = () => {
                   <div className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
                     <span className="text-xs text-[var(--muted)]">Lowest Score</span>
                     <p className="font-mono font-extrabold text-xl text-rose-600 dark:text-rose-400 mt-1">
-                      {stats.lowestScore ? stats.lowestScore.score : '—'}
+                      {stats.lowestScore ? formatNumber(stats.lowestScore.score) : '—'}
                     </p>
                     {stats.lowestScore && (
                       <span className="text-[11px] text-[var(--muted)] truncate block">
@@ -523,7 +524,7 @@ export const GameDetailPage: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="text-[var(--muted)]">
-                            {pw.wins}W / {pw.plays}G
+                            {formatNumber(pw.wins)}W / {formatNumber(pw.plays)}G
                           </span>
                           <span className="font-mono font-bold text-[var(--good)] w-12 text-right">
                             {pw.winRate}%
@@ -540,7 +541,7 @@ export const GameDetailPage: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="font-display font-bold text-lg text-[var(--ink)]">
-                  Play History ({gameSessions.length})
+                  Play History ({formatNumber(gameSessions.length)})
                 </h2>
                 <Link to={`/sessions/new?gameId=${game.id}`}>
                   <Button variant="ghost" size="sm">
@@ -565,7 +566,7 @@ export const GameDetailPage: React.FC = () => {
                       onClick={() => setVisibleSessionsCount((prev) => prev + 20)}
                       className="w-full justify-center"
                     >
-                      Load More Sessions ({gameSessions.length - visibleSessionsCount} remaining)
+                      Load More Sessions ({formatNumber(gameSessions.length - visibleSessionsCount)} remaining)
                     </Button>
                   )}
                 </div>

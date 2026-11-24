@@ -25,6 +25,8 @@ import {
   StreakData,
   formatDate,
   formatDuration,
+  formatNumber,
+  formatCount,
   pluralize,
 } from '../../lib/utils';
 import { Player, PlaySession, BoardGame } from '../../types';
@@ -482,7 +484,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                   <div className="flex justify-between text-xs font-bold text-[var(--ink)] mb-1.5">
                     <span>Progress towards H-{hIndex + 1}:</span>
                     <span className="text-amber-600 dark:text-amber-400 font-mono font-bold">
-                      {nextHIndexGame.name} ({nextHIndexGame.plays}/{hIndex + 1} plays)
+                      {nextHIndexGame.name} ({formatNumber(nextHIndexGame.plays)}/{formatNumber(hIndex + 1)} plays)
                     </span>
                   </div>
                   <div className="w-full h-3 rounded-full bg-[var(--card-3)] overflow-hidden shadow-[inset_0_0_0_1px_var(--line)]">
@@ -494,7 +496,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                     />
                   </div>
                   <p className="text-[11px] text-[var(--muted)] mt-1 font-medium">
-                    Only <strong className="text-[var(--ink)]">{(hIndex + 1) - nextHIndexGame.plays} more {(hIndex + 1) - nextHIndexGame.plays === 1 ? 'play' : 'plays'}</strong> for {nextHIndexGame.name} to advance to <strong className="text-[var(--ink)]">H-{hIndex + 1}</strong>!
+                    Only <strong className="text-[var(--ink)]">{formatCount((hIndex + 1) - nextHIndexGame.plays, 'more play', 'more plays')}</strong> for {nextHIndexGame.name} to advance to <strong className="text-[var(--ink)]">H-{formatNumber(hIndex + 1)}</strong>!
                   </p>
                 </div>
               )}
@@ -503,7 +505,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
             {/* H-Index Club Games Preview */}
             <div className="bg-[var(--card)] shadow-[inset_0_0_0_1px_var(--line)] rounded-2xl p-4 lg:w-80 space-y-2.5">
               <span className="text-xs font-bold text-[var(--accent)] uppercase tracking-wider block">
-                Games in H-{hIndex} Club ({hIndexClub.length})
+                Games in H-{hIndex} Club ({formatNumber(hIndexClub.length)})
               </span>
               <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                 {hIndexClub.length > 0 ? (
@@ -677,7 +679,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                 </p>
               </div>
               <span className="text-xs font-mono text-amber-700 dark:text-amber-400 font-bold bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-lg">
-                Peak: {maxMonthCount} sessions/month
+                Peak: {formatNumber(maxMonthCount)} sessions/month
               </span>
             </div>
 
@@ -694,7 +696,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                       className="flex-1 flex flex-col items-center gap-2 h-full justify-end group cursor-pointer"
                     >
                       <span className="font-mono text-[10px] font-bold text-[var(--accent)] group-hover:scale-125 transition-transform tabular-nums">
-                        {item.count}
+                        {formatNumber(item.count)}
                       </span>
                       <div
                         style={{ height: `${heightPct}%` }}
@@ -743,7 +745,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                     </span>
                   </div>
                   <span className="font-mono font-bold text-xs text-orange-600 dark:text-orange-400 shrink-0 flex items-center gap-1 group-hover:underline">
-                    🔥 {streak} in a row <ChevronRight className="w-3 h-3 opacity-60" />
+                    🔥 {formatNumber(streak)} in a row <ChevronRight className="w-3 h-3 opacity-60" />
                   </span>
                 </div>
               ))}

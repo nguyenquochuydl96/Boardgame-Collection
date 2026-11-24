@@ -91,6 +91,7 @@ import {
   FIRST_PLAYER_METHOD_LABELS,
   formatDate,
   formatDuration,
+  formatNumber,
 } from '../lib/utils';
 import { PlayerScore, Player } from '../types';
 import { ScoringSheetMatrix } from '../components/session/ScoringSheetMatrix';
@@ -658,7 +659,7 @@ export const SessionDetailPage: React.FC = () => {
                         </Link>
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-bold text-base text-[var(--text-primary)]">
-                        {typeof entry.score === 'number' ? entry.score : '—'}
+                        {typeof entry.score === 'number' ? formatNumber(entry.score) : '—'}
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         {isWin ? (
@@ -708,7 +709,7 @@ export const SessionDetailPage: React.FC = () => {
                 </div>
               </div>
               <span className="text-xs font-mono px-3 py-1 rounded-xl bg-[var(--bg-elevated)] text-[var(--accent-neon)] border border-[var(--border-subtle)] w-fit">
-                {breakdownCategories.length} Categories
+                {formatNumber(breakdownCategories.length)} Categories
               </span>
             </div>
 
@@ -775,7 +776,7 @@ export const SessionDetailPage: React.FC = () => {
                               )}
                             >
                               <div className="flex items-center justify-center gap-1">
-                                <span>{numVal}</span>
+                                <span>{formatNumber(numVal)}</span>
                                 {isTop && !isPenalty && (
                                   <span className="text-xs" title="Highest in category">
                                     🥇
@@ -795,7 +796,7 @@ export const SessionDetailPage: React.FC = () => {
                       <div>TOTAL SCORE</div>
                       {isCoopSession && (
                         <div className="text-[10px] font-semibold text-[var(--good)] mt-0.5">
-                          Team: {session.players.reduce((a, b) => a + (typeof b.score === 'number' ? b.score : 0), 0)}
+                          Team: {formatNumber(session.players.reduce((a, b) => a + (typeof b.score === 'number' ? b.score : 0), 0))}
                         </div>
                       )}
                     </td>
@@ -811,7 +812,7 @@ export const SessionDetailPage: React.FC = () => {
                         >
                           <div className="flex items-center justify-center gap-1">
                             {isLeader && <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />}
-                            <span>{typeof p.score === 'number' ? p.score : '—'}</span>
+                            <span>{typeof p.score === 'number' ? formatNumber(p.score) : '—'}</span>
                           </div>
                         </td>
                       );
