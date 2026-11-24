@@ -32,6 +32,7 @@ import {
   isWinOnlySession,
   resolveLowestScoreWins,
   GAME_SCORING_PRESETS,
+  formatWinnerBadgeText,
 } from './utils';
 import { healIncomingGames, isRealtimeSelfReflection } from './supabaseSync';
 import { BoardGame, PlaySession, Player, SessionDraft, GameLocation } from '../types';
@@ -2267,4 +2268,132 @@ test('sortPlayersByPlayCount in NewSessionPage Step 3 orders players descending 
   assert.equal(sorted[1].name, 'Hằng');
   assert.equal(sorted[2].name, 'A Kha');
 });
+
+test('formatWinnerBadgeText formats 0, 1, 2, and 3+ winners with correct truncation and fullTitle', () => {
+  // Empty
+  assert.deepEqual(formatWinnerBadgeText([]), { label: '', fullTitle: '' });
+
+  // 1 winner
+  assert.deepEqual(
+    formatWinnerBadgeText([{ playerName: 'Heo' }]),
+    { label: 'Heo', fullTitle: 'Heo' }
+  );
+
+  // 2 winners
+  assert.deepEqual(
+    formatWinnerBadgeText([{ playerName: 'Anh Huy' }, { playerName: 'Heo' }]),
+    { label: 'Anh Huy & Heo', fullTitle: 'Anh Huy, Heo' }
+  );
+
+  // 3 winners
+  assert.deepEqual(
+    formatWinnerBadgeText([
+      { playerName: 'Anh Huy' },
+      { playerName: 'Heo' },
+      { playerName: 'Hằng' },
+    ]),
+    { label: 'Anh Huy, Heo +1', fullTitle: 'Anh Huy, Heo, Hằng' }
+  );
+
+  // 4 winners
+  assert.deepEqual(
+    formatWinnerBadgeText([
+      { playerName: 'Anh Huy' },
+      { playerName: 'Heo' },
+      { playerName: 'Hằng' },
+      { playerName: 'Lộc' },
+    ]),
+    { label: 'Anh Huy, Heo +2', fullTitle: 'Anh Huy, Heo, Hằng, Lộc' }
+  );
+});
+
+test('Mind MGMT session with multi-winners does NOT get classified as Co-op', () => {
+  // Session play-1181: all 4 players won (rogue agents win / tie / play-test)
+  const sessionMindMgmtAllWon: PlaySession = {
+    id: 'play-1181',
+    gameId: 'game-mind-mgmt',
+    gameName: 'MIND MGMT: The Psychic Espionage “Game.”',
+    gameThumbnail: '',
+    datePlayed: '2026-05-17',
+    createdAt: '2026-05-17T16:41:20Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Heo', isWinner: true },
+      { playerId: 'p2', playerName: 'Anh Huy', isWinner: true },
+      { playerId: 'p3', playerName: 'Hằng', isWinner: true },
+      { playerId: 'p4', playerName: 'Lộc', isWinner: true },
+    ],
+  };
+
+  // 1. isCoopSession must return FALSE because Mind MGMT is a known competitive win_only game
+  assert.equal(isCoopSession(sessionMindMgmtAllWon), false);
+
+  // 2. isWinOnlySession must return TRUE
+  assert.equal(isWinOnlySession(sessionMindMgmtAllWon), true);
+
+  // 3. formatWinnerBadgeText must format all 4 winners
+  const winners = sessionMindMgmtAllWon.players.filter((p) => p.isWinner);
+  const badge = formatWinnerBadgeText(winners);
+  assert.equal(badge.label, 'Heo, Anh Huy +2');
+  assert.equal(badge.fullTitle, 'Heo, Anh Huy, Hằng, Lộc');
+});
+
+test('Session with 3 Rogue Agents winning in Mind MGMT preserves all winners and isWinOnly', () => {
+  // Session play-1189: 3 Rogue Agents won, Recruiter lost
+  const sessionMindMgmtAgentsWon: PlaySession = {
+    id: 'play-1189',
+    gameId: 'game-mind-mgmt',
+    gameName: 'MIND MGMT: The Psychic Espionage “Game.”',
+    gameThumbnail: '',
+    datePlayed: '2026-05-23',
+    createdAt: '2026-05-23T13:45:20Z',
+    durationMinutes: 71,
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Anh Huy', isWinner: true },
+      { playerId: 'p2', playerName: 'Chị Quyên', isWinner: true },
+      { playerId: 'p3', playerName: 'Heo', isWinner: true },
+      { playerId: 'p4', playerName: 'Hằng', isWinner: false },
+    ],
+  };
+
+  assert.equal(isCoopSession(sessionMindMgmtAgentsWon), false);
+  assert.equal(isWinOnlySession(sessionMindMgmtAgentsWon), true);
+
+  const winners = sessionMindMgmtAgentsWon.players.filter((p) => p.isWinner);
+  assert.equal(winners.length, 3);
+  const badge = formatWinnerBadgeText(winners);
+  assert.equal(badge.label, 'Anh Huy, Chị Quyên +1');
+  assert.equal(badge.fullTitle, 'Anh Huy, Chị Quyên, Heo');
+});
+
+test('Explicit session.scoringMode takes absolute precedence over preset or heuristic', () => {
+  const customSession: PlaySession = {
+    id: 'play-custom',
+    gameId: 'game-custom',
+    gameName: 'Custom Team Game',
+    gameThumbnail: '',
+    datePlayed: '2026-05-20',
+    createdAt: '2026-05-20T10:00:00Z',
+    scoringMode: 'coop',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Alice', isWinner: true },
+      { playerId: 'p2', playerName: 'Bob', isWinner: true },
+    ],
+  };
+
+  assert.equal(isCoopSession(customSession), true);
+
+  // Switch to win_only
+  customSession.scoringMode = 'win_only';
+  assert.equal(isCoopSession(customSession), false);
+  assert.equal(isWinOnlySession(customSession), true);
+
+  // Switch to points
+  customSession.scoringMode = 'points';
+  assert.equal(isCoopSession(customSession), false);
+  assert.equal(isWinOnlySession(customSession), false);
+});
+
 

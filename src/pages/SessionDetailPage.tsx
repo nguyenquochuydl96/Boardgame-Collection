@@ -97,7 +97,7 @@ import {
   isCoopSession as resolveIsCoopSession,
   isWinOnlySession,
 } from '../lib/utils';
-import { PlayerScore, Player } from '../types';
+import { PlayerScore, Player, GameScoringMode } from '../types';
 import { ScoringSheetMatrix } from '../components/session/ScoringSheetMatrix';
 import { LocationSelector } from '../components/session/LocationSelector';
 import { getScoringTemplateForGame, ScoringCategory } from '../lib/scoringPresets';
@@ -145,6 +145,7 @@ export const SessionDetailPage: React.FC = () => {
   const [editBreakdowns, setEditBreakdowns] = useState<Record<string, Record<string, number>>>({});
   const [editScoreMode, setEditScoreMode] = useState<'quick' | 'detailed'>('quick');
   const [editLowScoreWins, setEditLowScoreWins] = useState(false);
+  const [editScoringMode, setEditScoringMode] = useState<GameScoringMode>('points');
 
   const scoringTemplate = React.useMemo(
     () => getScoringTemplateForGame(session?.gameName),
@@ -323,13 +324,18 @@ export const SessionDetailPage: React.FC = () => {
 
     setEditLowScoreWins(sessionLowScoreWins);
 
+    const initialMode: GameScoringMode =
+      session.scoringMode ||
+      (resolveIsCoopSession(session) ? 'coop' : isWinOnlySession(session) ? 'win_only' : 'points');
+    setEditScoringMode(initialMode);
+
     setIsEditOpen(true);
   };
 
   // Toggle winner for a player (or team win/loss for co-op sessions)
   const handleToggleWinner = (playerId: string) => {
     setEditPlayers((prev) => {
-      if (isCoopSession) {
+      if (editScoringMode === 'coop') {
         const nextWin = !prev.some((p) => p.isWinner);
         return prev.map((p) => ({ ...p, isWinner: nextWin }));
       }
@@ -433,28 +439,33 @@ export const SessionDetailPage: React.FC = () => {
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const isEditingCoop = editScoringMode === 'coop';
+    const isEditingWinOnly = editScoringMode === 'win_only';
+
     // Map rows to PlayerScore[]
     const updatedScores: PlayerScore[] = editPlayers.map((p) => {
-      const num = p.score.trim() === '' ? undefined : Number(p.score);
+      const num = isEditingWinOnly || p.score.trim() === '' ? undefined : Number(p.score);
       const bd = editBreakdowns[p.playerId];
-      const hasBd = bd && Object.values(bd).some((v) => v !== 0);
+      const hasBd = !isEditingWinOnly && bd && Object.values(bd).some((v) => v !== 0);
       return {
         playerId: p.playerId,
         playerName: p.playerName,
         score: num,
         isWinner: p.isWinner,
-        rank: isCoopSession ? undefined : 1,
+        rank: isEditingCoop ? undefined : isEditingWinOnly ? (p.isWinner ? 1 : 2) : 1,
         scoreBreakdown: hasBd ? bd : undefined,
       };
     });
 
     // Sort to recalculate ranks using Standard Competition Ranking ("1224") for competitive games
-    const sorted = isCoopSession
+    const sorted = isEditingCoop
       ? updatedScores
       : [...updatedScores].sort((a, b) => {
           // Winners first
           if (a.isWinner && !b.isWinner) return -1;
           if (!a.isWinner && b.isWinner) return 1;
+
+          if (isEditingWinOnly) return 0;
 
           const sa = a.score;
           const sb = b.score;
@@ -464,7 +475,7 @@ export const SessionDetailPage: React.FC = () => {
           return editLowScoreWins ? sa - sb : sb - sa;
         });
 
-    if (!isCoopSession) {
+    if (!isEditingCoop && !isEditingWinOnly) {
       // Compute standard competition rank (1, 1, 3 for ties)
       let currentRank = 1;
       for (let i = 0; i < sorted.length; i++) {
@@ -479,6 +490,7 @@ export const SessionDetailPage: React.FC = () => {
       }
     }
 
+    const anyWinner = editPlayers.some((p) => p.isWinner);
     const activeWinner = editPlayers.find((p) => p.isWinner);
     const activeFirstPlayer = editPlayers.find((p) => p.isFirstPlayer);
 
@@ -492,9 +504,13 @@ export const SessionDetailPage: React.FC = () => {
       durationMinutes: Number(editDuration) || session.durationMinutes,
       notes: editNotes.trim() || undefined,
       players: sorted,
-      winnerId: activeWinner ? activeWinner.playerId : undefined,
-      firstPlayerId: activeFirstPlayer ? activeFirstPlayer.playerId : undefined,
-      isCoop: isCoopSession || undefined,
+      winnerId: isEditingCoop
+        ? (anyWinner ? editPlayers[0]?.playerId : undefined)
+        : (activeWinner ? activeWinner.playerId : undefined),
+      firstPlayerId: isEditingCoop ? undefined : (activeFirstPlayer ? activeFirstPlayer.playerId : undefined),
+      isCoop: isEditingCoop || undefined,
+      scoringMode: editScoringMode,
+      coopOutcome: isEditingCoop ? (anyWinner ? 'won' : 'lost') : undefined,
     });
 
     setIsEditOpen(false);
@@ -943,20 +959,73 @@ export const SessionDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* 2. Players & Scores Section */}
+            {/* 2. Scoring Style Selector */}
+            <div className="space-y-1.5 pt-3 border-t border-[var(--border-subtle)]">
+              <label className="block text-xs font-semibold text-[var(--text-secondary)]">
+                Scoring Style
+              </label>
+              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
+                <button
+                  type="button"
+                  onClick={() => setEditScoringMode('points')}
+                  className={cn(
+                    'py-1.5 px-2 rounded-lg text-xs font-bold transition-all text-center cursor-pointer',
+                    editScoringMode === 'points'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  )}
+                >
+                  🎯 Points
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditScoringMode('win_only')}
+                  className={cn(
+                    'py-1.5 px-2 rounded-lg text-xs font-bold transition-all text-center cursor-pointer',
+                    editScoringMode === 'win_only'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  )}
+                >
+                  🏆 Win / Loss
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditScoringMode('coop')}
+                  className={cn(
+                    'py-1.5 px-2 rounded-lg text-xs font-bold transition-all text-center cursor-pointer',
+                    editScoringMode === 'coop'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  )}
+                >
+                  🤝 Co-op
+                </button>
+              </div>
+            </div>
+
+            {/* 3. Players & Scores Section */}
             <div className="space-y-3 pt-3 border-t border-[var(--border-subtle)]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h3 className="font-bold text-[var(--text-primary)] text-sm">
-                    Players, Scores &amp; Winners
+                    {editScoringMode === 'win_only'
+                      ? 'Players & Winners'
+                      : editScoringMode === 'coop'
+                      ? 'Players & Team Result'
+                      : 'Players, Scores & Winners'}
                   </h3>
                   <p className="text-[11px] text-[var(--text-secondary)]">
-                    Choose quick total entry or category breakdown
+                    {editScoringMode === 'win_only'
+                      ? 'Mark winner(s) directly — no points recorded'
+                      : editScoringMode === 'coop'
+                      ? 'Set team victory or defeat status'
+                      : 'Choose quick total entry or category breakdown'}
                   </p>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                  {!isCoopSession && (
+                  {editScoringMode === 'points' && (
                     <button
                       type="button"
                       onClick={() => setEditLowScoreWins((prev) => !prev)}
@@ -971,14 +1040,16 @@ export const SessionDetailPage: React.FC = () => {
                       <span>{editLowScoreWins ? '⛳ Lowest Score Wins' : '🏆 Highest Score Wins'}</span>
                     </button>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => setEditScoreMode(editScoreMode === 'detailed' ? 'quick' : 'detailed')}
-                    className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-bold bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--accent-neon)] hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5"
-                  >
-                    <span>{editScoreMode === 'detailed' ? '⚡ Quick Entry' : '📊 Score Sheet'}</span>
-                  </button>
-                  {isCoopSession ? (
+                  {editScoringMode === 'points' && (
+                    <button
+                      type="button"
+                      onClick={() => setEditScoreMode(editScoreMode === 'detailed' ? 'quick' : 'detailed')}
+                      className="px-2.5 sm:px-3 py-1 rounded-xl text-xs font-bold bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--accent-neon)] hover:brightness-110 transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <span>{editScoreMode === 'detailed' ? '⚡ Quick Entry' : '📊 Score Sheet'}</span>
+                    </button>
+                  )}
+                  {editScoringMode === 'coop' ? (
                     <button
                       type="button"
                       onClick={() => handleToggleWinner(editPlayers[0]?.playerId || '')}
@@ -991,7 +1062,7 @@ export const SessionDetailPage: React.FC = () => {
                     >
                       {editPlayers.some((p) => p.isWinner) ? '🤝 Team Victory' : '💀 Team Defeat'}
                     </button>
-                  ) : (
+                  ) : editScoringMode === 'points' ? (
                     <button
                       type="button"
                       onClick={handleAutoWinner}
@@ -999,11 +1070,11 @@ export const SessionDetailPage: React.FC = () => {
                     >
                       ⚡ Auto Winner
                     </button>
-                  )}
+                  ) : null}
                 </div>
               </div>
 
-              {editScoreMode === 'detailed' ? (
+              {editScoringMode === 'points' && editScoreMode === 'detailed' ? (
                 <div className="space-y-3 p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
                   <div className="text-xs font-bold text-[var(--accent-neon)]">
                     📊 {scoringTemplate.displayName}
@@ -1013,7 +1084,7 @@ export const SessionDetailPage: React.FC = () => {
                     initialCategories={scoringTemplate.categories}
                     initialBreakdowns={editBreakdowns}
                     lowScoreWins={editLowScoreWins}
-                    isCoop={isCoopSession}
+                    isCoop={false}
                     computeTotal={scoringTemplate.computeTotal}
                     onScoresUpdate={handleScoresUpdate}
                   />
@@ -1044,20 +1115,22 @@ export const SessionDetailPage: React.FC = () => {
 
                       {/* Controls */}
                       <div className="flex items-center gap-2 shrink-0">
-                        {/* First player toggle */}
-                        <button
-                          type="button"
-                          onClick={() => handleSetFirstPlayer(p.playerId)}
-                          title="Assign first player"
-                          className={cn(
-                            'px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer',
-                            p.isFirstPlayer
-                              ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)]'
-                              : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]'
-                          )}
-                        >
-                          First
-                        </button>
+                        {/* First player toggle (only for competitive sessions) */}
+                        {editScoringMode !== 'coop' && (
+                          <button
+                            type="button"
+                            onClick={() => handleSetFirstPlayer(p.playerId)}
+                            title="Assign first player"
+                            className={cn(
+                              'px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer',
+                              p.isFirstPlayer
+                                ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)]'
+                                : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]'
+                            )}
+                          >
+                            First
+                          </button>
+                        )}
 
                         {/* Winner Crown button */}
                         <button
@@ -1073,43 +1146,45 @@ export const SessionDetailPage: React.FC = () => {
                         >
                           <Crown className="w-3.5 h-3.5 fill-current" />
                           <span className="text-[10px] hidden sm:inline">
-                            {p.isWinner ? 'Winner' : 'Defeat'}
+                            {p.isWinner ? (editScoringMode === 'coop' ? 'Victory' : 'Winner') : 'Defeat'}
                           </span>
                         </button>
 
-                        {/* Score Input with Tactile ± Toggle */}
-                        <div className="inline-flex items-center rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus-within:border-[var(--accent-primary)] overflow-hidden">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleToggleScoreSign(p.playerId);
-                            }}
-                            title="Toggle positive/negative sign (±)"
-                            aria-label={`Toggle negative score for ${p.playerName}`}
-                            className={cn(
-                              'px-2 py-1 text-xs font-mono font-extrabold border-r transition-colors cursor-pointer select-none min-h-[34px] sm:min-h-[36px] flex items-center justify-center',
-                              p.score.startsWith('-')
-                                ? 'bg-[var(--bad-soft)] text-[var(--bad)] border-[var(--bad)]/30'
-                                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border-[var(--border-subtle)]'
-                            )}
-                          >
-                            ±
-                          </button>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="Score"
-                            value={p.score}
-                            onFocus={(e) => e.target.select()}
-                            onChange={(e) => handleScoreChange(p.playerId, e.target.value)}
-                            className={cn(
-                              'w-16 sm:w-20 min-h-[34px] sm:min-h-[36px] bg-transparent px-2 py-1 text-right font-mono font-bold text-xs focus:outline-none',
-                              p.score.startsWith('-') ? 'text-[var(--bad)]' : 'text-[var(--text-primary)]'
-                            )}
-                          />
-                        </div>
+                        {/* Score Input with Tactile ± Toggle (hidden for win_only) */}
+                        {editScoringMode !== 'win_only' && (
+                          <div className="inline-flex items-center rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus-within:border-[var(--accent-primary)] overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleToggleScoreSign(p.playerId);
+                              }}
+                              title="Toggle positive/negative sign (±)"
+                              aria-label={`Toggle negative score for ${p.playerName}`}
+                              className={cn(
+                                'px-2 py-1 text-xs font-mono font-extrabold border-r transition-colors cursor-pointer select-none min-h-[34px] sm:min-h-[36px] flex items-center justify-center',
+                                p.score.startsWith('-')
+                                  ? 'bg-[var(--bad-soft)] text-[var(--bad)] border-[var(--bad)]/30'
+                                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border-[var(--border-subtle)]'
+                              )}
+                            >
+                              ±
+                            </button>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              placeholder="Score"
+                              value={p.score}
+                              onFocus={(e) => e.target.select()}
+                              onChange={(e) => handleScoreChange(p.playerId, e.target.value)}
+                              className={cn(
+                                'w-16 sm:w-20 min-h-[34px] sm:min-h-[36px] bg-transparent px-2 py-1 text-right font-mono font-bold text-xs focus:outline-none',
+                                p.score.startsWith('-') ? 'text-[var(--bad)]' : 'text-[var(--text-primary)]'
+                              )}
+                            />
+                          </div>
+                        )}
 
                         {/* Remove Player Button */}
                         <button

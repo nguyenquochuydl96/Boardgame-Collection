@@ -252,7 +252,12 @@ export function isCoopGame(
 
 /**
  * Determines whether a session is cooperative.
- * Checks session.scoringMode -> session.isCoop -> session.coopOutcome -> preset table -> game.
+ * Follows strict priority to prevent competitive games from being misclassified as Co-op:
+ * 1. Explicit session.scoringMode takes absolute precedence.
+ * 2. Canonical preset lookup for known collection games (e.g. Mind MGMT is always win_only, Spirit Island is always coop).
+ * 3. Scoring template lookup (e.g. Stardew Valley, Slay the Spire).
+ * 4. Game entity resolution (for new games with tags).
+ * 5. Fallback for untracked custom games (coopOutcome, legacy isCoop flag, all-player win).
  */
 export function isCoopSession(
   session?: PlaySession | null,
@@ -260,9 +265,20 @@ export function isCoopSession(
 ): boolean {
   if (!session) return false;
 
+  // 1. Explicit session.scoringMode takes absolute precedence
   if (session.scoringMode) {
     return session.scoringMode === 'coop';
   }
+
+  // 2. Canonical preset lookup: if game is definitively win_only or points, it is NOT co-op
+  const targetGame = game || (session.gameName ? { name: session.gameName } : null);
+  const preset = getGameScoringPreset(targetGame);
+  if (preset) {
+    return preset.scoringMode === 'coop';
+  }
+
+  // 3. Fallback for untracked / custom games without canonical preset:
+  // Check explicit legacy session flag
   if (typeof session.isCoop === 'boolean') {
     return session.isCoop;
   }
@@ -270,29 +286,32 @@ export function isCoopSession(
     return true;
   }
 
-  // Multi-player team win (all players marked isWinner: true)
-  if (
-    Array.isArray(session.players) &&
-    session.players.length > 1 &&
-    session.players.every((p) => p.isWinner)
-  ) {
-    return true;
-  }
-
-  // Check preset table by session.gameName
+  // 4. Known co-op template lookup (e.g. Stardew Valley, Slay the Spire)
   if (session.gameName) {
-    const preset = getGameScoringPreset({ name: session.gameName });
-    if (preset) {
-      return preset.scoringMode === 'coop';
-    }
     const template = getScoringTemplateForGame(session.gameName);
     if (template?.isCoop) {
       return true;
     }
   }
 
+  // 5. Game entity resolution
   if (game) {
-    return isCoopGame(game);
+    const resolved = resolveGameScoringMode(game);
+    if (resolved === 'win_only' || resolved === 'points') {
+      return false;
+    }
+    if (resolved === 'coop') {
+      return true;
+    }
+  }
+
+  // 6. Multi-player team win in untracked game (where all players marked isWinner: true)
+  if (
+    Array.isArray(session.players) &&
+    session.players.length > 1 &&
+    session.players.every((p) => p.isWinner)
+  ) {
+    return true;
   }
 
   return false;

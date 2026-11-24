@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, Clock, MapPin, Crown, ChevronRight, Check } from 'lucide-react';
 import { PlaySession, Player } from '../../types';
-import { formatDate, formatDuration, formatCount, isCoopSession, isWinOnlySession } from '../../lib/utils';
+import { formatDate, formatDuration, formatCount, isCoopSession, isWinOnlySession, formatWinnerBadgeText } from '../../lib/utils';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { GameCoverImage } from '../game/GameCoverImage';
 
@@ -18,9 +18,17 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
   const players = session.players || [];
   const isCoop = isCoopSession(session);
   const isWinOnly = isWinOnlySession(session);
-  const winner = players.find(
-    (p) => p.isWinner || p.playerId === session.winnerId
+  const winners = players.filter(
+    (p) => Boolean(p.isWinner || (session.winnerId && p.playerId === session.winnerId))
   );
+  const winnerBadge = formatWinnerBadgeText(winners);
+  const scoreSuffix =
+    !isWinOnly &&
+    winners.length > 0 &&
+    typeof winners[0].score === 'number' &&
+    winners.every((w) => w.score === winners[0].score)
+      ? ` · ${winners[0].score}`
+      : '';
 
   return (
     <div className="transition-transform duration-150 hover:-translate-y-0.5 active:scale-[0.99]">
@@ -53,21 +61,24 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
                 </span>
               )}
             </div>
-            {isCoop && winner ? (
+            {isCoop && (session.coopOutcome === 'won' || winners.length > 0) ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--good-soft)] text-[var(--good)] border border-[var(--good)]/30 text-xs font-bold shrink-0">
                 <span>🤝</span>
                 <span>Team Win</span>
               </span>
-            ) : isCoop && !winner ? (
+            ) : isCoop ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--bad-soft)] text-[var(--bad)] border border-[var(--bad)]/30 text-xs font-bold shrink-0">
                 <span>💀</span>
                 <span>Team Defeat</span>
               </span>
-            ) : winner ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E5734F]/15 text-[#E5734F] border border-[#E5734F]/30 text-xs font-semibold shrink-0">
-                <Crown className="w-3.5 h-3.5 fill-[#E5734F] text-[#E5734F]" />
-                <span className="truncate max-w-[100px]">{winner.playerName}</span>
-                {typeof winner.score === 'number' && !isWinOnly ? ` · ${winner.score}` : ''}
+            ) : winners.length > 0 ? (
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#E5734F]/15 text-[#E5734F] border border-[#E5734F]/30 text-xs font-semibold shrink-0 max-w-[200px] sm:max-w-[280px]"
+                title={winnerBadge.fullTitle}
+              >
+                <Crown className="w-3.5 h-3.5 fill-[#E5734F] text-[#E5734F] shrink-0" />
+                <span className="truncate">{winnerBadge.label}</span>
+                {scoreSuffix ? <span className="font-mono tabular-nums shrink-0">{scoreSuffix}</span> : null}
               </span>
             ) : null}
           </div>

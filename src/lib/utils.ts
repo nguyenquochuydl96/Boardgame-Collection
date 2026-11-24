@@ -105,6 +105,43 @@ export function formatCount(
 }
 
 /**
+ * Formats multi-winner badges for session cards and feeds.
+ * Rules:
+ * - 0 winners: { label: '', fullTitle: '' }
+ * - 1 winner: { label: 'Name', fullTitle: 'Name' }
+ * - 2 winners: { label: 'Name1 & Name2', fullTitle: 'Name1, Name2' }
+ * - 3+ winners: { label: 'Name1, Name2 +N', fullTitle: 'Name1, Name2, Name3...' }
+ */
+export function formatWinnerBadgeText(
+  winners: Array<{ playerName?: string; name?: string }>
+): { label: string; fullTitle: string } {
+  if (!Array.isArray(winners) || winners.length === 0) {
+    return { label: '', fullTitle: '' };
+  }
+
+  const names = winners
+    .map((w) => (w.playerName || w.name || '').trim())
+    .filter(Boolean);
+
+  if (names.length === 0) {
+    return { label: '', fullTitle: '' };
+  }
+
+  const fullTitle = names.join(', ');
+
+  if (names.length === 1) {
+    return { label: names[0], fullTitle };
+  }
+
+  if (names.length === 2) {
+    return { label: `${names[0]} & ${names[1]}`, fullTitle };
+  }
+
+  const remaining = names.length - 2;
+  return { label: `${names[0]}, ${names[1]} +${remaining}`, fullTitle };
+}
+
+/**
  * Formats a raw number or input string with comma separators for clean financial inputs (e.g. 1800000 -> "1,800,000")
  */
 export function formatNumberInput(value: number | string | undefined | null): string {

@@ -33,6 +33,9 @@ import {
   isDraftMatchingCompletedSession,
   calculatePlayerStreaks,
   pluralize,
+  isCoopSession,
+  isWinOnlySession,
+  formatWinnerBadgeText,
 } from '../lib/utils';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
 import { SessionDraft } from '../types';
@@ -328,12 +331,19 @@ export const HomePage: React.FC = () => {
             <div className="space-y-2.5">
               {recentSessions.length > 0 ? (
                 recentSessions.map((session) => {
-                  const isCoopSession =
-                    session.isCoop ||
-                    (session.players.length > 1 && session.players.every((p) => p.isWinner));
-                  const winner = session.players.find(
-                    (p) => p.isWinner || p.playerId === session.winnerId
+                  const isCoop = isCoopSession(session);
+                  const isWinOnly = isWinOnlySession(session);
+                  const winners = (session.players || []).filter(
+                    (p) => Boolean(p.isWinner || (session.winnerId && p.playerId === session.winnerId))
                   );
+                  const winnerBadge = formatWinnerBadgeText(winners);
+                  const scoreSuffix =
+                    !isWinOnly &&
+                    winners.length > 0 &&
+                    typeof winners[0].score === 'number' &&
+                    winners.every((w) => w.score === winners[0].score)
+                      ? ` · ${winners[0].score}p`
+                      : '';
 
                   return (
                     <Link
@@ -361,23 +371,26 @@ export const HomePage: React.FC = () => {
                         </div>
                       </div>
 
-                      {isCoopSession && winner ? (
+                      {isCoop && (session.coopOutcome === 'won' || winners.length > 0) ? (
                         <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--good-soft)] text-[var(--good)] text-xs font-bold">
                           <span>🤝</span>
                           <span>Team Win</span>
                         </div>
-                      ) : isCoopSession && !winner ? (
+                      ) : isCoop ? (
                         <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--bad-soft)] text-[var(--bad)] text-xs font-bold">
                           <span>💀</span>
                           <span>Team Defeat</span>
                         </div>
-                      ) : winner ? (
-                        <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-bold">
-                          <Crown className="w-3 h-3 fill-amber-500 text-amber-500" />
-                          <span className="truncate max-w-[80px] sm:max-w-[120px]">{winner.playerName}</span>
-                          {typeof winner.score === 'number' && (
-                            <span className="font-mono text-[var(--ink)] tabular-nums ml-0.5">
-                              {winner.score}p
+                      ) : winners.length > 0 ? (
+                        <div
+                          className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E5734F]/15 text-[#E5734F] text-xs font-bold max-w-[150px] sm:max-w-[200px]"
+                          title={winnerBadge.fullTitle}
+                        >
+                          <Crown className="w-3.5 h-3.5 fill-[#E5734F] text-[#E5734F] shrink-0" />
+                          <span className="truncate">{winnerBadge.label}</span>
+                          {scoreSuffix && (
+                            <span className="font-mono tabular-nums shrink-0 ml-0.5">
+                              {scoreSuffix}
                             </span>
                           )}
                         </div>
