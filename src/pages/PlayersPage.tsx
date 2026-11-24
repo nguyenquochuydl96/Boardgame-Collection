@@ -25,14 +25,14 @@ import { Input } from '../components/ui/Input';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { PlayerFormModal } from '../components/player/PlayerFormModal';
 import { PlayerCompareModal } from '../components/dashboard/PlayerCompareModal';
-import { LocationCard } from '../components/location/LocationCard';
+import { LocationCard, LocationMetrics } from '../components/location/LocationCard';
 import { LocationFormModal } from '../components/location/LocationFormModal';
 import { cn } from '../components/ui/cn';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useLocationStore } from '../store/useLocationStore';
 import { getPlayStyleInfo } from '../lib/boardgameAvatars';
-import { formatNumber, formatCount } from '../lib/utils';
+import { formatNumber, formatCount, normalizeLocationKey, sortVenuesByPlayCount } from '../lib/utils';
 import { Player, GameLocation } from '../types';
 
 export const PlayersPage: React.FC = () => {
@@ -40,6 +40,7 @@ export const PlayersPage: React.FC = () => {
   const players = usePlayerStore((s) => s.players);
   const sessions = useSessionStore((s) => s.sessions);
   const locations = useLocationStore((s) => s.locations);
+  const addLocation = useLocationStore((s) => s.addLocation);
   const deleteLocation = useLocationStore((s) => s.deleteLocation);
   const setDefaultLocation = useLocationStore((s) => s.setDefaultLocation);
   const syncHistoricalLocations = useLocationStore((s) => s.syncHistoricalLocations);
@@ -90,19 +91,7 @@ export const PlayersPage: React.FC = () => {
     selectedCompareIds.includes(p.id)
   );
 
-  // Filtered locations
-  const filteredLocations = useMemo(() => {
-    const q = locationSearch.trim().toLowerCase();
-    if (!q) return locations;
-    return locations.filter(
-      (l) =>
-        l.name.toLowerCase().includes(q) ||
-        (l.address && l.address.toLowerCase().includes(q)) ||
-        (l.notes && l.notes.toLowerCase().includes(q))
-    );
-  }, [locations, locationSearch]);
-
-  // Precompute player stats in a single pass O(S) to avoid heavy re-filtering on mobile
+  // 1. Precompute player stats in a single pass O(S) to avoid heavy re-filtering on mobile
   const playerStatsMap = useMemo(() => {
     const stats: Record<string, { totalGames: number; wins: number; winRate: number }> = {};
     for (const p of players) {
@@ -127,40 +116,26 @@ export const PlayersPage: React.FC = () => {
     return stats;
   }, [players, sessions]);
 
-  // Location summary statistics
-  const locationStats = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const s of sessions) {
-      if (s.location) {
-        counts[s.location] = (counts[s.location] || 0) + 1;
-      }
-    }
-    const topEntry = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-    const defaultLoc = locations.find((l) => l.isDefault);
-
-    return {
-      totalVenues: locations.length,
-      topVenueName: topEntry ? topEntry[0] : null,
-      topVenueCount: topEntry ? topEntry[1] : 0,
-      defaultVenueName: defaultLoc ? defaultLoc.name : null,
-    };
-  }, [locations, sessions]);
-
-  // Precomputed per-venue metrics in a single O(S) pass to eliminate heavy calculations inside LocationCard
-  const venueMetricsMap = useMemo(() => {
+  // 2. Precomputed per-venue metrics in a single O(S) pass, keyed by normalizeLocationKey
+  const venueMetricsByKey = useMemo(() => {
     const map = new Map<
       string,
-      { count: number; gameCounts: Record<string, { count: number; name: string }>; lastDate?: string }
+      { count: number; gameCounts: Record<string, { count: number; name: string }>; lastDate?: string; rawNames: Set<string> }
     >();
+
     for (const s of sessions) {
       if (!s.location || !s.location.trim()) continue;
-      const key = s.location.trim().toLowerCase();
+      const key = normalizeLocationKey(s.location);
+      if (!key) continue;
+
       let entry = map.get(key);
       if (!entry) {
-        entry = { count: 0, gameCounts: {}, lastDate: undefined };
+        entry = { count: 0, gameCounts: {}, lastDate: undefined, rawNames: new Set() };
         map.set(key, entry);
       }
       entry.count += 1;
+      entry.rawNames.add(s.location.trim());
+
       const gId = s.gameId || s.gameName || 'unknown';
       if (!entry.gameCounts[gId]) {
         entry.gameCounts[gId] = { count: 0, name: s.gameName || 'Board Game' };
@@ -170,24 +145,93 @@ export const PlayersPage: React.FC = () => {
         entry.lastDate = s.datePlayed;
       }
     }
+    return map;
+  }, [sessions]);
 
-    const result: Record<string, { sessionCount: number; topGame?: { name: string; count: number }; lastPlayedDate?: string }> = {};
+  // 3. Combine saved preset locations and historical session locations, deduplicated by normalizeLocationKey
+  const combinedVenues = useMemo(() => {
+    const keyMap = new Map<
+      string,
+      GameLocation & { playCount: number; metrics: LocationMetrics }
+    >();
+
+    // Add saved locations from store
     for (const loc of locations) {
-      const key = loc.name.trim().toLowerCase();
-      const entry = map.get(key);
-      if (entry) {
-        const topGame = Object.values(entry.gameCounts).sort((a, b) => b.count - a.count)[0];
-        result[loc.id] = {
-          sessionCount: entry.count,
-          topGame,
-          lastPlayedDate: entry.lastDate,
-        };
+      const key = normalizeLocationKey(loc.name);
+      if (!key) continue;
+
+      const metric = venueMetricsByKey.get(key);
+      const sessionCount = metric?.count || 0;
+      const topGame = metric ? Object.values(metric.gameCounts).sort((a, b) => b.count - a.count)[0] : undefined;
+      const lastPlayedDate = metric?.lastDate;
+
+      const existing = keyMap.get(key);
+      if (!existing) {
+        keyMap.set(key, {
+          ...loc,
+          name: loc.name.trim().normalize('NFC').replace(/\s+/g, ' '),
+          playCount: sessionCount,
+          metrics: {
+            sessionCount,
+            topGame,
+            lastPlayedDate,
+          },
+        });
       } else {
-        result[loc.id] = { sessionCount: 0 };
+        if (!existing.address && loc.address) existing.address = loc.address;
+        if (!existing.notes && loc.notes) existing.notes = loc.notes;
+        if (loc.isDefault) existing.isDefault = true;
       }
     }
-    return result;
-  }, [sessions, locations]);
+
+    // Include distinct historical venues from sessions not yet in store presets
+    for (const [key, metric] of venueMetricsByKey.entries()) {
+      if (!keyMap.has(key)) {
+        const repName = Array.from(metric.rawNames)[0] || key;
+        const topGame = Object.values(metric.gameCounts).sort((a, b) => b.count - a.count)[0];
+        keyMap.set(key, {
+          id: `hist-${key}`,
+          name: repName.normalize('NFC').replace(/\s+/g, ' '),
+          playCount: metric.count,
+          isDefault: false,
+          createdAt: metric.lastDate || new Date().toISOString(),
+          metrics: {
+            sessionCount: metric.count,
+            topGame,
+            lastPlayedDate: metric.lastDate,
+          },
+        });
+      }
+    }
+
+    // Sort using sortVenuesByPlayCount (play count descending, tie-break A-Z 'vi')
+    return sortVenuesByPlayCount(Array.from(keyMap.values()));
+  }, [locations, venueMetricsByKey]);
+
+  // 4. Filtered venues based on search query
+  const filteredVenues = useMemo(() => {
+    const q = locationSearch.trim().toLowerCase();
+    if (!q) return combinedVenues;
+    return combinedVenues.filter(
+      (l) =>
+        l.name.toLowerCase().includes(q) ||
+        (l.address && l.address.toLowerCase().includes(q)) ||
+        (l.notes && l.notes.toLowerCase().includes(q))
+    );
+  }, [combinedVenues, locationSearch]);
+
+  // 5. Location summary statistics
+  const locationStats = useMemo(() => {
+    const topVenue = combinedVenues[0]; // Already sorted descending by playCount
+    const defaultLoc = combinedVenues.find((l) => l.isDefault);
+
+    return {
+      totalVenues: combinedVenues.length,
+      topVenueName: topVenue && topVenue.playCount > 0 ? topVenue.name : null,
+      topVenueCount: topVenue ? topVenue.playCount : 0,
+      defaultVenueName: defaultLoc ? defaultLoc.name : null,
+    };
+  }, [combinedVenues]);
 
   return (
     <PageTransition>
@@ -586,19 +630,29 @@ export const PlayersPage: React.FC = () => {
             </div>
 
             {/* Locations Grid */}
-            {filteredLocations.length > 0 ? (
+            {filteredVenues.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredLocations.map((loc) => (
+                {filteredVenues.map((loc) => (
                   <LocationCard
                     key={loc.id}
                     location={loc}
-                    metrics={venueMetricsMap[loc.id]}
+                    metrics={loc.metrics}
                     onEdit={(targetLoc) => {
                       setEditingLocation(targetLoc);
                       setIsLocationModalOpen(true);
                     }}
                     onDelete={(id) => deleteLocation(id)}
-                    onSetDefault={(id) => setDefaultLocation(id)}
+                    onSetDefault={(id) => {
+                      if (id.startsWith('hist-')) {
+                        const found = combinedVenues.find((v) => v.id === id);
+                        if (found) {
+                          const created = addLocation(found.name, found.address, found.notes, true);
+                          setDefaultLocation(created.id);
+                          return;
+                        }
+                      }
+                      setDefaultLocation(id);
+                    }}
                   />
                 ))}
               </div>

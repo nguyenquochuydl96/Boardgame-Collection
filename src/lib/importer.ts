@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { BoardGame, GameStatus, Player, PlaySession, GameLocation } from '../types';
-import { generateId, compressImage } from './utils';
+import { generateId, compressImage, normalizeLocationKey } from './utils';
 import { saveMediaImage } from './mediaStorage';
 
 export interface ImportPreviewItem {
@@ -389,15 +389,24 @@ export function parseBGCatalogJsonObject(
     };
   });
 
-  // Convert Locations
+  // Convert Locations (deduplicated by normalizeLocationKey)
   const nowIso = new Date().toISOString();
-  const locations: GameLocation[] = rawLocations
+  const locationKeyMap = new Map<string, GameLocation>();
+  rawLocations
     .filter((l) => l && l.name && String(l.name).trim())
-    .map((l) => ({
-      id: `location-${l.id}`,
-      name: String(l.name).trim(),
-      createdAt: nowIso,
-    }));
+    .forEach((l) => {
+      const cleanName = String(l.name).trim().normalize('NFC').replace(/\s+/g, ' ');
+      const key = normalizeLocationKey(cleanName);
+      if (!key) return;
+      if (!locationKeyMap.has(key)) {
+        locationKeyMap.set(key, {
+          id: `location-${l.id}`,
+          name: cleanName,
+          createdAt: nowIso,
+        });
+      }
+    });
+  const locations: GameLocation[] = Array.from(locationKeyMap.values());
 
   return {
     games,

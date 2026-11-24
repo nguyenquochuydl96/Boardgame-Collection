@@ -141,7 +141,7 @@ const LocationCardComponent: React.FC<LocationCardProps> = ({
                 Top Board Game
               </span>
               <p className="font-display font-bold text-xs text-[var(--text-primary)] mt-1 truncate px-1">
-                {topGame ? `${topGame.name} (${formatNumber(topGame.count)})` : 'None'}
+                {topGame ? `${topGame.name} (${formatCount(topGame.count, 'play')})` : 'None'}
               </p>
             </div>
           </div>
@@ -185,7 +185,7 @@ const LocationCardComponent: React.FC<LocationCardProps> = ({
             </p>
             {sessionCount > 0 && (
               <p className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 p-2 rounded-lg border border-amber-500/25">
-                Note: {sessionCount} logged sessions will keep this venue name.
+                Note: {formatCount(sessionCount, 'logged session')} will keep this venue name.
               </p>
             )}
             <div className="flex gap-2">

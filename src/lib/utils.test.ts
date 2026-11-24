@@ -22,9 +22,12 @@ import {
   resolveCoopWinnerIds,
   isCoopSession,
   calculatePlayerStreaks,
+  normalizeLocationKey,
+  sortVenuesByPlayCount,
+  deduplicateLocationsList,
 } from './utils';
 import { healIncomingGames, isRealtimeSelfReflection } from './supabaseSync';
-import { BoardGame, PlaySession, Player, SessionDraft } from '../types';
+import { BoardGame, PlaySession, Player, SessionDraft, GameLocation } from '../types';
 
 test('formatNumberInput and parseNumberInput handle commas in price fields', () => {
   assert.equal(formatNumberInput(1800000), '1,800,000');
@@ -1239,6 +1242,155 @@ test('isCoopSession accurately detects cooperative sessions and competitive filt
   // When Competitive Only is selected: Alice won sess-1, then lost sess-3 -> Win Streak = 1
   const compStreaks = calculatePlayerStreaks('p1', competitiveSessions);
   assert.equal(compStreaks.longestWinStreak.count, 1);
+});
+
+test('normalizeLocationKey normalizes NFC/NFD Unicode, whitespace, and Vietnamese case sensitivity', () => {
+  // 1. Decomposed NFD vs Precomposed NFC
+  const nfd = 'Tra\u0300 S\u01b0\u0303a'; // NFD "Trà Sữa"
+  const nfc = 'Trà Sữa'; // NFC
+  assert.equal(normalizeLocationKey(nfd), 'trà sữa');
+  assert.equal(normalizeLocationKey(nfc), 'trà sữa');
+  assert.equal(normalizeLocationKey(nfd), normalizeLocationKey(nfc));
+
+  // 2. Extra spaces and trimming
+  assert.equal(normalizeLocationKey('   Quán    Trà   Sữa  '), 'quán trà sữa');
+  assert.equal(normalizeLocationKey('Nhà   Huy   (Quận 3)'), 'nhà huy (quận 3)');
+
+  // 3. Mixed case
+  assert.equal(normalizeLocationKey('THE BOARDGAME LOFT CAFE'), 'the boardgame loft cafe');
+  assert.equal(normalizeLocationKey('Lafam Coffee'), 'lafam coffee');
+  assert.equal(normalizeLocationKey('  LAFAM   '), 'lafam');
+
+  // 4. Empty / Null / Undefined
+  assert.equal(normalizeLocationKey(''), '');
+  assert.equal(normalizeLocationKey(null), '');
+  assert.equal(normalizeLocationKey(undefined), '');
+});
+
+test('deduplicateLocationsList merges duplicate venues and preserves richest metadata & default status', () => {
+  const duplicateLocs: GameLocation[] = [
+    {
+      id: 'loc-1',
+      name: 'Lafam',
+      createdAt: '2026-01-01',
+    },
+    {
+      id: 'loc-2',
+      name: '  lafam  ',
+      address: '123 Nguyen Trai, Q1',
+      isDefault: true,
+      createdAt: '2026-01-02',
+    },
+    {
+      id: 'loc-3',
+      name: 'LAFAM',
+      notes: 'Good air conditioning and big tables',
+      createdAt: '2026-01-03',
+    },
+    {
+      id: 'loc-4',
+      name: 'Nhà Lộc',
+      address: 'Binh Thanh',
+      createdAt: '2026-01-04',
+    },
+  ];
+
+  const deduped = deduplicateLocationsList(duplicateLocs);
+
+  // 'Lafam', '  lafam  ', 'LAFAM' collapse into 1 canonical venue
+  assert.equal(deduped.length, 2);
+
+  const lafam = deduped.find((l) => normalizeLocationKey(l.name) === 'lafam');
+  assert.ok(lafam);
+  assert.equal(lafam.address, '123 Nguyen Trai, Q1');
+  assert.equal(lafam.notes, 'Good air conditioning and big tables');
+  assert.equal(lafam.isDefault, true);
+
+  const nhaLoc = deduped.find((l) => normalizeLocationKey(l.name) === 'nhà lộc');
+  assert.ok(nhaLoc);
+  assert.equal(nhaLoc.address, 'Binh Thanh');
+});
+
+test('sortVenuesByPlayCount sorts descending by play count with Vietnamese alphabetical tie-breaking', () => {
+  const venues = [
+    { name: 'Quán Cafe C', playCount: 5 },
+    { name: 'Quán Cafe A', playCount: 15 },
+    { name: 'Quán Cafe D', playCount: 5 },
+    { name: 'Quán Cafe B', playCount: 5 },
+    { name: 'Quán Cafe Top', playCount: 42 },
+  ];
+
+  const sorted = sortVenuesByPlayCount(venues);
+
+  assert.equal(sorted[0].name, 'Quán Cafe Top'); // 42 plays
+  assert.equal(sorted[1].name, 'Quán Cafe A'); // 15 plays
+  // Tie at 5 plays: sorted alphabetically A -> B -> C -> D
+  assert.equal(sorted[2].name, 'Quán Cafe B');
+  assert.equal(sorted[3].name, 'Quán Cafe C');
+  assert.equal(sorted[4].name, 'Quán Cafe D');
+});
+
+test('Venue sessions aggregation correctly sums play counts across NFC/NFD/case/whitespace variants', () => {
+  const sessions: PlaySession[] = [
+    {
+      id: 's1',
+      gameId: 'g1',
+      gameName: 'Catan',
+      gameThumbnail: '',
+      datePlayed: '2026-01-01',
+      firstPlayerMethod: 'random_wheel',
+      createdAt: '2026-01-01',
+      location: 'Tra\u0300 S\u01b0\u0303a', // NFD
+      players: [],
+    },
+    {
+      id: 's2',
+      gameId: 'g1',
+      gameName: 'Catan',
+      gameThumbnail: '',
+      datePlayed: '2026-01-02',
+      firstPlayerMethod: 'random_wheel',
+      createdAt: '2026-01-02',
+      location: 'Trà Sữa', // NFC
+      players: [],
+    },
+    {
+      id: 's3',
+      gameId: 'g1',
+      gameName: 'Catan',
+      gameThumbnail: '',
+      datePlayed: '2026-01-03',
+      firstPlayerMethod: 'random_wheel',
+      createdAt: '2026-01-03',
+      location: '  TRÀ SỮA   ', // Uppercase & whitespace
+      players: [],
+    },
+    {
+      id: 's4',
+      gameId: 'g1',
+      gameName: 'Catan',
+      gameThumbnail: '',
+      datePlayed: '2026-01-04',
+      firstPlayerMethod: 'random_wheel',
+      createdAt: '2026-01-04',
+      location: 'Lafam',
+      players: [],
+    },
+  ];
+
+  // Aggregate sessions by normalizeLocationKey
+  const countsByKey = new Map<string, number>();
+  for (const s of sessions) {
+    if (s.location) {
+      const key = normalizeLocationKey(s.location);
+      countsByKey.set(key, (countsByKey.get(key) || 0) + 1);
+    }
+  }
+
+  // All 3 variations of "Trà Sữa" must be summed together into 3 plays
+  assert.equal(countsByKey.get('trà sữa'), 3);
+  assert.equal(countsByKey.get('lafam'), 1);
+  assert.equal(countsByKey.size, 2);
 });
 
 test('PHASE 3: Ark Nova official scoring formula calculates correctly (c <= 10, c > 10, negative scores, penalties)', async () => {

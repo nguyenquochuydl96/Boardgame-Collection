@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { GameLocation, PlaySession } from '../types';
-import { generateId } from '../lib/utils';
+import { generateId, normalizeLocationKey, deduplicateLocationsList } from '../lib/utils';
 
 export const FAKE_LOCATION_NAMES = new Set([
   'huy’s game room, district 3',
@@ -17,7 +17,7 @@ export const FAKE_LOCATION_NAMES = new Set([
   'loc’s house',
   'board game cafe / tea lounge',
   'company office',
-]);
+].map((n) => normalizeLocationKey(n)));
 
 export const INITIAL_LOCATIONS: GameLocation[] = [];
 
@@ -33,6 +33,7 @@ export interface LocationStore {
   setDefaultLocation: (id: string) => void;
   syncHistoricalLocations: (sessions: PlaySession[], force?: boolean) => void;
   bulkAddLocations: (newLocs: GameLocation[], replaceExisting?: boolean) => void;
+  deduplicateLocations: (sessions?: PlaySession[]) => void;
 }
 
 export const useLocationStore = create<LocationStore>()(
@@ -40,11 +41,16 @@ export const useLocationStore = create<LocationStore>()(
     (set, get) => ({
       locations: INITIAL_LOCATIONS,
       hasSyncedHistory: false,
+      deduplicateLocations: (sessions) => {
+        set((state) => ({
+          locations: deduplicateLocationsList(state.locations, sessions),
+        }));
+      },
       bulkAddLocations: (newLocs, replaceExisting = false) => {
         set((state) => {
           const filtered = newLocs.filter(
             (l) =>
-              !FAKE_LOCATION_NAMES.has(l.name.trim().toLowerCase()) &&
+              !FAKE_LOCATION_NAMES.has(normalizeLocationKey(l.name)) &&
               !l.id.startsWith('loc-huy') &&
               !l.id.startsWith('loc-boardgame') &&
               !l.id.startsWith('loc-quan') &&
@@ -53,21 +59,33 @@ export const useLocationStore = create<LocationStore>()(
               !l.id.startsWith('loc-cafe') &&
               !l.id.startsWith('loc-office')
           );
-          if (replaceExisting) {
-            return { locations: filtered, hasSyncedHistory: true };
+          const base = replaceExisting ? [] : state.locations;
+          const deduped = deduplicateLocationsList([...base, ...filtered]);
+
+          // Ensure default exists
+          if (!deduped.some((l) => l.isDefault) && deduped.length > 0) {
+            deduped[0].isDefault = true;
           }
-          const existingNames = new Set(state.locations.map((l) => l.name.trim().toLowerCase()));
-          const toAdd = filtered.filter((l) => !existingNames.has(l.name.trim().toLowerCase()));
-          return { locations: [...state.locations, ...toAdd], hasSyncedHistory: true };
+
+          return { locations: deduped, hasSyncedHistory: true };
         });
       },
       addLocation: (name, address, notes, isDefault) => {
-        const trimmed = name.trim();
+        const trimmed = name.trim().normalize('NFC').replace(/\s+/g, ' ');
+        const key = normalizeLocationKey(trimmed);
         const currentLocs = get().locations;
         const existing = currentLocs.find(
-          (l) => l.name.toLowerCase() === trimmed.toLowerCase()
+          (l) => normalizeLocationKey(l.name) === key
         );
         if (existing) {
+          if ((address && !existing.address) || (notes && !existing.notes) || isDefault) {
+            get().updateLocation(existing.id, {
+              name: existing.name,
+              address: existing.address || address?.trim() || undefined,
+              notes: existing.notes || notes?.trim() || undefined,
+              isDefault: isDefault ?? existing.isDefault,
+            });
+          }
           if (isDefault) {
             get().setDefaultLocation(existing.id);
           }
@@ -98,12 +116,13 @@ export const useLocationStore = create<LocationStore>()(
       updateLocation: (id, updates) => {
         set((state) => {
           const isSettingDefault = updates.isDefault === true;
+          const cleanName = updates.name.trim().normalize('NFC').replace(/\s+/g, ' ');
           return {
             locations: state.locations.map((loc) => {
               if (loc.id === id) {
                 return {
                   ...loc,
-                  name: updates.name.trim(),
+                  name: cleanName,
                   address: updates.address?.trim() || undefined,
                   notes: updates.notes?.trim() || undefined,
                   isDefault: isSettingDefault ? true : (updates.isDefault ?? loc.isDefault),
@@ -140,20 +159,20 @@ export const useLocationStore = create<LocationStore>()(
         const current = get().locations;
         if (get().hasSyncedHistory && current.length > 0 && !force) return;
 
-        const existingNames = new Set(
-          current.map((l) => l.name.trim().toLowerCase())
+        const existingKeys = new Set(
+          current.map((l) => normalizeLocationKey(l.name))
         );
         const newLocs: GameLocation[] = [];
 
         // Check real sessions in history (ignore any fake location names)
         for (const s of sessions) {
           if (!s.location || !s.location.trim()) continue;
-          const trimmed = s.location.trim();
-          const key = trimmed.toLowerCase();
-          if (FAKE_LOCATION_NAMES.has(key)) continue;
+          const trimmed = s.location.trim().normalize('NFC').replace(/\s+/g, ' ');
+          const key = normalizeLocationKey(trimmed);
+          if (!key || FAKE_LOCATION_NAMES.has(key)) continue;
 
-          if (!existingNames.has(key)) {
-            existingNames.add(key);
+          if (!existingKeys.has(key)) {
+            existingKeys.add(key);
             newLocs.push({
               id: `loc-${generateId()}`,
               name: trimmed,
@@ -165,7 +184,7 @@ export const useLocationStore = create<LocationStore>()(
         }
 
         set((state) => ({
-          locations: newLocs.length > 0 ? [...state.locations, ...newLocs] : state.locations,
+          locations: newLocs.length > 0 ? deduplicateLocationsList([...state.locations, ...newLocs], sessions) : state.locations,
           hasSyncedHistory: true,
         }));
       },
@@ -175,9 +194,9 @@ export const useLocationStore = create<LocationStore>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           // Permanently purge any fake locations that might have been saved in browser cache
-          state.locations = state.locations.filter(
+          const nonFake = state.locations.filter(
             (l) =>
-              !FAKE_LOCATION_NAMES.has(l.name.trim().toLowerCase()) &&
+              !FAKE_LOCATION_NAMES.has(normalizeLocationKey(l.name)) &&
               !l.id.startsWith('loc-huy') &&
               !l.id.startsWith('loc-boardgame') &&
               !l.id.startsWith('loc-quan') &&
@@ -186,6 +205,7 @@ export const useLocationStore = create<LocationStore>()(
               !l.id.startsWith('loc-cafe') &&
               !l.id.startsWith('loc-office')
           );
+          state.locations = deduplicateLocationsList(nonFake);
           // Ensure at least one default exists
           if (!state.locations.some((l) => l.isDefault) && state.locations.length > 0) {
             state.locations[0].isDefault = true;

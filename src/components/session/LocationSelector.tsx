@@ -15,6 +15,7 @@ import { useSessionStore } from '../../store/useSessionStore';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { cn } from '../ui/cn';
+import { normalizeLocationKey, sortVenuesByPlayCount, formatNumber, formatCount } from '../../lib/utils';
 
 export interface LocationSelectorProps {
   selectedLocation: string;
@@ -49,54 +50,64 @@ export const LocationSelectorComponent: React.FC<LocationSelectorProps> = ({
     }
   }, [sessions, locations.length, syncHistoricalLocations]);
 
-  // Aggregate all locations from presets AND actual session history
+  // Aggregate all locations from presets AND actual session history, deduplicated by normalizeLocationKey
   const allVenues = useMemo(() => {
-    // 1. Calculate play count for every venue in sessions
+    // 1. Calculate play count for every venue in sessions, keyed by normalizeLocationKey
     const playCounts = new Map<string, number>();
+    const sessionNames = new Map<string, string>();
     for (const s of sessions) {
       if (s.location && s.location.trim()) {
-        const key = s.location.trim();
+        const clean = s.location.trim().normalize('NFC').replace(/\s+/g, ' ');
+        const key = normalizeLocationKey(clean);
+        if (!key) continue;
         playCounts.set(key, (playCounts.get(key) || 0) + 1);
+        if (!sessionNames.has(key)) {
+          sessionNames.set(key, clean);
+        }
       }
     }
 
-    // 2. Map existing preset locations
+    // 2. Map existing preset locations, deduplicated by normalizeLocationKey
     const map = new Map<
       string,
       { id: string; name: string; address?: string; isDefault: boolean; playCount: number }
     >();
 
     for (const loc of locations) {
-      const trimmed = loc.name.trim();
-      const count = playCounts.get(trimmed) || 0;
-      map.set(trimmed.toLowerCase(), {
-        id: loc.id,
-        name: trimmed,
-        address: loc.address,
-        isDefault: Boolean(loc.isDefault),
-        playCount: count,
-      });
+      const clean = loc.name.trim().normalize('NFC').replace(/\s+/g, ' ');
+      const key = normalizeLocationKey(clean);
+      if (!key) continue;
+      const count = playCounts.get(key) || 0;
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, {
+          id: loc.id,
+          name: clean,
+          address: loc.address,
+          isDefault: Boolean(loc.isDefault),
+          playCount: count,
+        });
+      } else {
+        if (!existing.address && loc.address) existing.address = loc.address;
+        if (loc.isDefault) existing.isDefault = true;
+      }
     }
 
     // 3. Include any distinct historical venue from sessions not yet in presets
-    for (const [sLoc, count] of playCounts.entries()) {
-      const key = sLoc.toLowerCase();
+    for (const [key, count] of playCounts.entries()) {
       if (!map.has(key)) {
+        const rawName = sessionNames.get(key) || key;
         map.set(key, {
-          id: `hist-${sLoc}`,
-          name: sLoc,
+          id: `hist-${key}`,
+          name: rawName,
           isDefault: false,
           playCount: count,
         });
       }
     }
 
-    // 4. Sort: default venue first, then by play count descending, then alphabetically
-    return Array.from(map.values()).sort((a, b) => {
-      if (a.isDefault && !b.isDefault) return -1;
-      if (!a.isDefault && b.isDefault) return 1;
-      return b.playCount - a.playCount || a.name.localeCompare(b.name);
-    });
+    // 4. Sort: play count descending, tie-break A-Z using Vietnamese collation
+    return sortVenuesByPlayCount(Array.from(map.values()));
   }, [locations, sessions]);
 
   const hasAutoSelectedRef = useRef(false);
@@ -259,7 +270,7 @@ export const LocationSelectorComponent: React.FC<LocationSelectorProps> = ({
             {filteredVenues.length > 0 ? (
               filteredVenues.map((v) => {
                 const isSelected =
-                  selectedLocation.trim().toLowerCase() === v.name.trim().toLowerCase();
+                  normalizeLocationKey(selectedLocation) === normalizeLocationKey(v.name);
                 return (
                   <button
                     key={v.id}
@@ -302,7 +313,7 @@ export const LocationSelectorComponent: React.FC<LocationSelectorProps> = ({
                     <div className="flex items-center gap-2 shrink-0">
                       {v.playCount > 0 && (
                         <span className="font-mono text-[11px] text-[var(--text-muted)] tabular-nums px-2 py-0.5 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
-                          {v.playCount} {v.playCount === 1 ? 'play' : 'plays'}
+                          {formatCount(v.playCount, 'play')}
                         </span>
                       )}
                       {isSelected && (
@@ -320,7 +331,7 @@ export const LocationSelectorComponent: React.FC<LocationSelectorProps> = ({
 
             {/* Option to use newly typed custom query if not already in list */}
             {searchQuery.trim() &&
-              !allVenues.some((v) => v.name.toLowerCase() === searchQuery.trim().toLowerCase()) && (
+              !allVenues.some((v) => normalizeLocationKey(v.name) === normalizeLocationKey(searchQuery)) && (
                 <button
                   type="button"
                   onClick={() => handleSelectVenue(searchQuery.trim())}
@@ -343,7 +354,7 @@ export const LocationSelectorComponent: React.FC<LocationSelectorProps> = ({
           <div className="flex flex-wrap gap-2">
             {quickPills.map((v) => {
               const isSelected =
-                selectedLocation.trim().toLowerCase() === v.name.trim().toLowerCase();
+                normalizeLocationKey(selectedLocation) === normalizeLocationKey(v.name);
               return (
                 <button
                   key={v.id}
@@ -365,7 +376,7 @@ export const LocationSelectorComponent: React.FC<LocationSelectorProps> = ({
                         isSelected ? 'bg-black/20 text-white' : 'text-[var(--muted)]'
                       )}
                     >
-                      {v.playCount}
+                      {formatNumber(v.playCount)}
                     </span>
                   )}
                   {isSelected && <Check className="w-3 h-3 stroke-[3]" />}

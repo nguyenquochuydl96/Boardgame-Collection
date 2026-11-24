@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { PlaySession, Player } from '../../types';
-import { formatCount } from '../../lib/utils';
+import { formatCount, formatNumber, normalizeLocationKey, sortVenuesByPlayCount } from '../../lib/utils';
 
 interface StatsLocationsTabProps {
   sessions: PlaySession[];
@@ -12,43 +12,49 @@ interface StatsLocationsTabProps {
 export const StatsLocationsTab: React.FC<StatsLocationsTabProps> = React.memo(
   ({ sessions, players }) => {
     const locationStats = useMemo(() => {
-      const map = new Map<string, { count: number; playerWins: Map<string, number> }>();
+      const map = new Map<string, { name: string; count: number; playerWins: Map<string, number> }>();
 
       sessions.forEach((s) => {
-        const loc = s.location || 'Unknown location';
-        const entry = map.get(loc) || { count: 0, playerWins: new Map<string, number>() };
+        const rawLoc = s.location?.trim() || 'Unknown location';
+        const key = normalizeLocationKey(rawLoc) || 'unknown';
+        let entry = map.get(key);
+        if (!entry) {
+          entry = { name: rawLoc, count: 0, playerWins: new Map<string, number>() };
+          map.set(key, entry);
+        }
         entry.count += 1;
         s.players?.forEach((p) => {
           if (p.isWinner || s.winnerId === p.playerId) {
-            entry.playerWins.set(p.playerId, (entry.playerWins.get(p.playerId) || 0) + 1);
+            entry!.playerWins.set(p.playerId, (entry!.playerWins.get(p.playerId) || 0) + 1);
           }
         });
-        map.set(loc, entry);
       });
 
-      return Array.from(map.entries())
-        .map(([location, data]) => {
-          let topWinnerId = '';
-          let topWinnerWins = 0;
-          data.playerWins.forEach((wins, pid) => {
-            if (wins > topWinnerWins) {
-              topWinnerWins = wins;
-              topWinnerId = pid;
-            }
-          });
-          const topPlayer = players.find((p) => p.id === topWinnerId);
-          const topWinnerName = topPlayer?.name || (topWinnerId ? 'Player' : undefined);
+      const list = Array.from(map.values()).map((data) => {
+        let topWinnerId = '';
+        let topWinnerWins = 0;
+        data.playerWins.forEach((wins, pid) => {
+          if (wins > topWinnerWins) {
+            topWinnerWins = wins;
+            topWinnerId = pid;
+          }
+        });
+        const topPlayer = players.find((p) => p.id === topWinnerId);
+        const topWinnerName = topPlayer?.name || (topWinnerId ? 'Player' : undefined);
 
-          return {
-            location,
-            count: data.count,
-            percentage: Math.round((data.count / (sessions.length || 1)) * 100),
-            topWinnerName,
-            topWinnerWins,
-            topWinnerRate: Math.round((topWinnerWins / (data.count || 1)) * 100),
-          };
-        })
-        .sort((a, b) => b.count - a.count);
+        return {
+          location: data.name,
+          name: data.name,
+          playCount: data.count,
+          count: data.count,
+          percentage: Math.round((data.count / (sessions.length || 1)) * 100),
+          topWinnerName,
+          topWinnerWins,
+          topWinnerRate: Math.round((topWinnerWins / (data.count || 1)) * 100),
+        };
+      });
+
+      return sortVenuesByPlayCount(list);
     }, [sessions, players]);
 
     return (
@@ -60,7 +66,7 @@ export const StatsLocationsTab: React.FC<StatsLocationsTabProps> = React.memo(
               <span>Favorite Venues &amp; Locations</span>
             </h2>
             <p className="text-xs text-[var(--muted)] mt-1">
-              Tabletop gaming locations logged across {sessions.length.toLocaleString('en-US')} sessions
+              Tabletop gaming locations logged across {formatCount(sessions.length, 'session')}
             </p>
           </div>
 

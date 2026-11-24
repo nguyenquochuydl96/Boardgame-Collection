@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { GameLocation } from '../../types';
 import { useLocationStore } from '../../store/useLocationStore';
+import { normalizeLocationKey } from '../../lib/utils';
 
 export interface LocationFormModalProps {
   isOpen: boolean;
@@ -51,11 +52,12 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
       return;
     }
 
-    // Check duplicate name
+    // Check duplicate name using Unicode NFC and case normalization
+    const targetKey = normalizeLocationKey(trimmedName);
     const isDuplicate = locations.some(
       (l) =>
         l.id !== location?.id &&
-        l.name.toLowerCase() === trimmedName.toLowerCase()
+        normalizeLocationKey(l.name) === targetKey
     );
     if (isDuplicate) {
       setError('This venue name already exists');

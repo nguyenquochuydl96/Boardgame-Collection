@@ -1,4 +1,4 @@
-import { BoardGame, GameStatus, PlaySession, Player, SessionDraft } from '../types';
+import { BoardGame, GameStatus, PlaySession, Player, SessionDraft, GameLocation } from '../types';
 import { EXPANDED_BGG_CATALOG } from './bggCatalogData';
 import { getScoringTemplateForGame } from './scoringPresets';
 
@@ -1369,4 +1369,132 @@ export function compressImage(
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+/**
+ * Normalizes a location/venue name into a canonical deduplication key.
+ * - Decomposes/precomposes into Unicode NFC (handles iPhone/Mac NFD vs Windows/Web NFC).
+ * - Trims leading/trailing whitespace and compresses consecutive spaces.
+ * - Converts to lower-case using Vietnamese locale ('vi').
+ */
+export function normalizeLocationKey(name: string | null | undefined): string {
+  if (!name) return '';
+  return name
+    .normalize('NFC')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('vi');
+}
+
+/**
+ * Sorts venues by play count descending.
+ * Ties in play count are broken alphabetically by venue name using Vietnamese collation ('vi').
+ *
+ * @param venues List of venues to sort
+ * @param playCounts Optional external lookup map or record for play counts if not stored on the venue object
+ */
+export function sortVenuesByPlayCount<T extends { name: string; playCount?: number }>(
+  venues: T[],
+  playCounts?: Map<string, number> | Record<string, number>
+): T[] {
+  return [...venues].sort((a, b) => {
+    let countA = typeof a.playCount === 'number' ? a.playCount : 0;
+    let countB = typeof b.playCount === 'number' ? b.playCount : 0;
+
+    if (playCounts) {
+      if (playCounts instanceof Map) {
+        countA = playCounts.get(normalizeLocationKey(a.name)) ?? playCounts.get(a.name) ?? countA;
+        countB = playCounts.get(normalizeLocationKey(b.name)) ?? playCounts.get(b.name) ?? countB;
+      } else {
+        countA = playCounts[normalizeLocationKey(a.name)] ?? playCounts[a.name] ?? countA;
+        countB = playCounts[normalizeLocationKey(b.name)] ?? playCounts[b.name] ?? countB;
+      }
+    }
+
+    if (countB !== countA) {
+      return countB - countA;
+    }
+
+    return (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' });
+  });
+}
+
+/**
+ * Deduplicates an array of GameLocations based on normalizeLocationKey.
+ * Prioritizes records with address, notes, default status, or more sessions.
+ */
+export function deduplicateLocationsList(
+  locations: GameLocation[],
+  sessions?: PlaySession[]
+): GameLocation[] {
+  const sessionCounts = new Map<string, number>();
+  if (sessions) {
+    for (const s of sessions) {
+      if (s.location && s.location.trim()) {
+        const k = normalizeLocationKey(s.location);
+        sessionCounts.set(k, (sessionCounts.get(k) || 0) + 1);
+      }
+    }
+  }
+
+  const groups = new Map<string, GameLocation[]>();
+  for (const loc of locations) {
+    if (!loc || !loc.name) continue;
+    const key = normalizeLocationKey(loc.name);
+    if (!key) continue;
+    let list = groups.get(key);
+    if (!list) {
+      list = [];
+      groups.set(key, list);
+    }
+    list.push(loc);
+  }
+
+  const result: GameLocation[] = [];
+
+  for (const [, candidates] of groups.entries()) {
+    if (candidates.length === 1) {
+      result.push({
+        ...candidates[0],
+        name: candidates[0].name.trim().normalize('NFC').replace(/\s+/g, ' '),
+      });
+      continue;
+    }
+
+    // Score candidates to pick the best canonical record
+    const scoreCandidate = (loc: GameLocation) => {
+      let sc = 0;
+      if (loc.address && loc.address.trim()) sc += 100;
+      if (loc.notes && loc.notes.trim()) sc += 50;
+      const count = sessionCounts.get(normalizeLocationKey(loc.name)) || 0;
+      sc += Math.min(count, 50);
+      if (loc.isDefault) sc += 25;
+      if (loc.name !== loc.name.toLowerCase()) sc += 10;
+      return sc;
+    };
+
+    const sorted = [...candidates].sort((a, b) => scoreCandidate(b) - scoreCandidate(a));
+    const canonical = sorted[0];
+
+    // Merge missing fields from other candidates
+    let mergedAddress = canonical.address;
+    let mergedNotes = canonical.notes;
+    let isAnyDefault = Boolean(canonical.isDefault);
+
+    for (const other of sorted.slice(1)) {
+      if (!mergedAddress && other.address) mergedAddress = other.address;
+      if (!mergedNotes && other.notes) mergedNotes = other.notes;
+      if (other.isDefault) isAnyDefault = true;
+    }
+
+    result.push({
+      ...canonical,
+      name: canonical.name.trim().normalize('NFC').replace(/\s+/g, ' '),
+      address: mergedAddress?.trim() || undefined,
+      notes: mergedNotes?.trim() || undefined,
+      isDefault: isAnyDefault,
+    });
+  }
+
+  return result;
 }
