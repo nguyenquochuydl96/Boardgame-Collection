@@ -11,6 +11,7 @@ import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
+import { getTotalPlayHours } from '../lib/utils';
 
 import { StatsOverviewTab } from '../components/stats/StatsOverviewTab';
 import { StatsYearsTab } from '../components/stats/StatsYearsTab';
@@ -39,14 +40,8 @@ export const StatsPage: React.FC = () => {
     return Array.from(set).sort().reverse();
   }, [sessions]);
 
-  // Total play time in hours across all sessions (for header banner)
-  const totalHoursPlayed = useMemo(() => {
-    let mins = 0;
-    for (let i = 0; i < sessions.length; i++) {
-      mins += sessions[i].durationMinutes || 60;
-    }
-    return Math.round(mins / 60);
-  }, [sessions]);
+  // Total play time in hours across all sessions (unified with HomePage)
+  const totalHoursPlayed = useMemo(() => getTotalPlayHours(sessions), [sessions]);
 
   return (
     <PageTransition>
@@ -64,7 +59,7 @@ export const StatsPage: React.FC = () => {
           </div>
 
           <div className="text-xs font-mono px-3 py-1.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] text-[var(--accent)] font-semibold w-fit">
-            Total: <strong>{sessions.length}</strong> sessions · <strong>{totalHoursPlayed}h</strong> played
+            Total: <strong>{sessions.length}</strong> {sessions.length === 1 ? 'session' : 'sessions'} · <strong>{totalHoursPlayed}h</strong> played
           </div>
         </div>
 

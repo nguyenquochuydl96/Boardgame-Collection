@@ -16,6 +16,7 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { StreakDetailModal } from '../player/StreakDetailModal';
+import { GameCoverImage } from '../game/GameCoverImage';
 import { cn } from '../ui/cn';
 import {
   calculateLongestWinStreak,
@@ -24,6 +25,7 @@ import {
   StreakData,
   formatDate,
   formatDuration,
+  pluralize,
 } from '../../lib/utils';
 import { Player, PlaySession, BoardGame } from '../../types';
 
@@ -33,37 +35,25 @@ export const GameThumbBox: React.FC<{
   fallbackIcon: React.ReactNode;
   fallbackBg?: string;
 }> = React.memo(({ src, alt, fallbackIcon, fallbackBg = 'bg-[var(--card-3)]' }) => {
-  const [hasError, setHasError] = useState(false);
+  if (src) {
+    return (
+      <GameCoverImage
+        game={{ name: alt, thumbnail: src }}
+        className="w-16 h-20 rounded-xl shrink-0 border border-[var(--line)] shadow-md group-hover:scale-105 transition-transform"
+        paddingClass="p-1"
+        fallbackIconSize="text-2xl"
+      />
+    );
+  }
 
   return (
-    <div className="relative w-16 h-20 rounded-xl overflow-hidden shrink-0 border border-[var(--line)] shadow-md group-hover:scale-105 transition-transform bg-[var(--card-3)] flex items-center justify-center">
-      {src && !hasError ? (
-        <>
-          <img
-            src={src}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
-          />
-          <img
-            src={src}
-            alt={alt}
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            onError={() => setHasError(true)}
-            className="relative z-0 w-full h-full object-contain p-0.5"
-          />
-        </>
-      ) : (
-        <div
-          className={cn(
-            'w-full h-full flex flex-col items-center justify-center text-center p-1',
-            fallbackBg
-          )}
-        >
-          {fallbackIcon}
-        </div>
+    <div
+      className={cn(
+        'relative w-16 h-20 rounded-xl overflow-hidden shrink-0 border border-[var(--line)] shadow-md group-hover:scale-105 transition-transform flex flex-col items-center justify-center text-center p-1',
+        fallbackBg
       )}
+    >
+      {fallbackIcon}
     </div>
   );
 });
@@ -334,8 +324,9 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                       setStartDate('');
                       setEndDate('');
                     }}
-                    className="w-4 h-4 rounded-full bg-[var(--card-3)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center text-[10px] ml-1 cursor-pointer"
+                    className="w-8 h-8 sm:w-6 sm:h-6 rounded-full bg-[var(--card-3)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center text-xs ml-1 cursor-pointer"
                     title="Clear date range"
+                    aria-label="Clear date range"
                   >
                     ✕
                   </button>
@@ -364,7 +355,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                       : `Years: ${selectedYears.length} selected`}
                   </span>
                   {selectedYears.length > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-slate-950 font-mono font-bold">
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-[#161311] font-mono font-bold">
                       {selectedYears.length}
                     </span>
                   )}
@@ -431,7 +422,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                               <span>Year {yr}</span>
                             </div>
                             <span className="text-[11px] font-mono text-[var(--muted)]">
-                              {count} plays
+                              {pluralize(count, 'play')}
                             </span>
                           </label>
                         );
@@ -461,7 +452,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                 {timeFilterLabel}
               </span>
               <span className="font-mono text-amber-600 dark:text-amber-400 font-extrabold">
-                ({overviewSessions.length} plays)
+                ({pluralize(overviewSessions.length, 'play')})
               </span>
             </div>
           </div>
@@ -482,8 +473,9 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                 </span>
               </h2>
               <p className="text-xs sm:text-sm text-[var(--muted)] leading-relaxed font-medium">
-                In {timeFilterLabel.toLowerCase()}, you have played at least <strong className="text-[var(--ink)]">{hIndex} different games</strong>, each at least{' '}
-                <strong className="text-[var(--ink)]">{hIndex} times</strong>!
+                {hasActiveTimeFilter ? `In ${timeFilterLabel.toLowerCase()},` : 'Across all time,'} you have played at least{' '}
+                <strong className="text-[var(--ink)]">{pluralize(hIndex, 'different game')}</strong>, each at least{' '}
+                <strong className="text-[var(--ink)]">{pluralize(hIndex, 'time')}</strong>!
               </p>
 
               {nextHIndexGame && (
@@ -525,7 +517,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                         #{i + 1}. {g.name}
                       </span>
                       <span className="font-mono font-extrabold text-amber-600 dark:text-amber-400 shrink-0">
-                        {g.plays} plays
+                        {pluralize(g.plays, 'play')}
                       </span>
                     </div>
                   ))
@@ -549,11 +541,13 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
               No Sessions Found
             </h3>
             <p className="text-sm text-[var(--muted)] max-w-md mx-auto">
-              No play sessions recorded in {timeFilterLabel.toLowerCase()}.
+              {hasActiveTimeFilter
+                ? `No play sessions recorded in ${timeFilterLabel.toLowerCase()}.`
+                : 'No play sessions recorded yet.'}
             </p>
             <Button variant="primary" size="sm" onClick={resetTimeFilter}>
               <RotateCcw className="w-3.5 h-3.5 mr-1" />
-              View All Time ({sessions.length} sessions)
+              View All Time ({pluralize(sessions.length, 'session')})
             </Button>
           </Card>
         ) : (
@@ -582,10 +576,11 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                     {mostPlayedGame.name}
                   </h3>
                   <p className="text-xs text-amber-700 dark:text-amber-300 font-mono font-bold mt-0.5">
-                    {mostPlayedGame.plays} plays logged
+                    {pluralize(mostPlayedGame.plays, 'play')} logged
                   </p>
                   <p className="text-[10px] text-[var(--muted)] truncate">
-                    {((mostPlayedGame.plays / Math.max(1, overviewSessions.length)) * 100).toFixed(0)}% of sessions in {timeFilterLabel.toLowerCase()}
+                    {((mostPlayedGame.plays / Math.max(1, overviewSessions.length)) * 100).toFixed(0)}% of{' '}
+                    {hasActiveTimeFilter ? `sessions in ${timeFilterLabel.toLowerCase()}` : 'all-time sessions'}
                   </p>
                 </div>
               </Link>

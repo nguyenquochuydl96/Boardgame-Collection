@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BoardGame, GameStatus } from '../../types';
-import { STATUS_CONFIG, formatNumberInput, parseNumberInput, getGameThumbnail } from '../../lib/utils';
+import { STATUS_CONFIG, formatNumberInput, parseNumberInput } from '../../lib/utils';
+import { GameCoverImage } from './GameCoverImage';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { cn } from '../ui/cn';
@@ -52,6 +53,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
   const [tagsInput, setTagsInput] = useState<string>('');
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isSavedNotice, setIsSavedNotice] = useState(false);
+  const [playerRangeError, setPlayerRangeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!game) return;
@@ -70,6 +72,7 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
     setTagsInput((game.tags || []).join(', '));
     setIsConfirmingDelete(false);
     setIsSavedNotice(false);
+    setPlayerRangeError(null);
   }, [game, isOpen]);
 
   useEffect(() => {
@@ -97,6 +100,14 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
     e.preventDefault();
     if (!name.trim()) return;
 
+    const safeMin = Math.max(1, Number(minPlayers) || 1);
+    const safeMax = Math.max(1, Number(maxPlayers) || 1);
+    if (safeMin > safeMax) {
+      setPlayerRangeError('Min players cannot be greater than Max players.');
+      return;
+    }
+    setPlayerRangeError(null);
+
     const parsedTags = tagsInput
       .split(',')
       .map((t) => t.trim())
@@ -110,8 +121,8 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
       sellPrice: status === 'sold' && sellPrice ? parseNumberInput(sellPrice) : undefined,
       lentToName: status === 'lent_out' && lentToName.trim() ? lentToName.trim() : undefined,
       lentDate: status === 'lent_out' && lentDate ? new Date(lentDate).toISOString() : undefined,
-      minPlayers: Math.max(1, Number(minPlayers) || 1),
-      maxPlayers: Math.max(1, Number(maxPlayers) || 1),
+      minPlayers: safeMin,
+      maxPlayers: safeMax,
       playingTime: Math.max(5, Number(playingTime) || 60),
       yearPublished: Number(yearPublished) || 2024,
       bggRating: bggRating ? Number(bggRating) : undefined,
@@ -165,27 +176,12 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
           {/* Header */}
           <div className="flex items-start justify-between gap-3 pb-3 border-b border-[var(--line)] shrink-0">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="relative w-12 h-14 rounded-xl overflow-hidden bg-[var(--card-2)] shrink-0 border border-[var(--line)] flex items-center justify-center">
-                {getGameThumbnail(game) ? (
-                  <>
-                    <img
-                      src={getGameThumbnail(game)}
-                      alt=""
-                      aria-hidden="true"
-                      className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
-                    />
-                    <img
-                      src={getGameThumbnail(game)}
-                      alt={game.name}
-                      className="relative z-0 w-full h-full object-contain p-0.5"
-                    />
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs font-bold text-[var(--muted)]">
-                    🎲
-                  </div>
-                )}
-              </div>
+              <GameCoverImage
+                game={game}
+                className="w-12 h-14 rounded-xl shrink-0 border border-[var(--line)]"
+                paddingClassName="p-1"
+                fallbackIconClassName="w-5 h-5"
+              />
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-display font-extrabold text-base sm:text-lg text-[var(--ink)] truncate">
@@ -333,39 +329,52 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
             </div>
 
             {/* Player Count & Playtime */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
-              <div>
-                <Input
-                  label="Min Players"
-                  type="number"
-                  min={1}
-                  max={99}
-                  value={minPlayers}
-                  onChange={(e) => setMinPlayers(Number(e.target.value))}
-                  leftIcon={<Users className="w-3.5 h-3.5 text-sky-400" />}
-                />
+            <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                <div>
+                  <Input
+                    label="Min Players"
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={minPlayers}
+                    onChange={(e) => {
+                      setMinPlayers(Number(e.target.value));
+                      setPlayerRangeError(null);
+                    }}
+                    leftIcon={<Users className="w-3.5 h-3.5 text-sky-400" />}
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="Max Players"
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={maxPlayers}
+                    onChange={(e) => {
+                      setMaxPlayers(Number(e.target.value));
+                      setPlayerRangeError(null);
+                    }}
+                    leftIcon={<Users className="w-3.5 h-3.5 text-purple-400" />}
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="Playtime (min)"
+                    type="number"
+                    min={5}
+                    value={playingTime}
+                    onChange={(e) => setPlayingTime(Number(e.target.value))}
+                    leftIcon={<Clock className="w-3.5 h-3.5 text-amber-400" />}
+                  />
+                </div>
               </div>
-              <div>
-                <Input
-                  label="Max Players"
-                  type="number"
-                  min={1}
-                  max={99}
-                  value={maxPlayers}
-                  onChange={(e) => setMaxPlayers(Number(e.target.value))}
-                  leftIcon={<Users className="w-3.5 h-3.5 text-purple-400" />}
-                />
-              </div>
-              <div>
-                <Input
-                  label="Playtime (min)"
-                  type="number"
-                  min={5}
-                  value={playingTime}
-                  onChange={(e) => setPlayingTime(Number(e.target.value))}
-                  leftIcon={<Clock className="w-3.5 h-3.5 text-amber-400" />}
-                />
-              </div>
+              {playerRangeError && (
+                <p className="text-xs font-bold text-[var(--bad)] bg-[var(--bad-soft)] border border-[var(--bad)]/30 rounded-xl px-3 py-2">
+                  {playerRangeError}
+                </p>
+              )}
             </div>
 
             {/* Tags & Notes */}
@@ -416,8 +425,9 @@ export const QuickEditGameModal: React.FC<QuickEditGameModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsConfirmingDelete(true)}
-                    className="p-2 rounded-xl text-rose-500/80 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer self-start sm:self-auto"
-                    title="Delete Game from Vault"
+                    className="p-2 rounded-xl text-[var(--bad)]/80 hover:text-[var(--bad)] hover:bg-[var(--bad-soft)] transition-colors cursor-pointer self-start sm:self-auto"
+                    title="Delete Game from Collection"
+                    aria-label="Delete Game from Collection"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

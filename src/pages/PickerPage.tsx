@@ -26,6 +26,7 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { useGameStore } from '../store/useGameStore';
 import { cn } from '../components/ui/cn';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
+import { GameCoverImage } from '../components/game/GameCoverImage';
 import { resolveAvatarImage, getSafeDisplayAvatar } from '../lib/utils';
 
 type PickerMode = 'first_player' | 'what_to_play';
@@ -229,7 +230,7 @@ export const PickerPage: React.FC = () => {
             <span>Picker Mode:</span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs font-bold">
             <span>🎴 Mystery Card Shuffle</span>
           </div>
         </div>
@@ -316,7 +317,7 @@ export const PickerPage: React.FC = () => {
                           className={cn(
                             'w-5 h-5 rounded-lg flex items-center justify-center text-xs font-bold',
                             isSelected
-                              ? 'bg-amber-500 text-slate-950'
+                              ? 'bg-amber-500 text-[#161311]'
                               : 'border border-[var(--border-subtle)]'
                           )}
                         >
@@ -339,7 +340,7 @@ export const PickerPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setGuestPlayers((prev) => prev.filter((x) => x.id !== g.id))}
-                        className="text-xs text-rose-400 font-bold hover:underline"
+                        className="text-xs text-[var(--bad)] font-bold hover:underline cursor-pointer"
                       >
                         Remove
                       </button>
@@ -434,7 +435,7 @@ export const PickerPage: React.FC = () => {
                           className={cn(
                             'px-2 py-1 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer',
                             isSelected
-                              ? 'bg-amber-500 text-slate-950 border-amber-500 font-extrabold shadow-sm'
+                              ? 'bg-amber-500 text-[#161311] border-amber-500 font-extrabold shadow-sm'
                               : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:border-[var(--line-2)] hover:text-[var(--ink)]'
                           )}
                         >
@@ -507,29 +508,19 @@ export const PickerPage: React.FC = () => {
                         )}
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          {g.thumbnail ? (
-                            <div className="relative w-7 h-7 rounded-lg overflow-hidden shrink-0 bg-[var(--card-2)] flex items-center justify-center">
-                              <img
-                                src={g.thumbnail}
-                                alt=""
-                                aria-hidden="true"
-                                className="absolute inset-0 w-full h-full object-cover blur-xs scale-110 opacity-35 pointer-events-none"
-                              />
-                              <img
-                                src={g.thumbnail}
-                                alt={g.name}
-                                className="relative z-0 w-full h-full object-contain p-0.5"
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-7 h-7 rounded-lg bg-[var(--bg-elevated)] flex items-center justify-center text-xs shrink-0">
-                              🎲
-                            </div>
-                          )}
+                          <GameCoverImage
+                            game={g}
+                            className="w-7 h-7 rounded-lg shrink-0 border border-[var(--line)]"
+                            paddingClass="p-0.5"
+                            fallbackIconSize="text-xs"
+                          />
                           <div className="min-w-0">
                             <span className="font-bold text-xs truncate block">{g.name}</span>
                             <span className="text-[10px] text-[var(--text-secondary)] block">
-                              {g.minPlayers}-{g.maxPlayers} players · {g.playingTime}m
+                              {g.minPlayers === g.maxPlayers
+                                ? `${g.minPlayers} ${g.minPlayers === 1 ? 'player' : 'players'}`
+                                : `${g.minPlayers}–${g.maxPlayers} players`}{' '}
+                              · {g.playingTime}m
                             </span>
                           </div>
                         </div>
@@ -538,7 +529,7 @@ export const PickerPage: React.FC = () => {
                           className={cn(
                             'w-4 h-4 rounded flex items-center justify-center text-xs font-bold shrink-0',
                             isSelected
-                              ? 'bg-amber-500 text-slate-950'
+                              ? 'bg-amber-500 text-[#161311]'
                               : 'border border-[var(--border-subtle)]'
                           )}
                         >

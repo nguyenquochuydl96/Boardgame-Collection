@@ -56,6 +56,8 @@ export interface SessionDraft {
   scoresByPlayerId: Record<string, number | undefined>;
   breakdownsByPlayerId: Record<string, Record<string, number>>;
   manualWinnerIds: string[];
+  coopOutcome?: 'won' | 'lost';
+  hasManualDuration?: boolean;
   lowScoreWins: boolean;
   scoringMode: 'detailed' | 'quick';
   photos: string[];

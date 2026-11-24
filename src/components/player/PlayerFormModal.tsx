@@ -213,7 +213,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
 
             <div
               style={{ backgroundColor: color }}
-              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[var(--bg-surface)] shadow-md flex items-center justify-center text-[10px] text-slate-950 font-bold"
+              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[var(--bg-surface)] shadow-md flex items-center justify-center text-[10px] text-[#161311] font-bold"
             >
               ✓
             </div>
@@ -257,7 +257,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                 className={cn(
                   'px-2.5 py-1 rounded-md transition-colors cursor-pointer',
                   avatarTab === 'preset'
-                    ? 'bg-amber-500 text-slate-950 shadow-sm'
+                    ? 'bg-amber-500 text-[#161311] shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
                 )}
               >
@@ -269,7 +269,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                 className={cn(
                   'px-2.5 py-1 rounded-md transition-colors cursor-pointer',
                   avatarTab === 'upload'
-                    ? 'bg-amber-500 text-slate-950 shadow-sm'
+                    ? 'bg-amber-500 text-[#161311] shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
                 )}
               >
@@ -281,7 +281,7 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                 className={cn(
                   'px-2.5 py-1 rounded-md transition-colors cursor-pointer',
                   avatarTab === 'url'
-                    ? 'bg-amber-500 text-slate-950 shadow-sm'
+                    ? 'bg-amber-500 text-[#161311] shadow-sm'
                     : 'text-[var(--text-secondary)] hover:text-[var(--ink)]'
                 )}
               >

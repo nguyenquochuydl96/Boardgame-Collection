@@ -36,6 +36,7 @@ import { exportVaultJSON, exportGamesCSV, exportSessionsCSV } from '../../lib/ex
 import { migrateBase64ImagesToIdb } from '../../lib/mediaStorage';
 import { GameStatus } from '../../types';
 import { PoweredByBGG } from '../ui/PoweredByBGG';
+import { GameCoverImage } from './GameCoverImage';
 
 export interface CollectionImportModalProps {
   isOpen: boolean;
@@ -206,7 +207,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
     });
 
     setSuccessMessage(
-      `Successfully restored ${importOptions.games ? `${summary.gameCount} board games, ` : ''}${importOptions.players ? `${summary.playerCount} players, ` : ''}${importOptions.sessions ? `${summary.playCount} sessions, ` : ''}${importOptions.locations && summary.locationCount ? `${summary.locationCount} locations` : ''} into Vault!`
+      `Successfully restored ${importOptions.games ? `${summary.gameCount} board games, ` : ''}${importOptions.players ? `${summary.playerCount} players, ` : ''}${importOptions.sessions ? `${summary.playCount} sessions, ` : ''}${importOptions.locations && summary.locationCount ? `${summary.locationCount} locations` : ''} into your collection!`
     );
     setFullBackup(null);
   };
@@ -363,7 +364,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                 </p>
                 <p className="text-xs text-[var(--muted)] mt-1 max-w-md mx-auto">
                   Supports <strong className="text-[var(--ink)]">.ZIP</strong> or{' '}
-                  <strong className="text-[var(--ink)]">.JSON</strong> backups from BG Catalog (iOS) or BoardGame Vault, and <strong className="text-[var(--ink)]">.CSV</strong> catalogs. Automatically restores games, players, venues, and play sessions!
+                  <strong className="text-[var(--ink)]">.JSON</strong> backups from BG Catalog (iOS) or HEO Board Game Collection, and <strong className="text-[var(--ink)]">.CSV</strong> catalogs. Automatically restores games, players, venues, and play sessions!
                 </p>
               </div>
               <div>
@@ -602,7 +603,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                   try {
                     setIsExporting(true);
                     await exportVaultJSON();
-                    setSuccessMessage('Boardgame Vault JSON backup downloaded successfully!');
+                    setSuccessMessage('HEO Board Game Collection JSON backup downloaded successfully!');
                   } catch (err) {
                     console.error('Failed to export vault backup:', err);
                     setError('Failed to export backup. Please try again.');
@@ -661,7 +662,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
 
         {/* Error message */}
         {error && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 dark:text-rose-300 text-xs flex items-center gap-2">
+          <div className="p-3 rounded-xl bg-[var(--bad-soft)] border border-[var(--bad)]/30 text-[var(--bad)] text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -715,25 +716,12 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                     onChange={() => {}}
                     className="rounded border-[var(--line)] text-[var(--accent)] focus:ring-[var(--accent)]"
                   />
-                  {item.thumbnail ? (
-                    <div className="relative w-9 h-11 overflow-hidden rounded bg-[var(--card-2)] border border-[var(--line)] shrink-0 flex items-center justify-center">
-                      <img
-                        src={item.thumbnail}
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute inset-0 w-full h-full object-cover blur-xs scale-110 opacity-35 pointer-events-none"
-                      />
-                      <img
-                        src={item.thumbnail}
-                        alt={item.name}
-                        className="relative z-0 w-full h-full object-contain p-0.5"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-9 h-11 rounded bg-[var(--card-2)] border border-[var(--line)] flex items-center justify-center text-xs text-[var(--muted)]">
-                      🎲
-                    </div>
-                  )}
+                  <GameCoverImage
+                    game={{ name: item.name, bggId: item.bggId, thumbnail: item.thumbnail }}
+                    className="w-9 h-11 rounded border border-[var(--line)] shrink-0"
+                    paddingClass="p-0.5"
+                    fallbackIconSize="text-xs"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-[var(--ink)] text-xs truncate">{item.name}</p>
                     <p className="text-[11px] text-[var(--muted)]">

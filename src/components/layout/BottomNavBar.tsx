@@ -24,7 +24,7 @@ export const BottomNavBar: React.FC = memo(() => {
       aria-label="Mobile navigation"
       className="lg:hidden fixed bottom-[max(10px,env(safe-area-inset-bottom))] left-3 right-3 z-40 max-w-md mx-auto pointer-events-auto"
     >
-      <div className="bg-[var(--card)] rounded-2xl border border-[var(--line)] shadow-lg shadow-black/5 dark:shadow-black/25 p-1.5 grid grid-cols-5 items-center backdrop-blur-md">
+      <div className="bg-[var(--card)] rounded-2xl border border-[var(--line)] shadow-lg shadow-black/5 dark:shadow-black/25 p-1.5 grid grid-cols-5 items-center">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const active = isTabActive(item.to);

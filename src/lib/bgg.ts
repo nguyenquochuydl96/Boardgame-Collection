@@ -9,7 +9,7 @@ export function getBGGProxyUrl(): string {
     const saved = localStorage.getItem('bgvault_bgg_proxy_url');
     if (saved && saved.trim()) return saved.trim().replace(/\/$/, '');
   }
-  return (import.meta.env.VITE_BGG_PROXY_URL || '').replace(/\/$/, '');
+  return (import.meta.env?.VITE_BGG_PROXY_URL || '').replace(/\/$/, '');
 }
 
 export function getBGGApiToken(): string {
@@ -17,7 +17,7 @@ export function getBGGApiToken(): string {
     const saved = localStorage.getItem('bgvault_bgg_api_token');
     if (saved && saved.trim()) return saved.trim();
   }
-  return import.meta.env.VITE_BGG_API_TOKEN || '';
+  return import.meta.env?.VITE_BGG_API_TOKEN || '';
 }
 
 export function saveBGGSettings(proxyUrl: string, apiToken: string) {
@@ -241,6 +241,46 @@ function parseBGGSearchXml(xmlText: string): BGGSearchResult[] {
 }
 
 /**
+ * Decodes HTML/XML entities commonly returned by BoardGameGeek descriptions and titles.
+ */
+export function decodeHtml(input: string): string {
+  if (!input) return '';
+  const namedEntities: Record<string, string> = {
+    '&amp;': '&',
+    '&quot;': '"',
+    '&apos;': "'",
+    '&#39;': "'",
+    '&#039;': "'",
+    '&rsquo;': '’',
+    '&lsquo;': '‘',
+    '&rdquo;': '”',
+    '&ldquo;': '“',
+    '&mdash;': '—',
+    '&ndash;': '–',
+    '&hellip;': '…',
+    '&nbsp;': ' ',
+    '&lt;': '<',
+    '&gt;': '>',
+  };
+
+  return input
+    .replace(/&#10;|&#x0*a;/gi, '\n')
+    .replace(/&#13;|&#x0*d;/gi, '')
+    .replace(
+      /&(?:amp|quot|apos|#39|#039|rsquo|lsquo|rdquo|ldquo|mdash|ndash|hellip|nbsp|lt|gt);/gi,
+      (entity) => namedEntities[entity.toLowerCase()] ?? entity
+    )
+    .replace(/&#(\d+);/g, (_match, dec) => {
+      const code = Number(dec);
+      return Number.isFinite(code) && code > 0 ? String.fromCodePoint(code) : _match;
+    })
+    .replace(/&#x([0-9a-f]+);/gi, (_match, hex) => {
+      const code = parseInt(hex, 16);
+      return Number.isFinite(code) && code > 0 ? String.fromCodePoint(code) : _match;
+    });
+}
+
+/**
  * Parses raw XML returned by BGG XMLAPI2 /thing endpoint
  */
 function parseBGGThingXml(xmlText: string, bggId: string): BGGGameDetail | null {
@@ -265,10 +305,8 @@ function parseBGGThingXml(xmlText: string, bggId: string): BGGGameDetail | null 
 
     const thumbnail = thumbEl?.textContent?.trim() || imageEl?.textContent?.trim() || '';
     const image = imageEl?.textContent?.trim() || thumbEl?.textContent?.trim() || '';
-    const description = (descEl?.textContent || '')
-      .replace(/&#10;/g, '\n')
-      .replace(/&quot;/g, '"')
-      .replace(/&amp;/g, '&');
+    const description = decodeHtml(descEl?.textContent || '');
+    const decodedName = decodeHtml(name);
     const minPlayers = minPlayersEl ? Number(minPlayersEl.getAttribute('value')) || 1 : 1;
     const maxPlayers = maxPlayersEl ? Number(maxPlayersEl.getAttribute('value')) || 4 : 4;
     const playingTime = playTimeEl ? Number(playTimeEl.getAttribute('value')) || 60 : 60;
@@ -280,7 +318,7 @@ function parseBGGThingXml(xmlText: string, bggId: string): BGGGameDetail | null 
 
     return {
       bggId,
-      name,
+      name: decodedName,
       yearPublished,
       minPlayers,
       maxPlayers,
@@ -549,63 +587,132 @@ export async function getBGGGameDetail(bggId: string): Promise<BGGGameDetail> {
   };
 }
 
-export async function importBGGCollection(username: string): Promise<BGGGameDetail[]> {
-  if (!username.trim()) return [];
-  const proxyBase = getBGGProxyUrl();
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-  if (proxyBase) {
-    try {
-      const isXmlApi = proxyBase.includes('xmlapi2') || !proxyBase.includes('/api');
-      const collUrl = isXmlApi
-        ? `${proxyBase}/collection?username=${encodeURIComponent(username.trim())}&stats=1`
-        : `${proxyBase}/api/collection?username=${encodeURIComponent(username.trim())}`;
+export interface ImportBGGCollectionOptions {
+  maxRetries?: number;
+  retryDelayMs?: number;
+}
 
-      const response = await fetch(collUrl, { headers: getRequestHeaders() });
-      if (response.ok) {
-        const text = await response.text();
-        // Check if XML or JSON
-        if (text.trim().startsWith('<')) {
-          if (typeof window !== 'undefined' && window.DOMParser) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'text/xml');
-            const items = doc.querySelectorAll('item');
-            const results: BGGGameDetail[] = [];
-            items.forEach((item) => {
-              const bggId = item.getAttribute('objectid') || '';
-              const name = item.querySelector('name')?.textContent || 'Untitled';
-              const yearPublished = Number(item.querySelector('yearpublished')?.textContent) || 2020;
-              const thumbnail = item.querySelector('thumbnail')?.textContent || '';
-              const image = item.querySelector('image')?.textContent || '';
-              const stats = item.querySelector('stats');
-              const minPlayers = Number(stats?.getAttribute('minplayers')) || 1;
-              const maxPlayers = Number(stats?.getAttribute('maxplayers')) || 4;
-              const playingTime = Number(stats?.getAttribute('playingtime')) || 60;
-              const rating = Number(stats?.querySelector('rating > average')?.getAttribute('value')) || 7.5;
-
-              results.push({
-                bggId,
-                name,
-                yearPublished,
-                minPlayers,
-                maxPlayers,
-                playingTime,
-                bggRating: Math.round(rating * 10) / 10,
-                description: `${name} from ${username}'s BGG Collection.`,
-                thumbnail,
-                image,
-                tags: ['Strategy'],
-              });
-            });
-            if (results.length > 0) return results;
-          }
-        } else {
-          return (JSON.parse(text)) as BGGGameDetail[];
-        }
-      }
-    } catch {
-      // Fallback
-    }
+export async function importBGGCollection(
+  username: string,
+  options: ImportBGGCollectionOptions = {}
+): Promise<BGGGameDetail[]> {
+  const cleanUser = username.trim();
+  if (!cleanUser) {
+    throw new Error('Please enter a valid BoardGameGeek username.');
   }
 
-  return MOCK_BGG_CATALOG.slice(0, 10);
+  const proxyBase = getBGGProxyUrl();
+  if (!proxyBase) {
+    throw new Error(
+      'BGG API Proxy is not configured. Open BGG API Settings in the sidebar or menu to set your proxy URL before importing.'
+    );
+  }
+
+  const isXmlApi = proxyBase.includes('xmlapi2') || !proxyBase.includes('/api');
+  const collUrl = isXmlApi
+    ? `${proxyBase}/collection?username=${encodeURIComponent(cleanUser)}&stats=1`
+    : `${proxyBase}/api/collection?username=${encodeURIComponent(cleanUser)}`;
+
+  const maxRetries = options.maxRetries ?? 4;
+  const baseRetryDelayMs = options.retryDelayMs ?? 1500;
+
+  let response: Response | null = null;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      response = await fetch(collUrl, { headers: getRequestHeaders() });
+    } catch (err) {
+      throw new Error(
+        `Network error connecting to BGG proxy for "${cleanUser}": ${
+          err instanceof Error ? err.message : 'Request failed'
+        }`
+      );
+    }
+
+    if (response.status === 202) {
+      if (attempt < maxRetries) {
+        await delay(baseRetryDelayMs * (attempt + 1));
+        continue;
+      }
+      throw new Error(
+        `BoardGameGeek is still preparing "${cleanUser}"'s collection (HTTP 202 Accepted). Please try again in a few seconds.`
+      );
+    }
+
+    break;
+  }
+
+  if (!response || !response.ok) {
+    const statusText = response ? `HTTP ${response.status}` : 'No response';
+    throw new Error(
+      `Failed to fetch BGG collection for "${cleanUser}" (${statusText}). Check the username or your BGG API proxy settings.`
+    );
+  }
+
+  const text = await response.text();
+  const trimmed = text.trim();
+
+  if (trimmed.startsWith('<')) {
+    if (typeof window === 'undefined' || !window.DOMParser) {
+      throw new Error('XML parser is unavailable in this environment.');
+    }
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(trimmed, 'text/xml');
+
+    const errorMsg = doc.querySelector('errors > error > message')?.textContent?.trim();
+    if (errorMsg) {
+      throw new Error(`BoardGameGeek error: ${decodeHtml(errorMsg)}`);
+    }
+
+    const items = doc.querySelectorAll('item');
+    const results: BGGGameDetail[] = [];
+    items.forEach((item) => {
+      const bggId = item.getAttribute('objectid') || '';
+      const name = decodeHtml(item.querySelector('name')?.textContent || 'Untitled');
+      const yearPublished = Number(item.querySelector('yearpublished')?.textContent) || 2020;
+      const thumbnail = item.querySelector('thumbnail')?.textContent?.trim() || '';
+      const image = item.querySelector('image')?.textContent?.trim() || '';
+      const stats = item.querySelector('stats');
+      const minPlayers = Number(stats?.getAttribute('minplayers')) || 1;
+      const maxPlayers = Number(stats?.getAttribute('maxplayers')) || 4;
+      const playingTime = Number(stats?.getAttribute('playingtime')) || 60;
+      const rating = Number(stats?.querySelector('rating > average')?.getAttribute('value')) || 7.5;
+
+      results.push({
+        bggId,
+        name,
+        yearPublished,
+        minPlayers,
+        maxPlayers,
+        playingTime,
+        bggRating: Math.round(rating * 10) / 10,
+        description: `${name} from ${cleanUser}'s BGG Collection.`,
+        thumbnail,
+        image,
+        tags: ['Strategy'],
+      });
+    });
+
+    return results;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as BGGGameDetail[] | { items?: BGGGameDetail[]; error?: string };
+    if (Array.isArray(parsed)) return parsed;
+    if (parsed && Array.isArray(parsed.items)) return parsed.items;
+    if (parsed && typeof parsed.error === 'string') {
+      throw new Error(parsed.error);
+    }
+  } catch (err) {
+    if (err instanceof Error && !err.message.includes('JSON')) {
+      throw err;
+    }
+    throw new Error(`Unexpected response format returned by BGG proxy for "${cleanUser}".`);
+  }
+
+  return [];
 }
+

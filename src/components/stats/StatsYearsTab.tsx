@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { Trophy } from 'lucide-react';
 import { Card } from '../ui/Card';
+import { GameCoverImage } from '../game/GameCoverImage';
 import { cn } from '../ui/cn';
+import { getTotalPlayHours, pluralize } from '../../lib/utils';
 import { PlaySession } from '../../types';
 
 interface StatsYearsTabProps {
@@ -20,11 +22,7 @@ export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
 
     const yearStats = useMemo(() => {
       const totalSessions = yearFilteredSessions.length;
-      const totalMinutes = yearFilteredSessions.reduce(
-        (sum, s) => sum + (s.durationMinutes || 60),
-        0
-      );
-      const hours = Math.round(totalMinutes / 60);
+      const hours = getTotalPlayHours(yearFilteredSessions);
 
       // Top games of the year
       const gameMap = new Map<
@@ -120,7 +118,7 @@ export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
                 Total Sessions ({selectedYear === 'all' ? 'All-Time' : selectedYear})
               </span>
               <p className="font-display font-black text-2xl text-[var(--ink)] mt-0.5">
-                {yearStats.totalSessions} plays
+                {pluralize(yearStats.totalSessions, 'play')}
               </p>
             </div>
           </Card>
@@ -132,7 +130,7 @@ export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
             <div>
               <span className="text-xs text-[var(--muted)]">Tabletop Playtime</span>
               <p className="font-display font-black text-2xl text-[var(--ink)] mt-0.5">
-                ~{yearStats.hours} hrs
+                {pluralize(yearStats.hours, 'hr', 'hrs')}
               </p>
             </div>
           </Card>
@@ -148,7 +146,7 @@ export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
               </p>
               {yearStats.topWinners[0] && (
                 <span className="text-[11px] text-amber-600 dark:text-amber-300 font-bold">
-                  {yearStats.topWinners[0].wins} wins
+                  {pluralize(yearStats.topWinners[0].wins, 'win')}
                 </span>
               )}
             </div>
@@ -171,29 +169,16 @@ export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
                 <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 font-mono font-black text-xs flex items-center justify-center border border-amber-500/40">
                   #{idx + 1}
                 </div>
-                {g.thumbnail ? (
-                  <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden border border-[var(--line)] bg-[var(--card-2)] flex items-center justify-center">
-                    <img
-                      src={g.thumbnail}
-                      alt=""
-                      aria-hidden="true"
-                      className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
-                    />
-                    <img
-                      src={g.thumbnail}
-                      alt={g.name}
-                      className="relative z-0 w-full h-full object-contain p-1"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-full aspect-[4/3] rounded-xl bg-[var(--card-3)] flex items-center justify-center text-3xl">
-                    🎲
-                  </div>
-                )}
+                <GameCoverImage
+                  game={{ name: g.name, thumbnail: g.thumbnail }}
+                  className="w-full aspect-[4/3] rounded-xl border border-[var(--line)]"
+                  paddingClass="p-1.5"
+                  fallbackIconSize="text-3xl"
+                />
                 <div>
                   <h4 className="font-display font-bold text-xs text-[var(--ink)] truncate">{g.name}</h4>
                   <p className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400 mt-1">
-                    {g.count} plays
+                    {pluralize(g.count, 'play')}
                   </p>
                 </div>
               </div>

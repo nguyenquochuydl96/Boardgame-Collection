@@ -4,6 +4,7 @@ import { Card } from '../../ui/Card';
 import { Input } from '../../ui/Input';
 import { cn } from '../../ui/cn';
 import { BoardGame } from '../../../types';
+import { GameCoverImage } from '../../game/GameCoverImage';
 
 interface Step1PickGameProps {
   selectedGame?: BoardGame;
@@ -37,14 +38,12 @@ export const Step1PickGame: React.FC<Step1PickGameProps> = React.memo(
 
           {selectedGame ? (
             <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-glow)]">
-              <img
+              <GameCoverImage
                 key={selectedGame.id}
-                src={selectedGame.thumbnail || selectedGame.image}
-                alt={selectedGame.name}
-                referrerPolicy="no-referrer"
+                game={selectedGame}
                 loading="eager"
-                decoding="async"
-                className="w-12 h-16 rounded-lg object-cover"
+                paddingClass="p-0.5"
+                className="w-12 h-14 rounded-lg border border-[var(--line)] shrink-0"
               />
               <div>
                 <span className="text-[11px] text-[var(--accent-neon)] font-semibold">
@@ -84,21 +83,18 @@ export const Step1PickGame: React.FC<Step1PickGameProps> = React.memo(
                     : 'border-[var(--line)] bg-[var(--card)] hover:border-[var(--line-2)] hover:bg-[var(--card-2)]'
                 )}
               >
-                <div className="aspect-[4/3] w-full overflow-hidden bg-[var(--card-2)] relative">
-                  <img
-                    src={game.thumbnail || game.image}
-                    alt={game.name}
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                <GameCoverImage
+                  game={game}
+                  className="aspect-[4/3] w-full"
+                  paddingClass="p-2"
+                  imgClassName="group-hover:scale-105 transition-transform duration-300"
+                >
                   {active && (
-                    <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-lg">
+                    <div className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-lg">
                       <Check className="w-4 h-4" />
                     </div>
                   )}
-                </div>
+                </GameCoverImage>
                 <div className="p-3">
                   <p className="font-display font-bold text-sm text-[var(--ink)] truncate">
                     {game.name}

@@ -66,6 +66,20 @@ if (typeof window !== 'undefined') {
   }
 
   if ('serviceWorker' in navigator) {
+    let swReg: ServiceWorkerRegistration | undefined;
+
+    const checkSWUpdate = () => {
+      if (swReg) {
+        swReg.update().catch(() => {});
+        return;
+      }
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((reg) => {
+          reg.update().catch(() => {});
+        });
+      });
+    };
+
     updateServiceWorker = registerSW({
       immediate: true,
       onNeedRefresh() {
@@ -73,22 +87,10 @@ if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('pwa-need-refresh'));
       },
       onOfflineReady() {
-        console.info('[PWA] Boardgame Vault is ready for offline use');
+        console.info('[PWA] HEO — Board Game Collection is ready for offline use');
       },
       onRegisteredSW(_swUrl, registration) {
-        if (registration) {
-          // Check for SW updates whenever app returns to foreground on iOS PWA
-          document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-              registration.update().catch(() => {});
-            }
-          });
-
-          // Periodic background check every 15 minutes
-          setInterval(() => {
-            registration.update().catch(() => {});
-          }, 15 * 60 * 1000);
-        }
+        swReg = registration;
       },
     });
 
@@ -114,28 +116,14 @@ if (typeof window !== 'undefined') {
       }
     };
 
-    const checkSWUpdate = () => {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        registrations.forEach((reg) => {
-          reg.update().catch(() => {});
-        });
-      });
-    };
-
-    // Check on page load
+    // Single unified update check lifecycle (load, foreground return, reconnect, and 15-min interval)
     window.addEventListener('load', checkSWUpdate);
-
-    // Check whenever app returns to foreground on iOS/mobile
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
         checkSWUpdate();
       }
     });
-
-    // Check when network connection is re-established
     window.addEventListener('online', checkSWUpdate);
-
-    // Periodic check every 15 minutes
     setInterval(checkSWUpdate, 15 * 60 * 1000);
   }
 }

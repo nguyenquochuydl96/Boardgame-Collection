@@ -9,7 +9,7 @@ import {
   playCardSnapSound,
   triggerConfetti,
 } from '../../lib/soundEffects';
-import { resolveAvatarImage, getSafeDisplayAvatar } from '../../lib/utils';
+import { resolveAvatarImage, getSafeDisplayAvatar, pluralize } from '../../lib/utils';
 import { useResolvedMedia } from '../../hooks/useResolvedMedia';
 import { cn } from '../ui/cn';
 
@@ -43,24 +43,23 @@ const CardItemPortrait: React.FC<{ item: PickerItem; size?: number }> = ({ item,
   const rawImageSrc = resolveAvatarImage(item.thumbnail || item.avatar);
   const imageSrc = useResolvedMedia(rawImageSrc, item.thumbnail || undefined);
 
+  useEffect(() => {
+    setImgError(false);
+  }, [imageSrc]);
+
   if (imageSrc && !imgError) {
     return (
       <div
-        className="rounded-2xl border-2 border-amber-400/80 shadow-2xl bg-slate-950 overflow-hidden shrink-0 flex items-center justify-center"
+        className="rounded-2xl border-2 border-amber-400/80 shadow-2xl bg-[var(--card-2)] overflow-hidden shrink-0 relative"
         style={{ width: size, height: size }}
       >
-        <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
-          <img
-            src={imageSrc}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
-          />
+        <div className="absolute inset-0 p-1 flex items-center justify-center">
           <img
             src={imageSrc}
             alt={item.name}
+            referrerPolicy="no-referrer"
             onError={() => setImgError(true)}
-            className="relative z-0 w-full h-full object-contain p-1"
+            className="max-w-full max-h-full w-auto h-auto object-contain"
           />
         </div>
       </div>
@@ -97,7 +96,7 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
   const [stage, setStage] = useState<ShuffleStage>('idle');
   const [revealedItem, setRevealedItem] = useState<PickerItem | null>(null);
   const [cascadedCount, setCascadedCount] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout[]>([]);
+  const timerRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const isBusy = stage !== 'idle' && stage !== 'revealed';
@@ -264,7 +263,7 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
                   damping: 24,
                 }}
                 style={{ zIndex }}
-                className="absolute inset-0 rounded-2xl border-2 border-amber-400/40 bg-gradient-to-br from-[#161c2e] via-[#0d121f] to-[#06080e] p-2.5 shadow-2xl flex flex-col justify-between overflow-hidden"
+                className="absolute inset-0 rounded-2xl border-2 border-[#E5734F]/45 bg-gradient-to-br from-[#2C231E] via-[#1F1815] to-[#15100D] p-2.5 shadow-2xl flex flex-col justify-between overflow-hidden"
               >
                 {/* Gold Filigree & Casino Card Back Pattern */}
                 <div className="w-full h-full rounded-xl border border-amber-400/30 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.18),transparent_72%)] flex flex-col items-center justify-between p-3 relative">
@@ -278,7 +277,7 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
                       🎲
                     </div>
                     <span className="text-[10px] font-mono tracking-widest text-amber-300/90 uppercase font-black">
-                      VAULT
+                      HEO
                     </span>
                   </div>
 
@@ -320,10 +319,10 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
                   transformStyle: 'preserve-3d',
                   zIndex: 50,
                 }}
-                className="absolute inset-0 rounded-3xl border-2 border-amber-400 bg-gradient-to-b from-[#1b2236] via-[#101422] to-[#07090f] p-4 shadow-2xl shadow-amber-500/40 flex flex-col items-center justify-between text-center overflow-hidden"
+                className="absolute inset-0 rounded-3xl border-2 border-[#E5734F] bg-gradient-to-b from-[#312620] via-[#211A16] to-[#16110E] p-4 shadow-2xl shadow-[#E5734F]/30 flex flex-col items-center justify-between text-center overflow-hidden"
               >
                 {/* Floating 1ST / Starter Header Badge */}
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 flex items-center justify-center shadow-xl shadow-amber-500/50 -mt-7 border-2 border-white/20 shrink-0 font-display font-black text-xs">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#E5734F] to-amber-400 text-[#161311] flex items-center justify-center shadow-xl shadow-[#E5734F]/40 -mt-7 border-2 border-white/20 shrink-0 font-display font-black text-xs">
                   {mode === 'first_player' ? (
                     <span className="font-mono font-black text-sm tracking-tighter">1ST</span>
                   ) : (
@@ -409,7 +408,7 @@ export const MysteryCardShuffle: React.FC<MysteryCardShuffleProps> = ({
         </div>
 
         <p className="text-xs text-[var(--text-secondary)] tabular-nums">
-          {items.length} cards in deck
+          {pluralize(items.length, 'card')} in deck
         </p>
       </div>
     </div>

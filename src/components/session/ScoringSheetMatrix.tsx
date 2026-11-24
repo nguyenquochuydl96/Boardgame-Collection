@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Crown, Sparkles, AlertCircle } from 'lucide-react';
 import { Player } from '../../types';
 import { PlayerAvatar } from '../player/PlayerAvatar';
-import { ScoringCategory } from '../../lib/scoringPresets';
+import { ScoringCategory, computeSheetPlayerTotal } from '../../lib/scoringPresets';
 import { Button } from '../ui/Button';
 import { cn } from '../ui/cn';
 
@@ -63,30 +63,27 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
     });
   }, [players, initialBreakdowns]);
 
-  // Compute totals
+  const initialCategoryIds = React.useMemo(
+    () => initialCategories.map((c) => c.id),
+    [initialCategories]
+  );
+
+  // Compute totals (includes any user-added custom categories even when computeTotal is defined)
   const playerTotals = React.useMemo(() => {
     const totals: Record<string, number> = {};
 
     players.forEach((p) => {
       const playerVals = breakdowns[p.id] || {};
-      if (computeTotal) {
-        totals[p.id] = computeTotal(playerVals);
-      } else {
-        let sum = 0;
-        categories.forEach((cat) => {
-          const raw = playerVals[cat.id];
-          if (typeof raw === 'number' && !isNaN(raw)) {
-            const mult = cat.multiplier ?? 1;
-            const effectiveVal = mult < 0 ? Math.abs(raw) : raw;
-            sum += effectiveVal * mult;
-          }
-        });
-        totals[p.id] = sum;
-      }
+      totals[p.id] = computeSheetPlayerTotal(
+        playerVals,
+        categories,
+        computeTotal,
+        initialCategoryIds
+      );
     });
 
     return totals;
-  }, [players, categories, breakdowns, computeTotal]);
+  }, [players, categories, breakdowns, computeTotal, initialCategoryIds]);
 
   const isMountedRef = React.useRef(false);
   const lastEmittedRef = React.useRef<string>('');
@@ -258,7 +255,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                       <div className="relative">
                         <PlayerAvatar player={p} size="sm" />
                         {isLeader && (
-                          <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center shadow-md">
+                          <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-amber-500 text-[#161311] flex items-center justify-center shadow-md">
                             <Crown className="w-2.5 h-2.5 fill-current" />
                           </div>
                         )}
@@ -286,7 +283,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                         <div className="flex items-center gap-1 flex-wrap">
                           <span className="font-semibold text-xs text-[var(--text-primary)] truncate block">{cat.name}</span>
                           {isPenalty && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold shrink-0">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bad-soft)] text-[var(--bad)] font-bold shrink-0">
                               -
                             </span>
                           )}
@@ -319,8 +316,8 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                         <div className="inline-flex items-center rounded-lg bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus-within:border-[var(--accent-primary)] focus-within:ring-1 focus-within:ring-[var(--accent-primary)] overflow-hidden">
                           {isPenalty ? (
                             <span
-                              className="px-2 py-1 text-[11px] font-mono font-extrabold border-r bg-rose-500/25 text-rose-400 border-rose-500/30 select-none cursor-default"
-                              title="Điểm phạt (tự động trừ)"
+                              className="px-2 py-1 text-[11px] font-mono font-extrabold border-r bg-[var(--bad-soft)] text-[var(--bad)] border-[var(--bad)]/30 select-none cursor-default"
+                              title="Penalty points (subtracted automatically)"
                             >
                               -
                             </span>
@@ -332,12 +329,12 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                                 e.stopPropagation();
                                 handleToggleCellSign(p.id, cat.id);
                               }}
-                              title="Chuyển điểm âm / dương (±)"
+                              title="Toggle positive/negative sign (±)"
                               aria-label="Toggle negative score"
                               className={cn(
                                 'px-1.5 py-1 text-[11px] font-mono font-extrabold border-r transition-colors cursor-pointer select-none',
                                 isCellNegative
-                                  ? 'bg-rose-500/25 text-rose-400 border-rose-500/30'
+                                  ? 'bg-[var(--bad-soft)] text-[var(--bad)] border-[var(--bad)]/30'
                                   : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border-[var(--border-subtle)]'
                               )}
                             >
@@ -361,7 +358,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                             onBlur={() => handleCellBlur(p.id, cat.id)}
                             className={cn(
                               'w-14 sm:w-16 px-1.5 py-1.5 bg-transparent text-center font-mono font-bold text-xs focus:outline-none',
-                              (isPenalty || isCellNegative) ? 'text-rose-400' : 'text-[var(--text-primary)]'
+                              (isPenalty || isCellNegative) ? 'text-[var(--bad)]' : 'text-[var(--text-primary)]'
                             )}
                           />
                         </div>
@@ -408,7 +405,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
                   >
                     <div className="flex items-center justify-center gap-1.5 font-mono text-base font-extrabold text-[var(--text-primary)]">
                       {isLeader && <Crown className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" />}
-                      <span className={isLeader ? 'text-amber-300' : ''}>{total}</span>
+                      <span className={isLeader ? 'text-[var(--warn)]' : ''}>{total}</span>
                     </div>
                   </td>
                 );

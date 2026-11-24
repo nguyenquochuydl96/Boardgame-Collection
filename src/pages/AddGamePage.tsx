@@ -21,6 +21,7 @@ import { createGameCoverDataUri, STATUS_CONFIG, formatNumberInput, parseNumberIn
 import { BGGGameDetail, GameStatus } from '../types';
 import { BGGConfigModal } from '../components/game/BGGConfigModal';
 import { BGGCardThumbnail } from '../components/game/BGGCardThumbnail';
+import { GameCoverImage } from '../components/game/GameCoverImage';
 import { PoweredByBGG } from '../components/ui/PoweredByBGG';
 
 export const AddGamePage: React.FC = () => {
@@ -97,7 +98,7 @@ export const AddGamePage: React.FC = () => {
         image: generatedCover,
         description:
           description.trim() ||
-          `${name.trim()} is a tabletop boardgame in your BoardGame Vault collection.`,
+          `${name.trim()} is a tabletop boardgame in your HEO Board Game Collection.`,
         minPlayers: Math.max(1, Number(minPlayers) || 1),
         maxPlayers: Math.max(1, Number(maxPlayers) || 4),
         playingTime: Math.max(5, Number(playingTime) || 60),
@@ -347,28 +348,22 @@ export const AddGamePage: React.FC = () => {
                 <label className="block text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
                   Cover Image Preview
                 </label>
-                <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[var(--card-2)] border border-[var(--line)] flex items-center justify-center p-2 relative">
-                  {thumbnail ? (
-                    <>
-                      <img
-                        src={thumbnail}
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
-                      />
-                      <img
-                        src={thumbnail}
-                        alt={name || 'Cover preview'}
-                        className="relative z-0 w-full h-full object-contain rounded-xl p-1"
-                      />
-                    </>
-                  ) : (
-                    <div className="text-center p-4 text-xs text-[var(--muted)]">
+                {thumbnail ? (
+                  <GameCoverImage
+                    src={thumbnail}
+                    alt={name || 'Cover preview'}
+                    className="w-full aspect-square rounded-2xl border border-[var(--line)]"
+                    paddingClassName="p-3"
+                    fallbackIconClassName="w-8 h-8"
+                  />
+                ) : (
+                  <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[var(--card-2)] border border-[var(--line)] flex items-center justify-center p-4">
+                    <div className="text-center text-xs text-[var(--muted)]">
                       <Sparkles className="w-6 h-6 mx-auto mb-1 text-[var(--accent)]/50" />
                       Cover art will auto-generate on save
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -404,7 +399,10 @@ export const AddGamePage: React.FC = () => {
                             : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                         )}
                       >
-                        <span className={cn('block font-extrabold', isSelected ? 'text-[var(--accent-ink)]' : cfg.color)}>
+                        <span
+                          className="block font-extrabold"
+                          style={{ color: isSelected ? 'var(--accent-ink)' : cfg.color }}
+                        >
                           {cfg.label}
                         </span>
                       </button>
@@ -414,11 +412,11 @@ export const AddGamePage: React.FC = () => {
               </div>
 
               {status === 'rented' && (
-                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3 text-xs text-amber-200">
+                  <div className="p-3.5 rounded-2xl bg-[var(--warn-soft)] border border-[var(--warn)]/30 flex items-center gap-3 text-xs">
                     <span className="text-base">☕</span>
                     <div>
-                      <p className="font-bold text-amber-300">Rented / Cafe Play</p>
-                      <p className="text-amber-200/80 mt-0.5">
+                      <p className="font-bold text-[var(--warn)]">Rented / Cafe Play</p>
+                      <p className="text-[var(--ink-2)] mt-0.5">
                         Played at board game cafes or rented — excluded from personal collection valuation.
                       </p>
                     </div>

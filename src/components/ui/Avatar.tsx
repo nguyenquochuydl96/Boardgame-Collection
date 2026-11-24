@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { cn } from './cn';
 import { resolveAvatarImage, getSafeDisplayAvatar } from '../../lib/utils';
 import { useResolvedMedia } from '../../hooks/useResolvedMedia';
@@ -37,6 +37,10 @@ const AvatarComponent: React.FC<AvatarProps> = ({
 
   const resolvedAvatar = useResolvedMedia(avatar);
   const imageSrc = resolveAvatarImage(resolvedAvatar);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [imageSrc]);
 
   return (
     <div

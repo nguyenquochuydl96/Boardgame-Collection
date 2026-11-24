@@ -1,24 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#7c3aed" />
-      <stop offset="50%" stop-color="#2563eb" />
-      <stop offset="100%" stop-color="#0ea5e9" />
-    </linearGradient>
-    <linearGradient id="die" x1="120" y1="120" x2="392" y2="392" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ffffff" />
-      <stop offset="100%" stop-color="#e2e8f0" />
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="120" fill="#0f0f1a" />
-  <rect x="24" y="24" width="464" height="464" rx="100" fill="url(#bg)" fill-opacity="0.22" stroke="url(#bg)" stroke-width="8" />
-  <polygon points="256,88 402,172 402,340 256,424 110,340 110,172" fill="url(#bg)" stroke="#f8fafc" stroke-width="10" stroke-linejoin="round" />
-  <polyline points="110,172 256,256 402,172" stroke="#f8fafc" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.7" />
-  <line x1="256" y1="256" x2="256" y2="424" stroke="#f8fafc" stroke-width="8" stroke-linecap="round" stroke-opacity="0.7" />
-  <circle cx="256" cy="168" r="16" fill="url(#die)" />
-  <circle cx="170" cy="260" r="14" fill="url(#die)" />
-  <circle cx="204" cy="316" r="14" fill="url(#die)" />
-  <circle cx="342" cy="248" r="14" fill="url(#die)" />
-  <circle cx="312" cy="292" r="14" fill="url(#die)" />
-  <circle cx="342" cy="336" r="14" fill="url(#die)" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <circle cx="64" cy="64" r="62" fill="#341F1A"/>
+  <circle cx="64" cy="64" r="56" fill="#2B1915" stroke="#D99B58" stroke-width="5"/>
+  <circle cx="64" cy="64" r="52" stroke="#B67638" stroke-width="1.5" opacity="0.7"/>
+  <!-- Shelf dividers -->
+  <line x1="16" y1="52" x2="112" y2="52" stroke="#D99B58" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="18" y1="84" x2="110" y2="84" stroke="#D99B58" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="46" y1="52" x2="46" y2="84" stroke="#D99B58" stroke-width="3"/>
+  <line x1="82" y1="52" x2="82" y2="84" stroke="#D99B58" stroke-width="3"/>
+  <line x1="64" y1="84" x2="64" y2="115" stroke="#D99B58" stroke-width="3"/>
+  <!-- Top center pig emblem -->
+  <circle cx="64" cy="30" r="14" fill="#341F1A" stroke="#7E9F7B" stroke-width="2.5"/>
+  <path d="M55 24 L52 19 L58 21 Z" fill="#E5734F"/>
+  <path d="M73 24 L76 19 L70 21 Z" fill="#E5734F"/>
+  <circle cx="64" cy="30" r="9" fill="#E5734F"/>
+  <ellipse cx="64" cy="32.5" rx="4.2" ry="3" fill="#F29B7E"/>
+  <circle cx="62.5" cy="32.5" r="0.9" fill="#341F1A"/>
+  <circle cx="65.5" cy="32.5" r="0.9" fill="#341F1A"/>
+  <circle cx="60.5" cy="28" r="1.2" fill="#341F1A"/>
+  <circle cx="67.5" cy="28" r="1.2" fill="#341F1A"/>
+  <!-- Top-left game boxes -->
+  <rect x="27" y="34" width="6" height="16" rx="1.2" fill="#E0A96D"/>
+  <rect x="35" y="31" width="7" height="19" rx="1.2" fill="#E5734F"/>
+  <rect x="44" y="36" width="5" height="14" rx="1.2" fill="#7E9F7B"/>
+  <!-- Top-right tiles -->
+  <rect x="81" y="38" width="10" height="10" rx="2" fill="#E5734F"/>
+  <rect x="93" y="38" width="10" height="10" rx="2" fill="#5B95B5"/>
+  <rect x="86" y="27" width="10" height="10" rx="2" fill="#7E9F7B"/>
+  <!-- Middle-left stacked boxes -->
+  <rect x="21" y="61" width="21" height="5" rx="1.2" fill="#E0A96D"/>
+  <rect x="20" y="67" width="22" height="5" rx="1.2" fill="#7E9F7B"/>
+  <rect x="21" y="73" width="21" height="6" rx="1.2" fill="#E5734F"/>
+  <!-- Center hex tiles -->
+  <polygon points="57,57 63,57 66,62 63,67 57,67 54,62" fill="#7E9F7B"/>
+  <polygon points="68,61 74,61 77,66 74,71 68,71 65,66" fill="#5B95B5"/>
+  <polygon points="57,69 63,69 66,74 63,79 57,79 54,74" fill="#A6C16E"/>
+  <polygon points="68,72 74,72 77,77 74,82 68,82 65,77" fill="#D98B52"/>
+  <!-- Middle-right cards -->
+  <rect x="87" y="60" width="11" height="16" rx="2" fill="#FAF6EE" transform="rotate(-10 92 68)"/>
+  <rect x="94" y="60" width="12" height="17" rx="2" fill="#FAF6EE" stroke="#E8E0D5" stroke-width="0.8" transform="rotate(8 100 68)"/>
+  <polygon points="100,65 103,69 100,73 97,69" fill="#E5734F"/>
+  <!-- Bottom dice -->
+  <rect x="42" y="92" width="11" height="11" rx="2.5" fill="#E5734F" transform="rotate(-8 47 97)"/>
+  <rect x="51" y="97" width="10" height="10" rx="2.5" fill="#E0A96D"/>
+  <polygon points="78,91 86,95 86,104 78,108 70,104 70,95" fill="#7E9F7B"/>
+  <rect x="87" y="92" width="10" height="10" rx="2.5" fill="#FAF6EE" transform="rotate(10 92 97)"/>
 </svg>

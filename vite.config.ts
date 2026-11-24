@@ -43,8 +43,6 @@ export default defineConfig(() => {
           'pwa-512x512.png',
           'maskable-icon.png',
           'logo-mark.png',
-          'icon-192.png',
-          'icon-512.png',
           'icon.svg',
         ],
         manifest: false, // Using public/manifest.json as requested

@@ -59,15 +59,7 @@ const AppStartupGuard: React.FC = () => {
 
     if (isFirstLaunchInSession) {
       const hash = window.location.hash;
-      // If the app was opened directly to players tab from an old shortcut or bookmark, or empty hash, redirect to Home
-      if (
-        !hash ||
-        hash === '#' ||
-        hash === '#/' ||
-        hash === '#/players' ||
-        hash === '#/players/' ||
-        hash.startsWith('#/players?')
-      ) {
+      if (!hash || hash === '#') {
         navigate('/', { replace: true });
       }
     }

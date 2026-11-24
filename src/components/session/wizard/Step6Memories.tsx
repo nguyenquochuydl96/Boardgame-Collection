@@ -7,6 +7,7 @@ import { BoardGame, Player, PlayerScore } from '../../../types';
 import { formatDate, formatDuration } from '../../../lib/utils';
 import { useResolvedMedia } from '../../../hooks/useResolvedMedia';
 import { getScoringTemplateForGame } from '../../../lib/scoringPresets';
+import { GameCoverImage } from '../../game/GameCoverImage';
 
 const SessionPhotoThumb: React.FC<{
   src: string;
@@ -30,14 +31,14 @@ const SessionPhotoThumb: React.FC<{
       ) : (
         <div className="w-full h-full flex flex-col items-center justify-center p-2 text-[10px] text-[var(--muted)] text-center">
           <Camera className="w-5 h-5 mb-0.5 opacity-60" />
-          <span className="truncate max-w-full">Ảnh</span>
+          <span className="truncate max-w-full">Photo</span>
         </div>
       )}
       <button
         type="button"
         aria-label="Remove photo"
         onClick={onRemove}
-        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/75 text-rose-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+        className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/75 text-rose-300 hover:text-white flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity cursor-pointer z-10"
       >
         <Trash2 className="w-3.5 h-3.5" />
       </button>
@@ -158,11 +159,10 @@ export const Step6Memories: React.FC<Step6MemoriesProps> = React.memo(
             </div>
 
             <div className="flex items-center gap-4">
-              <img
-                src={selectedGame.thumbnail || selectedGame.image}
-                alt={selectedGame.name}
-                referrerPolicy="no-referrer"
-                className="w-16 h-20 rounded-xl object-cover shrink-0 border border-[var(--line)]"
+              <GameCoverImage
+                game={selectedGame}
+                className="w-16 h-20 rounded-xl shrink-0 border border-[var(--line)]"
+                paddingClass="p-1"
               />
               <div className="space-y-1">
                 <h2 className="font-display font-extrabold text-xl text-[var(--ink)]">

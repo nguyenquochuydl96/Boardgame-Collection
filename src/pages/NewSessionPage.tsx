@@ -28,11 +28,13 @@ import {
   compressImage,
   getLocalDateString,
   buildLocalDateTimeISO,
+  resolveCoopWinnerIds,
 } from '../lib/utils';
 import { getScoringTemplateForGame } from '../lib/scoringPresets';
 import { pushVaultToCloud } from '../lib/supabaseSync';
 import { saveMediaImage } from '../lib/mediaStorage';
 import { PickerItem } from '../components/picker/MysteryCardShuffle';
+import { GameCoverImage } from '../components/game/GameCoverImage';
 
 import { SessionLiveTimer, formatTimer } from '../components/session/wizard/SessionLiveTimer';
 import { Step1PickGame } from '../components/session/wizard/Step1PickGame';
@@ -94,6 +96,7 @@ export const NewSessionPage: React.FC = () => {
   }, [defaultLocation, location]);
 
   const [durationMinutes, setDurationMinutes] = useState<string>('60');
+  const hasManualDurationRef = useRef<boolean>(false);
 
   // Auto-Timer & Session Draft state
   const [sessionStartTime, setSessionStartTime] = useState<number>(() => Date.now());
@@ -127,6 +130,7 @@ export const NewSessionPage: React.FC = () => {
   const [breakdownsByPlayerId, setBreakdownsByPlayerId] = useState<Record<string, Record<string, number>>>({});
   const [scoresByPlayerId, setScoresByPlayerId] = useState<Record<string, number | undefined>>({});
   const [manualWinnerIds, setManualWinnerIds] = useState<string[]>([]);
+  const [coopOutcome, setCoopOutcome] = useState<'won' | 'lost'>('won');
   const [hasTouchedMatrix, setHasTouchedMatrix] = useState(false);
 
   // Step 6: Memories
@@ -178,6 +182,10 @@ export const NewSessionPage: React.FC = () => {
             setScoresByPlayerId(parsed.scoresByPlayerId || {});
             setBreakdownsByPlayerId(parsed.breakdownsByPlayerId || {});
             setManualWinnerIds(parsed.manualWinnerIds || []);
+            if (parsed.coopOutcome === 'won' || parsed.coopOutcome === 'lost') {
+              setCoopOutcome(parsed.coopOutcome);
+            }
+            hasManualDurationRef.current = Boolean(parsed.hasManualDuration);
             setLowScoreWins(parsed.lowScoreWins ?? false);
             setScoringMode(parsed.scoringMode || 'quick');
             setPhotos(parsed.photos || []);
@@ -227,6 +235,10 @@ export const NewSessionPage: React.FC = () => {
     setScoresByPlayerId(existingDraft.scoresByPlayerId);
     setBreakdownsByPlayerId(existingDraft.breakdownsByPlayerId);
     setManualWinnerIds(existingDraft.manualWinnerIds);
+    if (existingDraft.coopOutcome === 'won' || existingDraft.coopOutcome === 'lost') {
+      setCoopOutcome(existingDraft.coopOutcome);
+    }
+    hasManualDurationRef.current = Boolean(existingDraft.hasManualDuration);
     setLowScoreWins(existingDraft.lowScoreWins);
     setScoringMode(existingDraft.scoringMode);
     setPhotos(existingDraft.photos);
@@ -278,6 +290,8 @@ export const NewSessionPage: React.FC = () => {
       scoresByPlayerId: overrides?.scoresByPlayerId ?? scoresByPlayerId,
       breakdownsByPlayerId: overrides?.breakdownsByPlayerId ?? breakdownsByPlayerId,
       manualWinnerIds: overrides?.manualWinnerIds ?? manualWinnerIds,
+      coopOutcome: overrides?.coopOutcome ?? coopOutcome,
+      hasManualDuration: overrides?.hasManualDuration ?? hasManualDurationRef.current,
       lowScoreWins: overrides?.lowScoreWins ?? lowScoreWins,
       scoringMode: overrides?.scoringMode ?? scoringMode,
       photos: overrides?.photos ?? photos,
@@ -300,9 +314,9 @@ export const NewSessionPage: React.FC = () => {
     }
   };
 
-  // Sync duration on step changes or when leaving Step 1
+  // Sync duration on step changes or when leaving Step 1 (unless user manually set duration)
   useEffect(() => {
-    if (currentStep >= 2) {
+    if (currentStep >= 2 && !hasManualDurationRef.current) {
       const activeMs = (pauseStartTime || Date.now()) - sessionStartTime - pausedDurationMs;
       const totalSecs = Math.max(0, Math.floor(activeMs / 1000));
       const mins = Math.max(1, Math.round(totalSecs / 60));
@@ -338,6 +352,7 @@ export const NewSessionPage: React.FC = () => {
 
   const handleResetTimer = () => {
     const now = Date.now();
+    hasManualDurationRef.current = false;
     setSessionStartTime(now);
     setPausedDurationMs(0);
     setPauseStartTime(undefined);
@@ -347,20 +362,35 @@ export const NewSessionPage: React.FC = () => {
       pausedDurationMs: 0,
       pauseStartTime: undefined,
       durationMinutes: '1',
+      hasManualDuration: false,
       elapsedSeconds: 0,
     });
   };
 
-  // Listen to visibilitychange (e.g. user locks screen or switches apps on iOS) and pagehide to save draft immediately
+  const handleManualDurationChange = (val: string) => {
+    hasManualDurationRef.current = true;
+    setDurationMinutes(val);
+  };
+
+  const handleSelectGameId = (id: string) => {
+    setSelectedGameId(id);
+    setCoopOutcome('won');
+    setManualWinnerIds([]);
+  };
+
+  const flushDraftRef = useRef(flushDraftNow);
+  flushDraftRef.current = flushDraftNow;
+
+  // Bind visibilitychange/pagehide/beforeunload ONCE so listeners never churn on keystrokes
   useEffect(() => {
     const handleVisibilityOrPageHide = () => {
       if (document.visibilityState === 'hidden') {
-        flushDraftNow();
+        flushDraftRef.current();
       }
     };
 
     const handlePageHide = () => {
-      flushDraftNow();
+      flushDraftRef.current();
     };
 
     document.addEventListener('visibilitychange', handleVisibilityOrPageHide);
@@ -372,7 +402,7 @@ export const NewSessionPage: React.FC = () => {
       window.removeEventListener('pagehide', handlePageHide);
       window.removeEventListener('beforeunload', handlePageHide);
     };
-  });
+  }, []);
 
   // Debounced auto-save draft effect to LocalStorage for typing/scoring changes
   useEffect(() => {
@@ -411,6 +441,7 @@ export const NewSessionPage: React.FC = () => {
     scoresByPlayerId,
     breakdownsByPlayerId,
     manualWinnerIds,
+    coopOutcome,
     lowScoreWins,
     scoringMode,
     photos,
@@ -506,12 +537,10 @@ export const NewSessionPage: React.FC = () => {
       activeSessionPlayers.some((p) => typeof scoresByPlayerId[p.id] === 'number');
 
     if (scoringTemplate.isCoop) {
-      // In cooperative games, all players share victory or defeat together; no individual competitive ranks
-      const isExplicitDefeat = manualWinnerIds.includes('__team_defeat__');
-      const isTeamWon = !isExplicitDefeat && (
-        manualWinnerIds.length > 0
-          ? activeSessionPlayers.some((p) => manualWinnerIds.includes(p.id))
-          : hasAnyNumericScore // Default to team win when scores are recorded unless marked defeat
+      // In cooperative games, all players share victory or defeat together via dedicated coopOutcome state
+      const coopWinnerIds = resolveCoopWinnerIds(
+        coopOutcome,
+        activeSessionPlayers.map((p) => p.id)
       );
 
       return activeSessionPlayers.map((p) => {
@@ -522,7 +551,7 @@ export const NewSessionPage: React.FC = () => {
           playerName: p.name,
           score: scoresByPlayerId[p.id],
           rank: undefined,
-          isWinner: isTeamWon,
+          isWinner: coopWinnerIds.includes(p.id),
           scoreBreakdown: hasBd ? bd : undefined,
         };
       });
@@ -596,6 +625,7 @@ export const NewSessionPage: React.FC = () => {
     scoresByPlayerId,
     lowScoreWins,
     manualWinnerIds,
+    coopOutcome,
     breakdownsByPlayerId,
     hasTouchedMatrix,
     scoringTemplate.isCoop,
@@ -643,7 +673,9 @@ export const NewSessionPage: React.FC = () => {
   };
 
   const handleScoreChange = (playerId: string, score: number | undefined) => {
-    setManualWinnerIds([]);
+    if (!scoringTemplate.isCoop) {
+      setManualWinnerIds([]);
+    }
     setScoresByPlayerId((prev) => ({
       ...prev,
       [playerId]: score,
@@ -652,14 +684,7 @@ export const NewSessionPage: React.FC = () => {
 
   const handleToggleManualWinner = (playerId: string) => {
     if (scoringTemplate.isCoop) {
-      const anyWon = activeSessionPlayers.some((p) =>
-        computedPlayerScores.find((x) => x.playerId === p.id)?.isWinner
-      );
-      if (anyWon) {
-        setManualWinnerIds(['__team_defeat__']);
-      } else {
-        setManualWinnerIds(activeSessionPlayers.map((p) => p.id));
-      }
+      setCoopOutcome((prev) => (prev === 'won' ? 'lost' : 'won'));
       return;
     }
 
@@ -719,6 +744,7 @@ export const NewSessionPage: React.FC = () => {
       durationMinutes: Math.max(5, Number(durationMinutes) || 60),
       players: computedPlayerScores,
       winnerId: winnerEntry?.playerId,
+      isCoop: scoringTemplate.isCoop || undefined,
       firstPlayerMethod,
       firstPlayerId: firstPlayerId || activeSessionPlayers[0]?.id,
       photos: photos.length > 0 ? photos : undefined,
@@ -819,7 +845,7 @@ export const NewSessionPage: React.FC = () => {
                 <Button variant="ghost" size="sm" onClick={handleDiscardDraft}>
                   Discard
                 </Button>
-                <Button variant="primary" size="sm" onClick={handleRestoreDraft} className="bg-amber-500 text-slate-950 font-bold shadow-md">
+                <Button variant="primary" size="sm" onClick={handleRestoreDraft} className="bg-amber-500 text-[#161311] font-bold shadow-md">
                   ▶️ Resume Session
                 </Button>
               </div>
@@ -829,12 +855,12 @@ export const NewSessionPage: React.FC = () => {
 
         {/* Quota Exceeded Warning Banner */}
         {quotaError && (
-          <div className="p-3 bg-rose-500/15 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center justify-between gap-3 shadow-md">
+          <div className="p-3 bg-[var(--bad-soft)] border border-[var(--bad)]/30 rounded-xl text-[var(--bad)] text-xs flex items-center justify-between gap-3 shadow-md">
             <span>⚠️ {quotaError}</span>
             <button
               type="button"
               onClick={() => setQuotaError(null)}
-              className="text-rose-400 hover:text-rose-200 text-sm font-bold px-1.5 py-0.5 rounded"
+              className="text-[var(--bad)] hover:opacity-80 text-sm font-bold px-1.5 py-0.5 rounded cursor-pointer"
             >
               ✕
             </button>
@@ -845,19 +871,12 @@ export const NewSessionPage: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 sm:p-3.5 rounded-2xl bg-[var(--card)] border border-[var(--line)] shadow-xs">
           <div className="flex items-center gap-2.5 min-w-0">
             {selectedGame ? (
-              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden border border-[var(--line)] shrink-0 bg-[var(--card-2)] flex items-center justify-center">
-                <img
-                  src={selectedGame.thumbnail || selectedGame.image}
-                  alt=""
-                  aria-hidden="true"
-                  className="absolute inset-0 w-full h-full object-cover blur-xs scale-110 opacity-35 pointer-events-none"
-                />
-                <img
-                  src={selectedGame.thumbnail || selectedGame.image}
-                  alt={selectedGame.name}
-                  className="relative z-0 w-full h-full object-contain p-0.5"
-                />
-              </div>
+              <GameCoverImage
+                game={selectedGame}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-[var(--line)] shrink-0"
+                paddingClass="p-0.5"
+                fallbackIconSize="text-base"
+              />
             ) : (
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--card-2)] flex items-center justify-center text-base sm:text-lg shrink-0">
                 🎲
@@ -928,7 +947,7 @@ export const NewSessionPage: React.FC = () => {
               <Step1PickGame
                 selectedGame={selectedGame}
                 selectedGameId={selectedGameId}
-                onSelectGameId={setSelectedGameId}
+                onSelectGameId={handleSelectGameId}
                 games={games}
               />
             )}
@@ -941,7 +960,7 @@ export const NewSessionPage: React.FC = () => {
                 location={location}
                 setLocation={setLocation}
                 durationMinutes={durationMinutes}
-                setDurationMinutes={setDurationMinutes}
+                setDurationMinutes={handleManualDurationChange}
                 sessionStartTime={sessionStartTime}
                 isTimerRunning={isTimerRunning}
                 pausedDurationMs={pausedDurationMs}
@@ -998,13 +1017,17 @@ export const NewSessionPage: React.FC = () => {
                 scoringMode={scoringMode}
                 setScoringMode={setScoringMode}
                 scoringTemplate={scoringTemplate}
+                coopOutcome={coopOutcome}
+                onSetCoopOutcome={setCoopOutcome}
                 activeSessionPlayers={activeSessionPlayers}
                 breakdownsByPlayerId={breakdownsByPlayerId}
                 onScoresUpdate={(totals, breakdowns) => {
                   setHasTouchedMatrix(true);
                   setScoresByPlayerId(totals);
                   setBreakdownsByPlayerId(breakdowns);
-                  setManualWinnerIds([]);
+                  if (!scoringTemplate.isCoop) {
+                    setManualWinnerIds([]);
+                  }
                 }}
                 computedPlayerScores={computedPlayerScores}
                 allAvailablePlayers={allAvailablePlayers}

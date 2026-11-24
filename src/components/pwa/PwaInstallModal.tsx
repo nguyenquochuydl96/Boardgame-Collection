@@ -8,7 +8,7 @@ import {
   PlusSquare,
   CheckCircle2,
   Sparkles,
-  Dices,
+  RefreshCw,
   Zap,
   Wifi,
 } from 'lucide-react';
@@ -80,14 +80,15 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 rounded-full text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+              aria-label="Close install dialog"
+              className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
 
             {/* Brand Header */}
             <div className="flex flex-col items-center text-center mb-4">
-              <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-xl mb-3 border border-[var(--line-2)] bg-[#41241C]">
+              <div className="w-14 h-14 rounded-full overflow-hidden shadow-xl mb-3 border border-[var(--line-2)] bg-[#341F1A]">
                 <img
                   src="./logo-mark.png"
                   alt="HEO Logo"
@@ -95,7 +96,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
                 />
               </div>
               <h3 className="text-lg font-display font-extrabold text-[var(--ink)] tracking-tight">
-                Install Heo&apos;s Board Game Collection
+                Install HEO — Board Game Collection
               </h3>
               <p className="text-xs text-[var(--muted)] mt-1 leading-relaxed">
                 Add to your mobile home screen for a seamless fullscreen, native-like tabletop companion app
@@ -185,23 +186,19 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
               <button
                 type="button"
                 onClick={async () => {
-                  try {
-                    if ('caches' in window) {
-                      const keys = await caches.keys();
-                      await Promise.all(keys.map((k) => caches.delete(k)));
-                    }
-                    if ('serviceWorker' in navigator) {
-                      const regs = await navigator.serviceWorker.getRegistrations();
-                      await Promise.all(regs.map((r) => r.unregister()));
-                    }
-                  } catch (e) {
-                    console.warn(e);
+                  const forceUpdate = (
+                    window as unknown as { forceAppUpdate?: () => Promise<void> }
+                  ).forceAppUpdate;
+                  if (typeof forceUpdate === 'function') {
+                    await forceUpdate();
+                  } else {
+                    window.location.reload();
                   }
-                  window.location.reload();
                 }}
-                className="w-full py-2 px-3 rounded-xl text-xs font-bold text-[var(--ink-2)] bg-[var(--card-2)] hover:bg-[var(--card-3)] hover:text-[var(--ink)] border border-[var(--line-2)] transition-colors cursor-pointer"
+                className="w-full min-h-10 py-2 px-3 rounded-xl text-xs font-bold text-[var(--ink-2)] bg-[var(--card-2)] hover:bg-[var(--card-3)] hover:text-[var(--ink)] border border-[var(--line-2)] transition-colors cursor-pointer flex items-center justify-center gap-1.5"
               >
-                🔄 Force Update &amp; Clear Cache
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Force Update &amp; Clear Cache</span>
               </button>
               <button
                 type="button"

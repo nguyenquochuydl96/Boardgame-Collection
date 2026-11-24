@@ -14,6 +14,7 @@ import {
   RefreshCw,
   PanelLeftClose,
   PanelLeftOpen,
+  MoreVertical,
 } from 'lucide-react';
 import { BottomNavBar, NAV_ITEMS } from './BottomNavBar';
 import { Button } from '../ui/Button';
@@ -50,6 +51,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showBGGModal, setShowBGGModal] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Desktop sidebar collapsible rail state (persisted)
@@ -238,6 +240,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     return () => window.removeEventListener('open-pwa-install', handleOpenInstall);
   }, []);
 
+  useEffect(() => {
+    setShowMobileMenu(false);
+  }, [location.pathname]);
+
   const isTabActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
@@ -396,51 +402,48 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               </Link>
 
               {/* Utility Tools Grid */}
-              <div className="grid grid-cols-3 gap-1 pt-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
+              <div className="grid grid-cols-3 gap-1.5 pt-1">
+                <button
+                  type="button"
                   className={cn(
-                    'justify-center text-xs transition-colors font-semibold px-1 rounded-lg',
+                    'flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl text-[11px] leading-tight transition-colors font-semibold cursor-pointer',
                     isSyncEnabled
                       ? syncStatus === 'error'
-                        ? 'text-rose-600 bg-rose-500/10'
+                        ? 'text-[var(--bad)] bg-[var(--bad-soft)]'
                         : 'text-[var(--good)] bg-[var(--good-soft)]'
-                      : 'opacity-70 hover:opacity-100'
+                      : 'text-[var(--sidebar-ink)] opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10'
                   )}
                   onClick={() => setShowSyncModal(true)}
                   title={isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}
                 >
                   {isSyncEnabled ? (
-                    <CloudCheck className="w-3.5 h-3.5 mr-1 text-[var(--good)] shrink-0" />
+                    <CloudCheck className="w-4 h-4 text-[var(--good)] shrink-0" />
                   ) : (
-                    <Cloud className="w-3.5 h-3.5 mr-1 shrink-0" />
+                    <Cloud className="w-4 h-4 shrink-0" />
                   )}
-                  <span className="truncate">{isSyncEnabled ? 'Synced' : 'Cloud'}</span>
-                </Button>
+                  <span>{isSyncEnabled ? 'Synced' : 'Cloud'}</span>
+                </button>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="justify-center text-xs opacity-70 hover:opacity-100 font-semibold px-1 rounded-lg"
+                <button
+                  type="button"
+                  className="flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl text-[11px] leading-tight text-[var(--sidebar-ink)] opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 font-semibold transition-colors cursor-pointer"
                   onClick={() => setShowBGGModal(true)}
                   title="BoardGameGeek API Settings"
                 >
-                  <Settings className="w-3.5 h-3.5 mr-1 text-[#ff7722] shrink-0" />
-                  <span className="truncate">BGG</span>
-                </Button>
+                  <Settings className="w-4 h-4 text-[var(--accent)] shrink-0" />
+                  <span>BGG</span>
+                </button>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
+                  type="button"
                   disabled={isUpdating}
-                  className="justify-center text-xs opacity-70 hover:opacity-100 font-semibold px-1 rounded-lg cursor-pointer"
+                  className="flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl text-[11px] leading-tight text-[var(--sidebar-ink)] opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 font-semibold transition-colors cursor-pointer disabled:opacity-40"
                   onClick={handleForceAppUpdate}
-                  title="Làm mới ứng dụng & Tải bản cập nhật mới nhất (Xóa cache PWA)"
+                  title="Refresh app & clear PWA cache"
                 >
-                  <RefreshCw className={cn('w-3.5 h-3.5 mr-1 shrink-0', isUpdating && 'animate-spin text-[var(--accent)]')} />
-                  <span className="truncate">{isUpdating ? '...' : 'Update'}</span>
-                </Button>
+                  <RefreshCw className={cn('w-4 h-4 shrink-0', isUpdating && 'animate-spin text-[var(--accent)]')} />
+                  <span>{isUpdating ? 'Sync...' : 'Update'}</span>
+                </button>
               </div>
 
               {!isInstalled && (
@@ -459,105 +462,176 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         </div>
       </aside>
 
-      {/* Mobile Top Header (1-line, safe-area-inset-top padding, clean layout) */}
-      <header className="lg:hidden sticky top-0 z-30 h-14 pt-[env(safe-area-inset-top)] px-3 sm:px-4 flex items-center justify-between gap-2 bg-[var(--bg)] border-b border-[var(--line)]">
-        <Link
-          to="/"
-          className="font-display font-bold text-sm tracking-tight text-[var(--ink)] whitespace-nowrap shrink-0 flex items-center gap-2"
-        >
-          <span className="w-8 h-8 rounded-xl overflow-hidden shrink-0 shadow-xs border border-[var(--line)] bg-[#41241C]">
-            <img
-              src="./logo-mark.png"
-              alt="HEO Logo"
-              className="w-full h-full object-cover"
-              loading="eager"
-            />
-          </span>
-          <div className="flex flex-col">
-            <span className="font-extrabold text-xs leading-none text-[var(--ink)]">HEO</span>
-            <span className="text-[9px] font-bold text-[var(--muted)] uppercase tracking-tight">Board Game Collection</span>
-          </div>
-        </Link>
-
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {/* Mobile Theme Toggle */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="p-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
-            title={`Switch to ${themeMode === 'light' ? 'Dark' : 'Light'} Mode`}
+      {/* Mobile Top Header (safe-area-inset-top separated from 3.5rem toolbar height) */}
+      <header className="lg:hidden sticky top-0 z-30 min-h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] px-3 sm:px-4 flex items-center bg-[var(--bg)] border-b border-[var(--line)]">
+        <div className="w-full min-h-14 flex items-center justify-between gap-2">
+          <Link
+            to="/"
+            className="font-display font-bold text-sm tracking-tight text-[var(--ink)] whitespace-nowrap shrink-0 flex items-center gap-2 min-h-10"
           >
-            {themeMode === 'light' ? (
-              <Moon className="w-4 h-4 text-[var(--ink)]" />
-            ) : (
-              <Sun className="w-4 h-4 text-amber-400" />
-            )}
-          </button>
+            <span className="w-8 h-8 rounded-full overflow-hidden shrink-0 shadow-xs border border-[var(--line)] bg-[#341F1A]">
+              <img
+                src="./logo-mark.png"
+                alt="HEO Logo"
+                className="w-full h-full object-cover"
+                loading="eager"
+              />
+            </span>
+            <div className="flex flex-col">
+              <span className="font-extrabold text-xs leading-none text-[var(--ink)]">HEO</span>
+              <span className="text-[9px] font-bold text-[var(--muted)] uppercase tracking-tight">Board Game Collection</span>
+            </div>
+          </Link>
 
-          {/* Mobile Cloud Sync Icon */}
-          <button
-            type="button"
-            onClick={() => setShowSyncModal(true)}
-            className={cn(
-              'p-1.5 rounded-xl transition-colors cursor-pointer relative',
-              isSyncEnabled
-                ? syncStatus === 'error'
-                  ? 'text-rose-500 bg-rose-500/10'
-                  : 'text-[var(--good)] bg-[var(--good-soft)]'
-                : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
-            )}
-            title={isSyncEnabled ? 'Cloud Synced' : 'Connect Cloud Sync'}
-          >
-            {isSyncEnabled ? (
-              <CloudCheck className="w-4 h-4 text-[var(--good)]" />
-            ) : (
-              <Cloud className="w-4 h-4" />
-            )}
-            {isSyncEnabled && syncStatus === 'syncing' && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[var(--accent)] animate-ping" />
-            )}
-          </button>
-
-          {/* Mobile Force Refresh */}
-          <button
-            type="button"
-            onClick={handleForceAppUpdate}
-            disabled={isUpdating}
-            className="p-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--accent)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
-            title="Làm mới ứng dụng & Tải bản cập nhật mới nhất (Xóa cache PWA)"
-          >
-            <RefreshCw className={cn('w-4 h-4', isUpdating && 'animate-spin text-[var(--accent)]')} />
-          </button>
-
-          {!isInstalled && (
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 relative">
+            {/* Mobile Theme Toggle */}
             <button
               type="button"
-              onClick={() => setShowInstallModal(true)}
-              className="hidden sm:inline-flex px-2.5 py-1.5 rounded-full bg-[var(--card-2)] hover:bg-[var(--card)] border border-[var(--line)] text-[var(--ink)] text-xs font-bold items-center gap-1 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
-              title="Install on your mobile home screen"
+              onClick={toggleTheme}
+              aria-label={`Switch to ${themeMode === 'light' ? 'Dark' : 'Light'} Mode`}
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+              title={`Switch to ${themeMode === 'light' ? 'Dark' : 'Light'} Mode`}
             >
-              <Smartphone className="w-3.5 h-3.5 text-[var(--accent)]" />
-              <span>Install</span>
+              {themeMode === 'light' ? (
+                <Moon className="w-4 h-4 text-[var(--ink)]" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-400" />
+              )}
             </button>
-          )}
 
-          <button
-            type="button"
-            onClick={() => setShowBGGModal(true)}
-            className="hidden sm:inline-flex p-1.5 sm:p-2 rounded-full text-[var(--muted)] hover:text-[#ff7722] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
-            title="BGG API Settings"
-          >
-            <Settings className="w-4 h-4" />
-          </button>
+            {/* Mobile Cloud Sync Icon */}
+            <button
+              type="button"
+              onClick={() => setShowSyncModal(true)}
+              aria-label={isSyncEnabled ? 'Cloud Sync Settings (Synced)' : 'Connect Cloud Sync'}
+              className={cn(
+                'w-10 h-10 rounded-xl flex items-center justify-center transition-colors cursor-pointer relative',
+                isSyncEnabled
+                  ? syncStatus === 'error'
+                    ? 'text-[var(--bad)] bg-[var(--bad-soft)]'
+                    : 'text-[var(--good)] bg-[var(--good-soft)]'
+                  : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
+              )}
+              title={isSyncEnabled ? 'Cloud Synced' : 'Connect Cloud Sync'}
+            >
+              {isSyncEnabled ? (
+                <CloudCheck className="w-4 h-4 text-[var(--good)]" />
+              ) : (
+                <Cloud className="w-4 h-4" />
+              )}
+              {isSyncEnabled && syncStatus === 'syncing' && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--accent)] animate-ping" />
+              )}
+            </button>
 
-          <Link
-            to="/sessions/new"
-            className="min-h-[32px] sm:min-h-[36px] px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[var(--accent)] text-xs font-bold text-[var(--accent-ink)] inline-flex items-center gap-1 shadow-xs whitespace-nowrap shrink-0 active:scale-95 transition-transform"
-          >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            <span className="hidden sm:inline">New Session</span>
-            <span className="sm:hidden">Play</span>
-          </Link>
+            {/* Tablet-only quick controls */}
+            <button
+              type="button"
+              onClick={handleForceAppUpdate}
+              disabled={isUpdating}
+              aria-label="Refresh app and clear PWA cache"
+              className="hidden sm:inline-flex w-10 h-10 rounded-xl items-center justify-center text-[var(--muted)] hover:text-[var(--accent)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+              title="Refresh app & clear PWA cache"
+            >
+              <RefreshCw className={cn('w-4 h-4', isUpdating && 'animate-spin text-[var(--accent)]')} />
+            </button>
+
+            {!isInstalled && (
+              <button
+                type="button"
+                onClick={() => setShowInstallModal(true)}
+                className="hidden sm:inline-flex min-h-10 px-3 py-1.5 rounded-full bg-[var(--card-2)] hover:bg-[var(--card)] border border-[var(--line)] text-[var(--ink)] text-xs font-bold items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+                title="Install on your mobile home screen"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-[var(--accent)]" />
+                <span>Install</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setShowBGGModal(true)}
+              aria-label="BGG API Settings"
+              className="hidden sm:inline-flex w-10 h-10 rounded-xl items-center justify-center text-[var(--muted)] hover:text-[var(--accent)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+              title="BGG API Settings"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+
+            {/* Mobile compact utility menu for BGG Settings, Refresh & Install App */}
+            <div className="relative sm:hidden">
+              <button
+                type="button"
+                onClick={() => setShowMobileMenu((prev) => !prev)}
+                aria-label="More options"
+                aria-expanded={showMobileMenu}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+                title="More options"
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+
+              {showMobileMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowMobileMenu(false)}
+                  />
+                  <div className="absolute right-0 top-11 z-50 w-52 rounded-2xl border border-[var(--line)] bg-[var(--card)] shadow-xl p-1.5 space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowMobileMenu(false);
+                        setShowBGGModal(true);
+                      }}
+                      className="w-full min-h-10 px-3 py-2 rounded-xl text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--card-2)] flex items-center gap-2.5 transition-colors cursor-pointer"
+                    >
+                      <Settings className="w-4 h-4 text-[var(--accent)] shrink-0" />
+                      <span>BGG API Settings</span>
+                    </button>
+
+                    {!isInstalled && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMobileMenu(false);
+                          setShowInstallModal(true);
+                        }}
+                        className="w-full min-h-10 px-3 py-2 rounded-xl text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--card-2)] flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <Smartphone className="w-4 h-4 text-[var(--accent)] shrink-0" />
+                        <span>Install App</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      disabled={isUpdating}
+                      onClick={() => {
+                        setShowMobileMenu(false);
+                        handleForceAppUpdate();
+                      }}
+                      className="w-full min-h-10 px-3 py-2 rounded-xl text-left text-xs font-semibold text-[var(--ink)] hover:bg-[var(--card-2)] flex items-center gap-2.5 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <RefreshCw className={cn('w-4 h-4 text-[var(--muted)] shrink-0', isUpdating && 'animate-spin text-[var(--accent)]')} />
+                      <span>{isUpdating ? 'Refreshing...' : 'Refresh & Clear Cache'}</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {!isNewSession && (
+              <Link
+                to="/sessions/new"
+                className="min-h-10 px-3.5 py-2 rounded-full bg-[var(--accent)] text-xs font-bold text-[var(--accent-ink)] inline-flex items-center gap-1.5 shadow-xs whitespace-nowrap shrink-0 active:scale-95 transition-transform"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span className="hidden sm:inline">New Session</span>
+                <span className="sm:hidden">Play</span>
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
@@ -572,7 +646,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         )}
       >
         {/* Desktop Top Header Bar (Breadcrumb / Status / Theme Switcher) */}
-        <div className="hidden lg:flex items-center justify-between px-8 h-16 border-b border-[var(--line)] bg-[var(--bg)]/90 backdrop-blur-sm sticky top-0 z-20">
+        <div className="hidden lg:flex items-center justify-between px-8 h-16 border-b border-[var(--line)] bg-[var(--bg)] sticky top-0 z-20">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
               Collection
@@ -630,8 +704,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
               type="button"
               onClick={handleForceAppUpdate}
               disabled={isUpdating}
-              className="p-1.5 rounded-full bg-[var(--card)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--accent)] transition-colors cursor-pointer"
-              title="Làm mới ứng dụng & Tải bản cập nhật mới nhất (Xóa cache PWA)"
+              aria-label="Refresh app and clear PWA cache"
+              className="p-2 rounded-full bg-[var(--card)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--accent)] transition-colors cursor-pointer"
+              title="Refresh app & clear PWA cache"
             >
               <RefreshCw className={cn('w-3.5 h-3.5', isUpdating && 'animate-spin text-[var(--accent)]')} />
             </button>

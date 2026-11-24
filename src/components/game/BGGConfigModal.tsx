@@ -153,7 +153,7 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
             className={`p-3.5 rounded-xl border flex items-start gap-2.5 ${
               testResult.success
                 ? 'bg-[var(--good-soft)] border-[var(--good)]/30 text-[var(--good)]'
-                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                : 'bg-[var(--bad-soft)] border-[var(--bad)]/30 text-[var(--bad)]'
             }`}
           >
             {testResult.success ? (
@@ -193,17 +193,17 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
         {/* App Version & PWA Cache Force Update */}
         <div className="pt-3 border-t border-[var(--line)] space-y-2">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-xs text-[var(--ink)]">Cập nhật PWA &amp; Làm mới Cache</span>
+            <span className="font-semibold text-xs text-[var(--ink)]">PWA Updates &amp; Cache Refresh</span>
             <span className="text-[11px] text-[var(--muted)] font-mono">v1.0 Production</span>
           </div>
           <p className="text-xs text-[var(--muted)] leading-relaxed">
-            Xóa bộ nhớ Cache Storage của Service Worker và tải lại phiên bản mới nhất từ máy chủ. Toàn bộ dữ liệu board game và kết quả ván đấu (LocalStorage &amp; IndexedDB) được bảo toàn 100%.
+            Clear the Service Worker Cache Storage and reload the latest version from the server. All board game data and play logs (LocalStorage &amp; IndexedDB) remain 100% preserved.
           </p>
           <div className="pt-1">
             <Button
               variant="secondary"
               size="sm"
-              className="w-full sm:w-auto text-xs font-semibold text-[var(--ink)] hover:text-cyan-500 cursor-pointer flex items-center justify-center gap-1.5"
+              className="w-full sm:w-auto text-xs font-semibold text-[var(--ink)] hover:text-[var(--accent)] cursor-pointer flex items-center justify-center gap-1.5"
               onClick={async () => {
                 if (typeof window !== 'undefined' && (window as any).forceAppUpdate) {
                   await (window as any).forceAppUpdate();
@@ -211,10 +211,10 @@ export const BGGConfigModal: React.FC<BGGConfigModalProps> = ({ isOpen, onClose,
                   window.location.reload();
                 }
               }}
-              title="Xóa cache service worker và tải bản mới nhất"
+              title="Clear service worker cache and load latest version"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-cyan-500" />
-              <span>Kiểm tra cập nhật / Làm mới Cache</span>
+              <RefreshCw className="w-3.5 h-3.5 text-[var(--accent)]" />
+              <span>Check for Updates / Refresh Cache</span>
             </Button>
           </div>
         </div>

@@ -50,7 +50,7 @@ export const BGGCardThumbnail: React.FC<BGGCardThumbnailProps> = ({
     <div
       className={cn(
         className,
-        'relative rounded-xl overflow-hidden shrink-0 bg-[var(--card)] border border-[var(--line)] shadow-sm flex items-center justify-center'
+        'relative rounded-xl overflow-hidden shrink-0 bg-[var(--card-2)] border border-[var(--line)] shadow-sm'
       )}
     >
       {!isLoaded && (
@@ -58,24 +58,20 @@ export const BGGCardThumbnail: React.FC<BGGCardThumbnailProps> = ({
           {initials}
         </div>
       )}
-      <img
-        src={src}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
-      />
-      <img
-        src={src}
-        alt={name}
-        referrerPolicy="no-referrer"
-        loading="lazy"
-        onLoad={() => setIsLoaded(true)}
-        onError={() => setHasError(true)}
-        className={cn(
-          'relative z-0 w-full h-full object-contain p-0.5 transition-opacity duration-200',
-          isLoaded ? 'opacity-100' : 'opacity-0'
-        )}
-      />
+      <div className="absolute inset-0 p-1 flex items-center justify-center">
+        <img
+          src={src}
+          alt={name}
+          referrerPolicy="no-referrer"
+          loading="lazy"
+          onLoad={() => setIsLoaded(true)}
+          onError={() => setHasError(true)}
+          className={cn(
+            'max-w-full max-h-full w-auto h-auto object-contain transition-opacity duration-200',
+            isLoaded ? 'opacity-100' : 'opacity-0'
+          )}
+        />
+      </div>
     </div>
   );
 };

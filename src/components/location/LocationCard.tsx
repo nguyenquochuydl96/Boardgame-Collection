@@ -59,18 +59,18 @@ const LocationCardComponent: React.FC<LocationCardProps> = ({
           <div className="flex items-start justify-between gap-3 mb-2">
             <div className="flex items-center gap-2 flex-wrap">
               {location.isDefault ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold shadow-sm">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-800 dark:text-amber-300 text-xs font-bold shadow-sm">
+                  <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                   Default Venue
                 </span>
               ) : (
                 <button
                   type="button"
                   onClick={() => onSetDefault(location.id)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--bg-surface)] hover:bg-amber-500/15 border border-[var(--border-subtle)] text-[11px] font-semibold text-[var(--text-secondary)] hover:text-amber-300 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[var(--bg-surface)] hover:bg-amber-500/15 border border-[var(--border-subtle)] text-[11px] font-semibold text-[var(--text-secondary)] hover:text-[var(--warn)] transition-colors cursor-pointer"
                   title="Set as default venue"
                 >
-                  <Star className="w-3 h-3 text-[var(--text-muted)] group-hover:text-amber-400" />
+                  <Star className="w-3 h-3 text-[var(--text-muted)] group-hover:text-amber-500" />
                   Set Default
                 </button>
               )}
@@ -81,19 +81,21 @@ const LocationCardComponent: React.FC<LocationCardProps> = ({
               <button
                 type="button"
                 onClick={() => onEdit(location)}
-                className="w-7 h-7 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--accent-glow)] text-[var(--text-secondary)] hover:text-[var(--accent-neon)] border border-[var(--border-subtle)] flex items-center justify-center transition-colors cursor-pointer"
+                className="w-10 h-10 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--accent-soft)] text-[var(--text-secondary)] hover:text-[var(--accent)] border border-[var(--border-subtle)] flex items-center justify-center transition-colors cursor-pointer"
                 title="Edit venue"
+                aria-label={`Edit ${location.name}`}
               >
-                <Edit3 className="w-3.5 h-3.5" />
+                <Edit3 className="w-4 h-4" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsConfirmingDelete(true)}
-                className="w-7 h-7 rounded-lg bg-[var(--bg-surface)] hover:bg-rose-500/20 text-[var(--text-secondary)] hover:text-rose-400 border border-[var(--border-subtle)] flex items-center justify-center transition-colors cursor-pointer"
+                className="w-10 h-10 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bad-soft)] text-[var(--text-secondary)] hover:text-[var(--bad)] border border-[var(--border-subtle)] flex items-center justify-center transition-colors cursor-pointer"
                 title="Delete venue"
+                aria-label={`Delete ${location.name}`}
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -178,11 +180,11 @@ const LocationCardComponent: React.FC<LocationCardProps> = ({
             <p className="text-xs font-bold text-[var(--text-primary)]">
               Confirm venue deletion:
             </p>
-            <p className="text-xs font-extrabold text-rose-400 truncate max-w-full px-2">
+            <p className="text-xs font-extrabold text-[var(--bad)] truncate max-w-full px-2">
               "{location.name}"?
             </p>
             {sessionCount > 0 && (
-              <p className="text-[11px] text-amber-300 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+              <p className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 p-2 rounded-lg border border-amber-500/25">
                 Note: {sessionCount} logged sessions will keep this venue name.
               </p>
             )}

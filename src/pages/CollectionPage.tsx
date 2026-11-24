@@ -262,27 +262,27 @@ export const CollectionPage: React.FC = () => {
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={cn(
-                  'p-1.5 rounded-full transition-all duration-150 cursor-pointer select-none active:scale-95',
+                  'w-10 h-10 flex items-center justify-center rounded-full transition-all duration-150 cursor-pointer select-none active:scale-95',
                   viewMode === 'grid'
                     ? 'bg-[#231F1D] text-white dark:bg-[#F4EFE6] dark:text-[#161311] shadow-xs'
                     : 'text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
                 aria-label="Grid view"
               >
-                <LayoutGrid className="w-3.5 h-3.5" />
+                <LayoutGrid className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
                 className={cn(
-                  'p-1.5 rounded-full transition-all duration-150 cursor-pointer select-none active:scale-95',
+                  'w-10 h-10 flex items-center justify-center rounded-full transition-all duration-150 cursor-pointer select-none active:scale-95',
                   viewMode === 'list'
                     ? 'bg-[#231F1D] text-white dark:bg-[#F4EFE6] dark:text-[#161311] shadow-xs'
                     : 'text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
                 aria-label="List view"
               >
-                <List className="w-3.5 h-3.5" />
+                <List className="w-4 h-4" />
               </button>
             </div>
           </div>

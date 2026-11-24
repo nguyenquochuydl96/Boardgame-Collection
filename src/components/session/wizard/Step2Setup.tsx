@@ -80,16 +80,24 @@ export const Step2Setup: React.FC<Step2SetupProps> = React.memo(
               className="w-full min-h-[44px] rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-4 py-2 font-mono font-bold text-xl text-[var(--text-primary)] tabular-nums focus:outline-none focus:border-[var(--accent-primary)]"
             />
             <div className="flex flex-wrap gap-2">
-              {[30, 45, 60, 90, 120].map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setDurationMinutes(String(preset))}
-                  className="px-3 py-1 rounded-lg bg-[var(--bg-surface)] hover:bg-[var(--accent-glow)] text-xs font-mono text-[var(--text-primary)] border border-[var(--border-subtle)] cursor-pointer"
-                >
-                  {preset}m
-                </button>
-              ))}
+              {[30, 45, 60, 90, 120].map((preset) => {
+                const isSelected = durationMinutes === String(preset);
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setDurationMinutes(String(preset))}
+                    className={cn(
+                      'min-h-9 px-3 py-1 rounded-lg text-xs font-mono border cursor-pointer transition-colors',
+                      isSelected
+                        ? 'bg-[var(--accent)] text-[var(--accent-ink)] border-[var(--accent)] font-bold'
+                        : 'bg-[var(--bg-surface)] hover:bg-[var(--accent-glow)] text-[var(--text-primary)] border-[var(--border-subtle)]'
+                    )}
+                  >
+                    {preset}m
+                  </button>
+                );
+              })}
             </div>
           </div>
 

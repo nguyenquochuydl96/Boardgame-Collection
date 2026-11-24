@@ -14,6 +14,7 @@ import {
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { PlayerAvatar } from './PlayerAvatar';
+import { GameCoverImage } from '../game/GameCoverImage';
 import { Player, PlaySession } from '../../types';
 import { StreakData, formatDate } from '../../lib/utils';
 import { cn } from '../ui/cn';
@@ -68,7 +69,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
                   {player.name}
                 </h3>
                 {player.nickname && (
-                  <span className="text-xs font-semibold text-amber-300">
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
                     "{player.nickname}"
                   </span>
                 )}
@@ -86,11 +87,11 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
               className={cn(
                 'inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-base font-display font-black border shadow-sm',
                 isWin
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
-                  : 'bg-rose-500/20 text-rose-300 border-rose-500/50'
+                  ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40'
+                  : 'bg-[var(--bad-soft)] text-[var(--bad)] border-[var(--bad)]/40'
               )}
             >
-              {isWin ? <Flame className="w-5 h-5 fill-current text-orange-400" /> : <CloudRain className="w-5 h-5 text-rose-400" />}
+              {isWin ? <Flame className="w-5 h-5 fill-current text-orange-500 dark:text-orange-400" /> : <CloudRain className="w-5 h-5 text-[var(--bad)]" />}
               <span>{count} Consecutive Games</span>
             </div>
 
@@ -129,7 +130,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
                       className={cn(
                         'absolute left-0 top-3.5 w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-mono font-bold z-10 transition-transform group-hover:scale-110 shadow-md',
                         isWin
-                          ? 'bg-amber-500 text-slate-950 border-amber-300'
+                          ? 'bg-amber-500 text-[#161311] border-amber-300'
                           : 'bg-rose-500 text-white border-rose-300'
                       )}
                     >
@@ -139,33 +140,20 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
                     {/* Session Card Detail */}
                     <div className="p-3.5 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-amber-400/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group-hover:bg-[var(--bg-elevated)]/60">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {session.gameThumbnail ? (
-                          <div className="relative w-12 h-14 rounded-xl overflow-hidden bg-[var(--card-2)] border border-[var(--line)] shrink-0 flex items-center justify-center">
-                            <img
-                              src={session.gameThumbnail}
-                              alt=""
-                              aria-hidden="true"
-                              className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
-                            />
-                            <img
-                              src={session.gameThumbnail}
-                              alt={session.gameName}
-                              className="relative z-0 w-full h-full object-contain p-0.5"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-12 h-14 rounded-xl bg-[var(--bg-elevated)] border border-white/10 flex items-center justify-center text-xl shrink-0">
-                            🎲
-                          </div>
-                        )}
+                        <GameCoverImage
+                          game={{ name: session.gameName, thumbnail: session.gameThumbnail }}
+                          className="w-12 h-14 rounded-xl border border-[var(--line)] shrink-0"
+                          paddingClass="p-0.5"
+                          fallbackIconSize="text-xl"
+                        />
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-display font-bold text-sm text-[var(--ink)] group-hover:text-amber-500 transition-colors truncate">
+                            <h4 className="font-display font-bold text-sm text-[var(--ink)] group-hover:text-[var(--accent)] transition-colors truncate">
                               {session.gameName}
                             </h4>
                             {isWinner && (
-                              <span className="px-1.5 py-0.2 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
+                              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/40 shrink-0">
                                 Winner 🏆
                               </span>
                             )}
@@ -188,7 +176,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
                               </span>
                             )}
                             {playerEntry?.rank !== undefined && (
-                              <span className="text-amber-300 font-mono font-bold">
+                              <span className="text-amber-700 dark:text-amber-300 font-mono font-bold">
                                 Rank #{playerEntry.rank}
                               </span>
                             )}
@@ -237,7 +225,7 @@ export const StreakDetailModal: React.FC<StreakDetailModalProps> = ({
           <Link
             to={`/sessions?playerId=${player.id}`}
             onClick={onClose}
-            className="text-xs font-bold text-amber-400 hover:underline inline-flex items-center gap-1"
+            className="text-xs font-bold text-[var(--accent)] hover:underline inline-flex items-center gap-1"
           >
             <span>View all match history for {player.name}</span>
             <ArrowRight className="w-3.5 h-3.5" />

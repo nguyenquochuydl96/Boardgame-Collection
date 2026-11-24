@@ -16,8 +16,10 @@ import {
   BGG_OFFICIAL_IRON_CLAYS,
   findPreviousLoser,
   findPreviousWinner,
+  STATUS_CONFIG,
+  resolveCoopWinnerIds,
 } from './utils';
-import { healIncomingGames } from './supabaseSync';
+import { healIncomingGames, isRealtimeSelfReflection } from './supabaseSync';
 import { BoardGame, PlaySession, Player, SessionDraft } from '../types';
 
 test('formatNumberInput and parseNumberInput handle commas in price fields', () => {
@@ -1302,4 +1304,74 @@ test('findPreviousWinner identifies previous winner among active players', () =>
   const result = findPreviousWinner(activePlayers, sessions, 'g1');
   assert.ok(result);
   assert.equal(result.player.id, 'p1');
+  assert.doesNotMatch(result.reason, /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i);
 });
+
+test('STATUS_CONFIG uses Warm Editorial CSS tokens with zero legacy emerald/teal classes', () => {
+  const entries = Object.entries(STATUS_CONFIG);
+  assert.ok(entries.length >= 7);
+  for (const [, cfg] of entries) {
+    assert.ok(cfg.label.length > 0);
+    assert.match(cfg.color, /var\(--/);
+    assert.match(cfg.bg, /var\(--/);
+    assert.match(cfg.dot, /var\(--/);
+    assert.doesNotMatch(`${cfg.color} ${cfg.bg} ${cfg.border} ${cfg.dot}`, /emerald-|teal-/);
+  }
+});
+
+test('resolveCoopWinnerIds handles team victory and team defeat cleanly', () => {
+  const ids = ['p1', 'p2', 'p3'];
+  const wonIds = resolveCoopWinnerIds('won', ids);
+  assert.deepEqual(wonIds, ['p1', 'p2', 'p3']);
+  assert.notEqual(wonIds, ids, 'should return a fresh copy');
+
+  const lostIds = resolveCoopWinnerIds('lost', ids);
+  assert.deepEqual(lostIds, []);
+});
+
+test('findPreviousLoser emits Technical English reason strings without Vietnamese diacritics', () => {
+  const activePlayers: Player[] = [
+    { id: 'p1', name: 'Alice', color: '#ff0000', createdAt: '2026-01-01' },
+    { id: 'p2', name: 'Bob', color: '#00ff00', createdAt: '2026-01-01' },
+  ];
+  const sessions: PlaySession[] = [
+    {
+      id: 's-en',
+      gameId: 'g-en',
+      gameName: 'Spirit Island',
+      gameThumbnail: '',
+      datePlayed: '2026-11-23T10:00:00Z',
+      createdAt: '2026-11-23T10:00:00Z',
+      firstPlayerMethod: 'manual',
+      players: [
+        { playerId: 'p1', playerName: 'Alice', isWinner: true },
+        { playerId: 'p2', playerName: 'Bob', isWinner: false },
+      ],
+    },
+  ];
+  const result = findPreviousLoser(activePlayers, sessions, 'g-en');
+  assert.ok(result);
+  assert.equal(result.player.id, 'p2');
+  assert.match(result.reason, /Previous session \(Spirit Island\)/);
+  assert.doesNotMatch(result.reason, /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i);
+});
+
+test('isRealtimeSelfReflection suppresses own push echoes while allowing genuine remote updates', () => {
+  const baseMs = Date.parse('2026-11-23T12:00:00.000Z');
+  const recordIso = new Date(baseMs + 800).toISOString();
+
+  // Matches recent in-flight/just-finished push timestamp (within 2.5s)
+  assert.equal(isRealtimeSelfReflection(recordIso, null, baseMs), true);
+
+  // Matches local lastSyncedAt timestamp (within 1.5s)
+  assert.equal(isRealtimeSelfReflection(recordIso, new Date(baseMs).toISOString(), 0), true);
+
+  // Genuine remote update 10 seconds later must NOT be suppressed
+  const remoteLaterIso = new Date(baseMs + 10_000).toISOString();
+  assert.equal(isRealtimeSelfReflection(remoteLaterIso, new Date(baseMs).toISOString(), baseMs), false);
+
+  // Missing or malformed timestamp returns false safely
+  assert.equal(isRealtimeSelfReflection(undefined, new Date(baseMs).toISOString(), baseMs), false);
+  assert.equal(isRealtimeSelfReflection('not-a-date', new Date(baseMs).toISOString(), baseMs), false);
+});
+

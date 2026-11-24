@@ -57,7 +57,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
         if (randomPlayer) {
           setFirstPlayerId(randomPlayer.id);
           setFirstPlayerMethod('previous_loser');
-          setRuleReason(`${randomPlayer.name} (chưa có ván trước, đã chọn ngẫu nhiên)`);
+          setRuleReason(`${randomPlayer.name} (no prior session found — picked randomly)`);
         }
       }
     };
@@ -73,7 +73,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
         if (randomPlayer) {
           setFirstPlayerId(randomPlayer.id);
           setFirstPlayerMethod('previous_winner');
-          setRuleReason(`${randomPlayer.name} (chưa có ván trước, đã chọn ngẫu nhiên)`);
+          setRuleReason(`${randomPlayer.name} (no prior session found — picked randomly)`);
         }
       }
     };
@@ -83,18 +83,18 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
       if (randomPlayer) {
         setFirstPlayerId(randomPlayer.id);
         setFirstPlayerMethod('random_wheel');
-        setRuleReason(`Đã bốc thăm ngẫu nhiên: ${randomPlayer.name}`);
+        setRuleReason(`Randomly picked: ${randomPlayer.name}`);
       }
     };
 
     return (
       <Card className="p-4 sm:p-6 md:p-8 space-y-6">
         {isRematchMode && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-transparent border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-purple-500/15 to-transparent border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[var(--ink)]">
             <div className="flex items-center gap-2.5">
               <span className="text-xl">🔄</span>
               <span>
-                <strong className="text-amber-300">Rematch:</strong> Kept <strong>{selectedGame?.name}</strong>, <strong>{activeSessionPlayers.length} players</strong> and venue <strong>{location}</strong>. Draw cards or choose manually to pick a first player!
+                <strong className="text-[var(--warn)]">Rematch:</strong> Kept <strong>{selectedGame?.name}</strong>, <strong>{activeSessionPlayers.length} players</strong> and venue <strong>{location}</strong>. Draw cards or choose manually to pick a first player!
               </span>
             </div>
             <span className="font-mono text-[var(--good)] font-bold shrink-0 flex items-center gap-1">
@@ -223,7 +223,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
                   <Zap className="w-4 h-4 text-amber-500 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs font-bold truncate">Previous Loser</p>
-                    <p className="text-[10px] text-[var(--muted)] truncate">Đứng chót bảng ván gần nhất</p>
+                    <p className="text-[10px] text-[var(--muted)] truncate">Last place in previous match</p>
                   </div>
                 </button>
 
@@ -240,7 +240,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
                   <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs font-bold truncate">Previous Winner</p>
-                    <p className="text-[10px] text-[var(--muted)] truncate">Quán quân ván gần nhất</p>
+                    <p className="text-[10px] text-[var(--muted)] truncate">Winner of previous match</p>
                   </div>
                 </button>
 
@@ -257,7 +257,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
                   <Dices className="w-4 h-4 text-amber-500 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs font-bold truncate">Random Pick</p>
-                    <p className="text-[10px] text-[var(--muted)] truncate">Bốc ngẫu nhiên 1 người</p>
+                    <p className="text-[10px] text-[var(--muted)] truncate">Pick one player at random</p>
                   </div>
                 </button>
               </div>
@@ -295,7 +295,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
                       />
                       <span>{p.name}</span>
                       {isChosen && (
-                        <span className="font-mono font-black text-[10px] px-1.5 py-0.5 rounded bg-amber-400 text-slate-950">
+                        <span className="font-mono font-black text-[10px] px-1.5 py-0.5 rounded bg-amber-400 text-[#161311]">
                           1ST
                         </span>
                       )}
@@ -311,7 +311,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
                 <Button
                   variant="primary"
                   onClick={onContinueToStep5}
-                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg px-6"
+                  className="bg-amber-500 hover:bg-amber-400 text-[#161311] font-extrabold shadow-lg px-6"
                 >
                   Enter Scores 👉
                 </Button>
@@ -337,7 +337,7 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
                   variant="primary"
                   size="md"
                   onClick={onContinueToStep5}
-                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold shadow-lg px-6"
+                  className="bg-amber-500 hover:bg-amber-400 text-[#161311] font-extrabold shadow-lg px-6"
                 >
                   Enter Scores 👉
                 </Button>

@@ -22,10 +22,12 @@ import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { PlayerFormModal } from '../components/player/PlayerFormModal';
 import { StreakDetailModal } from '../components/player/StreakDetailModal';
 import { SessionCard } from '../components/session/SessionCard';
+import { GameCoverImage } from '../components/game/GameCoverImage';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useGameStore } from '../store/useGameStore';
@@ -44,6 +46,7 @@ export const PlayerDetailPage: React.FC = () => {
   const games = useGameStore((s) => s.games);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [activeStreakType, setActiveStreakType] = useState<'win' | 'loss' | null>(null);
   const [breakdownSearch, setBreakdownSearch] = useState('');
   const [breakdownSort, setBreakdownSort] = useState<'plays' | 'winRate' | 'wins' | 'name'>('plays');
@@ -255,15 +258,13 @@ export const PlayerDetailPage: React.FC = () => {
       });
   }, [perGameStats, breakdownSearch, breakdownSort]);
 
-  const handleDelete = () => {
+  const handleConfirmDelete = () => {
     if (!player) return;
-    if (window.confirm(`Are you sure you want to delete player profile "${player.name}"?`)) {
-      const playerId = player.id;
-      navigate('/players', { replace: true });
-      setTimeout(() => {
-        deletePlayer(playerId);
-      }, 50);
-    }
+    const playerId = player.id;
+    navigate('/players', { replace: true });
+    setTimeout(() => {
+      deletePlayer(playerId);
+    }, 50);
   };
 
   const playStyleInfo = getPlayStyleInfo(player?.playStyle);
@@ -314,7 +315,7 @@ export const PlayerDetailPage: React.FC = () => {
               Edit Profile
             </Button>
 
-            <Button variant="danger" size="sm" onClick={handleDelete} title="Delete this player">
+            <Button variant="danger" size="sm" onClick={() => setIsDeleteConfirmOpen(true)} title="Delete this player">
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
@@ -335,7 +336,7 @@ export const PlayerDetailPage: React.FC = () => {
               <PlayerAvatar player={player} size="xl" className="shadow-2xl border-4" />
               <div
                 style={{ backgroundColor: player.color }}
-                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[var(--bg-card)] flex items-center justify-center text-[10px] text-slate-950 font-bold"
+                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[var(--bg-card)] flex items-center justify-center text-[10px] text-[#161311] font-bold"
               >
                 ★
               </div>
@@ -477,25 +478,12 @@ export const PlayerDetailPage: React.FC = () => {
 
               {favoriteGame ? (
                 <div className="flex items-center gap-3">
-                  {favoriteGame.thumbnail ? (
-                    <div className="relative w-14 h-16 rounded-xl overflow-hidden bg-[var(--card-2)] border border-amber-400/30 shrink-0 flex items-center justify-center">
-                      <img
-                        src={favoriteGame.thumbnail}
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
-                      />
-                      <img
-                        src={favoriteGame.thumbnail}
-                        alt={favoriteGame.gameName}
-                        className="relative z-0 w-full h-full object-contain p-0.5"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-14 h-16 rounded-xl bg-amber-500/20 flex items-center justify-center text-2xl shrink-0">
-                      🎲
-                    </div>
-                  )}
+                  <GameCoverImage
+                    game={{ name: favoriteGame.gameName, thumbnail: favoriteGame.thumbnail }}
+                    className="w-14 h-16 rounded-xl border border-amber-400/30 shrink-0"
+                    paddingClass="p-1"
+                    fallbackIconSize="text-2xl"
+                  />
                   <div className="min-w-0 flex-1">
                     <Link
                       to={`/collection/${favoriteGame.gameId}`}
@@ -545,25 +533,12 @@ export const PlayerDetailPage: React.FC = () => {
 
               {signatureGame ? (
                 <div className="flex items-center gap-3">
-                  {signatureGame.thumbnail ? (
-                    <div className="relative w-14 h-16 rounded-xl overflow-hidden bg-[var(--card-2)] border border-[var(--good)]/30 shrink-0 flex items-center justify-center">
-                      <img
-                        src={signatureGame.thumbnail}
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
-                      />
-                      <img
-                        src={signatureGame.thumbnail}
-                        alt={signatureGame.gameName}
-                        className="relative z-0 w-full h-full object-contain p-0.5"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-14 h-16 rounded-xl bg-[var(--good-soft)] text-[var(--good)] flex items-center justify-center text-2xl shrink-0">
-                      🏆
-                    </div>
-                  )}
+                  <GameCoverImage
+                    game={{ name: signatureGame.gameName, thumbnail: signatureGame.thumbnail }}
+                    className="w-14 h-16 rounded-xl border border-[var(--good)]/30 shrink-0"
+                    paddingClass="p-1"
+                    fallbackIconSize="text-2xl"
+                  />
                   <div className="min-w-0 flex-1">
                     <Link
                       to={`/collection/${signatureGame.gameId}`}
@@ -618,25 +593,12 @@ export const PlayerDetailPage: React.FC = () => {
 
               {nemesisGame ? (
                 <div className="flex items-center gap-3">
-                  {nemesisGame.thumbnail ? (
-                    <div className="relative w-14 h-16 rounded-xl overflow-hidden bg-[var(--card-2)] border border-rose-400/30 shrink-0 flex items-center justify-center">
-                      <img
-                        src={nemesisGame.thumbnail}
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
-                      />
-                      <img
-                        src={nemesisGame.thumbnail}
-                        alt={nemesisGame.gameName}
-                        className="relative z-0 w-full h-full object-contain p-0.5"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-14 h-16 rounded-xl bg-rose-500/20 flex items-center justify-center text-2xl shrink-0">
-                      💀
-                    </div>
-                  )}
+                  <GameCoverImage
+                    game={{ name: nemesisGame.gameName, thumbnail: nemesisGame.thumbnail }}
+                    className="w-14 h-16 rounded-xl border border-rose-400/30 shrink-0"
+                    paddingClass="p-1"
+                    fallbackIconSize="text-2xl"
+                  />
                   <div className="min-w-0 flex-1">
                     <Link
                       to={`/collection/${nemesisGame.gameId}`}
@@ -720,25 +682,12 @@ export const PlayerDetailPage: React.FC = () => {
                     to={`/collection/${item.gameId}`}
                     className="flex items-center gap-3 min-w-0 flex-1"
                   >
-                    {item.thumbnail ? (
-                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-[var(--card-2)] border border-[var(--line)] shrink-0 flex items-center justify-center">
-                        <img
-                          src={item.thumbnail}
-                          alt=""
-                          aria-hidden="true"
-                          className="absolute inset-0 w-full h-full object-cover blur-xs scale-110 opacity-35 pointer-events-none"
-                        />
-                        <img
-                          src={item.thumbnail}
-                          alt={item.gameName}
-                          className="relative z-0 w-full h-full object-contain p-0.5"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-[var(--card-3)] flex items-center justify-center text-lg shrink-0">
-                        🎲
-                      </div>
-                    )}
+                    <GameCoverImage
+                      game={{ name: item.gameName, thumbnail: item.thumbnail }}
+                      className="w-10 h-10 rounded-lg border border-[var(--line)] shrink-0"
+                      paddingClass="p-0.5"
+                      fallbackIconSize="text-lg"
+                    />
 
                     <div className="min-w-0">
                       <h4 className="font-display font-bold text-sm text-[var(--ink)] group-hover:text-amber-600 dark:group-hover:text-amber-300 transition-colors truncate">
@@ -798,7 +747,7 @@ export const PlayerDetailPage: React.FC = () => {
             </h2>
             <Link
               to={`/sessions?playerId=${player.id}`}
-              className="text-xs font-bold text-amber-400 hover:underline flex items-center gap-1"
+              className="text-xs font-bold text-[var(--accent)] hover:underline flex items-center gap-1"
             >
               View all {playerSessions.length} sessions <ArrowRight className="w-3.5 h-3.5" />
             </Link>
@@ -839,6 +788,17 @@ export const PlayerDetailPage: React.FC = () => {
               ? streaks.longestLossStreak
               : streaks.longestWinStreak
           }
+        />
+
+        <ConfirmModal
+          isOpen={isDeleteConfirmOpen}
+          onClose={() => setIsDeleteConfirmOpen(false)}
+          onConfirm={handleConfirmDelete}
+          title={`Delete "${player.name}"?`}
+          message={`Remove "${player.name}" from your players roster? Existing play sessions will retain their historical name.`}
+          confirmLabel="Delete Player"
+          cancelLabel="Cancel"
+          variant="danger"
         />
       </div>
     </PageTransition>

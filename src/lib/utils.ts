@@ -1,5 +1,6 @@
 import { BoardGame, GameStatus, PlaySession, Player, SessionDraft } from '../types';
 import { EXPANDED_BGG_CATALOG } from './bggCatalogData';
+import { getScoringTemplateForGame } from './scoringPresets';
 
 const catalogByBggId = new Map<string, string>();
 const catalogByName = new Map<string, string>();
@@ -240,60 +241,136 @@ export function formatDuration(minutes?: number): string {
   return `${hrs}h ${mins}m`;
 }
 
+/**
+ * Single source of truth for cumulative play duration across Home and Analytics.
+ * Only sums sessions with positive recorded durationMinutes (never fabricates default 60m).
+ */
+export function getTotalPlayDurationMinutes(sessions: readonly PlaySession[]): number {
+  if (!sessions || sessions.length === 0) return 0;
+  let total = 0;
+  for (let i = 0; i < sessions.length; i++) {
+    const mins = sessions[i]?.durationMinutes;
+    if (typeof mins === 'number' && mins > 0 && Number.isFinite(mins)) {
+      total += mins;
+    }
+  }
+  return total;
+}
+
+export function getTotalPlayHours(sessions: readonly PlaySession[]): number {
+  return Math.round(getTotalPlayDurationMinutes(sessions) / 60);
+}
+
+/**
+ * Formats singular/plural count cleanly (e.g. pluralize(1, 'play') => '1 play', pluralize(3, 'play') => '3 plays')
+ */
+export function pluralize(count: number, singular: string, plural?: string): string {
+  const safeCount = Number.isFinite(count) ? count : 0;
+  const word = Math.abs(safeCount) === 1 ? singular : (plural ?? `${singular}s`);
+  return `${safeCount} ${word}`;
+}
+
+/**
+ * Formats a board game player range cleanly without grammar errors (never "1–1 players" or "1 players").
+ */
+export function formatPlayerRange(
+  min?: number | null,
+  max?: number | null,
+  style: 'short' | 'full' = 'full'
+): string {
+  const hasMin = typeof min === 'number' && min > 0;
+  const hasMax = typeof max === 'number' && max > 0;
+  if (!hasMin && !hasMax) return style === 'short' ? '—' : 'Any players';
+
+  const lo = hasMin ? min! : max!;
+  const hi = hasMax ? max! : min!;
+
+  if (lo === hi) {
+    return style === 'short' ? `${lo}p` : pluralize(lo, 'player');
+  }
+  const low = Math.min(lo, hi);
+  const high = Math.max(lo, hi);
+  return style === 'short' ? `${low}–${high}p` : `${low}–${high} players`;
+}
+
+/**
+ * Unbiased Fisher-Yates shuffle returning a new array without mutating input.
+ */
+export function shuffleArray<T>(items: readonly T[]): T[] {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = copy[i];
+    copy[i] = copy[j];
+    copy[j] = tmp;
+  }
+  return copy;
+}
+
 export const STATUS_CONFIG: Record<
   GameStatus,
   { label: string; color: string; bg: string; border: string; dot: string }
 > = {
   own: {
     label: 'Owned',
-    color: '#10b981',
-    bg: 'rgba(16, 185, 129, 0.14)',
-    border: 'rgba(16, 185, 129, 0.35)',
-    dot: '#10b981',
+    color: 'var(--good)',
+    bg: 'var(--good-soft)',
+    border: 'color-mix(in srgb, var(--good) 32%, transparent)',
+    dot: 'var(--good)',
   },
   rented: {
     label: 'Rented',
-    color: '#eab308',
-    bg: 'rgba(234, 179, 8, 0.14)',
-    border: 'rgba(234, 179, 8, 0.35)',
-    dot: '#eab308',
+    color: 'var(--warn)',
+    bg: 'var(--warn-soft)',
+    border: 'color-mix(in srgb, var(--warn) 32%, transparent)',
+    dot: 'var(--warn)',
   },
   lent_out: {
     label: 'Lent Out',
-    color: '#f97316',
-    bg: 'rgba(249, 115, 22, 0.14)',
-    border: 'rgba(249, 115, 22, 0.35)',
-    dot: '#f97316',
+    color: 'var(--accent)',
+    bg: 'var(--accent-soft)',
+    border: 'color-mix(in srgb, var(--accent) 34%, transparent)',
+    dot: 'var(--accent)',
   },
   borrowed: {
     label: 'Borrowed',
-    color: '#22d3ee',
-    bg: 'rgba(34, 211, 238, 0.14)',
-    border: 'rgba(34, 211, 238, 0.35)',
-    dot: '#22d3ee',
+    color: 'var(--info)',
+    bg: 'var(--info-soft)',
+    border: 'color-mix(in srgb, var(--info) 32%, transparent)',
+    dot: 'var(--info)',
   },
   sold: {
     label: 'Sold',
-    color: '#ec4899',
-    bg: 'rgba(236, 72, 153, 0.14)',
-    border: 'rgba(236, 72, 153, 0.35)',
-    dot: '#ec4899',
+    color: 'var(--bad)',
+    bg: 'var(--bad-soft)',
+    border: 'color-mix(in srgb, var(--bad) 32%, transparent)',
+    dot: 'var(--bad)',
   },
   wishlist: {
     label: 'Wishlist',
-    color: '#a78bfa',
-    bg: 'rgba(167, 139, 250, 0.14)',
-    border: 'rgba(167, 139, 250, 0.35)',
-    dot: '#a78bfa',
+    color: 'var(--accent-text)',
+    bg: 'var(--accent-soft)',
+    border: 'color-mix(in srgb, var(--accent) 28%, transparent)',
+    dot: 'var(--accent)',
   },
   previously_owned: {
     label: 'Prev. Owned',
-    color: '#94a3b8',
-    bg: 'rgba(148, 163, 184, 0.14)',
-    border: 'rgba(148, 163, 184, 0.3)',
-    dot: '#94a3b8',
+    color: 'var(--muted)',
+    bg: 'var(--card-2)',
+    border: 'var(--line-2)',
+    dot: 'var(--muted)',
   },
 };
+
+/**
+ * Pure helper to determine winner IDs for a co-op session based on explicit outcome.
+ */
+export function resolveCoopWinnerIds(
+  outcome: 'won' | 'lost',
+  playerIds: string[]
+): string[] {
+  return outcome === 'won' ? [...playerIds] : [];
+}
 
 export const FIRST_PLAYER_METHOD_LABELS: Record<string, string> = {
   random_wheel: 'Random Draw',
@@ -323,20 +400,29 @@ export function findPreviousLoser(
 
   const activeIds = new Set(activePlayers.map((p) => p.id));
 
-  const sortedSessions = [...sessions].sort((a, b) => {
-    const da = new Date(a.datePlayed || a.createdAt).getTime();
-    const db = new Date(b.datePlayed || b.createdAt).getTime();
-    return db - da;
-  });
+  const isCoopSession = (s: PlaySession): boolean => {
+    if (s.isCoop === true) return true;
+    if (s.isCoop === false) return false;
+    return getScoringTemplateForGame(s.gameName)?.isCoop === true;
+  };
 
-  // Prefer recent session of the same game with active players
-  let targetSession = sortedSessions.find(
+  // Skip co-op sessions where players win or lose together as a team
+  const competitiveSessions = [...sessions]
+    .filter((s) => !isCoopSession(s))
+    .sort((a, b) => {
+      const da = new Date(a.datePlayed || a.createdAt).getTime();
+      const db = new Date(b.datePlayed || b.createdAt).getTime();
+      return db - da;
+    });
+
+  // Prefer recent competitive session of the same game with active players
+  let targetSession = competitiveSessions.find(
     (s) => s.gameId === currentGameId && s.players.some((p) => activeIds.has(p.playerId))
   );
 
-  // Fallback to most recent session of any game with active players
+  // Fallback to most recent competitive session of any game with active players
   if (!targetSession) {
-    targetSession = sortedSessions.find((s) => s.players.some((p) => activeIds.has(p.playerId)));
+    targetSession = competitiveSessions.find((s) => s.players.some((p) => activeIds.has(p.playerId)));
   }
 
   if (!targetSession) return null;
@@ -344,21 +430,24 @@ export function findPreviousLoser(
   const participatingActive = targetSession.players.filter((p) => activeIds.has(p.playerId));
   if (participatingActive.length === 0) return null;
 
-  // Detect if this session used lowestScoreWins
-  let isLowScoreWins = false;
-  const winners = targetSession.players.filter((p) => p.isWinner);
-  const nonWinners = targetSession.players.filter((p) => !p.isWinner && typeof p.score === 'number');
-  if (winners.length > 0 && typeof winners[0].score === 'number' && nonWinners.length > 0) {
-    const winnerScore = winners[0].score as number;
-    const avgLoserScore = nonWinners.reduce((sum, p) => sum + (p.score as number), 0) / nonWinners.length;
-    if (winnerScore < avgLoserScore) {
-      isLowScoreWins = true;
+  // Detect if this session used lowestScoreWins: prefer preset template flag, fallback to winner/loser heuristic
+  const templateLowestWins = getScoringTemplateForGame(targetSession.gameName)?.lowestScoreWins;
+  let isLowScoreWins = templateLowestWins === true;
+  if (templateLowestWins === undefined) {
+    const winners = targetSession.players.filter((p) => p.isWinner);
+    const nonWinners = targetSession.players.filter((p) => !p.isWinner && typeof p.score === 'number');
+    if (winners.length > 0 && typeof winners[0].score === 'number' && nonWinners.length > 0) {
+      const winnerScore = winners[0].score as number;
+      const avgLoserScore = nonWinners.reduce((sum, p) => sum + (p.score as number), 0) / nonWinners.length;
+      if (winnerScore < avgLoserScore) {
+        isLowScoreWins = true;
+      }
     }
   }
 
   let candidates: typeof participatingActive = [];
 
-  // 1. If ranks exist for all participating active players, maximum rank = last place (chót bảng)
+  // 1. If ranks exist for all participating active players, maximum rank = last place
   const withRank = participatingActive.filter((p) => typeof p.rank === 'number');
   if (withRank.length === participatingActive.length && withRank.length > 0) {
     const maxRank = Math.max(...withRank.map((p) => p.rank as number));
@@ -390,13 +479,13 @@ export function findPreviousLoser(
   const matchedPlayer = activePlayers.find((p) => p.id === chosenScore.playerId);
   if (!matchedPlayer) return null;
 
-  let reason = `Ván trước (${targetSession.gameName})`;
+  let reason = `Previous session (${targetSession.gameName})`;
   if (typeof chosenScore.score === 'number') {
-    reason += `: ${chosenScore.score} điểm (chót bảng)`;
+    reason += `: ${chosenScore.score} pts (last place)`;
   } else if (typeof chosenScore.rank === 'number') {
-    reason += `: hạng #${chosenScore.rank}`;
+    reason += `: rank #${chosenScore.rank}`;
   } else {
-    reason += `: không chiến thắng`;
+    reason += `: did not win`;
   }
 
   return {
@@ -442,11 +531,11 @@ export function findPreviousWinner(
   const matchedPlayer = activePlayers.find((p) => p.id === chosenScore.playerId);
   if (!matchedPlayer) return null;
 
-  let reason = `Ván trước (${targetSession.gameName})`;
+  let reason = `Previous session (${targetSession.gameName})`;
   if (typeof chosenScore.score === 'number') {
-    reason += `: ${chosenScore.score} điểm (thắng cuộc)`;
+    reason += `: ${chosenScore.score} pts (winner)`;
   } else {
-    reason += `: quán quân`;
+    reason += `: winner`;
   }
 
   return {

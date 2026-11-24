@@ -22,6 +22,7 @@ import { DraftSessionCard } from '../components/session/DraftSessionCard';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
+import { GameCoverImage } from '../components/game/GameCoverImage';
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useGameStore } from '../store/useGameStore';
@@ -412,7 +413,7 @@ export const SessionsPage: React.FC = () => {
                 <Users className="w-3.5 h-3.5" />
                 <span>Players</span>
                 {selectedPlayerIds.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-slate-950 font-mono font-bold">
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-[#161311] font-mono font-bold">
                     {selectedPlayerIds.length}
                   </span>
                 )}
@@ -456,7 +457,7 @@ export const SessionsPage: React.FC = () => {
                 <Calendar className="w-3.5 h-3.5" />
                 <span>Date &amp; Time</span>
                 {selectedYears.length + selectedMonths.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-sky-500 text-slate-950 font-mono font-bold">
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-sky-500 text-[#161311] font-mono font-bold">
                     {selectedYears.length + selectedMonths.length}
                   </span>
                 )}
@@ -544,7 +545,7 @@ export const SessionsPage: React.FC = () => {
                           className={cn(
                             'px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer',
                             playerMatchMode === 'or'
-                              ? 'bg-amber-500 text-slate-950 shadow-sm'
+                              ? 'bg-amber-500 text-[#161311] shadow-sm'
                               : 'text-[var(--muted)] hover:text-[var(--ink)]'
                           )}
                           title="Sessions with any of the selected players"
@@ -557,7 +558,7 @@ export const SessionsPage: React.FC = () => {
                           className={cn(
                             'px-2.5 py-1 rounded-md text-[11px] font-bold transition-colors cursor-pointer',
                             playerMatchMode === 'and'
-                              ? 'bg-amber-500 text-slate-950 shadow-sm'
+                              ? 'bg-amber-500 text-[#161311] shadow-sm'
                               : 'text-[var(--muted)] hover:text-[var(--ink)]'
                           )}
                           title="Sessions where all selected players played together"
@@ -618,7 +619,7 @@ export const SessionsPage: React.FC = () => {
                             className={cn(
                               'w-4 h-4 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold',
                               isSelected
-                                ? 'bg-amber-500 text-slate-950'
+                                ? 'bg-amber-500 text-[#161311]'
                                 : 'border border-[var(--line)]'
                             )}
                           >
@@ -689,25 +690,12 @@ export const SessionsPage: React.FC = () => {
                           )}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            {g.thumbnail ? (
-                              <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-[var(--card-2)] shrink-0 border border-[var(--line)] flex items-center justify-center">
-                                <img
-                                  src={g.thumbnail}
-                                  alt=""
-                                  aria-hidden="true"
-                                  className="absolute inset-0 w-full h-full object-cover blur-xs scale-110 opacity-35 pointer-events-none"
-                                />
-                                <img
-                                  src={g.thumbnail}
-                                  alt={g.name}
-                                  className="relative z-0 w-full h-full object-contain p-0.5"
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-8 h-8 rounded-lg bg-[var(--card-3)] flex items-center justify-center text-sm shrink-0">
-                                🎲
-                              </div>
-                            )}
+                            <GameCoverImage
+                              game={{ name: g.name, thumbnail: g.thumbnail }}
+                              className="w-8 h-8 rounded-lg shrink-0 border border-[var(--line)]"
+                              paddingClass="p-0.5"
+                              fallbackIconSize="text-sm"
+                            />
                             <div className="min-w-0">
                               <h4 className="text-xs font-bold truncate text-[var(--ink)]">{g.name}</h4>
                               <p className="text-[10px] text-[var(--muted)] tabular-nums">
@@ -769,7 +757,7 @@ export const SessionsPage: React.FC = () => {
                             className={cn(
                               'px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer border select-none',
                               isSelected
-                                ? 'bg-sky-500 text-slate-950 border-sky-400 shadow-sm'
+                                ? 'bg-sky-500 text-[#161311] border-sky-400 shadow-sm'
                                 : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                             )}
                           >
@@ -815,7 +803,7 @@ export const SessionsPage: React.FC = () => {
                             className={cn(
                               'py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer border select-none text-center',
                               isSelected
-                                ? 'bg-sky-500 text-slate-950 border-sky-400 font-bold shadow-sm'
+                                ? 'bg-sky-500 text-[#161311] border-sky-400 font-bold shadow-sm'
                                 : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                             )}
                           >
@@ -973,7 +961,7 @@ export const SessionsPage: React.FC = () => {
           <div className="space-y-8">
             {groupedByMonth.map((group) => (
               <section key={group.monthLabel} className="space-y-3">
-                <div className="sticky top-14 lg:top-0 z-20 py-2 px-3.5 rounded-xl bg-[var(--card)] border border-[var(--line)] inline-flex items-center gap-2 shadow-sm">
+                <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] lg:top-0 z-20 py-2 px-3.5 rounded-xl bg-[var(--card)] border border-[var(--line)] inline-flex items-center gap-2 shadow-sm">
                   <Calendar className="w-4 h-4 text-[var(--accent)]" />
                   <h2 className="font-display font-bold text-sm text-[var(--ink)]">
                     {group.monthLabel}

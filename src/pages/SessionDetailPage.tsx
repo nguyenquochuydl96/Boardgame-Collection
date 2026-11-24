@@ -22,8 +22,10 @@ import { PageTransition } from '../components/layout/PageTransition';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Input } from '../components/ui/Input';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
+import { GameCoverImage } from '../components/game/GameCoverImage';
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useResolvedMedia } from '../hooks/useResolvedMedia';
@@ -54,7 +56,7 @@ const SessionGalleryPhoto: React.FC<{
       ) : (
         <div className="w-full h-full flex flex-col items-center justify-center p-3 text-xs text-[var(--muted)]">
           <ImageOff className="w-5 h-5 mb-1 opacity-50" />
-          <span>Ảnh không khả dụng</span>
+          <span>Photo unavailable</span>
         </div>
       )}
       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -72,7 +74,7 @@ const FullscreenPhotoModalContent: React.FC<{ photo: string }> = ({ photo }) => 
     return (
       <div className="h-64 flex flex-col items-center justify-center text-sm text-[var(--text-secondary)]">
         <ImageOff className="w-8 h-8 mb-2 opacity-50" />
-        <span>Ảnh không khả dụng hoặc đã bị xóa khỏi thiết bị</span>
+        <span>Photo unavailable or removed from device</span>
       </div>
     );
   }
@@ -122,6 +124,7 @@ export const SessionDetailPage: React.FC = () => {
   const savedPlayers = usePlayerStore((s) => s.players);
 
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   // Edit Modal State
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -139,6 +142,7 @@ export const SessionDetailPage: React.FC = () => {
     () => getScoringTemplateForGame(session?.gameName),
     [session?.gameName]
   );
+  const isCoopSession = Boolean(session?.isCoop ?? scoringTemplate.isCoop);
 
   const hasBreakdown = React.useMemo(() => {
     return (
@@ -250,13 +254,35 @@ export const SessionDetailPage: React.FC = () => {
     (p) => p.playerId === session.firstPlayerId
   );
 
+  const sessionLowScoreWins = (() => {
+    if (typeof scoringTemplate.lowestScoreWins === 'boolean') {
+      return scoringTemplate.lowestScoreWins;
+    }
+    const validScores = (session.players || [])
+      .map((p) => p.score)
+      .filter((s): s is number => typeof s === 'number');
+    if (validScores.length < 2) return false;
+    const minScore = Math.min(...validScores);
+    const maxScore = Math.max(...validScores);
+    if (minScore >= maxScore) return false;
+    const winner = (session.players || []).find(
+      (p) => p.isWinner || (session.winnerId && p.playerId === session.winnerId)
+    );
+    return winner?.score === minScore;
+  })();
+
   const sortedResults = [...(session.players || [])].sort((a, b) => {
+    const rankA = typeof a.rank === 'number' && a.rank > 0 ? a.rank : undefined;
+    const rankB = typeof b.rank === 'number' && b.rank > 0 ? b.rank : undefined;
+    if (rankA !== undefined && rankB !== undefined && rankA !== rankB) {
+      return rankA - rankB;
+    }
     if (a.isWinner && !b.isWinner) return -1;
     if (!a.isWinner && b.isWinner) return 1;
-    if (typeof a.score === 'number' && typeof b.score === 'number') {
-      return b.score - a.score;
+    if (typeof a.score === 'number' && typeof b.score === 'number' && a.score !== b.score) {
+      return sessionLowScoreWins ? a.score - b.score : b.score - a.score;
     }
-    return (a.rank || 99) - (b.rank || 99);
+    return (rankA ?? 99) - (rankB ?? 99);
   });
 
   // Open Edit Modal with full state initialized
@@ -286,26 +312,22 @@ export const SessionDetailPage: React.FC = () => {
     setEditBreakdowns(initialBreakdowns);
     setEditScoreMode(hasBreakdown ? 'detailed' : 'quick');
 
-    const validScores = (session.players || [])
-      .map((p) => p.score)
-      .filter((s): s is number => typeof s === 'number');
-    const isLowScoreWinner =
-      session.winnerId &&
-      validScores.length > 1 &&
-      session.players.find((p) => p.playerId === session.winnerId)?.score === Math.min(...validScores) &&
-      Math.min(...validScores) < Math.max(...validScores);
-    setEditLowScoreWins(Boolean(isLowScoreWinner));
+    setEditLowScoreWins(sessionLowScoreWins);
 
     setIsEditOpen(true);
   };
 
-  // Toggle winner for a player
+  // Toggle winner for a player (or team win/loss for co-op sessions)
   const handleToggleWinner = (playerId: string) => {
-    setEditPlayers((prev) =>
-      prev.map((p) =>
+    setEditPlayers((prev) => {
+      if (isCoopSession) {
+        const nextWin = !prev.some((p) => p.isWinner);
+        return prev.map((p) => ({ ...p, isWinner: nextWin }));
+      }
+      return prev.map((p) =>
         p.playerId === playerId ? { ...p, isWinner: !p.isWinner } : p
-      )
-    );
+      );
+    });
   };
 
   // Set exclusive first player
@@ -412,36 +434,40 @@ export const SessionDetailPage: React.FC = () => {
         playerName: p.playerName,
         score: num,
         isWinner: p.isWinner,
-        rank: 1,
+        rank: isCoopSession ? undefined : 1,
         scoreBreakdown: hasBd ? bd : undefined,
       };
     });
 
-    // Sort to recalculate ranks using Standard Competition Ranking ("1224")
-    const sorted = [...updatedScores].sort((a, b) => {
-      // Winners first
-      if (a.isWinner && !b.isWinner) return -1;
-      if (!a.isWinner && b.isWinner) return 1;
+    // Sort to recalculate ranks using Standard Competition Ranking ("1224") for competitive games
+    const sorted = isCoopSession
+      ? updatedScores
+      : [...updatedScores].sort((a, b) => {
+          // Winners first
+          if (a.isWinner && !b.isWinner) return -1;
+          if (!a.isWinner && b.isWinner) return 1;
 
-      const sa = a.score;
-      const sb = b.score;
-      if (sa === undefined && sb === undefined) return 0;
-      if (sa === undefined) return 1;
-      if (sb === undefined) return -1;
-      return editLowScoreWins ? sa - sb : sb - sa;
-    });
+          const sa = a.score;
+          const sb = b.score;
+          if (sa === undefined && sb === undefined) return 0;
+          if (sa === undefined) return 1;
+          if (sb === undefined) return -1;
+          return editLowScoreWins ? sa - sb : sb - sa;
+        });
 
-    // Compute standard competition rank (1, 1, 3 for ties)
-    let currentRank = 1;
-    for (let i = 0; i < sorted.length; i++) {
-      if (i > 0) {
-        const prev = sorted[i - 1];
-        const curr = sorted[i];
-        if (curr.isWinner !== prev.isWinner || curr.score !== prev.score) {
-          currentRank = i + 1;
+    if (!isCoopSession) {
+      // Compute standard competition rank (1, 1, 3 for ties)
+      let currentRank = 1;
+      for (let i = 0; i < sorted.length; i++) {
+        if (i > 0) {
+          const prev = sorted[i - 1];
+          const curr = sorted[i];
+          if (curr.isWinner !== prev.isWinner || curr.score !== prev.score) {
+            currentRank = i + 1;
+          }
         }
+        sorted[i].rank = currentRank;
       }
-      sorted[i].rank = currentRank;
     }
 
     const activeWinner = editPlayers.find((p) => p.isWinner);
@@ -459,20 +485,19 @@ export const SessionDetailPage: React.FC = () => {
       players: sorted,
       winnerId: activeWinner ? activeWinner.playerId : undefined,
       firstPlayerId: activeFirstPlayer ? activeFirstPlayer.playerId : undefined,
+      isCoop: isCoopSession || undefined,
     });
 
     setIsEditOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleConfirmDelete = () => {
     if (!session) return;
-    if (window.confirm('Are you sure you want to delete this session from history?')) {
-      const sessionId = session.id;
-      navigate('/sessions', { replace: true });
-      setTimeout(() => {
-        deleteSession(sessionId);
-      }, 50);
-    }
+    const sessionId = session.id;
+    navigate('/sessions', { replace: true });
+    setTimeout(() => {
+      deleteSession(sessionId);
+    }, 50);
   };
 
   const handleRematch = () => {
@@ -507,7 +532,7 @@ export const SessionDetailPage: React.FC = () => {
               variant="primary"
               size="sm"
               onClick={handleRematch}
-              className="bg-[image:var(--gradient-hero)] text-white shadow-md shadow-[var(--accent-glow)] font-bold text-xs sm:text-sm px-2.5 sm:px-3"
+              className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] shadow-md shadow-[var(--accent-glow)] font-bold text-xs sm:text-sm px-2.5 sm:px-3"
               title="Launch rematch keeping game, players, and location, skipping to first player picker"
             >
               <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
@@ -517,7 +542,7 @@ export const SessionDetailPage: React.FC = () => {
               <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 text-[var(--accent-neon)]" />
               Edit
             </Button>
-            <Button variant="danger" size="sm" onClick={handleDelete} className="text-xs sm:text-sm px-2.5 sm:px-3">
+            <Button variant="danger" size="sm" onClick={() => setIsDeleteConfirmOpen(true)} className="text-xs sm:text-sm px-2.5 sm:px-3">
               <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
               Delete
             </Button>
@@ -527,20 +552,12 @@ export const SessionDetailPage: React.FC = () => {
         {/* Hero Banner */}
         <div className="rounded-3xl overflow-hidden bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 shadow-2xl">
           <Link to={`/collection/${session.gameId}`} className="shrink-0">
-            <div className="relative w-24 h-32 rounded-2xl overflow-hidden border border-[var(--border-subtle)] hover:scale-105 transition-transform bg-[var(--bg-elevated)] flex items-center justify-center shadow-md">
-              <img
-                src={session.gameThumbnail}
-                alt=""
-                aria-hidden="true"
-                className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
-              />
-              <img
-                src={session.gameThumbnail}
-                alt={session.gameName}
-                referrerPolicy="no-referrer"
-                className="relative z-0 w-full h-full object-contain p-1"
-              />
-            </div>
+            <GameCoverImage
+              game={{ name: session.gameName, thumbnail: session.gameThumbnail }}
+              className="w-24 h-32 rounded-2xl border border-[var(--border-subtle)] hover:scale-105 transition-transform shadow-md"
+              paddingClass="p-1.5"
+              fallbackIconSize="text-3xl"
+            />
           </Link>
 
           <div className="space-y-3 flex-1 min-w-0">
@@ -623,10 +640,10 @@ export const SessionDetailPage: React.FC = () => {
                   return (
                     <tr
                       key={entry.playerId}
-                      className={isWin ? (scoringTemplate.isCoop ? 'bg-[var(--good-soft)]' : 'bg-amber-500/[0.08]') : ''}
+                      className={isWin ? (isCoopSession ? 'bg-[var(--good-soft)]' : 'bg-amber-500/[0.08]') : ''}
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-[var(--text-secondary)]">
-                        {scoringTemplate.isCoop ? '🤝' : `#${entry.rank || idx + 1}`}
+                        {isCoopSession ? '🤝' : `#${entry.rank || idx + 1}`}
                       </td>
                       <td className="py-3.5 px-4">
                         <Link
@@ -646,17 +663,22 @@ export const SessionDetailPage: React.FC = () => {
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         {isWin ? (
-                          scoringTemplate.isCoop ? (
+                          isCoopSession ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--good-soft)] text-[var(--good)] text-xs font-bold">
                               <span>🤝</span>
                               Team Win
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">
-                              <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-800 dark:text-amber-300 text-xs font-bold">
+                              <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                               Winner
                             </span>
                           )
+                        ) : isCoopSession ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--bad-soft)] text-[var(--bad)] text-xs font-bold">
+                            <span>💀</span>
+                            Team Defeat
+                          </span>
                         ) : (
                           <span className="text-xs text-[var(--text-secondary)]">Played</span>
                         )}
@@ -700,7 +722,7 @@ export const SessionDetailPage: React.FC = () => {
                     </th>
                     {session.players.map((p) => {
                       const savedPlayer = playersById[p.playerId];
-                      const isLeader = scoringTemplate.isCoop ? false : (p.isWinner || session.winnerId === p.playerId);
+                      const isLeader = isCoopSession ? false : (p.isWinner || session.winnerId === p.playerId);
                       return (
                         <th
                           key={p.playerId}
@@ -733,7 +755,7 @@ export const SessionDetailPage: React.FC = () => {
                             <span className="text-base leading-none">{cat.icon || '🎲'}</span>
                             <span>{cat.name}</span>
                             {isPenalty && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold shrink-0">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bad-soft)] text-[var(--bad)] font-bold shrink-0">
                                 - penalty
                               </span>
                             )}
@@ -749,8 +771,8 @@ export const SessionDetailPage: React.FC = () => {
                               key={p.playerId}
                               className={cn(
                                 'py-2.5 px-3 text-center font-mono font-bold text-xs',
-                                isTop ? 'text-amber-400 font-extrabold' : 'text-[var(--text-secondary)]',
-                                isPenalty && numVal > 0 && 'text-rose-400'
+                                isTop ? 'text-amber-700 dark:text-amber-400 font-extrabold' : 'text-[var(--text-secondary)]',
+                                isPenalty && numVal > 0 && 'text-[var(--bad)]'
                               )}
                             >
                               <div className="flex items-center justify-center gap-1">
@@ -772,24 +794,24 @@ export const SessionDetailPage: React.FC = () => {
                   <tr className="bg-[var(--bg-elevated)] border-t-2 border-[var(--border-glow)] font-bold">
                     <td className="py-3 px-4 font-extrabold text-[var(--text-primary)]">
                       <div>TOTAL SCORE</div>
-                      {scoringTemplate.isCoop && (
+                      {isCoopSession && (
                         <div className="text-[10px] font-semibold text-[var(--good)] mt-0.5">
                           Team: {session.players.reduce((a, b) => a + (typeof b.score === 'number' ? b.score : 0), 0)}
                         </div>
                       )}
                     </td>
                     {session.players.map((p) => {
-                      const isLeader = scoringTemplate.isCoop ? false : (p.isWinner || session.winnerId === p.playerId);
+                      const isLeader = isCoopSession ? false : (p.isWinner || session.winnerId === p.playerId);
                       return (
                         <td
                           key={p.playerId}
                           className={cn(
                             'py-3 px-3 text-center font-mono text-sm font-extrabold',
-                            isLeader ? 'bg-amber-500/20 text-amber-300' : 'text-[var(--text-primary)]'
+                            isLeader ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300' : 'text-[var(--text-primary)]'
                           )}
                         >
                           <div className="flex items-center justify-center gap-1">
-                            {isLeader && <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />}
+                            {isLeader && <Crown className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />}
                             <span>{typeof p.score === 'number' ? p.score : '—'}</span>
                           </div>
                         </td>
@@ -850,7 +872,7 @@ export const SessionDetailPage: React.FC = () => {
             variant="primary"
             size="md"
             onClick={handleRematch}
-            className="shrink-0 bg-[image:var(--gradient-hero)] text-white shadow-lg shadow-[var(--accent-glow)] font-bold"
+            className="shrink-0 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] shadow-lg shadow-[var(--accent-glow)] font-bold"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             Play Rematch
@@ -926,19 +948,21 @@ export const SessionDetailPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setEditLowScoreWins((prev) => !prev)}
-                    className={cn(
-                      'px-2.5 sm:px-3 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5',
-                      editLowScoreWins
-                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                        : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                    )}
-                    title="Toggle lowest score wins (e.g. Golf, 6 Nimmt, Scout)"
-                  >
-                    <span>{editLowScoreWins ? '⛳ Lowest Score Wins' : '🏆 Highest Score Wins'}</span>
-                  </button>
+                  {!isCoopSession && (
+                    <button
+                      type="button"
+                      onClick={() => setEditLowScoreWins((prev) => !prev)}
+                      className={cn(
+                        'px-2.5 sm:px-3 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5',
+                        editLowScoreWins
+                          ? 'bg-[var(--bad-soft)] text-[var(--bad)] border-[var(--bad)]/40'
+                          : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      )}
+                      title="Toggle lowest score wins (e.g. Golf, 6 Nimmt, Scout)"
+                    >
+                      <span>{editLowScoreWins ? '⛳ Lowest Score Wins' : '🏆 Highest Score Wins'}</span>
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setEditScoreMode(editScoreMode === 'detailed' ? 'quick' : 'detailed')}
@@ -946,13 +970,28 @@ export const SessionDetailPage: React.FC = () => {
                   >
                     <span>{editScoreMode === 'detailed' ? '⚡ Quick Entry' : '📊 Score Sheet'}</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={handleAutoWinner}
-                    className="px-2 sm:px-2.5 py-1 rounded-xl text-xs font-semibold bg-[var(--bg-elevated)] text-[var(--accent-secondary)] hover:brightness-110 border border-[var(--border-subtle)] cursor-pointer"
-                  >
-                    ⚡ Auto Winner
-                  </button>
+                  {isCoopSession ? (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleWinner(editPlayers[0]?.playerId || '')}
+                      className={cn(
+                        'px-2.5 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer',
+                        editPlayers.some((p) => p.isWinner)
+                          ? 'bg-[var(--good-soft)] text-[var(--good)] border-[var(--good)]/40'
+                          : 'bg-[var(--bad-soft)] text-[var(--bad)] border-[var(--bad)]/40'
+                      )}
+                    >
+                      {editPlayers.some((p) => p.isWinner) ? '🤝 Team Victory' : '💀 Team Defeat'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleAutoWinner}
+                      className="px-2 sm:px-2.5 py-1 rounded-xl text-xs font-semibold bg-[var(--bg-elevated)] text-[var(--accent-secondary)] hover:brightness-110 border border-[var(--border-subtle)] cursor-pointer"
+                    >
+                      ⚡ Auto Winner
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -966,6 +1005,7 @@ export const SessionDetailPage: React.FC = () => {
                     initialCategories={scoringTemplate.categories}
                     initialBreakdowns={editBreakdowns}
                     lowScoreWins={editLowScoreWins}
+                    isCoop={isCoopSession}
                     computeTotal={scoringTemplate.computeTotal}
                     onScoresUpdate={handleScoresUpdate}
                   />
@@ -1019,7 +1059,7 @@ export const SessionDetailPage: React.FC = () => {
                           className={cn(
                             'p-1.5 rounded-lg border transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold',
                             p.isWinner
-                              ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md'
+                              ? 'bg-amber-500 text-[#161311] border-amber-400 shadow-md'
                               : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-amber-400'
                           )}
                         >
@@ -1038,12 +1078,12 @@ export const SessionDetailPage: React.FC = () => {
                               e.stopPropagation();
                               handleToggleScoreSign(p.playerId);
                             }}
-                            title="Chuyển điểm âm / dương (±)"
+                            title="Toggle positive/negative sign (±)"
                             aria-label={`Toggle negative score for ${p.playerName}`}
                             className={cn(
                               'px-2 py-1 text-xs font-mono font-extrabold border-r transition-colors cursor-pointer select-none min-h-[34px] sm:min-h-[36px] flex items-center justify-center',
                               p.score.startsWith('-')
-                                ? 'bg-rose-500/25 text-rose-400 border-rose-500/30'
+                                ? 'bg-[var(--bad-soft)] text-[var(--bad)] border-[var(--bad)]/30'
                                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] border-[var(--border-subtle)]'
                             )}
                           >
@@ -1058,7 +1098,7 @@ export const SessionDetailPage: React.FC = () => {
                             onChange={(e) => handleScoreChange(p.playerId, e.target.value)}
                             className={cn(
                               'w-16 sm:w-20 min-h-[34px] sm:min-h-[36px] bg-transparent px-2 py-1 text-right font-mono font-bold text-xs focus:outline-none',
-                              p.score.startsWith('-') ? 'text-rose-400' : 'text-[var(--text-primary)]'
+                              p.score.startsWith('-') ? 'text-[var(--bad)]' : 'text-[var(--text-primary)]'
                             )}
                           />
                         </div>
@@ -1133,6 +1173,17 @@ export const SessionDetailPage: React.FC = () => {
             </div>
           </form>
         </Modal>
+
+        <ConfirmModal
+          isOpen={isDeleteConfirmOpen}
+          onClose={() => setIsDeleteConfirmOpen(false)}
+          onConfirm={handleConfirmDelete}
+          title="Delete Play Session?"
+          message={`Remove this ${session.gameName} play session from your history? This action cannot be undone.`}
+          confirmLabel="Delete Session"
+          cancelLabel="Keep Session"
+          variant="danger"
+        />
       </div>
     </PageTransition>
   );

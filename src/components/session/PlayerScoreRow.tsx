@@ -121,12 +121,12 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
           <button
             type="button"
             onClick={handleToggleSign}
-            title="Chuyển điểm âm / dương (±)"
+            title="Toggle positive/negative sign (±)"
             aria-label={`Toggle negative score for ${playerScore.playerName}`}
             className={cn(
               'px-2.5 py-1.5 text-xs font-mono font-extrabold border-r transition-colors cursor-pointer select-none min-h-[38px] sm:min-h-[42px] flex items-center justify-center',
               isNegative
-                ? 'bg-rose-500/25 text-rose-400 border-rose-500/30'
+                ? 'bg-[var(--bad-soft)] text-[var(--bad)] border-[var(--bad)]/30'
                 : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-3)] border-[var(--line-2)]'
             )}
           >
@@ -150,7 +150,7 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
             onBlur={handleInputBlur}
             className={cn(
               'w-full min-w-0 min-h-[38px] sm:min-h-[42px] px-2 py-1.5 bg-transparent text-right font-mono font-bold text-sm sm:text-base tabular-nums focus:outline-none',
-              isNegative ? 'text-rose-400' : 'text-[var(--ink)]'
+              isNegative ? 'text-[var(--bad)]' : 'text-[var(--ink)]'
             )}
           />
         </div>
@@ -168,7 +168,7 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
             playerScore.isWinner
               ? isCoop
                 ? 'bg-[var(--good)] text-white border-[var(--good)] shadow-sm font-black'
-                : 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm font-black'
+                : 'bg-amber-500 text-[#161311] border-amber-400 shadow-sm font-black'
               : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
           )}
         >
@@ -178,7 +178,7 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
             <Crown
               className={cn(
                 'w-4 h-4',
-                playerScore.isWinner ? 'fill-slate-950 text-slate-950' : ''
+                playerScore.isWinner ? 'fill-[#161311] text-[#161311]' : ''
               )}
             />
           )}

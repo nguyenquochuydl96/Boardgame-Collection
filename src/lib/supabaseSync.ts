@@ -19,6 +19,33 @@ let cachedClient: SupabaseClient | null = null;
 let cachedUrl = '';
 let cachedKey = '';
 let activeChannel: RealtimeChannel | null = null;
+let inFlightPushPromise: Promise<{ success: boolean; error?: string }> | null = null;
+let queuedPushRequested = false;
+let lastLocalPushTimestampMs = 0;
+
+/**
+ * Pure helper determining whether an incoming Realtime record timestamp
+ * reflects this client's own recent push (within 2.5s tolerance).
+ */
+export function isRealtimeSelfReflection(
+  recordUpdatedAt: string | undefined,
+  localLastSyncedAt: string | null | undefined,
+  recentPushMs: number = lastLocalPushTimestampMs
+): boolean {
+  const recordTime = recordUpdatedAt ? new Date(recordUpdatedAt).getTime() : 0;
+  if (!recordTime || Number.isNaN(recordTime)) return false;
+
+  if (recentPushMs > 0 && Math.abs(recordTime - recentPushMs) < 2500) {
+    return true;
+  }
+
+  const localTime = localLastSyncedAt ? new Date(localLastSyncedAt).getTime() : 0;
+  if (localTime > 0 && Math.abs(recordTime - localTime) < 1500) {
+    return true;
+  }
+
+  return false;
+}
 
 /**
  * Smart merge two arrays of entities with unique IDs.
@@ -119,7 +146,7 @@ export function healIncomingGames(
 }
 
 export const SQL_SETUP_SCRIPT = `-- ==========================================
--- BOARDGAME VAULT REAL-TIME CLOUD SYNC SETUP
+-- HEO — BOARD GAME COLLECTION REAL-TIME CLOUD SYNC SETUP
 -- Paste this script into Supabase SQL Editor and click RUN
 -- ==========================================
 
@@ -277,9 +304,35 @@ async function processIncomingMedia(
 }
 
 /**
- * Push current local state to Supabase Cloud
+ * Push current local state to Supabase Cloud (serialized with an in-flight mutex)
  */
 export async function pushVaultToCloud(): Promise<{ success: boolean; error?: string }> {
+  if (inFlightPushPromise) {
+    queuedPushRequested = true;
+    return inFlightPushPromise;
+  }
+
+  const runLoop = async (): Promise<{ success: boolean; error?: string }> => {
+    let lastResult: { success: boolean; error?: string } = { success: true };
+    do {
+      queuedPushRequested = false;
+      lastResult = await executeSinglePushToCloud();
+      if (!lastResult.success) {
+        queuedPushRequested = false;
+        break;
+      }
+    } while (queuedPushRequested);
+    return lastResult;
+  };
+
+  inFlightPushPromise = runLoop().finally(() => {
+    inFlightPushPromise = null;
+  });
+
+  return inFlightPushPromise;
+}
+
+async function executeSinglePushToCloud(): Promise<{ success: boolean; error?: string }> {
   const client = getSupabaseClient();
   const { vaultId, isEnabled, setSyncStatus, setLastSyncedAt } = useSyncStore.getState();
 
@@ -299,7 +352,7 @@ export async function pushVaultToCloud(): Promise<{ success: boolean; error?: st
   if (!hasCompletedInitialPull && games.length === 0 && sessions.length === 0) {
     return {
       success: false,
-      error: 'Cannot push empty vault before initial cloud pull has completed',
+      error: 'Cannot push empty collection before initial cloud pull has completed',
     };
   }
 
@@ -317,27 +370,30 @@ export async function pushVaultToCloud(): Promise<{ success: boolean; error?: st
 
       if (remoteGamesCount > 0 || remoteSessionsCount > 0) {
         console.warn(
-          `[supabaseSync] Blocked push of empty vault: remote vault has ${remoteGamesCount} games and ${remoteSessionsCount} sessions.`
+          `[supabaseSync] Blocked push of empty collection: remote has ${remoteGamesCount} games and ${remoteSessionsCount} sessions.`
         );
         return {
           success: false,
-          error: 'Accidental overwrite blocked: remote vault has data but local vault is empty.',
+          error: 'Accidental overwrite blocked: remote collection has data while local is empty.',
         };
       }
     } catch (checkErr) {
       console.warn('[supabaseSync] Error verifying remote vault content:', checkErr);
-      return { success: false, error: 'Could not verify remote vault state before pushing empty data.' };
+      return { success: false, error: 'Could not verify remote state before pushing empty data.' };
     }
   }
 
   setSyncStatus('syncing');
+  const prevSyncedAt = useSyncStore.getState().lastSyncedAt;
+  const prevPushMs = lastLocalPushTimestampMs;
 
   try {
-    const games = useGameStore.getState().games;
-    const sessions = useSessionStore.getState().sessions;
+    const latestGames = useGameStore.getState().games;
+    const latestSessions = useSessionStore.getState().sessions;
     const players = usePlayerStore.getState().players;
     const locations = useLocationStore.getState().locations;
-    const nowIso = new Date().toISOString();
+    const nowDate = new Date();
+    const nowIso = nowDate.toISOString();
 
     // Resolve idb:// references to data URLs before uploading to cloud so other devices can access images
     const cloudPlayers = await Promise.all(
@@ -351,7 +407,7 @@ export async function pushVaultToCloud(): Promise<{ success: boolean; error?: st
     );
 
     const cloudSessions = await Promise.all(
-      sessions.map(async (s) => {
+      latestSessions.map(async (s) => {
         if (s.photos && s.photos.some((ph) => isIdbMediaRef(ph))) {
           const resolvedPhotos = await Promise.all(
             s.photos.map(async (ph) => {
@@ -370,24 +426,31 @@ export async function pushVaultToCloud(): Promise<{ success: boolean; error?: st
 
     const payload: VaultPayload = {
       vault_id: vaultId,
-      games,
+      games: latestGames,
       sessions: cloudSessions,
       players: cloudPlayers,
       locations,
       updated_at: nowIso,
     };
 
+    // Record push timestamp BEFORE upsert so Realtime echo arriving before HTTP response is ignored
+    lastLocalPushTimestampMs = nowDate.getTime();
+    setLastSyncedAt(nowIso);
+
     const { error } = await client.from('vaults').upsert(payload, { onConflict: 'vault_id' });
 
     if (error) {
+      lastLocalPushTimestampMs = prevPushMs;
+      if (prevSyncedAt) setLastSyncedAt(prevSyncedAt);
       setSyncStatus('error', error.message);
       return { success: false, error: error.message };
     }
 
-    setLastSyncedAt(nowIso);
     setSyncStatus('synced');
     return { success: true };
   } catch (err: any) {
+    lastLocalPushTimestampMs = prevPushMs;
+    if (prevSyncedAt) setLastSyncedAt(prevSyncedAt);
     const msg = err?.message || 'Unknown network error';
     setSyncStatus('error', msg);
     return { success: false, error: msg };
@@ -552,10 +615,8 @@ export function startVaultRealtimeSubscription(): () => void {
         const record = payload.new as VaultPayload;
         const localLastSynced = useSyncStore.getState().lastSyncedAt;
 
-        // If this update was triggered by another device (normalize timestamps to avoid self-reflection loop)
-        const recordTime = record.updated_at ? new Date(record.updated_at).getTime() : 0;
-        const localTime = localLastSynced ? new Date(localLastSynced).getTime() : 0;
-        const isSelfReflection = Math.abs(recordTime - localTime) < 1500;
+        // If this update was triggered by another device (check timestamp & pre-upsert push guard)
+        const isSelfReflection = isRealtimeSelfReflection(record.updated_at, localLastSynced);
 
         if (record.updated_at && !isSelfReflection) {
           setSyncApplyingRemote(true);

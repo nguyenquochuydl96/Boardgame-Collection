@@ -6,7 +6,6 @@ import {
   Clock,
   MapPin,
   Calendar,
-  Dices,
   AlertCircle,
   Pause,
 } from 'lucide-react';
@@ -14,6 +13,7 @@ import { SessionDraft, Player } from '../../types';
 import { useGameStore } from '../../store/useGameStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { PlayerAvatar } from '../player/PlayerAvatar';
+import { GameCoverImage } from '../game/GameCoverImage';
 import { Button } from '../ui/Button';
 import { formatDate } from '../../lib/utils';
 
@@ -58,14 +58,14 @@ const DraftTimerDisplay: React.FC<{ draft: SessionDraft }> = ({ draft }) => {
     : `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 
   return (
-    <span className="inline-flex items-center gap-1 font-mono font-bold text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-lg border border-amber-500/30">
+    <span className="inline-flex items-center gap-1 font-mono font-bold text-amber-800 dark:text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-lg border border-amber-500/30">
       {draft.isTimerRunning ? (
-        <Clock className="w-3.5 h-3.5 text-amber-400" />
+        <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
       ) : (
-        <Pause className="w-3.5 h-3.5 text-amber-400" />
+        <Pause className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
       )}
       <span>{timeText}</span>
-      <span className="text-[10px] font-normal text-amber-400/80">
+      <span className="text-[10px] font-normal text-amber-700/80 dark:text-amber-400/80">
         {draft.isTimerRunning ? '(Running)' : '(Paused)'}
       </span>
     </span>
@@ -121,13 +121,13 @@ const DraftSessionCardComponent: React.FC<DraftSessionCardProps> = ({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--good)] opacity-75" />
             <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--good)]" />
           </span>
-          <span className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
-            🟢 Active Match · In Progress (Draft)
+          <span className="text-xs font-black uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+            Active Match · In Progress (Draft)
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-200 text-xs font-bold border border-amber-500/30">
+          <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-900 dark:text-amber-200 text-xs font-bold border border-amber-500/30">
             {getStepLabel(draft.currentStep || 1)}
           </span>
         </div>
@@ -137,29 +137,12 @@ const DraftSessionCardComponent: React.FC<DraftSessionCardProps> = ({
       <div className="mt-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           {/* Game Thumbnail */}
-          <div className="relative w-16 h-20 rounded-xl overflow-hidden shrink-0 bg-[var(--bg-elevated)] border border-amber-500/40 shadow-md flex items-center justify-center">
-            {gameThumbnail ? (
-              <>
-                <img
-                  src={gameThumbnail}
-                  alt=""
-                  aria-hidden="true"
-                  className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
-                />
-                <img
-                  src={gameThumbnail}
-                  alt={gameName}
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                  className="relative z-0 w-full h-full object-contain p-0.5"
-                />
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-amber-500/20 text-amber-400">
-                <Dices className="w-7 h-7" />
-              </div>
-            )}
-          </div>
+          <GameCoverImage
+            game={game || { name: gameName, thumbnail: gameThumbnail }}
+            className="w-16 h-20 rounded-xl shrink-0 border border-amber-500/40 shadow-md"
+            paddingClass="p-1"
+            fallbackIconSize="text-2xl"
+          />
 
           {/* Game Title & Match Setup Details */}
           <div className="space-y-1.5 min-w-0">
@@ -217,7 +200,7 @@ const DraftSessionCardComponent: React.FC<DraftSessionCardProps> = ({
           <Link to="/sessions/new?resume=1">
             <Button variant="primary" className="shadow-lg shadow-amber-500/25">
               <Play className="w-4 h-4 mr-1.5 fill-current" />
-              Tiếp tục ván đấu
+              Resume Session
             </Button>
           </Link>
         </div>

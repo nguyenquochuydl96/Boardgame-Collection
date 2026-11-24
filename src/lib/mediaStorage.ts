@@ -1,5 +1,6 @@
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
+import { useGameStore } from '../store/useGameStore';
 
 const DB_NAME = 'bg-vault-media-v1';
 const STORE_NAME = 'images';
@@ -168,49 +169,85 @@ export async function deleteMediaImage(ref: string): Promise<void> {
   }
 }
 
+function isLargeBase64Image(val?: string | null): val is string {
+  return Boolean(
+    val &&
+      typeof val === 'string' &&
+      val.startsWith('data:image/') &&
+      !val.startsWith('data:image/svg+xml') &&
+      val.length > 5000
+  );
+}
+
 /**
- * Scan stores and migrate large base64 images (> 5000 chars, non-svg) to IndexedDB
+ * Scan stores (games, players, sessions) and migrate large base64 images (> 5000 chars, non-svg) to IndexedDB
  */
 export async function migrateBase64ImagesToIdb(): Promise<{ migratedCount: number; savedBytes: number }> {
   let migratedCount = 0;
   let savedBytes = 0;
 
   try {
+    // 1. Custom game cover art (image & thumbnail)
+    const games = useGameStore.getState().games;
+    for (const g of games) {
+      let nextImage = g.image;
+      let nextThumb = g.thumbnail;
+      let changed = false;
+
+      if (isLargeBase64Image(g.image)) {
+        const originalLen = g.image.length;
+        const ref = await saveMediaImage(g.image);
+        nextImage = ref;
+        if (g.thumbnail === g.image) {
+          nextThumb = ref;
+        }
+        migratedCount++;
+        savedBytes += originalLen - ref.length;
+        changed = true;
+      }
+
+      if (isLargeBase64Image(nextThumb)) {
+        const originalLen = nextThumb.length;
+        const ref = await saveMediaImage(nextThumb);
+        nextThumb = ref;
+        migratedCount++;
+        savedBytes += originalLen - ref.length;
+        changed = true;
+      }
+
+      if (changed) {
+        useGameStore.getState().updateGame(g.id, {
+          image: nextImage,
+          thumbnail: nextThumb,
+        });
+      }
+    }
+
+    // 2. Player avatars
     const players = usePlayerStore.getState().players;
     for (const p of players) {
-      if (
-        p.avatar &&
-        typeof p.avatar === 'string' &&
-        p.avatar.startsWith('data:image/') &&
-        !p.avatar.startsWith('data:image/svg+xml') &&
-        p.avatar.length > 5000
-      ) {
+      if (isLargeBase64Image(p.avatar)) {
         const originalLen = p.avatar.length;
         const ref = await saveMediaImage(p.avatar);
         usePlayerStore.getState().updatePlayer(p.id, { avatar: ref });
         migratedCount++;
-        savedBytes += (originalLen - ref.length);
+        savedBytes += originalLen - ref.length;
       }
     }
 
+    // 3. Session memory photos
     const sessions = useSessionStore.getState().sessions;
     for (const s of sessions) {
       if (s.photos && s.photos.length > 0) {
         let changed = false;
         const newPhotos: string[] = [];
         for (const photo of s.photos) {
-          if (
-            photo &&
-            typeof photo === 'string' &&
-            photo.startsWith('data:image/') &&
-            !photo.startsWith('data:image/svg+xml') &&
-            photo.length > 5000
-          ) {
+          if (isLargeBase64Image(photo)) {
             const originalLen = photo.length;
             const ref = await saveMediaImage(photo);
             newPhotos.push(ref);
             migratedCount++;
-            savedBytes += (originalLen - ref.length);
+            savedBytes += originalLen - ref.length;
             changed = true;
           } else {
             newPhotos.push(photo);
@@ -227,3 +264,147 @@ export async function migrateBase64ImagesToIdb(): Promise<{ migratedCount: numbe
 
   return { migratedCount, savedBytes };
 }
+
+function normalizeMediaKey(val: string): string {
+  return val.startsWith('idb://') ? val.slice('idb://'.length) : val;
+}
+
+function extractIdbRefsFromUnknown(value: unknown, out: Set<string>): void {
+  if (!value) return;
+  if (typeof value === 'string') {
+    if (isIdbMediaRef(value)) {
+      out.add(normalizeMediaKey(value));
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      extractIdbRefsFromUnknown(item, out);
+    }
+    return;
+  }
+  if (typeof value === 'object') {
+    for (const v of Object.values(value as Record<string, unknown>)) {
+      extractIdbRefsFromUnknown(v, out);
+    }
+  }
+}
+
+/**
+ * Collects every active `idb://` key referenced across games, players, sessions, AND localStorage session drafts.
+ */
+export function collectReferencedMediaKeys(): Set<string> {
+  const keys = new Set<string>();
+
+  const games = useGameStore.getState().games;
+  for (const g of games) {
+    if (isIdbMediaRef(g.image)) keys.add(normalizeMediaKey(g.image!));
+    if (isIdbMediaRef(g.thumbnail)) keys.add(normalizeMediaKey(g.thumbnail!));
+  }
+
+  const players = usePlayerStore.getState().players;
+  for (const p of players) {
+    if (isIdbMediaRef(p.avatar)) keys.add(normalizeMediaKey(p.avatar!));
+  }
+
+  const sessions = useSessionStore.getState().sessions;
+  for (const s of sessions) {
+    if (isIdbMediaRef(s.gameThumbnail)) keys.add(normalizeMediaKey(s.gameThumbnail!));
+    if (s.photos) {
+      for (const photo of s.photos) {
+        if (isIdbMediaRef(photo)) keys.add(normalizeMediaKey(photo));
+      }
+    }
+  }
+
+  // Scan ALL localStorage draft session entries so ongoing session photos are never pruned
+  if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+    try {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const storageKey = window.localStorage.key(i);
+        if (!storageKey || !storageKey.toLowerCase().includes('draft')) continue;
+        const raw = window.localStorage.getItem(storageKey);
+        if (!raw || !raw.includes('idb://')) continue;
+        try {
+          extractIdbRefsFromUnknown(JSON.parse(raw), keys);
+        } catch {
+          const matches = raw.match(/idb:\/\/[a-zA-Z0-9_-]+/g);
+          matches?.forEach((m) => keys.add(normalizeMediaKey(m)));
+        }
+      }
+    } catch {
+      // Ignore storage access errors
+    }
+  }
+
+  return keys;
+}
+
+/**
+ * Safely deletes orphaned IndexedDB media items not present in `referencedKeys`.
+ * Always pass keys collected from games, players, sessions, and active drafts (or omit to auto-collect all 4).
+ */
+export async function pruneOrphanMedia(
+  referencedKeys?: Iterable<string>
+): Promise<{ prunedCount: number; keptCount: number }> {
+  const keepSet = new Set<string>();
+  const sourceKeys = referencedKeys ?? collectReferencedMediaKeys();
+  for (const key of sourceKeys) {
+    if (key) keepSet.add(normalizeMediaKey(key));
+  }
+
+  let prunedCount = 0;
+  let keptCount = 0;
+
+  if (hasIndexedDB()) {
+    try {
+      const db = await openMediaDB();
+      const allKeys = await new Promise<string[]>((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.getAllKeys();
+        req.onsuccess = () => resolve((req.result || []).map(String));
+        req.onerror = () => reject(req.error);
+      });
+
+      const orphanKeys: string[] = [];
+      for (const key of allKeys) {
+        if (keepSet.has(key)) {
+          keptCount++;
+        } else {
+          orphanKeys.push(key);
+        }
+      }
+
+      if (orphanKeys.length > 0) {
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          const store = tx.objectStore(STORE_NAME);
+          for (const key of orphanKeys) {
+            store.delete(key);
+            lruDelete(key);
+            fallbackStore.delete(key);
+          }
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+        prunedCount = orphanKeys.length;
+      }
+    } catch (err) {
+      console.warn('[mediaStorage] Failed to prune IndexedDB orphan media:', err);
+    }
+  } else {
+    for (const key of Array.from(fallbackStore.keys())) {
+      if (keepSet.has(key)) {
+        keptCount++;
+      } else {
+        fallbackStore.delete(key);
+        lruDelete(key);
+        prunedCount++;
+      }
+    }
+  }
+
+  return { prunedCount, keptCount };
+}
+

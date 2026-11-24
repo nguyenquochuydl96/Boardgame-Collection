@@ -56,10 +56,10 @@ export const Step3Players: React.FC<Step3PlayersProps> = React.memo(
               <span className="text-xl shrink-0">👥</span>
               <div className="min-w-0 text-xs">
                 <p className="font-bold text-[var(--text-primary)]">
-                  Gợi ý từ ván gần nhất ({latestSession?.gameName || 'Session trước'}):
+                  Suggested from last session ({latestSession?.gameName || 'Previous Session'}):
                 </p>
                 <p className="text-[var(--text-secondary)] truncate">
-                  {lastSessionPlayers.map((p) => p.playerName).join(', ')} ({lastSessionPlayers.length} người)
+                  {lastSessionPlayers.map((p) => p.playerName).join(', ')} ({lastSessionPlayers.length} players)
                 </p>
               </div>
             </div>
@@ -70,8 +70,8 @@ export const Step3Players: React.FC<Step3PlayersProps> = React.memo(
               onClick={onCopyPreviousSessionPlayers}
               className="shrink-0 text-xs font-bold self-start sm:self-auto border-amber-500/40 hover:border-amber-400"
             >
-              <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-400" />
-              Lấy người chơi ván trước
+              <Sparkles className="w-3.5 h-3.5 mr-1 text-amber-500" />
+              Use Previous Players
             </Button>
           </div>
         )}
@@ -79,16 +79,16 @@ export const Step3Players: React.FC<Step3PlayersProps> = React.memo(
         <div className="flex items-center justify-between pt-1">
           <span className="text-xs font-semibold text-[var(--text-secondary)]">
             {activeSessionPlayers.length === 0
-              ? 'Chưa chọn người chơi nào'
-              : `Đã chọn ${activeSessionPlayers.length} người chơi`}
+              ? 'No players selected yet'
+              : `${activeSessionPlayers.length} ${activeSessionPlayers.length === 1 ? 'player' : 'players'} selected`}
           </span>
           {selectedPlayerIds.length > 0 && (
             <button
               type="button"
               onClick={onClearSelection}
-              className="text-xs text-[var(--text-muted)] hover:text-rose-400 transition-colors cursor-pointer"
+              className="text-xs text-[var(--muted)] hover:text-[var(--bad)] transition-colors cursor-pointer"
             >
-              Bỏ chọn tất cả
+              Clear all
             </button>
           )}
         </div>
@@ -135,7 +135,7 @@ export const Step3Players: React.FC<Step3PlayersProps> = React.memo(
               onChange={(e) => setSaveGuestToVault(e.target.checked)}
               className="rounded border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--accent-primary)]"
             />
-            Save this player to permanent vault roster
+            Save this player to permanent player roster
           </label>
         </form>
       </Card>

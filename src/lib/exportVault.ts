@@ -41,10 +41,33 @@ function downloadFile(content: string, fileName: string, contentType: string) {
  * Export 100% full JSON backup of the entire Vault
  */
 export async function exportVaultJSON(): Promise<VaultBackupData> {
-  const games = useGameStore.getState().games;
+  const rawGames = useGameStore.getState().games;
   const rawPlayers = usePlayerStore.getState().players;
   const rawSessions = useSessionStore.getState().sessions;
   const locations = useLocationStore.getState().locations;
+
+  // Resolve custom game cover art from idb://
+  const games: BoardGame[] = await Promise.all(
+    rawGames.map(async (g) => {
+      const hasIdbImage = Boolean(g.image && isIdbMediaRef(g.image));
+      const hasIdbThumb = Boolean(g.thumbnail && isIdbMediaRef(g.thumbnail));
+      if (!hasIdbImage && !hasIdbThumb) return g;
+
+      const resolvedImage = hasIdbImage ? (await getMediaImage(g.image!)) || g.image : g.image;
+      const resolvedThumb =
+        hasIdbThumb
+          ? g.thumbnail === g.image
+            ? resolvedImage
+            : (await getMediaImage(g.thumbnail!)) || g.thumbnail
+          : g.thumbnail;
+
+      return {
+        ...g,
+        image: resolvedImage,
+        thumbnail: resolvedThumb,
+      };
+    })
+  );
 
   // Resolve player avatars from idb://
   const players: Player[] = await Promise.all(
@@ -97,7 +120,7 @@ export async function exportVaultJSON(): Promise<VaultBackupData> {
   const jsonStr = JSON.stringify(payload, null, 2);
   downloadFile(
     jsonStr,
-    `BoardGameVault_Backup_${timestamp}.json`,
+    `HEO_BoardGameCollection_Backup_${timestamp}.json`,
     'application/json;charset=utf-8'
   );
 
@@ -141,7 +164,7 @@ export function exportGamesCSV() {
 
   const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
   const timestamp = new Date().toISOString().slice(0, 10);
-  downloadFile(csvContent, `BoardGameVault_Games_${timestamp}.csv`, 'text/csv;charset=utf-8');
+  downloadFile(csvContent, `HEO_BoardGameCollection_Games_${timestamp}.csv`, 'text/csv;charset=utf-8');
 }
 
 /**
@@ -180,5 +203,5 @@ export function exportSessionsCSV() {
 
   const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
   const timestamp = new Date().toISOString().slice(0, 10);
-  downloadFile(csvContent, `BoardGameVault_Sessions_${timestamp}.csv`, 'text/csv;charset=utf-8');
+  downloadFile(csvContent, `HEO_BoardGameCollection_Sessions_${timestamp}.csv`, 'text/csv;charset=utf-8');
 }

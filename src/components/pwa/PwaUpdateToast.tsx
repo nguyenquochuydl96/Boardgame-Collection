@@ -46,19 +46,19 @@ export const PwaUpdateToast: React.FC = () => {
     <div
       role="alert"
       aria-live="polite"
-      className="fixed z-50 top-4 right-4 left-4 sm:left-auto sm:max-w-md animate-in fade-in slide-in-from-top-3 duration-300 pointer-events-auto"
+      className="fixed z-50 top-[calc(1rem+env(safe-area-inset-top))] right-4 left-4 sm:left-auto sm:max-w-md animate-in fade-in slide-in-from-top-3 duration-300 pointer-events-auto"
     >
-      <div className="flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-[var(--card)] border border-[var(--line-2)] shadow-2xl backdrop-blur-md">
+      <div className="flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-[var(--card)] border border-[var(--line-2)] shadow-2xl">
         <div className="flex items-center gap-3 min-w-0">
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] shrink-0">
             <Sparkles className="w-5 h-5 animate-spin-slow" />
           </div>
           <div className="min-w-0">
             <h4 className="font-display font-bold text-sm text-[var(--ink)] truncate">
-              Đã có bản cập nhật mới
+              New Update Available
             </h4>
             <p className="text-xs text-[var(--muted)] truncate">
-              Cập nhật ngay để trải nghiệm tính năng mới nhất
+              Reload now to get the latest improvements
             </p>
           </div>
         </div>
@@ -69,18 +69,18 @@ export const PwaUpdateToast: React.FC = () => {
             size="sm"
             disabled={isUpdating}
             onClick={handleUpdateNow}
-            className="text-xs font-bold py-1.5 px-3 h-8 shadow-sm flex items-center gap-1 bg-[var(--accent)] hover:opacity-90 text-[var(--accent-ink)] rounded-full cursor-pointer"
+            className="text-xs font-bold py-1.5 px-3 min-h-9 shadow-sm flex items-center gap-1 bg-[var(--accent)] hover:opacity-90 text-[var(--accent-ink)] rounded-full cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isUpdating ? 'animate-spin' : ''}`} />
-            <span>{isUpdating ? 'Đang tải...' : 'Cập nhật ngay'}</span>
+            <span>{isUpdating ? 'Updating...' : 'Update Now'}</span>
           </Button>
 
           <button
             type="button"
             onClick={() => setNeedRefresh(false)}
-            aria-label="Để sau"
-            title="Để sau"
-            className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+            aria-label="Dismiss update notification"
+            title="Dismiss"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>

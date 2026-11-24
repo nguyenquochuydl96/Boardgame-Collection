@@ -12,6 +12,8 @@ interface Step5ScoringProps {
   scoringMode: 'detailed' | 'quick';
   setScoringMode: (mode: 'detailed' | 'quick') => void;
   scoringTemplate: GameScoringTemplate;
+  coopOutcome: 'won' | 'lost';
+  onSetCoopOutcome: (outcome: 'won' | 'lost') => void;
   activeSessionPlayers: Player[];
   breakdownsByPlayerId: Record<string, Record<string, number>>;
   onScoresUpdate: (
@@ -31,6 +33,8 @@ export const Step5Scoring: React.FC<Step5ScoringProps> = React.memo(
     scoringMode,
     setScoringMode,
     scoringTemplate,
+    coopOutcome,
+    onSetCoopOutcome,
     activeSessionPlayers,
     breakdownsByPlayerId,
     onScoresUpdate,
@@ -86,29 +90,16 @@ export const Step5Scoring: React.FC<Step5ScoringProps> = React.memo(
 
             <button
               type="button"
-              onClick={() => {
-                const anyWon = activeSessionPlayers.some((p) =>
-                  computedPlayerScores.find((ps) => ps.playerId === p.id)?.isWinner
-                );
-                // Toggle team victory: if any won, mark all defeat; if none won, mark all victory
-                activeSessionPlayers.forEach((p) => {
-                  const ps = computedPlayerScores.find((x) => x.playerId === p.id);
-                  if (anyWon) {
-                    if (ps?.isWinner) onToggleManualWinner(p.id);
-                  } else {
-                    if (!ps?.isWinner) onToggleManualWinner(p.id);
-                  }
-                });
-              }}
+              onClick={() => onSetCoopOutcome(coopOutcome === 'won' ? 'lost' : 'won')}
               className={cn(
                 'px-3.5 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 shadow-sm shrink-0',
-                activeSessionPlayers.some((p) => computedPlayerScores.find((ps) => ps.playerId === p.id)?.isWinner)
+                coopOutcome === 'won'
                   ? 'bg-[var(--good)] text-white border-[var(--good)] shadow-xs font-black'
                   : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]'
               )}
             >
               <span>
-                {activeSessionPlayers.some((p) => computedPlayerScores.find((ps) => ps.playerId === p.id)?.isWinner)
+                {coopOutcome === 'won'
                   ? '🏆 Team Victory (Won)'
                   : '💀 Team Defeat'}
               </span>
@@ -170,17 +161,7 @@ export const Step5Scoring: React.FC<Step5ScoringProps> = React.memo(
                   onScoreChange={onScoreChange}
                   onToggleWinner={(playerId) => {
                     if (scoringTemplate.isCoop) {
-                      const anyWon = activeSessionPlayers.some((p) =>
-                        computedPlayerScores.find((x) => x.playerId === p.id)?.isWinner
-                      );
-                      activeSessionPlayers.forEach((p) => {
-                        const curr = computedPlayerScores.find((x) => x.playerId === p.id);
-                        if (anyWon) {
-                          if (curr?.isWinner) onToggleManualWinner(p.id);
-                        } else {
-                          if (!curr?.isWinner) onToggleManualWinner(p.id);
-                        }
-                      });
+                      onSetCoopOutcome(coopOutcome === 'won' ? 'lost' : 'won');
                     } else {
                       onToggleManualWinner(playerId);
                     }

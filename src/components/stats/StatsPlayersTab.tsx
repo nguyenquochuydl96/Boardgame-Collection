@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Swords, Trophy } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { PlayerChip } from '../player/PlayerChip';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { PlayerLeaderboardSection } from '../dashboard/PlayerLeaderboardSection';
-import { calculateHeadToHead } from '../../lib/utils';
+import { calculateHeadToHead, pluralize } from '../../lib/utils';
 import { PlaySession, Player } from '../../types';
 
 interface StatsPlayersTabProps {
@@ -17,8 +17,25 @@ export const StatsPlayersTab: React.FC<StatsPlayersTabProps> = React.memo(
     const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>(() =>
       players.slice(0, 2).map((p) => p.id)
     );
+    const hasAutoInitializedRef = useRef(players.length > 0);
+
+    useEffect(() => {
+      const validIds = new Set(players.map((p) => p.id));
+      setSelectedPlayerIds((prev) => {
+        const filtered = prev.filter((id) => validIds.has(id));
+        if (!hasAutoInitializedRef.current && players.length > 0) {
+          hasAutoInitializedRef.current = true;
+          return players.slice(0, 2).map((p) => p.id);
+        }
+        if (filtered.length !== prev.length) {
+          return filtered;
+        }
+        return prev;
+      });
+    }, [players]);
 
     const togglePlayerSelection = (id: string) => {
+      hasAutoInitializedRef.current = true;
       setSelectedPlayerIds((prev) =>
         prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
       );
@@ -79,7 +96,7 @@ export const StatsPlayersTab: React.FC<StatsPlayersTabProps> = React.memo(
                   </span>
                 </div>
                 <span className="font-mono font-black text-2xl text-cyan-700 dark:text-cyan-400 tabular-nums">
-                  {headToHead.sharedSessionsCount} plays
+                  {pluralize(headToHead.sharedSessionsCount, 'play')}
                 </span>
               </div>
 

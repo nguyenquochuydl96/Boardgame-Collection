@@ -52,6 +52,126 @@ const PLAYER_COLORS = [
   '#14b8a6',
 ];
 
+export interface RawBGCatalogGame {
+  id: number | string;
+  bggId?: number | string;
+  name?: string;
+  urlThumb?: string;
+  urlImage?: string;
+  designers?: string;
+  artists?: string;
+  minPlayers?: number | string;
+  maxPlayers?: number | string;
+  minPlayTime?: number | string;
+  maxPlayTime?: number | string;
+  yearPublished?: number | string;
+  average?: number | string;
+  own?: number;
+  fortrade?: number;
+  prevowned?: number;
+  wishlist?: number;
+  addedDate?: string;
+  notes?: string;
+  expansion?: number;
+}
+
+export interface RawBGCatalogPlayer {
+  id: number | string;
+  name?: string;
+  isAnonymous?: boolean | number;
+  image?: string;
+  me?: number;
+}
+
+export interface RawBGCatalogPlay {
+  id: number | string;
+  gameId: number | string;
+  locationId?: number | string;
+  playDate?: string;
+  length?: number | string;
+  image?: string;
+  notes?: string;
+}
+
+export interface RawBGCatalogPlayerPlay {
+  playId: number | string;
+  playerId: number | string;
+  nickname?: string;
+  score?: number | string | null;
+  winner?: number;
+  startPlayer?: number;
+}
+
+export interface RawBGCatalogLocation {
+  id: number | string;
+  name?: string;
+}
+
+export interface RawBGCatalogExport {
+  games?: RawBGCatalogGame[];
+  players?: RawBGCatalogPlayer[];
+  plays?: RawBGCatalogPlay[];
+  playersPlays?: RawBGCatalogPlayerPlay[];
+  locations?: RawBGCatalogLocation[];
+}
+
+interface RawSimpleImportItem {
+  name?: string;
+  title?: string;
+  yearPublished?: number | string;
+  year?: number | string;
+  bggId?: number | string;
+  minPlayers?: number | string;
+  maxPlayers?: number | string;
+  playingTime?: number | string;
+  bggRating?: number | string;
+  status?: string;
+  purchasePrice?: number | string;
+  lentToName?: string;
+  lentTo?: string;
+  notes?: string;
+  comment?: string;
+  thumbnail?: string;
+  image?: string;
+  urlThumb?: string;
+}
+
+/**
+ * Safely normalizes arbitrary BG Catalog / ISO / SQLite date strings to a valid ISO 8601 string.
+ * Never throws RangeError when strings already end with 'Z' or contain timezone offsets.
+ */
+export function safeParseIsoDate(raw?: string | null, fallbackIso?: string): string {
+  const fallback = fallbackIso ?? new Date().toISOString();
+  if (!raw || typeof raw !== 'string') return fallback;
+
+  const trimmed = raw.trim();
+  if (!trimmed) return fallback;
+
+  // Already has 'Z' or explicit timezone offset (+HH:MM / -HH:MM / +HHMM)
+  const hasTz = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(trimmed);
+  let normalized = trimmed;
+  if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}/.test(trimmed)) {
+    normalized = trimmed.replace(/\s+/, 'T') + (hasTz ? '' : 'Z');
+  } else if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    normalized = `${trimmed}T00:00:00.000Z`;
+  } else if (trimmed.includes(' ') && !hasTz) {
+    normalized = trimmed.replace(' ', 'T') + 'Z';
+  }
+
+  const parsed = new Date(normalized);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString();
+  }
+
+  // Last-chance direct Date parse (e.g. RFC2822 / locale formats)
+  const direct = new Date(trimmed);
+  if (!Number.isNaN(direct.getTime())) {
+    return direct.toISOString();
+  }
+
+  return fallback;
+}
+
 /**
  * Parses a BG Catalog export ZIP file containing BGGCatalogExport.json and optional player/play images
  */
@@ -102,7 +222,7 @@ export async function parseBGCatalogZip(
     throw new Error('No valid JSON export file found in this ZIP archive.');
   }
 
-  const rawData = JSON.parse(jsonString);
+  const rawData = JSON.parse(jsonString) as RawBGCatalogExport;
   return parseBGCatalogJsonObject(rawData, imageMap);
 }
 
@@ -110,7 +230,7 @@ export async function parseBGCatalogZip(
  * Parses raw JSON exported from BG Catalog (iOS)
  */
 export function parseBGCatalogJsonObject(
-  data: any,
+  data: RawBGCatalogExport,
   imageMap: Record<string, string> = {}
 ): FullBGCatalogImportResult {
   const rawGames = data.games || [];
@@ -120,19 +240,21 @@ export function parseBGCatalogJsonObject(
   const rawLocations = data.locations || [];
 
   // 1. Build lookup tables
-  const gameMap = new Map<number | string, any>();
-  rawGames.forEach((g: any) => gameMap.set(g.id, g));
+  const gameMap = new Map<number | string, RawBGCatalogGame>();
+  rawGames.forEach((g) => gameMap.set(g.id, g));
 
-  const playerMap = new Map<number | string, any>();
+  const playerMap = new Map<number | string, RawBGCatalogPlayer>();
   rawPlayers
-    .filter((p: any) => !p.isAnonymous && p.name && p.name.trim())
-    .forEach((p: any) => playerMap.set(p.id, p));
+    .filter((p) => !p.isAnonymous && p.name && p.name.trim())
+    .forEach((p) => playerMap.set(p.id, p));
 
   const locationMap = new Map<number | string, string>();
-  rawLocations.forEach((l: any) => locationMap.set(l.id, l.name));
+  rawLocations.forEach((l) => {
+    if (l.name) locationMap.set(l.id, l.name);
+  });
 
-  const playersPlaysByPlayId = new Map<number | string, any[]>();
-  rawPlayersPlays.forEach((pp: any) => {
+  const playersPlaysByPlayId = new Map<number | string, RawBGCatalogPlayerPlay[]>();
+  rawPlayersPlays.forEach((pp) => {
     if (!playersPlaysByPlayId.has(pp.playId)) {
       playersPlaysByPlayId.set(pp.playId, []);
     }
@@ -145,7 +267,7 @@ export function parseBGCatalogJsonObject(
   let prevOwnedCount = 0;
   let wishlistCount = 0;
 
-  const games: BoardGame[] = rawGames.map((g: any) => {
+  const games: BoardGame[] = rawGames.map((g) => {
     let status: GameStatus = 'own';
     if (g.own === 1) {
       status = 'own';
@@ -165,9 +287,7 @@ export function parseBGCatalogJsonObject(
     }
 
     const bggId = g.bggId ? String(g.bggId) : undefined;
-    const addedDate = g.addedDate
-      ? new Date(g.addedDate.replace(' ', 'T') + 'Z').toISOString()
-      : new Date().toISOString();
+    const addedDate = safeParseIsoDate(g.addedDate);
 
     return {
       id: `bgg-${bggId || g.id}`,
@@ -193,7 +313,7 @@ export function parseBGCatalogJsonObject(
 
   // 3. Convert Players
   let colorIdx = 0;
-  const players: Player[] = Array.from(playerMap.values()).map((p: any) => {
+  const players: Player[] = Array.from(playerMap.values()).map((p) => {
     // Resolve avatar: check if in imageMap (from zip), else fallback
     const imageName = p.image ? p.image.replace(/^.*[\\/]/, '') : null;
     const avatar =
@@ -201,7 +321,7 @@ export function parseBGCatalogJsonObject(
 
     return {
       id: `player-${p.id}`,
-      name: p.name.trim(),
+      name: (p.name || 'Player').trim(),
       avatar,
       color: PLAYER_COLORS[colorIdx++ % PLAYER_COLORS.length],
       createdAt: new Date().toISOString(),
@@ -209,15 +329,15 @@ export function parseBGCatalogJsonObject(
   });
 
   // 4. Convert Sessions & Scores
-  const sessions: PlaySession[] = rawPlays.map((play: any) => {
+  const sessions: PlaySession[] = rawPlays.map((play) => {
     const g = gameMap.get(play.gameId);
     const pps = playersPlaysByPlayId.get(play.id) || [];
 
-    const scores = pps.map((pp: any) => {
+    const scores = pps.map((pp) => {
       const pl = playerMap.get(pp.playerId);
       return {
         playerId: `player-${pp.playerId}`,
-        playerName: pl ? pl.name : pp.nickname || 'Guest',
+        playerName: pl?.name || pp.nickname || 'Guest',
         score:
           pp.score !== null &&
           pp.score !== undefined &&
@@ -242,12 +362,10 @@ export function parseBGCatalogJsonObject(
       }
     });
 
-    const winner = pps.find((pp: any) => pp.winner === 1);
-    const starter = pps.find((pp: any) => pp.startPlayer === 1);
+    const winner = pps.find((pp) => pp.winner === 1);
+    const starter = pps.find((pp) => pp.startPlayer === 1);
 
-    const datePlayed = play.playDate
-      ? new Date(play.playDate.replace(' ', 'T') + 'Z').toISOString()
-      : new Date().toISOString();
+    const datePlayed = safeParseIsoDate(play.playDate);
 
     const photoName = play.image ? play.image.replace(/^.*[\\/]/, '') : null;
     const photos =
@@ -256,10 +374,10 @@ export function parseBGCatalogJsonObject(
     return {
       id: `play-${play.id}`,
       gameId: g ? `bgg-${g.bggId || g.id}` : `game-${play.gameId}`,
-      gameName: g ? g.name : 'Board Game',
+      gameName: g?.name || 'Board Game',
       gameThumbnail: g ? g.urlThumb || g.urlImage || '' : '',
       datePlayed,
-      location: locationMap.get(play.locationId) || undefined,
+      location: play.locationId !== undefined ? locationMap.get(play.locationId) || undefined : undefined,
       durationMinutes: play.length ? Number(play.length) : undefined,
       firstPlayerMethod: starter ? 'manual' : 'random_wheel',
       firstPlayerId: starter ? `player-${starter.playerId}` : undefined,
@@ -272,11 +390,13 @@ export function parseBGCatalogJsonObject(
   });
 
   // Convert Locations
+  const nowIso = new Date().toISOString();
   const locations: GameLocation[] = rawLocations
-    .filter((l: any) => l && l.name && String(l.name).trim())
-    .map((l: any) => ({
+    .filter((l) => l && l.name && String(l.name).trim())
+    .map((l) => ({
       id: `location-${l.id}`,
       name: String(l.name).trim(),
+      createdAt: nowIso,
     }));
 
   return {
@@ -354,11 +474,13 @@ export function parseImportFile(content: string): ImportPreviewItem[] {
   // 1. Try parsing as JSON first
   if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
     try {
-      const parsed = JSON.parse(trimmed);
-      const list = Array.isArray(parsed)
+      const parsed = JSON.parse(trimmed) as
+        | RawSimpleImportItem[]
+        | { games?: RawSimpleImportItem[]; items?: RawSimpleImportItem[] };
+      const list: RawSimpleImportItem[] = Array.isArray(parsed)
         ? parsed
         : parsed.games || parsed.items || [];
-      return list.map((item: any) => ({
+      return list.map((item) => ({
         name: item.name || item.title || 'Untitled Game',
         yearPublished:
           item.yearPublished || item.year
@@ -369,7 +491,7 @@ export function parseImportFile(content: string): ImportPreviewItem[] {
         maxPlayers: Number(item.maxPlayers) || 4,
         playingTime: Number(item.playingTime) || 60,
         bggRating: item.bggRating ? Number(item.bggRating) : undefined,
-        status: normalizeStatus(item.status),
+        status: normalizeStatus(item.status || ''),
         purchasePrice: item.purchasePrice
           ? Number(item.purchasePrice)
           : undefined,

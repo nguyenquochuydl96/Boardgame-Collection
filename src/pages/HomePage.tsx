@@ -16,6 +16,7 @@ import { PageTransition } from '../components/layout/PageTransition';
 import { StatCard } from '../components/dashboard/StatCard';
 import { MiniBarChart } from '../components/dashboard/MiniBarChart';
 import { DraftSessionCard } from '../components/session/DraftSessionCard';
+import { GameCoverImage } from '../components/game/GameCoverImage';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useGameStore } from '../store/useGameStore';
@@ -25,8 +26,11 @@ import {
   formatDate,
   formatDuration,
   getCollectionTotalValue,
+  getTotalPlayDurationMinutes,
+  getTotalPlayHours,
   isDraftMatchingCompletedSession,
   calculatePlayerStreaks,
+  pluralize,
 } from '../lib/utils';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
 import { SessionDraft } from '../types';
@@ -128,10 +132,9 @@ export const HomePage: React.FC = () => {
       if (g.status === 'own' || g.status === 'lent_out') ownCount++;
     }
 
-    let totalMinutes = 0;
+    const totalMinutes = getTotalPlayDurationMinutes(sessions);
     const playMap = new Map<string, { id: string; label: string; value: number }>();
     for (const s of sessions) {
-      totalMinutes += s.durationMinutes || 0;
       const existing = playMap.get(s.gameId) || {
         id: s.gameId,
         label: s.gameName,
@@ -157,7 +160,7 @@ export const HomePage: React.FC = () => {
       ownedGamesCount: ownCount,
       totalSessionsCount: sessions.length,
       totalMinutesPlayed: totalMinutes,
-      totalHoursPlayed: Math.round(totalMinutes / 60),
+      totalHoursPlayed: getTotalPlayHours(sessions),
       totalCollectionValue: getCollectionTotalValue(games),
       recentSessions: recent,
       topPlayedGames: top,
@@ -181,8 +184,10 @@ export const HomePage: React.FC = () => {
             </h1>
           </div>
           <div className="text-xs sm:text-sm text-[var(--muted)] font-medium">
-            <span className="font-bold text-[var(--ink)]">{ownedGamesCount}</span> games in collection ·{' '}
-            <span className="font-bold text-[var(--ink)]">{totalSessionsCount}</span> plays logged
+            <span className="font-bold text-[var(--ink)]">{ownedGamesCount}</span>{' '}
+            {ownedGamesCount === 1 ? 'game' : 'games'} in collection ·{' '}
+            <span className="font-bold text-[var(--ink)]">{totalSessionsCount}</span>{' '}
+            {totalSessionsCount === 1 ? 'play' : 'plays'} logged
           </div>
         </section>
 
@@ -288,7 +293,7 @@ export const HomePage: React.FC = () => {
                 label="Active Rivals"
                 value={players.length}
                 icon={<Users className="w-5 h-5" />}
-                subtitle="Players logged"
+                subtitle={`${pluralize(players.length, 'player')} logged`}
                 href="/players"
                 tileIndex={4}
               />
@@ -321,6 +326,9 @@ export const HomePage: React.FC = () => {
             <div className="space-y-2.5">
               {recentSessions.length > 0 ? (
                 recentSessions.map((session) => {
+                  const isCoopSession =
+                    session.isCoop ||
+                    (session.players.length > 1 && session.players.every((p) => p.isWinner));
                   const winner = session.players.find(
                     (p) => p.isWinner || p.playerId === session.winnerId
                   );
@@ -332,21 +340,13 @@ export const HomePage: React.FC = () => {
                       className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--card-2)] hover:bg-[var(--line)]/40 transition-colors group"
                     >
                       <div className="flex items-center gap-3.5 min-w-0">
-                        {/* Square rounded album thumbnail */}
-                        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-[var(--card)] shrink-0 border border-[var(--line)] shadow-xs flex items-center justify-center">
-                          <img
-                            src={session.gameThumbnail}
-                            alt=""
-                            aria-hidden="true"
-                            className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
-                          />
-                          <img
-                            src={session.gameThumbnail}
-                            alt={session.gameName}
-                            referrerPolicy="no-referrer"
-                            className="relative z-0 w-full h-full object-contain p-0.5 group-hover:scale-105 transition-transform duration-200"
-                          />
-                        </div>
+                        <GameCoverImage
+                          game={{ name: session.gameName, thumbnail: session.gameThumbnail }}
+                          className="w-12 h-12 rounded-xl shrink-0 border border-[var(--line)] shadow-xs"
+                          paddingClass="p-0.5"
+                          imgClassName="group-hover:scale-105 transition-transform duration-200"
+                          fallbackIconSize="text-lg"
+                        />
 
                         <div className="min-w-0">
                           <h3 className="font-display font-bold text-sm text-[var(--ink)] truncate group-hover:text-[var(--accent)] transition-colors">
@@ -360,7 +360,17 @@ export const HomePage: React.FC = () => {
                         </div>
                       </div>
 
-                      {winner && (
+                      {isCoopSession && winner ? (
+                        <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--good-soft)] text-[var(--good)] text-xs font-bold">
+                          <span>🤝</span>
+                          <span>Team Win</span>
+                        </div>
+                      ) : isCoopSession && !winner ? (
+                        <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--bad-soft)] text-[var(--bad)] text-xs font-bold">
+                          <span>💀</span>
+                          <span>Team Defeat</span>
+                        </div>
+                      ) : winner ? (
                         <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-bold">
                           <Crown className="w-3 h-3 fill-amber-500 text-amber-500" />
                           <span className="truncate max-w-[80px] sm:max-w-[120px]">{winner.playerName}</span>
@@ -370,7 +380,7 @@ export const HomePage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                      )}
+                      ) : null}
                     </Link>
                   );
                 })

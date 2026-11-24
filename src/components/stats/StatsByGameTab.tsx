@@ -1,13 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Filter, Search, ArrowUpRight, BarChart3 } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { GameStatusBadge } from '../game/GameStatusBadge';
+import { GameCoverImage } from '../game/GameCoverImage';
 import { cn } from '../ui/cn';
 import {
   calculateGameStats,
   formatDuration,
+  formatPlayerRange,
   formatRecordTimeAgo,
+  getTotalPlayDurationMinutes,
+  pluralize,
   GameStatsSummary,
 } from '../../lib/utils';
 import { PlaySession, BoardGame, GameStatus } from '../../types';
@@ -36,6 +40,12 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
     );
     const [gameStatusFilter, setGameStatusFilter] = useState<GameStatus | 'all'>('all');
     const [gameSearchQuery, setGameSearchQuery] = useState<string>('');
+
+    useEffect(() => {
+      if (initialGameId) {
+        setSelectedGameId(initialGameId);
+      }
+    }, [initialGameId]);
 
     const gameStatusCounts = useMemo(() => {
       const counts: Record<string, number> = { all: games.length };
@@ -86,10 +96,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
         .map((g) => {
           const gSessions = gameSessionsMap.get(g.id) || [];
           const stats = calculateGameStats(gSessions);
-          const totalDuration = gSessions.reduce(
-            (acc, s) => acc + (s.durationMinutes || 0),
-            0
-          );
+          const totalDuration = getTotalPlayDurationMinutes(gSessions);
 
           return {
             game: g,
@@ -202,20 +209,12 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
           <Card className="p-6 sm:p-8 space-y-6 bg-[var(--card)] border border-[var(--line)]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--line)] pb-5">
               <div className="flex items-center gap-4 min-w-0">
-                <div className="relative w-16 h-20 rounded-xl overflow-hidden border border-[var(--line)] shrink-0 shadow-md bg-[var(--card-2)] flex items-center justify-center">
-                  <img
-                    src={activeGame.thumbnail || activeGame.image}
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
-                  />
-                  <img
-                    src={activeGame.thumbnail || activeGame.image}
-                    alt={activeGame.name}
-                    referrerPolicy="no-referrer"
-                    className="relative z-0 w-full h-full object-contain p-1"
-                  />
-                </div>
+                <GameCoverImage
+                  game={activeGame}
+                  className="w-16 h-20 rounded-xl border border-[var(--line)] shrink-0 shadow-md"
+                  paddingClass="p-1"
+                  fallbackIconSize="text-2xl"
+                />
                 <div className="min-w-0 space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="font-display font-extrabold text-xl sm:text-2xl text-[var(--ink)] truncate">
@@ -229,7 +228,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                     )}
                   </div>
                   <p className="text-xs text-[var(--muted)] line-clamp-1">
-                    {activeGame.minPlayers}-{activeGame.maxPlayers} players · {activeGame.playingTime} min/play
+                    {formatPlayerRange(activeGame.minPlayers, activeGame.maxPlayers, 'full')} · {activeGame.playingTime} min/play
                   </p>
                 </div>
               </div>
@@ -261,11 +260,11 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                     <ArrowUpRight className="w-3.5 h-3.5 text-[var(--muted)] group-hover:text-[var(--accent)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
                   </div>
                   <p className="font-display font-black text-2xl text-[var(--accent)] mt-1">
-                    {activeGameStats.totalPlays} plays
+                    {pluralize(activeGameStats.totalPlays, 'play')}
                   </p>
                 </div>
                 <div className="text-[10px] text-[var(--muted)] group-hover:text-[var(--ink-2)] transition-colors mt-1 flex items-center justify-between">
-                  <span>{activeGameSessions.length} logged sessions</span>
+                  <span>{pluralize(activeGameSessions.length, 'logged session')}</span>
                   <span className="font-semibold text-[9px] text-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity">
                     View all →
                   </span>
@@ -429,7 +428,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                     </div>
                     <div className="mt-1 space-y-0.5">
                       <span className="text-xs font-mono font-bold text-[var(--ink)] block">
-                        {topWin.wins} wins ({topWin.winRate}%)
+                        {pluralize(topWin.wins, 'win')} ({topWin.winRate}%)
                       </span>
                       {topWin.lastWonDate && (
                         <div className="text-[10px] text-[var(--muted)] flex items-center justify-between gap-1">
@@ -496,7 +495,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                     </div>
                     <div className="mt-1 space-y-0.5">
                       <span className="text-xs font-mono font-bold text-[var(--ink)] block">
-                        {topLoss.losses} losses / {topLoss.plays} plays ({topLoss.lossRate}%)
+                        {pluralize(topLoss.losses, 'loss', 'losses')} / {pluralize(topLoss.plays, 'play')} ({topLoss.lossRate}%)
                       </span>
                       {topLoss.lastPlayedDate && (
                         <div className="text-[10px] text-[var(--muted)] flex items-center justify-between gap-1">
@@ -540,7 +539,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                     >
                       <span className="font-bold text-xs text-[var(--ink)]">{pw.playerName}</span>
                       <div className="text-xs font-mono">
-                        <span className="text-amber-600 dark:text-amber-400 font-bold">{pw.wins} wins</span>
+                        <span className="text-amber-600 dark:text-amber-400 font-bold">{pluralize(pw.wins, 'win')}</span>
                         <span className="text-[var(--muted)] ml-2">({pw.winRate}%)</span>
                       </div>
                     </div>
@@ -563,7 +562,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                 <h3 className="font-display font-bold text-lg text-[var(--ink)] flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-[var(--accent)]" />
                   <span>
-                    All Games Breakdown ({gamesBreakdownList.length} games)
+                    All Games Breakdown ({pluralize(gamesBreakdownList.length, 'game')})
                   </span>
                 </h3>
                 <p className="text-xs text-[var(--muted)]">
@@ -603,26 +602,18 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                       >
                         <td className="py-3 px-4 font-display font-bold text-[var(--ink)]">
                           <div className="flex items-center gap-3">
-                            <div className="relative w-8 h-10 rounded-lg overflow-hidden shrink-0 border border-[var(--line)] shadow-sm bg-[var(--card-2)] flex items-center justify-center">
-                              <img
-                                src={item.game.thumbnail || item.game.image}
-                                alt=""
-                                aria-hidden="true"
-                                className="absolute inset-0 w-full h-full object-cover blur-xs scale-110 opacity-35 pointer-events-none"
-                              />
-                              <img
-                                src={item.game.thumbnail || item.game.image}
-                                alt={item.game.name}
-                                referrerPolicy="no-referrer"
-                                className="relative z-0 w-full h-full object-contain p-0.5"
-                              />
-                            </div>
+                            <GameCoverImage
+                              game={item.game}
+                              className="w-8 h-10 rounded-lg shrink-0 border border-[var(--line)] shadow-sm"
+                              paddingClass="p-0.5"
+                              fallbackIconSize="text-sm"
+                            />
                             <div className="min-w-0">
                               <span className="font-bold text-sm block truncate text-[var(--ink)]">
                                 {item.game.name}
                               </span>
                               <span className="text-[10px] text-[var(--muted)] font-normal font-sans">
-                                {item.game.minPlayers} - {item.game.maxPlayers} players · {item.game.playingTime}m
+                                {formatPlayerRange(item.game.minPlayers, item.game.maxPlayers, 'full')} · {item.game.playingTime}m
                               </span>
                             </div>
                           </div>
@@ -636,9 +627,9 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                               to={`/sessions?gameId=${item.game.id}`}
                               onClick={(e) => e.stopPropagation()}
                               className="text-[var(--accent)] font-black hover:underline inline-flex items-center gap-0.5 justify-end group/plays"
-                              title={`View all ${item.totalPlays} sessions of ${item.game.name}`}
+                              title={`View all ${pluralize(item.totalPlays, 'session')} of ${item.game.name}`}
                             >
-                              <span>{item.totalPlays} plays</span>
+                              <span>{pluralize(item.totalPlays, 'play')}</span>
                               <ArrowUpRight className="w-3 h-3 opacity-0 group-hover/plays:opacity-100 transition-opacity" />
                             </Link>
                           ) : (
@@ -745,12 +736,12 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                                 className="group/rec block text-right hover:opacity-90"
                                 title={`View latest winning session of ${item.topWinner.playerName}`}
                               >
-                                <span className="font-bold text-amber-600 dark:text-amber-400 block truncate max-w-[120px] ml-auto group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
-                                  {item.topWinner.playerName}
-                                  <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover/rec:opacity-100 transition-opacity" />
+                                <span className="font-bold text-amber-600 dark:text-amber-400 max-w-[120px] ml-auto group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
+                                  <span className="truncate">{item.topWinner.playerName}</span>
+                                  <ArrowUpRight className="w-2.5 h-2.5 shrink-0 opacity-0 group-hover/rec:opacity-100 transition-opacity" />
                                 </span>
                                 <span className="text-[10px] text-[var(--muted)] block">
-                                  {item.topWinner.wins} wins ({item.topWinner.winRate}%)
+                                  {pluralize(item.topWinner.wins, 'win')} ({item.topWinner.winRate}%)
                                 </span>
                                 {item.topWinner.lastWonDate && (
                                   <span
@@ -767,7 +758,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                                   {item.topWinner.playerName}
                                 </span>
                                 <span className="text-[10px] text-[var(--muted)] block">
-                                  {item.topWinner.wins} wins ({item.topWinner.winRate}%)
+                                  {pluralize(item.topWinner.wins, 'win')} ({item.topWinner.winRate}%)
                                 </span>
                                 {item.topWinner.lastWonDate && (
                                   <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={`Won: ${formatRecordTimeAgo(item.topWinner.lastWonDate)}`}>
@@ -789,16 +780,16 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                                 className="group/rec block text-right hover:opacity-90"
                                 title={`View recent session of ${item.topLoser.playerName}`}
                               >
-                                <span className="font-bold text-rose-600 dark:text-rose-400 block truncate max-w-[120px] ml-auto group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
-                                  {item.topLoser.playerName}
-                                  <ArrowUpRight className="w-2.5 h-2.5 opacity-0 group-hover/rec:opacity-100 transition-opacity" />
+                                <span className="font-bold text-rose-600 dark:text-rose-400 max-w-[120px] ml-auto group-hover/rec:underline inline-flex items-center gap-0.5 justify-end">
+                                  <span className="truncate">{item.topLoser.playerName}</span>
+                                  <ArrowUpRight className="w-2.5 h-2.5 shrink-0 opacity-0 group-hover/rec:opacity-100 transition-opacity" />
                                 </span>
                                 <span className="text-[10px] text-[var(--muted)] block">
-                                  {item.topLoser.losses} losses ({item.topLoser.lossRate}%)
+                                  {pluralize(item.topLoser.losses, 'loss', 'losses')} ({item.topLoser.lossRate}%)
                                 </span>
                                 {item.topLoser.lastPlayedDate && (
                                   <span
-                                    className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto group-hover/rec:text-rose-600 dark:group-hover:text-rose-400 transition-colors"
+                                    className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto group-hover/rec:text-rose-600 dark:group-hover/rec:text-rose-400 transition-colors"
                                     title={`Recent: ${formatRecordTimeAgo(item.topLoser.lastPlayedDate)}`}
                                   >
                                     {formatRecordTimeAgo(item.topLoser.lastPlayedDate)}
@@ -811,7 +802,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                                   {item.topLoser.playerName}
                                 </span>
                                 <span className="text-[10px] text-[var(--muted)] block">
-                                  {item.topLoser.losses} losses ({item.topLoser.lossRate}%)
+                                  {pluralize(item.topLoser.losses, 'loss', 'losses')} ({item.topLoser.lossRate}%)
                                 </span>
                                 {item.topLoser.lastPlayedDate && (
                                   <span className="text-[9px] text-[var(--muted)]/80 block truncate max-w-[130px] ml-auto" title={`Recent: ${formatRecordTimeAgo(item.topLoser.lastPlayedDate)}`}>

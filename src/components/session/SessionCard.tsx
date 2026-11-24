@@ -1,9 +1,10 @@
-import React, { useState, memo } from 'react';
+import React, { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, MapPin, Crown, ChevronRight, Dices, Check } from 'lucide-react';
+import { Calendar, Clock, MapPin, Crown, ChevronRight, Check } from 'lucide-react';
 import { PlaySession, Player } from '../../types';
 import { formatDate, formatDuration } from '../../lib/utils';
 import { PlayerAvatar } from '../player/PlayerAvatar';
+import { GameCoverImage } from '../game/GameCoverImage';
 
 export interface SessionCardProps {
   session: PlaySession;
@@ -14,7 +15,6 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
   session,
   playersById = {},
 }) => {
-  const [imageError, setImageError] = useState(false);
   const players = session.players || [];
   const isCoopSession = session.isCoop || (players.length > 1 && players.every((p) => p.isWinner));
   const winner = players.find(
@@ -27,31 +27,13 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
         to={`/sessions/${session.id}`}
         className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--card)] border border-[var(--line)] hover:border-[var(--line-2)] hover:shadow-md transition-all duration-200 group"
       >
-        <div className="w-14 h-16 sm:w-16 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-[var(--card-2)] border border-[var(--line)] relative flex items-center justify-center">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-r from-black/25 to-transparent z-10 pointer-events-none" />
-          {!imageError && session.gameThumbnail ? (
-            <>
-              <img
-                src={session.gameThumbnail}
-                alt=""
-                aria-hidden="true"
-                className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
-              />
-              <img
-                src={session.gameThumbnail}
-                alt={session.gameName}
-                loading="lazy"
-                referrerPolicy="no-referrer"
-                onError={() => setImageError(true)}
-                className="relative z-0 w-full h-full object-contain p-0.5 group-hover:scale-105 transition-transform duration-300"
-              />
-            </>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-[var(--card-2)] text-[var(--accent)]">
-              <Dices className="w-6 h-6 text-current" />
-            </div>
-          )}
-        </div>
+        <GameCoverImage
+          game={{ name: session.gameName, thumbnail: session.gameThumbnail }}
+          className="w-14 h-16 sm:w-16 sm:h-20 rounded-xl shrink-0 border border-[var(--line)]"
+          paddingClass="p-1"
+          imgClassName="group-hover:scale-105 transition-transform duration-300"
+          fallbackIconSize="text-xl"
+        />
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -75,6 +57,11 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--good-soft)] text-[var(--good)] border border-[var(--good)]/30 text-xs font-bold shrink-0">
                 <span>🤝</span>
                 <span>Team Win</span>
+              </span>
+            ) : isCoopSession && !winner ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--bad-soft)] text-[var(--bad)] border border-[var(--bad)]/30 text-xs font-bold shrink-0">
+                <span>💀</span>
+                <span>Team Defeat</span>
               </span>
             ) : winner ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 text-xs font-semibold shrink-0">

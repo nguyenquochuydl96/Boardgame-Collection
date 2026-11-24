@@ -41,11 +41,14 @@
   --muted: #756D67;
   --text-primary: #231F1D;
   --text-secondary: #756D67;
+  --text-tertiary: #8B827A;
   --text-muted: #9E958C;
+  --hover-bg: rgba(35, 31, 29, 0.06);
 
   /* Ultra-subtle Borders & Dividers */
   --line: #E8E0D5;
   --line-2: rgba(35, 31, 29, 0.16);
+  --line-strong: rgba(35, 31, 29, 0.24);
   --border-subtle: #E8E0D5;
   --border-glow: rgba(229, 115, 79, 0.35);
 
@@ -126,11 +129,14 @@
   --muted: #9E958C;
   --text-primary: #F4EFE6;
   --text-secondary: #9E958C;
+  --text-tertiary: #847B73;
   --text-muted: #756D67;
+  --hover-bg: rgba(244, 239, 230, 0.07);
 
   /* Ultra-subtle Borders & Dividers */
   --line: #322C27;
   --line-2: rgba(244, 239, 230, 0.16);
+  --line-strong: rgba(244, 239, 230, 0.26);
   --border-subtle: #322C27;
   --border-glow: rgba(229, 115, 79, 0.45);
 
@@ -213,6 +219,14 @@
     font-family: var(--font-display);
     letter-spacing: -0.02em;
     text-wrap: balance;
+  }
+
+  @media (max-width: 767px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea {
+      font-size: 16px;
+    }
   }
 }
 

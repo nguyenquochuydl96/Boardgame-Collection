@@ -12,17 +12,17 @@ import {
   Ban,
   Package,
   Trophy,
-  Search,
-  Check,
   Flame,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { useGameStore } from '../../store/useGameStore';
 import { useSessionStore } from '../../store/useSessionStore';
-import { BoardGame, GameStatus } from '../../types';
+import { BoardGame } from '../../types';
 import { getScoringTemplateForGame } from '../../lib/scoringPresets';
+import { formatPlayerRange, shuffleArray } from '../../lib/utils';
 import { playTickSound, playFanfareSound, triggerConfetti } from '../../lib/soundEffects';
+import { GameCoverImage } from './GameCoverImage';
 import { cn } from '../ui/cn';
 
 export type PlayerCountFilter = 'any' | '2' | '3' | '4' | '5+';
@@ -200,13 +200,13 @@ export function filterWhatToPlayGames(
       }
     }
 
-    // 4. Playtime filter
+    // 4. Playtime filter (strictly non-overlapping buckets: <30, 30-60, 61-120, >120)
     if (durationFilter !== 'any') {
       const pt = g.playingTime || 0;
-      if (durationFilter === '<30m' && (pt <= 0 || pt > 30)) return false;
+      if (durationFilter === '<30m' && (pt <= 0 || pt >= 30)) return false;
       if (durationFilter === '30-60m' && (pt < 30 || pt > 60)) return false;
-      if (durationFilter === '60-120m' && (pt < 60 || pt > 120)) return false;
-      if (durationFilter === '120m+' && pt < 120) return false;
+      if (durationFilter === '60-120m' && (pt <= 60 || pt > 120)) return false;
+      if (durationFilter === '120m+' && pt <= 120) return false;
     }
 
     // 5. Vibe / Weight filter
@@ -225,6 +225,22 @@ export function filterWhatToPlayGames(
   });
 }
 
+/**
+ * Count Dusty Gems strictly within the active ownership scope (Owned Only vs All Games),
+ * never counting sold / wishlist / previously_owned titles.
+ */
+export function countDustyGames(
+  allGames: BoardGame[],
+  shelfOnly: boolean,
+  gameMetricsMap: Record<string, GamePlayMetrics>
+): number {
+  return filterWhatToPlayGames(allGames, {
+    shelfOnly,
+    dustyOnly: true,
+    gameMetricsMap,
+  }).length;
+}
+
 export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const allGames = useGameStore((s) => s.games);
@@ -239,7 +255,6 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
   const [durationFilter, setDurationFilter] = useState<DurationFilter>('any');
   const [vibeFilter, setVibeFilter] = useState<VibeFilter>('all');
   const [dustyOnly, setDustyOnly] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Quick Pick & Table Veto States
   const [quickPickGame, setQuickPickGame] = useState<BoardGame | null>(null);
@@ -284,16 +299,15 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
     return result;
   }, [allGames, sessions]);
 
-  // Count total dusty gems in the collection
+  // Count total dusty gems scoped to active ownership filter (Owned Only vs All Games)
   const totalDustyCount = useMemo(() => {
-    return allGames.filter((g) => gameMetricsMap[g.id]?.isDusty).length;
-  }, [allGames, gameMetricsMap]);
+    return countDustyGames(allGames, shelfOnly, gameMetricsMap);
+  }, [allGames, shelfOnly, gameMetricsMap]);
 
   // Filter available games based on smart criteria
   const filteredGames = useMemo(() => {
     return filterWhatToPlayGames(allGames, {
       shelfOnly,
-      searchQuery,
       playerCountFilter,
       durationFilter,
       vibeFilter,
@@ -303,7 +317,6 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
   }, [
     allGames,
     shelfOnly,
-    searchQuery,
     playerCountFilter,
     durationFilter,
     vibeFilter,
@@ -324,7 +337,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
     []
   );
 
-  // Initialize Table Veto Pool with 2-5 candidate games
+  // Initialize Table Veto Pool with 2-5 unbiased candidate games (Fisher-Yates)
   const initVetoPool = useCallback((pool: BoardGame[]) => {
     if (pool.length < 2) {
       setVetoPool(pool);
@@ -332,7 +345,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
       return;
     }
     const poolSize = Math.min(5, Math.max(2, pool.length));
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    const shuffled = shuffleArray(pool);
     setVetoPool(shuffled.slice(0, poolSize));
     setVetoedIds([]);
   }, []);
@@ -402,7 +415,6 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
     setDurationFilter('any');
     setVibeFilter('all');
     setDustyOnly(false);
-    setSearchQuery('');
   };
 
   const isFilterActive =
@@ -410,8 +422,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
     playerCountFilter !== 'any' ||
     durationFilter !== 'any' ||
     vibeFilter !== 'all' ||
-    dustyOnly ||
-    searchQuery.trim() !== '';
+    dustyOnly;
 
   const activeVetoCandidates = useMemo(() => {
     return vetoPool.filter((g) => !vetoedIds.includes(g.id));
@@ -455,7 +466,6 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
               type="button"
               onClick={() => {
                 setMode('veto');
-                initVetoPool(filteredGames);
               }}
               className={cn(
                 'px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 select-none',
@@ -542,8 +552,8 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
               { id: 'any', label: 'Any' },
               { id: '<30m', label: '< 30m' },
               { id: '30-60m', label: '30–60m' },
-              { id: '60-120m', label: '60–120m' },
-              { id: '120m+', label: '120m+' },
+              { id: '60-120m', label: '61–120m' },
+              { id: '120m+', label: '> 120m' },
             ] as const).map((d) => (
               <button
                 key={d.id}
@@ -641,27 +651,12 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                   {/* Spotlight Game Header */}
                   <div className="flex items-start gap-3.5 sm:gap-4">
                     {/* Game Cover */}
-                    {quickPickGame.thumbnail || quickPickGame.image ? (
-                      <div className="relative w-20 h-24 sm:w-24 sm:h-28 rounded-2xl overflow-hidden shrink-0 border border-[var(--line)] shadow-md bg-[var(--card-2)] flex items-center justify-center">
-                        <img
-                          src={quickPickGame.thumbnail || quickPickGame.image}
-                          alt=""
-                          aria-hidden="true"
-                          className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
-                        />
-                        <img
-                          src={quickPickGame.thumbnail || quickPickGame.image}
-                          alt={quickPickGame.name}
-                          loading="lazy"
-                          decoding="async"
-                          className="relative z-0 w-full h-full object-contain p-1"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-20 h-24 sm:w-24 sm:h-28 rounded-2xl bg-amber-500/15 border border-[var(--line)] flex items-center justify-center text-3xl shrink-0">
-                        🎲
-                      </div>
-                    )}
+                    <GameCoverImage
+                      game={quickPickGame}
+                      className="w-20 h-24 sm:w-24 sm:h-28 rounded-2xl shrink-0 border border-[var(--line)] shadow-md"
+                      paddingClassName="p-1.5"
+                      fallbackIconClassName="w-8 h-8"
+                    />
 
                     {/* Game Details */}
                     <div className="min-w-0 flex-1 space-y-1.5">
@@ -684,7 +679,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                       <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold bg-[var(--card-2)] border border-[var(--line)] text-[var(--ink)]">
                           <Users className="w-3 h-3 opacity-70" />
-                          {quickPickGame.minPlayers}–{quickPickGame.maxPlayers}p
+                          {formatPlayerRange(quickPickGame.minPlayers, quickPickGame.maxPlayers, 'short')}
                         </span>
 
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold bg-[var(--card-2)] border border-[var(--line)] text-[var(--ink)]">
@@ -787,7 +782,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                 transition={{ type: 'spring', stiffness: 350, damping: 25 }}
                 className="p-5 sm:p-6 rounded-3xl bg-gradient-to-b from-amber-500/20 via-orange-500/15 to-transparent border-2 border-amber-400 shadow-2xl space-y-4 text-center"
               >
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 text-[#161311] font-black text-xs uppercase tracking-wider shadow-md">
                   <Trophy className="w-3.5 h-3.5 fill-current" />
                   Table Consensus Winner!
                 </div>
@@ -803,32 +798,17 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
 
                 {/* Cover and details */}
                 <div className="flex items-center justify-center gap-4 py-2">
-                  {vetoWinner.thumbnail || vetoWinner.image ? (
-                    <div className="relative w-24 h-32 rounded-2xl overflow-hidden shrink-0 border-2 border-amber-400/60 shadow-xl bg-[var(--card-2)] flex items-center justify-center">
-                      <img
-                        src={vetoWinner.thumbnail || vetoWinner.image}
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute inset-0 w-full h-full object-cover blur-md scale-110 opacity-35 pointer-events-none"
-                      />
-                      <img
-                        src={vetoWinner.thumbnail || vetoWinner.image}
-                        alt={vetoWinner.name}
-                        loading="lazy"
-                        decoding="async"
-                        className="relative z-0 w-full h-full object-contain p-1"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-24 h-32 rounded-2xl bg-amber-500/20 text-4xl flex items-center justify-center border-2 border-amber-400/60">
-                      🎲
-                    </div>
-                  )}
+                  <GameCoverImage
+                    game={vetoWinner}
+                    className="w-24 h-32 rounded-2xl shrink-0 border-2 border-amber-400/60 shadow-xl"
+                    paddingClassName="p-1.5"
+                    fallbackIconClassName="w-9 h-9"
+                  />
 
                   <div className="text-left space-y-1.5 text-xs">
                     <div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
                       <Users className="w-3.5 h-3.5 text-amber-500" />
-                      {vetoWinner.minPlayers}–{vetoWinner.maxPlayers} players
+                      {formatPlayerRange(vetoWinner.minPlayers, vetoWinner.maxPlayers, 'full')}
                     </div>
                     <div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
                       <Clock className="w-3.5 h-3.5 text-amber-500" />
@@ -913,27 +893,12 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                           className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--card)] border border-[var(--line)] hover:border-[var(--line-2)] shadow-sm transition-all"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            {g.thumbnail || g.image ? (
-                              <div className="relative w-12 h-14 rounded-xl overflow-hidden shrink-0 border border-[var(--line)] shadow-sm bg-[var(--card-2)] flex items-center justify-center">
-                                <img
-                                  src={g.thumbnail || g.image}
-                                  alt=""
-                                  aria-hidden="true"
-                                  className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 opacity-35 pointer-events-none"
-                                />
-                                <img
-                                  src={g.thumbnail || g.image}
-                                  alt={g.name}
-                                  loading="lazy"
-                                  decoding="async"
-                                  className="relative z-0 w-full h-full object-contain p-0.5"
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-12 h-14 rounded-xl bg-amber-500/15 border border-[var(--line)] flex items-center justify-center text-xl shrink-0">
-                                🎲
-                              </div>
-                            )}
+                            <GameCoverImage
+                              game={g}
+                              className="w-12 h-14 rounded-xl shrink-0 border border-[var(--line)] shadow-sm"
+                              paddingClassName="p-1"
+                              fallbackIconClassName="w-5 h-5"
+                            />
 
                             <div className="min-w-0 space-y-0.5">
                               <h4 className="font-display font-bold text-sm text-[var(--ink)] truncate">
@@ -941,7 +906,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                               </h4>
                               <div className="flex items-center gap-1.5 text-[10px] text-[var(--muted)] flex-wrap">
                                 <span>
-                                  {g.minPlayers}–{g.maxPlayers}p
+                                  {formatPlayerRange(g.minPlayers, g.maxPlayers, 'short')}
                                 </span>
                                 <span>·</span>
                                 <span>{g.playingTime}m</span>
@@ -965,7 +930,7 @@ export const WhatToPlayModal: React.FC<WhatToPlayModalProps> = ({ isOpen, onClos
                             className="px-3.5 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-600 hover:text-white text-rose-500 dark:text-rose-400 font-extrabold text-xs inline-flex items-center gap-1.5 shrink-0 transition-all cursor-pointer shadow-sm min-h-[38px] active:scale-95"
                           >
                             <Ban className="w-3.5 h-3.5" />
-                            <span>Veto (Loại)</span>
+                            <span>Veto</span>
                           </button>
                         </motion.div>
                       );

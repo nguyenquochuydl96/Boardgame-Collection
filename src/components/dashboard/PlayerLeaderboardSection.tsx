@@ -10,7 +10,8 @@ import {
   HeartCrack,
 } from 'lucide-react';
 import { Player, PlaySession } from '../../types';
-import { calculateMinRequiredPlays } from '../../lib/utils';
+import { calculateMinRequiredPlays, pluralize } from '../../lib/utils';
+import { getScoringTemplateForGame } from '../../lib/scoringPresets';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { Card } from '../ui/Card';
 import { cn } from '../ui/cn';
@@ -81,7 +82,7 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     metricHeader: 'Win Rate',
     contextHeader: 'Match Record',
     getPrimaryMetric: (st) => `${st.winRate}%`,
-    getSecondaryMetric: (st) => `${st.wins} wins / ${st.plays} plays`,
+    getSecondaryMetric: (st) => `${pluralize(st.wins, 'win')} / ${pluralize(st.plays, 'play')}`,
     sortFn: (a, b) => b.winRate - a.winRate || b.wins - a.wins,
   },
   {
@@ -97,8 +98,8 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     description: 'Total absolute match victories accumulated across all tabletop sessions.',
     metricHeader: 'Total Wins',
     contextHeader: 'Win Rate & Plays',
-    getPrimaryMetric: (st) => `${st.wins} wins`,
-    getSecondaryMetric: (st) => `Win rate: ${st.winRate}% (across ${st.plays} plays)`,
+    getPrimaryMetric: (st) => pluralize(st.wins, 'win'),
+    getSecondaryMetric: (st) => `Win rate: ${st.winRate}% (across ${pluralize(st.plays, 'play')})`,
     sortFn: (a, b) => b.wins - a.wins || b.winRate - a.winRate,
     filterFn: (st) => st.wins > 0,
   },
@@ -115,8 +116,8 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     description: 'Longest consecutive match winning streak ever achieved by a player.',
     metricHeader: 'Record Streak',
     contextHeader: 'Current Streak Status',
-    getPrimaryMetric: (st) => `${st.maxWinStreak} games`,
-    getSecondaryMetric: (st) => `Current streak: ${st.currentWinStreak} consecutive wins`,
+    getPrimaryMetric: (st) => pluralize(st.maxWinStreak, 'game'),
+    getSecondaryMetric: (st) => `Current streak: ${pluralize(st.currentWinStreak, 'consecutive win')}`,
     sortFn: (a, b) => b.maxWinStreak - a.maxWinStreak || b.wins - a.wins,
     filterFn: (st) => st.maxWinStreak > 0,
   },
@@ -133,8 +134,8 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     description: 'Number of unique tabletop games played across the collection.',
     metricHeader: 'Games Played',
     contextHeader: 'Total Plays Logged',
-    getPrimaryMetric: (st) => `${st.uniqueGamesCount} games`,
-    getSecondaryMetric: (st) => `${st.plays} total plays logged`,
+    getPrimaryMetric: (st) => pluralize(st.uniqueGamesCount, 'game'),
+    getSecondaryMetric: (st) => `${pluralize(st.plays, 'total play')} logged`,
     sortFn: (a, b) => b.uniqueGamesCount - a.uniqueGamesCount || b.plays - a.plays,
     filterFn: (st) => st.uniqueGamesCount > 0,
   },
@@ -154,7 +155,7 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     metricHeader: 'Runner-Up Rate',
     contextHeader: '2nd Places / Total Plays',
     getPrimaryMetric: (st) => `${st.secondRate}%`,
-    getSecondaryMetric: (st) => `${st.secondPlaces} times / ${st.plays} plays`,
+    getSecondaryMetric: (st) => `${pluralize(st.secondPlaces, 'time')} / ${pluralize(st.plays, 'play')}`,
     sortFn: (a, b) => b.secondRate - a.secondRate || b.secondPlaces - a.secondPlaces || b.plays - a.plays,
     filterFn: (st) => st.secondPlaces > 0,
   },
@@ -172,7 +173,7 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     metricHeader: 'Last Place Rate',
     contextHeader: 'Last Places / Total Plays',
     getPrimaryMetric: (st) => `${st.lastRate}%`,
-    getSecondaryMetric: (st) => `${st.lastPlaces} times / ${st.plays} plays`,
+    getSecondaryMetric: (st) => `${pluralize(st.lastPlaces, 'time')} / ${pluralize(st.plays, 'play')}`,
     sortFn: (a, b) => b.lastRate - a.lastRate || b.lastPlaces - a.lastPlaces || b.plays - a.plays,
     filterFn: (st) => st.lastPlaces > 0,
   },
@@ -189,8 +190,8 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     description: 'Longest consecutive match drought without a single victory.',
     metricHeader: 'Longest Drought',
     contextHeader: 'Current Drought Status',
-    getPrimaryMetric: (st) => `${st.maxColdStreak} games`,
-    getSecondaryMetric: (st) => `Current drought: ${st.currentColdStreak} games without a win`,
+    getPrimaryMetric: (st) => pluralize(st.maxColdStreak, 'game'),
+    getSecondaryMetric: (st) => `Current drought: ${pluralize(st.currentColdStreak, 'game')} without a win`,
     sortFn: (a, b) => b.maxColdStreak - a.maxColdStreak || b.plays - a.plays,
     filterFn: (st) => st.maxColdStreak > 0,
   },
@@ -207,8 +208,8 @@ const CRITERIA_CONFIG: CriterionConfig[] = [
     description: 'Finished 2nd place by an agonizing margin of just 1 or 2 points behind the winner!',
     metricHeader: 'Narrow Losses (≤ 2 pts)',
     contextHeader: 'Of All 2nd Places',
-    getPrimaryMetric: (st) => `${st.closeLosses} games`,
-    getSecondaryMetric: (st) => `${(st.secondPlaces > 0 ? Math.round((st.closeLosses / st.secondPlaces) * 100) : 0)}% of 2nd places (${st.secondPlaces} times)`,
+    getPrimaryMetric: (st) => pluralize(st.closeLosses, 'game'),
+    getSecondaryMetric: (st) => `${(st.secondPlaces > 0 ? Math.round((st.closeLosses / st.secondPlaces) * 100) : 0)}% of 2nd places (${pluralize(st.secondPlaces, 'time')})`,
     sortFn: (a, b) => b.closeLosses - a.closeLosses || b.secondPlaces - a.secondPlaces,
     filterFn: (st) => st.closeLosses > 0,
   },
@@ -224,12 +225,20 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
     const [activeGroup, setActiveGroup] = useState<LeaderboardGroup>('all');
     const [activeCriterionId, setActiveCriterionId] = useState<LeaderboardCriterion>('win_rate');
     const [showAllPlayers, setShowAllPlayers] = useState(false);
+    const [sessionScope, setSessionScope] = useState<'competitive' | 'all'>('all');
+
+    const scopedSessions = useMemo(() => {
+      if (sessionScope === 'all') return sessions;
+      return sessions.filter(
+        (s) => s.isCoop !== true && getScoringTemplateForGame(s.gameName).isCoop !== true
+      );
+    }, [sessions, sessionScope]);
 
     // Dynamic qualification threshold: capped at 5 plays so large vaults (e.g. 1,400+ sessions)
     // don't lock regular group players out of the leaderboard.
     const calculatedThreshold = useMemo(
-      () => calculateMinRequiredPlays(sessions.length, 0.05),
-      [sessions.length]
+      () => calculateMinRequiredPlays(scopedSessions.length, 0.05),
+      [scopedSessions.length]
     );
     const minRequiredPlays = useMemo(
       () => Math.min(5, Math.max(1, calculatedThreshold)),
@@ -240,7 +249,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
     // 1. Compute comprehensive stats for all players from session history
     const allStats = useMemo(() => {
       // Sort sessions chronologically for accurate streak calculations (string compare is O(1) per pair)
-      const chrono = [...sessions].sort(
+      const chrono = [...scopedSessions].sort(
         (a, b) =>
           (a.datePlayed || '').localeCompare(b.datePlayed || '') ||
           (a.createdAt || '').localeCompare(b.createdAt || '')
@@ -333,7 +342,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
       });
 
       return Array.from(statsMap.values()).filter((st) => st.plays > 0);
-    }, [players, sessions]);
+    }, [players, scopedSessions]);
 
     // 2. Filter criteria options by group (All, Positive, Negative)
     const availableCriteria = useMemo(() => {
@@ -446,6 +455,36 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
               </button>
             </div>
 
+            {/* Competitive Only vs All (incl. Co-op) Scope Toggle */}
+            <div className="inline-flex items-center p-1 rounded-xl bg-[var(--card-2)] border border-[var(--line)]">
+              <button
+                type="button"
+                onClick={() => setSessionScope('competitive')}
+                className={cn(
+                  'px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer select-none',
+                  sessionScope === 'competitive'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
+                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
+                )}
+                title="Exclude cooperative games from Win Rate and Win Streak rankings"
+              >
+                Competitive Only
+              </button>
+              <button
+                type="button"
+                onClick={() => setSessionScope('all')}
+                className={cn(
+                  'px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer select-none',
+                  sessionScope === 'all'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs'
+                    : 'text-[var(--ink-2)] hover:text-[var(--ink)]'
+                )}
+                title="Include both competitive and cooperative sessions"
+              >
+                All (incl. Co-op)
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => setShowAllPlayers((prev) => !prev)}
@@ -455,7 +494,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
                   ? 'bg-amber-500/15 border-amber-500/40 text-amber-500 shadow-sm'
                   : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--ink-2)] hover:text-[var(--ink)]'
               )}
-              title={showAllPlayers ? 'Showing all players with at least 1 play' : `Filter by qualified (≥ ${minRequiredPlays} plays)`}
+              title={showAllPlayers ? 'Showing all players with at least 1 play' : `Filter by qualified (≥ ${pluralize(minRequiredPlays, 'play')})`}
             >
               <span>{showAllPlayers ? '👥 All Players' : `🏆 Qualified (≥ ${minRequiredPlays})`}</span>
             </button>
@@ -521,12 +560,12 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
             </span>
             <div className="flex items-center sm:justify-end gap-1.5 mt-0.5">
               <span className="text-xs font-semibold text-[var(--ink-2)]">
-                {rankedStats.length} qualified players
+                {pluralize(rankedStats.length, 'qualified player')}
               </span>
               <span className="text-[11px] text-[var(--muted)] font-mono">
                 {showAllPlayers
                   ? '(≥ 1 play)'
-                  : `(≥ 5% · min ${minRequiredPlays} ${minRequiredPlays === 1 ? 'play' : 'plays'})`}
+                  : `(≥ 5% · min ${pluralize(minRequiredPlays, 'play')})`}
               </span>
             </div>
           </div>

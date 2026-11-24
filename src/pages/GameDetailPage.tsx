@@ -14,30 +14,33 @@ import {
   Save,
   Coffee,
   ArrowUpRight,
-  Dices,
+  Upload,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { GameStatusBadge } from '../components/game/GameStatusBadge';
+import { GameCoverImage } from '../components/game/GameCoverImage';
 import { SessionCard } from '../components/session/SessionCard';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
+import { saveMediaImage } from '../lib/mediaStorage';
 import {
   calculateGameStats,
   formatDate,
   formatDuration,
+  formatPlayerRange,
   formatVND,
   formatNumberInput,
   parseNumberInput,
-  getGameCoverImage,
+  pluralize,
   STATUS_CONFIG,
 } from '../lib/utils';
 import { GameStatus } from '../types';
-import { useResolvedMedia } from '../hooks/useResolvedMedia';
 
 export const GameDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -50,14 +53,11 @@ export const GameDetailPage: React.FC = () => {
   const allSessions = useSessionStore((s) => s.sessions);
   const players = usePlayerStore((s) => s.players);
 
-  const [coverError, setCoverError] = useState(false);
-  const rawCover = getGameCoverImage(game);
-  const resolvedCover = useResolvedMedia(rawCover, game?.image || game?.thumbnail || undefined);
-
   const [notesDraft, setNotesDraft] = useState(game?.notes || '');
   const [notesSaved, setNotesSaved] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [visibleSessionsCount, setVisibleSessionsCount] = useState(15);
 
   // Edit modal state
@@ -69,6 +69,15 @@ export const GameDetailPage: React.FC = () => {
     game?.sellPrice ? formatNumberInput(game.sellPrice) : ''
   );
   const [editLentTo, setEditLentTo] = useState(game?.lentToName || '');
+  const [editMinPlayers, setEditMinPlayers] = useState<string>(String(game?.minPlayers ?? 1));
+  const [editMaxPlayers, setEditMaxPlayers] = useState<string>(String(game?.maxPlayers ?? 4));
+  const [editPlayingTime, setEditPlayingTime] = useState<string>(String(game?.playingTime ?? 60));
+  const [editBggRating, setEditBggRating] = useState<string>(
+    game?.bggRating !== undefined ? String(game.bggRating) : ''
+  );
+  const [editTags, setEditTags] = useState<string>((game?.tags || []).join(', '));
+  const [editCoverUrl, setEditCoverUrl] = useState<string>(game?.image || game?.thumbnail || '');
+  const [editError, setEditError] = useState<string | null>(null);
 
   const gameSessions = React.useMemo(() => {
     if (!game) return [];
@@ -112,14 +121,57 @@ export const GameDetailPage: React.FC = () => {
     setTimeout(() => setNotesSaved(false), 2000);
   };
 
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+      if (!dataUrl) return;
+      try {
+        const ref = await saveMediaImage(dataUrl);
+        setEditCoverUrl(ref);
+      } catch {
+        setEditCoverUrl(dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
+    const minP = Math.max(1, Number(editMinPlayers) || 1);
+    const maxP = Math.max(1, Number(editMaxPlayers) || 1);
+    if (minP > maxP) {
+      setEditError('Min players cannot be greater than Max players.');
+      return;
+    }
+
+    const parsedPlaytime = Math.max(5, Number(editPlayingTime) || game.playingTime || 60);
+    const parsedBgg =
+      editBggRating.trim() !== '' && !isNaN(Number(editBggRating))
+        ? Math.min(10, Math.max(0, Number(editBggRating)))
+        : undefined;
+    const parsedTags = editTags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const trimmedCover = editCoverUrl.trim();
+
     updateGame(game.id, {
       name: editName.trim() || game.name,
       purchasePrice: parseNumberInput(editPurchasePrice),
       sellPrice: parseNumberInput(editSellPrice),
       lentToName: editLentTo.trim() || undefined,
+      minPlayers: minP,
+      maxPlayers: maxP,
+      playingTime: parsedPlaytime,
+      bggRating: parsedBgg,
+      tags: parsedTags.length > 0 ? parsedTags : undefined,
+      image: trimmedCover || undefined,
+      thumbnail: trimmedCover || undefined,
     });
+    setEditError(null);
     setIsEditOpen(false);
   };
 
@@ -162,6 +214,13 @@ export const GameDetailPage: React.FC = () => {
                 setEditPurchasePrice(game.purchasePrice ? formatNumberInput(game.purchasePrice) : '');
                 setEditSellPrice(game.sellPrice ? formatNumberInput(game.sellPrice) : '');
                 setEditLentTo(game.lentToName || '');
+                setEditMinPlayers(String(game.minPlayers || 1));
+                setEditMaxPlayers(String(game.maxPlayers || 4));
+                setEditPlayingTime(String(game.playingTime || 60));
+                setEditBggRating(game.bggRating !== undefined ? String(game.bggRating) : '');
+                setEditTags((game.tags || []).join(', '));
+                setEditCoverUrl(game.image || game.thumbnail || '');
+                setEditError(null);
                 setIsEditOpen(true);
               }}
               className="text-xs sm:text-sm px-2.5 sm:px-3"
@@ -169,7 +228,12 @@ export const GameDetailPage: React.FC = () => {
               <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
               Edit
             </Button>
-            <Button variant="danger" size="sm" onClick={handleDelete} className="text-xs sm:text-sm px-2.5 sm:px-3">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setIsDeleteConfirmOpen(true)}
+              className="text-xs sm:text-sm px-2.5 sm:px-3"
+            >
               <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
               Delete
             </Button>
@@ -179,33 +243,15 @@ export const GameDetailPage: React.FC = () => {
         {/* Hero Cover Section */}
         <div className="relative rounded-3xl overflow-hidden border border-[var(--line)] bg-[var(--card)] shadow-xl">
           <div className="grid grid-cols-1 md:grid-cols-12 items-stretch">
-            <div className="md:col-span-4 relative aspect-[4/3] md:aspect-auto bg-[var(--card-2)] overflow-hidden flex items-center justify-center min-h-[220px]">
-              {!coverError && resolvedCover ? (
-                <>
-                  <img
-                    src={resolvedCover}
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-35 pointer-events-none"
-                  />
-                  <img
-                    src={resolvedCover}
-                    alt={game.name}
-                    loading="lazy"
-                    decoding="async"
-                    referrerPolicy="no-referrer"
-                    onError={() => setCoverError(true)}
-                    className="relative z-0 w-full h-full max-h-[380px] md:max-h-full object-contain p-3 sm:p-5"
-                  />
-                </>
-              ) : (
-                <div className="w-full h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center text-[var(--muted)] bg-[var(--card-2)]">
-                  <Dices className="w-12 h-12 text-[var(--accent)] mb-2" />
-                  <span className="font-display font-bold text-base text-[var(--ink)]">{game.name}</span>
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)] via-transparent to-transparent md:hidden" />
-            </div>
+            <GameCoverImage
+              game={game}
+              loading="eager"
+              className="md:col-span-4 aspect-[4/3] md:aspect-auto min-h-[240px]"
+              paddingClassName="p-4 sm:p-6"
+              fallbackIconClassName="w-12 h-12"
+            >
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--card)]/70 via-transparent to-transparent md:hidden pointer-events-none" />
+            </GameCoverImage>
 
             <div className="md:col-span-8 p-6 sm:p-8 flex flex-col justify-between space-y-6">
               <div className="space-y-3">
@@ -236,14 +282,11 @@ export const GameDetailPage: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-5 text-sm text-[var(--ink)] tabular-nums">
                   <span className="inline-flex items-center gap-2">
                     <Users className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    <strong>
-                      {game.minPlayers}–{game.maxPlayers}
-                    </strong>{' '}
-                    Players
+                    <strong>{formatPlayerRange(game.minPlayers, game.maxPlayers, 'full')}</strong>
                   </span>
                   <span className="inline-flex items-center gap-2">
                     <Clock className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
-                    <strong>{game.playingTime}</strong> Mins
+                    <strong>{game.playingTime}</strong> {game.playingTime === 1 ? 'Min' : 'Mins'}
                   </span>
                 </div>
 
@@ -374,7 +417,7 @@ export const GameDetailPage: React.FC = () => {
                   <Link
                     to={`/sessions?gameId=${game.id}`}
                     className="p-3.5 rounded-xl bg-[var(--card-2)] border border-[var(--line)] hover:border-[var(--accent)] hover:shadow-md transition-all group block cursor-pointer"
-                    title={`View all ${stats.totalPlays} sessions of ${game.name}`}
+                    title={`View all ${pluralize(stats.totalPlays, 'session')} of ${game.name}`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-[var(--muted)]">Total Plays</span>
@@ -584,6 +627,7 @@ export const GameDetailPage: React.FC = () => {
           isOpen={isEditOpen}
           onClose={() => setIsEditOpen(false)}
           title={`Edit ${game.name}`}
+          maxWidthClass="max-w-lg"
         >
           <form onSubmit={handleSaveEdit} className="space-y-4">
             <Input
@@ -592,14 +636,68 @@ export const GameDetailPage: React.FC = () => {
               onChange={(e) => setEditName(e.target.value)}
               required
             />
-            <Input
-              label="Purchase Price (VND)"
-              type="text"
-              inputMode="numeric"
-              placeholder="e.g. 1,450,000"
-              value={editPurchasePrice}
-              onChange={(e) => setEditPurchasePrice(formatNumberInput(e.target.value))}
-            />
+
+            {/* Players & Playtime */}
+            <div className="grid grid-cols-3 gap-2.5">
+              <Input
+                label="Min Players"
+                type="number"
+                min={1}
+                max={99}
+                value={editMinPlayers}
+                onChange={(e) => {
+                  setEditMinPlayers(e.target.value);
+                  setEditError(null);
+                }}
+              />
+              <Input
+                label="Max Players"
+                type="number"
+                min={1}
+                max={99}
+                value={editMaxPlayers}
+                onChange={(e) => {
+                  setEditMaxPlayers(e.target.value);
+                  setEditError(null);
+                }}
+              />
+              <Input
+                label="Playtime (min)"
+                type="number"
+                min={5}
+                value={editPlayingTime}
+                onChange={(e) => setEditPlayingTime(e.target.value)}
+              />
+            </div>
+
+            {editError && (
+              <p className="text-xs font-bold text-[var(--bad)] bg-[var(--bad-soft)] border border-[var(--bad)]/30 rounded-xl px-3 py-2">
+                {editError}
+              </p>
+            )}
+
+            {/* BGG Rating & Price */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input
+                label="BGG Rating (0–10)"
+                type="number"
+                step="0.1"
+                min={0}
+                max={10}
+                placeholder="e.g. 8.4"
+                value={editBggRating}
+                onChange={(e) => setEditBggRating(e.target.value)}
+              />
+              <Input
+                label="Purchase Price (VND)"
+                type="text"
+                inputMode="numeric"
+                placeholder="e.g. 1,450,000"
+                value={editPurchasePrice}
+                onChange={(e) => setEditPurchasePrice(formatNumberInput(e.target.value))}
+              />
+            </div>
+
             {game.status === 'sold' && (
               <Input
                 label="Sell Price (VND)"
@@ -617,9 +715,53 @@ export const GameDetailPage: React.FC = () => {
                 onChange={(e) => setEditLentTo(e.target.value)}
               />
             )}
+
+            {/* Tags */}
+            <Input
+              label="Tags (comma separated)"
+              placeholder="e.g. Euro, Engine Building, Co-op"
+              value={editTags}
+              onChange={(e) => setEditTags(e.target.value)}
+            />
+
+            {/* Cover Image URL or Upload */}
+            <div className="space-y-2">
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Input
+                    label="Cover Image URL"
+                    placeholder="https://... or upload below"
+                    value={editCoverUrl.startsWith('idb://') ? 'Custom uploaded cover (stored locally)' : editCoverUrl}
+                    onChange={(e) => setEditCoverUrl(e.target.value)}
+                    disabled={editCoverUrl.startsWith('idb://')}
+                  />
+                </div>
+                <label className="min-h-[42px] px-3 py-2 rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] border border-[var(--line)] text-xs font-bold text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors">
+                  <Upload className="w-3.5 h-3.5 text-[var(--accent)]" />
+                  <span>Upload</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+              {editCoverUrl.startsWith('idb://') && (
+                <button
+                  type="button"
+                  onClick={() => setEditCoverUrl('')}
+                  className="text-[11px] font-semibold text-[var(--bad)] hover:underline cursor-pointer"
+                >
+                  Clear uploaded cover
+                </button>
+              )}
+            </div>
+
             <div className="flex justify-end gap-3 pt-2">
               <Button
                 variant="ghost"
+                type="button"
                 onClick={() => setIsEditOpen(false)}
               >
                 Cancel
@@ -630,6 +772,19 @@ export const GameDetailPage: React.FC = () => {
             </div>
           </form>
         </Modal>
+        <ConfirmModal
+          isOpen={isDeleteConfirmOpen}
+          title="Delete Game?"
+          message={`Remove "${game.name}" from your collection? Existing play sessions will remain in your history.`}
+          confirmLabel="Delete Game"
+          cancelLabel="Cancel"
+          variant="danger"
+          onConfirm={() => {
+            setIsDeleteConfirmOpen(false);
+            handleDelete();
+          }}
+          onCancel={() => setIsDeleteConfirmOpen(false)}
+        />
       </div>
     </PageTransition>
   );

@@ -12,6 +12,7 @@ export interface GameScoringTemplate {
   displayName: string;
   categories: ScoringCategory[];
   isCoop?: boolean;
+  lowestScoreWins?: boolean;
   computeTotal?: (values: Record<string, number>) => number;
 }
 
@@ -300,7 +301,20 @@ export const PRESET_SCORING_TEMPLATES: GameScoringTemplate[] = [
       const finalScoring = values['final_scoring'] || 0;
       const penalties = values['penalties'] || 0;
       const targetAppeal = 100 - (c <= 10 ? c * 2 : 20 + (c - 10) * 3);
-      return appeal - targetAppeal + finalScoring - Math.abs(penalties);
+      let extraCustomTotal = 0;
+      for (const [key, val] of Object.entries(values)) {
+        if (
+          key !== 'appeal' &&
+          key !== 'conservation' &&
+          key !== 'final_scoring' &&
+          key !== 'penalties' &&
+          typeof val === 'number' &&
+          !Number.isNaN(val)
+        ) {
+          extraCustomTotal += val;
+        }
+      }
+      return appeal - targetAppeal + finalScoring - Math.abs(penalties) + extraCustomTotal;
     },
   },
 
@@ -653,3 +667,54 @@ export function getScoringTemplateForGame(gameName?: string): GameScoringTemplat
     }
   );
 }
+
+/**
+ * Computes a player's total score across all active categories.
+ * When a custom formula (`computeTotal`, e.g. Ark Nova) is provided, it evaluates the base
+ * template categories with `computeTotal` AND adds any user-added custom categories (respecting multipliers).
+ */
+export function computeSheetPlayerTotal(
+  playerValues: Record<string, number>,
+  activeCategories: ScoringCategory[],
+  computeTotal?: (values: Record<string, number>) => number,
+  baseCategoryIds?: Iterable<string>
+): number {
+  if (computeTotal) {
+    const baseIdSet = new Set<string>(baseCategoryIds ?? []);
+    const baseValues: Record<string, number> = {};
+    let extraSum = 0;
+
+    if (baseIdSet.size > 0) {
+      for (const id of baseIdSet) {
+        if (typeof playerValues[id] === 'number' && !Number.isNaN(playerValues[id])) {
+          baseValues[id] = playerValues[id];
+        }
+      }
+      for (const cat of activeCategories) {
+        if (baseIdSet.has(cat.id)) continue;
+        const raw = playerValues[cat.id];
+        if (typeof raw === 'number' && !Number.isNaN(raw)) {
+          const mult = cat.multiplier ?? 1;
+          const effectiveVal = mult < 0 ? Math.abs(raw) : raw;
+          extraSum += effectiveVal * mult;
+        }
+      }
+      return computeTotal(baseValues) + extraSum;
+    }
+
+    // Fallback when baseCategoryIds is not supplied: delegate full values object
+    return computeTotal(playerValues);
+  }
+
+  let sum = 0;
+  for (const cat of activeCategories) {
+    const raw = playerValues[cat.id];
+    if (typeof raw === 'number' && !Number.isNaN(raw)) {
+      const mult = cat.multiplier ?? 1;
+      const effectiveVal = mult < 0 ? Math.abs(raw) : raw;
+      sum += effectiveVal * mult;
+    }
+  }
+  return sum;
+}
+

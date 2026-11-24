@@ -210,13 +210,20 @@ export const PlayersPage: React.FC = () => {
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none active:scale-95',
                 activeTab === 'players'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black shadow-md'
+                  ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-md'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--card-2)]'
               )}
             >
               <Users className="w-4 h-4" />
               <span>Players</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold text-white">
+              <span
+                className={cn(
+                  'px-1.5 py-0.5 rounded-full text-[11px] font-extrabold',
+                  activeTab === 'players'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-[var(--card-2)] text-[var(--muted)]'
+                )}
+              >
                 {players.length}
               </span>
             </button>
@@ -227,13 +234,20 @@ export const PlayersPage: React.FC = () => {
               className={cn(
                 'flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer select-none active:scale-95',
                 activeTab === 'locations'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black shadow-md'
+                  ? 'bg-[var(--accent)] text-[var(--accent-ink)] font-black shadow-md'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--card-2)]'
               )}
             >
               <MapPin className="w-4 h-4" />
               <span>Venues</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-black/20 text-[11px] font-extrabold text-white">
+              <span
+                className={cn(
+                  'px-1.5 py-0.5 rounded-full text-[11px] font-extrabold',
+                  activeTab === 'locations'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-[var(--card-2)] text-[var(--muted)]'
+                )}
+              >
                 {locations.length}
               </span>
             </button>
@@ -335,16 +349,16 @@ export const PlayersPage: React.FC = () => {
                         )}
                       >
                         {/* Top Right Actions */}
-                        <div className="absolute top-4 right-4 flex items-center gap-1.5 z-10">
+                        <div className="absolute top-3.5 right-3.5 flex items-center gap-1.5 z-10">
                           {compareMode ? (
                             <button
                               type="button"
                               aria-label={`Select ${player.name} for comparison`}
                               onClick={() => toggleComparePlayer(player.id)}
                               className={cn(
-                                'w-7 h-7 rounded-lg border flex items-center justify-center cursor-pointer transition-colors',
+                                'w-10 h-10 rounded-xl border flex items-center justify-center cursor-pointer transition-colors',
                                 isSelectedForCompare
-                                  ? 'bg-cyan-500 border-cyan-500 text-slate-950 font-bold'
+                                  ? 'bg-[var(--accent)] border-[var(--accent)] text-[var(--accent-ink)] font-bold'
                                   : 'bg-[var(--card-2)] border-[var(--line-2)] text-transparent'
                               )}
                             >
@@ -359,10 +373,10 @@ export const PlayersPage: React.FC = () => {
                                 e.stopPropagation();
                                 setEditingPlayer(player);
                               }}
-                              className="w-7 h-7 rounded-lg bg-[var(--bg-surface)] hover:bg-amber-500/20 text-[var(--text-secondary)] hover:text-amber-300 border border-[var(--border-subtle)] flex items-center justify-center transition-colors cursor-pointer"
+                              className="w-10 h-10 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--accent-soft)] text-[var(--text-secondary)] hover:text-[var(--accent)] border border-[var(--border-subtle)] flex items-center justify-center transition-colors cursor-pointer"
                               title="Edit Profile"
                             >
-                              <Edit3 className="w-3.5 h-3.5" />
+                              <Edit3 className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -370,7 +384,7 @@ export const PlayersPage: React.FC = () => {
                         {/* Player Info Link */}
                         <Link
                           to={`/players/${player.id}`}
-                          className="flex items-start gap-3.5 pr-8"
+                          className="flex items-start gap-3.5 pr-12"
                         >
                           <div className="relative shrink-0">
                             <PlayerAvatar player={player} size="lg" />
@@ -381,12 +395,12 @@ export const PlayersPage: React.FC = () => {
                           </div>
 
                           <div className="min-w-0 flex-1">
-                            <h2 className="font-display font-bold text-base sm:text-lg text-[var(--text-primary)] truncate group-hover:text-amber-300 transition-colors">
+                            <h2 className="font-display font-bold text-base sm:text-lg text-[var(--text-primary)] truncate group-hover:text-[var(--accent)] transition-colors">
                               {player.name}
                             </h2>
 
                             {player.nickname && (
-                              <p className="text-xs font-semibold text-amber-400/90 truncate">
+                              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 truncate">
                                 "{player.nickname}"
                               </p>
                             )}
@@ -440,7 +454,7 @@ export const PlayersPage: React.FC = () => {
 
                         <Link
                           to={`/players/${player.id}`}
-                          className="text-xs font-semibold text-[var(--accent-neon)] group-hover:text-amber-300 transition-colors flex items-center justify-between"
+                          className="text-xs font-semibold text-[var(--accent)] group-hover:underline transition-colors flex items-center justify-between"
                         >
                           <span>View Full Profile</span>
                           <span>→</span>
