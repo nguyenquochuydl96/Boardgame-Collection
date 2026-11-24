@@ -1,4 +1,5 @@
 import { BoardGame, GameLocation, PlaySession, Player } from '../types';
+import { getDeterministicAvatar } from './boardgameAvatars';
 import {
   formatCount,
   formatDate,
@@ -8,28 +9,38 @@ import {
   isCoopSession,
   isWinOnlySession,
   normalizeLocationKey,
+  resolveAvatarImage,
   resolveLowestScoreWins,
 } from './utils';
 
 export type ShareCardMode = 'points' | 'win_only' | 'coop';
 
-export interface ShareCardPointsPlayer {
+export interface ShareCardPlayerAvatar {
+  avatarUrl?: string;
+  avatarEmoji?: string;
+  color: string;
+  monogram: string;
+}
+
+export interface ShareCardPointsPlayer extends ShareCardPlayerAvatar {
   rank: number;
   playerName: string;
   score: number;
   scoreFormatted: string;
   isWinner: boolean;
+  scorePercentage: number; // 0 to 100
+  microTag?: string; // e.g. "+32 pts margin", "Photo Finish · +1 pt", "Shared Victory"
 }
 
-export interface ShareCardWinnerPlayer {
+export interface ShareCardWinnerPlayer extends ShareCardPlayerAvatar {
   playerName: string;
 }
 
-export interface ShareCardOtherPlayer {
+export interface ShareCardOtherPlayer extends ShareCardPlayerAvatar {
   playerName: string;
 }
 
-export interface ShareCardTeamPlayer {
+export interface ShareCardTeamPlayer extends ShareCardPlayerAvatar {
   playerName: string;
 }
 
@@ -37,8 +48,10 @@ export interface SessionShareCardData {
   mode: ShareCardMode;
   gameTitle: string;
   coverUrl?: string;
+  tablePhotoUrl?: string;
   dateFormatted: string;
   locationName?: string;
+  venueDateFormatted: string;
   durationFormatted?: string;
   playerCountFormatted: string;
   playIndexFormatted: string; // e.g. "Play #42"
@@ -66,6 +79,61 @@ export interface BuildShareCardContext {
   allSessions?: PlaySession[];
   players?: Player[];
   locations?: GameLocation[];
+  useTablePhoto?: boolean;
+}
+
+/**
+ * Builds a CORS-proxy URL (via wsrv.nl) for external images (e.g. BGG CDN),
+ * while preserving idb://, data:, blob:, and relative URLs unchanged.
+ */
+export function buildProxiedImageUrl(url?: string | null, width = 800): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (
+    trimmed.startsWith('idb://') ||
+    trimmed.startsWith('data:') ||
+    trimmed.startsWith('blob:') ||
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('./')
+  ) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return `https://wsrv.nl/?url=${encodeURIComponent(trimmed)}&w=${width}&output=png`;
+  }
+  return trimmed;
+}
+
+/**
+ * Resolves avatar data (photo url, emoji, custom color, and initials monogram)
+ * for a player using the player store or deterministic boardgame fallbacks.
+ */
+function resolvePlayerAvatar(
+  player: Player | undefined,
+  name: string
+): ShareCardPlayerAvatar {
+  const defaultBg = getDeterministicAvatar(name);
+  const rawAvatar = player?.avatar || defaultBg.emoji;
+  const color = player?.color || defaultBg.color;
+  const avatarImageUrl = resolveAvatarImage(rawAvatar);
+  const avatarEmoji =
+    !avatarImageUrl && rawAvatar ? rawAvatar : !avatarImageUrl ? defaultBg.emoji : undefined;
+
+  const monogram =
+    name
+      .split(' ')
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'P';
+
+  return {
+    avatarUrl: avatarImageUrl || undefined,
+    avatarEmoji,
+    color,
+    monogram,
+  };
 }
 
 /**
@@ -76,7 +144,7 @@ export function buildSessionShareCardData(
   session: PlaySession,
   context: BuildShareCardContext = {}
 ): SessionShareCardData {
-  const { game, allSessions = [], players = [], locations = [] } = context;
+  const { game, allSessions = [], players = [], locations = [], useTablePhoto = false } = context;
 
   // 1. Resolve scoring mode via Single Source of Truth
   let mode: ShareCardMode = 'points';
@@ -89,6 +157,8 @@ export function buildSessionShareCardData(
   // 2. Resolve common metadata
   const gameTitle = (game?.name || session.gameName || 'Unknown Game').trim();
   const coverUrl = game?.image || game?.thumbnail || session.gameThumbnail || '';
+  const tablePhotoUrl =
+    Array.isArray(session.photos) && session.photos.length > 0 ? session.photos[0] : undefined;
   const dateFormatted = formatDate(session.datePlayed);
 
   // Canonical venue lookup
@@ -100,6 +170,10 @@ export function buildSessionShareCardData(
     locationName = matched ? matched.name : rawLoc;
   }
 
+  const venueDateFormatted = locationName
+    ? `Played at ${locationName} · ${dateFormatted}`
+    : `Played on ${dateFormatted}`;
+
   // Duration
   let durationFormatted: string | undefined;
   if (typeof session.durationMinutes === 'number' && session.durationMinutes > 0) {
@@ -110,15 +184,19 @@ export function buildSessionShareCardData(
   const rawPlayers = Array.isArray(session.players) ? session.players : [];
   const playerCountFormatted = formatCount(rawPlayers.length, 'player');
 
-  // Player name resolution map (prioritize latest name from player store)
-  const playerNameMap = new Map<string, string>();
+  // Player map lookup
+  const playerStoreMap = new Map<string, Player>();
   for (const p of players) {
-    if (p.id && p.name) {
-      playerNameMap.set(p.id, p.name);
+    if (p.id) {
+      playerStoreMap.set(p.id, p);
     }
   }
-  const resolvePlayerName = (p: { playerId: string; playerName?: string }) => {
-    return (playerNameMap.get(p.playerId) || p.playerName || 'Player').trim();
+
+  const getPlayerDetails = (p: { playerId: string; playerName?: string }) => {
+    const storePlayer = playerStoreMap.get(p.playerId);
+    const resolvedName = (storePlayer?.name || p.playerName || 'Player').trim();
+    const avatar = resolvePlayerAvatar(storePlayer, resolvedName);
+    return { resolvedName, avatar };
   };
 
   // Play #N calculation
@@ -166,7 +244,15 @@ export function buildSessionShareCardData(
     });
 
     // Compute standard ranks with tie breaking
-    const rankedPlayers: ShareCardPointsPlayer[] = [];
+    const rankedPlayersWithoutPct: Array<{
+      rank: number;
+      playerName: string;
+      score: number;
+      scoreFormatted: string;
+      isWinner: boolean;
+      avatar: ShareCardPlayerAvatar;
+    }> = [];
+
     let currentRank = 1;
     for (let i = 0; i < sorted.length; i++) {
       const p = sorted[i];
@@ -183,14 +269,76 @@ export function buildSessionShareCardData(
         p.isWinner || (session.winnerId && p.playerId === session.winnerId) || currentRank === 1
       );
 
-      rankedPlayers.push({
+      const { resolvedName, avatar } = getPlayerDetails(p);
+
+      rankedPlayersWithoutPct.push({
         rank: typeof p.rank === 'number' ? p.rank : currentRank,
-        playerName: resolvePlayerName(p),
+        playerName: resolvedName,
         score: typeof p.score === 'number' ? p.score : 0,
         scoreFormatted: typeof p.score === 'number' ? formatNumber(p.score) : '—',
         isWinner,
+        avatar,
       });
     }
+
+    // Determine Winner Micro-Tag
+    const rank1Players = rankedPlayersWithoutPct.filter((p) => p.rank === 1);
+    let rank1MicroTag: string | undefined;
+    if (rank1Players.length > 1) {
+      rank1MicroTag = 'Shared Victory';
+    } else if (
+      rankedPlayersWithoutPct.length > 1 &&
+      typeof rankedPlayersWithoutPct[0].score === 'number' &&
+      typeof rankedPlayersWithoutPct[1].score === 'number'
+    ) {
+      const margin = Math.abs(
+        rankedPlayersWithoutPct[0].score - rankedPlayersWithoutPct[1].score
+      );
+      if (margin <= 2) {
+        rank1MicroTag = `Photo Finish · +${formatNumber(margin)}${margin === 1 ? ' pt' : ' pts'}`;
+      } else {
+        rank1MicroTag = `+${formatNumber(margin)} pts margin`;
+      }
+    }
+
+    // Determine Proportional Score Bar Percentage for each player
+    const topScore = rankedPlayersWithoutPct[0]?.score ?? 100;
+    const rankedPlayers: ShareCardPointsPlayer[] = rankedPlayersWithoutPct.map((p) => {
+      let scorePercentage = 100;
+      if (lowestScoreWins) {
+        if (topScore <= 0 && p.score <= 0) {
+          scorePercentage = 100;
+        } else {
+          scorePercentage = Math.max(
+            15,
+            Math.min(100, Math.round((Math.max(1, topScore) / Math.max(1, p.score)) * 100))
+          );
+        }
+      } else {
+        if (topScore <= 0) {
+          scorePercentage = 100;
+        } else {
+          scorePercentage = Math.max(
+            15,
+            Math.min(100, Math.round((Math.max(0, p.score) / topScore) * 100))
+          );
+        }
+      }
+
+      return {
+        rank: p.rank,
+        playerName: p.playerName,
+        score: p.score,
+        scoreFormatted: p.scoreFormatted,
+        isWinner: p.isWinner,
+        scorePercentage,
+        microTag: p.rank === 1 ? rank1MicroTag : undefined,
+        avatarUrl: p.avatar.avatarUrl,
+        avatarEmoji: p.avatar.avatarEmoji,
+        color: p.avatar.color,
+        monogram: p.avatar.monogram,
+      };
+    });
 
     // Overflow protection: max 8 rows
     let leaderboard = rankedPlayers;
@@ -244,8 +392,10 @@ export function buildSessionShareCardData(
       mode: 'points',
       gameTitle,
       coverUrl,
+      tablePhotoUrl,
       dateFormatted,
       locationName,
+      venueDateFormatted,
       durationFormatted,
       playerCountFormatted,
       playIndexFormatted,
@@ -264,11 +414,20 @@ export function buildSessionShareCardData(
     const otherPlayers: ShareCardOtherPlayer[] = [];
 
     for (const p of rawPlayers) {
-      const name = resolvePlayerName(p);
-      if (winnerIdSet.has(p.playerId) || p.isWinner) {
-        winners.push({ playerName: name });
+      const { resolvedName, avatar } = getPlayerDetails(p);
+      const isWinner = winnerIdSet.has(p.playerId) || Boolean(p.isWinner);
+      const playerItem = {
+        playerName: resolvedName,
+        avatarUrl: avatar.avatarUrl,
+        avatarEmoji: avatar.avatarEmoji,
+        color: avatar.color,
+        monogram: avatar.monogram,
+      };
+
+      if (isWinner) {
+        winners.push(playerItem);
       } else {
-        otherPlayers.push({ playerName: name });
+        otherPlayers.push(playerItem);
       }
     }
 
@@ -287,8 +446,10 @@ export function buildSessionShareCardData(
       mode: 'win_only',
       gameTitle,
       coverUrl,
+      tablePhotoUrl,
       dateFormatted,
       locationName,
+      venueDateFormatted,
       durationFormatted,
       playerCountFormatted,
       playIndexFormatted,
@@ -316,9 +477,16 @@ export function buildSessionShareCardData(
     teamScoreFormatted = formatNumber(rawTeamScore);
   }
 
-  const teamPlayers = rawPlayers.map((p) => ({
-    playerName: resolvePlayerName(p),
-  }));
+  const teamPlayers = rawPlayers.map((p) => {
+    const { resolvedName, avatar } = getPlayerDetails(p);
+    return {
+      playerName: resolvedName,
+      avatarUrl: avatar.avatarUrl,
+      avatarEmoji: avatar.avatarEmoji,
+      color: avatar.color,
+      monogram: avatar.monogram,
+    };
+  });
 
   let finalTeam = teamPlayers;
   let overflowTeamCount: number | undefined;
@@ -331,8 +499,10 @@ export function buildSessionShareCardData(
     mode: 'coop',
     gameTitle,
     coverUrl,
+    tablePhotoUrl,
     dateFormatted,
     locationName,
+    venueDateFormatted,
     durationFormatted,
     playerCountFormatted,
     playIndexFormatted,

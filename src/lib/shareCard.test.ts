@@ -7,7 +7,7 @@ import {
   isWinOnlySession,
   resolveLowestScoreWins,
 } from './utils';
-import { buildSessionShareCardData } from './shareCard';
+import { buildSessionShareCardData, buildProxiedImageUrl } from './shareCard';
 
 // ---------------------------------------------------------------------------
 // PART 0 TESTS: PRESET INTEGRITY & RESOLUTION PRIORITIES
@@ -90,10 +90,29 @@ test('Part 0: Manual override game.scoringMode = points on a win_only game beats
 });
 
 // ---------------------------------------------------------------------------
+// PROXIED IMAGE URL BUILDER TESTS
+// ---------------------------------------------------------------------------
+
+test('buildProxiedImageUrl proxies external images through wsrv.nl and keeps idb/data untouched', () => {
+  const bggUrl = 'https://cf.geekdo-images.com/ABC123/original/img.jpg';
+  const proxied = buildProxiedImageUrl(bggUrl, 800);
+  assert.equal(
+    proxied,
+    `https://wsrv.nl/?url=${encodeURIComponent(bggUrl)}&w=800&output=png`
+  );
+
+  // Local & data URLs remain untouched
+  assert.equal(buildProxiedImageUrl('idb://media-123'), 'idb://media-123');
+  assert.equal(buildProxiedImageUrl('data:image/png;base64,abc'), 'data:image/png;base64,abc');
+  assert.equal(buildProxiedImageUrl('/assets/icon.png'), '/assets/icon.png');
+  assert.equal(buildProxiedImageUrl(''), '');
+});
+
+// ---------------------------------------------------------------------------
 // PART 1 & 2 TESTS: SESSION SHARE CARD DATA BUILDER
 // ---------------------------------------------------------------------------
 
-test('buildSessionShareCardData: points mode formats ranks, ties, comma scores, Play #N and record detection', () => {
+test('buildSessionShareCardData: points mode formats ranks, ties, comma scores, Play #N, micro-tag and avatars', () => {
   const game = {
     id: 'g-ark',
     name: 'Ark Nova',
@@ -146,8 +165,20 @@ test('buildSessionShareCardData: points mode formats ranks, ties, comma scores, 
     { id: 'loc-1', name: 'Lafam', createdAt: '2026-01-01T00:00:00Z' },
   ];
   const players: Player[] = [
-    { id: 'p1', name: 'Heo (Pro)', color: '#E5734F', createdAt: '2026-01-01T00:00:00Z' },
-    { id: 'p2', name: 'Hằng', color: '#588157', createdAt: '2026-01-01T00:00:00Z' },
+    {
+      id: 'p1',
+      name: 'Heo (Pro)',
+      color: '#E5734F',
+      avatar: 'idb://avatar-heo',
+      createdAt: '2026-01-01T00:00:00Z',
+    },
+    {
+      id: 'p2',
+      name: 'Hằng',
+      color: '#588157',
+      avatar: '👑',
+      createdAt: '2026-01-01T00:00:00Z',
+    },
   ];
 
   const data2 = buildSessionShareCardData(newSession, {
@@ -160,26 +191,92 @@ test('buildSessionShareCardData: points mode formats ranks, ties, comma scores, 
   assert.equal(data2.mode, 'points');
   assert.equal(data2.playIndexFormatted, 'Play #2');
   assert.equal(data2.locationName, 'Lafam');
+  assert.equal(data2.venueDateFormatted, 'Played at Lafam · May 15, 2026');
   assert.equal(data2.durationFormatted, '2h 5m');
   assert.equal(data2.playerCountFormatted, '3 players');
   assert.equal(data2.isNewRecord, true); // 1,250 > 110 with >= 2 points sessions
 
-  // Check leaderboard ranks & formatting
+  // Check leaderboard ranks, avatars & formatting
   const lb = data2.leaderboard!;
   assert.equal(lb.length, 3);
   assert.equal(lb[0].playerName, 'Heo (Pro)'); // Uses updated name from store
   assert.equal(lb[0].rank, 1);
   assert.equal(lb[0].scoreFormatted, '1,250');
   assert.equal(lb[0].isWinner, true);
+  assert.equal(lb[0].scorePercentage, 100);
+  assert.equal(lb[0].microTag, '+300 pts margin');
+  assert.equal(lb[0].avatarUrl, 'idb://avatar-heo');
 
-  // Tied 2nd place
+  // Tied 2nd place (alphabetically A Kha then Hằng)
   assert.equal(lb[1].rank, 2);
+  assert.equal(lb[1].playerName, 'A Kha');
   assert.equal(lb[1].scoreFormatted, '950');
+  assert.equal(lb[1].monogram, 'AK');
+  assert.equal(lb[1].scorePercentage, 76); // Math.round((950 / 1250) * 100) = 76
+
   assert.equal(lb[2].rank, 2);
+  assert.equal(lb[2].playerName, 'Hằng');
   assert.equal(lb[2].scoreFormatted, '950');
+  assert.equal(lb[2].avatarEmoji, '👑');
 });
 
-test('buildSessionShareCardData: lowestScoreWins (Durian) ranks lowest score #1 and detects low record', () => {
+test('buildSessionShareCardData: detects Photo Finish and Shared Victory correctly', () => {
+  const game = { id: 'g-catan', name: 'Catan', status: 'own' } as unknown as BoardGame;
+
+  // 1. Photo Finish · +1 pt
+  const closeSession1: PlaySession = {
+    id: 's-close-1',
+    gameId: 'g-catan',
+    gameName: 'Catan',
+    gameThumbnail: '',
+    datePlayed: '2026-05-18',
+    createdAt: '2026-05-18T10:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Heo', score: 10, isWinner: true },
+      { playerId: 'p2', playerName: 'Huy', score: 9, isWinner: false },
+    ],
+  };
+  const dataClose1 = buildSessionShareCardData(closeSession1, { game });
+  assert.equal(dataClose1.leaderboard?.[0].microTag, 'Photo Finish · +1 pt');
+
+  // 2. Photo Finish · +2 pts
+  const closeSession2: PlaySession = {
+    id: 's-close-2',
+    gameId: 'g-catan',
+    gameName: 'Catan',
+    gameThumbnail: '',
+    datePlayed: '2026-05-18',
+    createdAt: '2026-05-18T10:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Heo', score: 10, isWinner: true },
+      { playerId: 'p2', playerName: 'Huy', score: 8, isWinner: false },
+    ],
+  };
+  const dataClose2 = buildSessionShareCardData(closeSession2, { game });
+  assert.equal(dataClose2.leaderboard?.[0].microTag, 'Photo Finish · +2 pts');
+
+  // 3. Shared Victory
+  const tiedSession: PlaySession = {
+    id: 's-tie',
+    gameId: 'g-catan',
+    gameName: 'Catan',
+    gameThumbnail: '',
+    datePlayed: '2026-05-18',
+    createdAt: '2026-05-18T10:00:00Z',
+    firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'p1', playerName: 'Heo', score: 10, isWinner: true },
+      { playerId: 'p2', playerName: 'Huy', score: 10, isWinner: true },
+    ],
+  };
+  const dataTied = buildSessionShareCardData(tiedSession, { game });
+  assert.equal(dataTied.leaderboard?.[0].microTag, 'Shared Victory');
+  assert.equal(dataTied.leaderboard?.[1].microTag, 'Shared Victory');
+});
+
+test('buildSessionShareCardData: lowestScoreWins (Durian) ranks lowest score #1 and inverts score percentage', () => {
   const durianGame = {
     id: 'g-durian',
     name: 'Durian',
@@ -228,11 +325,14 @@ test('buildSessionShareCardData: lowestScoreWins (Durian) ranks lowest score #1 
   assert.equal(lb[0].playerName, 'Heo');
   assert.equal(lb[0].score, 1);
   assert.equal(lb[0].rank, 1);
+  assert.equal(lb[0].scorePercentage, 100);
+
   assert.equal(lb[1].score, 5);
   assert.equal(lb[1].rank, 2);
+  assert.equal(lb[1].scorePercentage, 20); // Math.round((1 / 5) * 100) = 20
 });
 
-test('buildSessionShareCardData: win_only (Mind MGMT with 3 Rogue Agents) separates winners and hides 0 pts', () => {
+test('buildSessionShareCardData: win_only (Mind MGMT with 3 Rogue Agents) separates winners, attaches avatars and hides 0 pts', () => {
   const mindGame = {
     id: 'g-mind',
     name: 'Mind MGMT: The Psychic Espionage “Game.”',
@@ -268,15 +368,17 @@ test('buildSessionShareCardData: win_only (Mind MGMT with 3 Rogue Agents) separa
     data.winners?.map((w) => w.playerName),
     ['Anh Huy', 'Chị Quyên', 'Heo']
   );
+  assert.equal(data.winners?.[0].monogram, 'AH');
   assert.equal(data.otherPlayers?.length, 1);
   assert.equal(data.otherPlayers?.[0].playerName, 'Hằng');
+  assert.equal(data.otherPlayers?.[0].monogram, 'H');
 
   // Verify no score is exposed in data
   assert.equal(data.leaderboard, undefined);
   assert.equal(data.teamScoreFormatted, undefined);
 });
 
-test('buildSessionShareCardData: coop (Spirit Island) sets TEAM VICTORY/DEFEAT and formats score if present', () => {
+test('buildSessionShareCardData: coop (Spirit Island) sets TEAM VICTORY/DEFEAT, attaches squad avatars and formats score', () => {
   const spiritGame = {
     id: 'g-spirit',
     name: 'Spirit Island',
@@ -310,6 +412,7 @@ test('buildSessionShareCardData: coop (Spirit Island) sets TEAM VICTORY/DEFEAT a
   assert.equal(dataWon.teamScoreFormatted, undefined); // No valid numeric score
   assert.equal(dataWon.isNewRecord, false);
   assert.equal(dataWon.teamPlayers?.length, 2);
+  assert.equal(dataWon.teamPlayers?.[0].monogram, 'H');
 
   // 2. Victory with valid team score
   const sessionWithScore: any = {

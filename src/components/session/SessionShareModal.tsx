@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Share2, Download, Copy, Check, Loader2, Sparkles, Moon, Sun } from 'lucide-react';
+import {
+  Share2,
+  Download,
+  Copy,
+  Check,
+  Loader2,
+  Sparkles,
+  Moon,
+  Sun,
+  Image as ImageIcon,
+  Camera,
+} from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { PlaySession, BoardGame } from '../../types';
@@ -23,6 +34,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
   game,
 }) => {
   const [theme, setTheme] = useState<ShareCardTheme>('dark');
+  const [backdropSource, setBackdropSource] = useState<'cover' | 'photo'>('cover');
   const [isRendering, setIsRendering] = useState(false);
   const [cardBlob, setCardBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -34,6 +46,8 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
   const allSessions = useSessionStore((s) => s.sessions);
   const players = usePlayerStore((s) => s.players);
   const locations = useLocationStore((s) => s.locations);
+
+  const hasPhotos = Array.isArray(session.photos) && session.photos.length > 0;
 
   // Clean up object URL when unmounting or regenerating
   const cleanupUrl = () => {
@@ -49,7 +63,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
     };
   }, []);
 
-  // Generate share card on open and theme change
+  // Generate share card on open, theme, or backdrop source change
   useEffect(() => {
     if (!isOpen) {
       cleanupUrl();
@@ -65,14 +79,19 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
       setError(null);
 
       try {
+        const useTablePhoto = backdropSource === 'photo' && hasPhotos;
         const cardData = buildSessionShareCardData(session, {
           game,
           allSessions,
           players,
           locations,
+          useTablePhoto,
         });
 
-        const blob = await renderSessionShareCard(cardData, { theme });
+        const blob = await renderSessionShareCard(cardData, {
+          theme,
+          useTablePhoto,
+        });
         if (isCancelled) return;
 
         cleanupUrl();
@@ -98,7 +117,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [isOpen, theme, session, game, allSessions, players, locations]);
+  }, [isOpen, theme, backdropSource, session, game, allSessions, players, locations, hasPhotos]);
 
   const fileNameSlug = (session.gameName || 'session')
     .toLowerCase()
@@ -170,48 +189,86 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
       title="Session Share Card"
       maxWidthClass="max-w-xl"
     >
-      <div className="space-y-4 pt-1">
-        {/* Theme Selector */}
-        <div className="flex items-center justify-between pb-1">
-          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[var(--text-muted)]">
-            <Sparkles className="w-4 h-4 text-[var(--accent)]" />
-            <span>Card Palette:</span>
+      <div className="space-y-3.5 pt-1">
+        {/* Controls Row: Palette & Optional Photo Switcher */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-[var(--border-subtle)]">
+          {/* Theme Selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-[var(--text-muted)] flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-[var(--accent)]" />
+              Palette:
+            </span>
+            <div className="inline-flex p-0.5 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)]">
+              <button
+                type="button"
+                onClick={() => setTheme('dark')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[30px] ${
+                  theme === 'dark'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <Moon className="w-3 h-3" />
+                Espresso
+              </button>
+              <button
+                type="button"
+                onClick={() => setTheme('light')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[30px] ${
+                  theme === 'light'
+                    ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <Sun className="w-3 h-3" />
+                Cream
+              </button>
+            </div>
           </div>
 
-          <div className="inline-flex p-1 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)]">
-            <button
-              type="button"
-              onClick={() => setTheme('dark')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[32px] ${
-                theme === 'dark'
-                  ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <Moon className="w-3.5 h-3.5" />
-              Deep Espresso
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme('light')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[32px] ${
-                theme === 'light'
-                  ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <Sun className="w-3.5 h-3.5" />
-              Warm Cream
-            </button>
-          </div>
+          {/* Optional Table Photo Toggle */}
+          {hasPhotos && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-[var(--text-muted)] flex items-center gap-1">
+                <Camera className="w-3.5 h-3.5 text-[var(--accent)]" />
+                Backdrop:
+              </span>
+              <div className="inline-flex p-0.5 rounded-xl bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)]">
+                <button
+                  type="button"
+                  onClick={() => setBackdropSource('cover')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[30px] ${
+                    backdropSource === 'cover'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  <ImageIcon className="w-3 h-3" />
+                  Box Art
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBackdropSource('photo')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all min-h-[30px] ${
+                    backdropSource === 'photo'
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  <Camera className="w-3 h-3" />
+                  Table Photo
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Card Preview Area */}
-        <div className="relative rounded-2xl overflow-hidden bg-[var(--bg-canvas)] border border-[var(--border-subtle)] p-2 sm:p-4 flex items-center justify-center min-h-[380px] max-h-[58vh]">
+        <div className="relative rounded-2xl overflow-hidden bg-[var(--bg-canvas)] border border-[var(--border-subtle)] p-2 sm:p-4 flex items-center justify-center min-h-[360px] max-h-[58vh]">
           {isRendering ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-[var(--text-muted)]">
               <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
-              <p className="text-sm font-medium">Rendering 1080 × 1350 editorial card...</p>
+              <p className="text-sm font-medium">Crafting Warm Editorial Poster...</p>
             </div>
           ) : error ? (
             <div className="text-center py-12 px-4 text-[var(--bad)] text-sm">

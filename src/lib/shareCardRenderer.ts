@@ -1,10 +1,11 @@
 import { getMediaImage } from './mediaStorage';
-import { SessionShareCardData } from './shareCard';
+import { SessionShareCardData, ShareCardPlayerAvatar, buildProxiedImageUrl } from './shareCard';
 
 export type ShareCardTheme = 'dark' | 'light';
 
 export interface RenderShareCardOptions {
   theme?: ShareCardTheme;
+  useTablePhoto?: boolean;
 }
 
 interface Palette {
@@ -12,6 +13,7 @@ interface Palette {
   cardBg: string;
   surface: string;
   surfaceAlt: string;
+  surfaceHover: string;
   border: string;
   borderLight: string;
   text: string;
@@ -34,8 +36,9 @@ const PALETTES: Record<ShareCardTheme, Palette> = {
     cardBg: '#1D211B', // Dark Olive surface
     surface: '#272A24',
     surfaceAlt: '#32362E',
+    surfaceHover: '#3C4236',
     border: 'rgba(250, 246, 238, 0.12)',
-    borderLight: 'rgba(250, 246, 238, 0.22)',
+    borderLight: 'rgba(250, 246, 238, 0.24)',
     text: '#FAF6EE', // Warm Cream
     textMuted: '#A8A196',
     textSubMuted: '#7A746B',
@@ -54,8 +57,9 @@ const PALETTES: Record<ShareCardTheme, Palette> = {
     cardBg: '#FFFFFF',
     surface: '#F4EFE6',
     surfaceAlt: '#EBE4D8',
+    surfaceHover: '#DFD7C8',
     border: 'rgba(22, 19, 17, 0.12)',
-    borderLight: 'rgba(22, 19, 17, 0.24)',
+    borderLight: 'rgba(22, 19, 17, 0.26)',
     text: '#161311', // Deep Espresso
     textMuted: '#6E675E',
     textSubMuted: '#9E968A',
@@ -72,55 +76,94 @@ const PALETTES: Record<ShareCardTheme, Palette> = {
 };
 
 /**
- * Safely loads an image without tainting the canvas or throwing SecurityError.
- * Reads idb:// references via mediaStorage, uses crossOrigin="anonymous" with 3.5s timeout.
+ * Loads an image safely for Canvas drawing without tainting the canvas or throwing SecurityError.
+ * 1. idb:// references are resolved via mediaStorage to Data URL.
+ * 2. data: and same-origin URLs are loaded directly.
+ * 3. External HTTP/HTTPS URLs (like BGG CDN) are first attempted via wsrv.nl CORS proxy (4000ms timeout),
+ *    falling back to direct load with crossOrigin="anonymous" (3000ms timeout).
+ * 4. Returns null if all attempts fail (triggering elegant fallback).
  */
-async function loadSafeImage(
+export async function loadCanvasImageSafe(
   url?: string | null,
-  timeoutMs = 3500
+  timeoutMs = 4000
 ): Promise<HTMLImageElement | null> {
   if (!url) return null;
-  try {
-    let resolvedUrl = url;
-    if (url.startsWith('idb://')) {
-      const idbData = await getMediaImage(url);
-      if (!idbData) return null;
-      resolvedUrl = idbData;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  // 1. Resolve idb:// references
+  if (trimmed.startsWith('idb://')) {
+    try {
+      const dataUrl = await getMediaImage(trimmed);
+      if (!dataUrl) return null;
+      return await loadHtmlImageElement(dataUrl, timeoutMs);
+    } catch {
+      return null;
+    }
+  }
+
+  // 2. Direct data: or relative URLs
+  if (trimmed.startsWith('data:') || trimmed.startsWith('blob:') || trimmed.startsWith('/')) {
+    return await loadHtmlImageElement(trimmed, timeoutMs);
+  }
+
+  // 3. External HTTP/HTTPS URLs
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    // Attempt 1: CORS proxy via wsrv.nl
+    const proxied = buildProxiedImageUrl(trimmed, 800);
+    const proxyResult = await loadHtmlImageElement(proxied, timeoutMs, true);
+    if (proxyResult) {
+      return proxyResult;
     }
 
-    return await new Promise<HTMLImageElement | null>((resolve) => {
-      const img = new Image();
-      let finished = false;
-      const timer = setTimeout(() => {
-        if (!finished) {
-          finished = true;
-          resolve(null);
-        }
-      }, timeoutMs);
+    // Attempt 2: Direct load fallback
+    const directResult = await loadHtmlImageElement(trimmed, 3000, true);
+    if (directResult) {
+      return directResult;
+    }
+  }
 
-      if (!resolvedUrl.startsWith('data:')) {
-        img.crossOrigin = 'anonymous';
+  return null;
+}
+
+function loadHtmlImageElement(
+  src: string,
+  timeoutMs: number,
+  useCrossOrigin = false
+): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    let done = false;
+
+    const timer = setTimeout(() => {
+      if (!done) {
+        done = true;
+        resolve(null);
       }
+    }, timeoutMs);
 
-      img.onload = () => {
-        if (finished) return;
-        finished = true;
+    if (useCrossOrigin && !src.startsWith('data:')) {
+      img.crossOrigin = 'anonymous';
+    }
+
+    img.onload = () => {
+      if (!done) {
+        done = true;
         clearTimeout(timer);
         resolve(img);
-      };
+      }
+    };
 
-      img.onerror = () => {
-        if (finished) return;
-        finished = true;
+    img.onerror = () => {
+      if (!done) {
+        done = true;
         clearTimeout(timer);
         resolve(null);
-      };
+      }
+    };
 
-      img.src = resolvedUrl;
-    });
-  } catch {
-    return null;
-  }
+    img.src = src;
+  });
 }
 
 function drawRoundRect(
@@ -195,8 +238,109 @@ function getMonogram(title: string): string {
 }
 
 /**
- * Renders the HTML5 Canvas 2D Session Share Card at 1080 × 1350 resolution.
- * Returns a high-res PNG Blob.
+ * Draws a circular player avatar on the canvas with smooth clipping and border ring.
+ * If player has an avatar image, draws center-cropped image; otherwise draws monogram or emoji.
+ */
+function drawPlayerAvatarOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  avatarImg: HTMLImageElement | null,
+  avatar: ShareCardPlayerAvatar,
+  cx: number,
+  cy: number,
+  diameter: number,
+  ringColor: string,
+  ringWidth = 2
+): void {
+  const radius = diameter / 2;
+
+  if (avatarImg) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.clip();
+
+    const scale = Math.max(diameter / avatarImg.naturalWidth, diameter / avatarImg.naturalHeight);
+    const sw = diameter / scale;
+    const sh = diameter / scale;
+    const sx = (avatarImg.naturalWidth - sw) / 2;
+    const sy = (avatarImg.naturalHeight - sh) / 2;
+    ctx.drawImage(avatarImg, sx, sy, sw, sh, cx - radius, cy - radius, diameter, diameter);
+    ctx.restore();
+
+    // Ring border
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.lineWidth = ringWidth;
+    ctx.strokeStyle = ringColor;
+    ctx.stroke();
+  } else {
+    // Circle fill with user's tint
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fillStyle = avatar.color ? `${avatar.color}33` : 'rgba(229, 115, 79, 0.2)';
+    ctx.fill();
+
+    ctx.lineWidth = ringWidth;
+    ctx.strokeStyle = ringColor || avatar.color;
+    ctx.stroke();
+
+    if (avatar.avatarEmoji) {
+      ctx.font = `${Math.round(diameter * 0.52)}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(avatar.avatarEmoji, cx, cy + 1);
+    } else {
+      ctx.font = `bold ${Math.round(diameter * 0.42)}px sans-serif`;
+      ctx.fillStyle = avatar.color || '#E5734F';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(avatar.monogram, cx, cy);
+    }
+  }
+}
+
+/**
+ * Calculates dynamic canvas height based on content to eliminate empty dark void at bottom.
+ */
+function calculateDynamicCanvasHeight(data: SessionShareCardData): number {
+  const baseHeaderHeroH = 390;
+  const baseFooterH = 120;
+
+  let contentH = 350;
+
+  if (data.mode === 'points') {
+    const players = data.leaderboard || [];
+    const count = players.length;
+    if (count <= 1) {
+      contentH = 150;
+    } else {
+      // #1 spotlight row: 96px + 12px gap
+      // Runner-up rows: 74px + 10px gap = 84px each
+      const runnerUpCount = Math.max(0, count - 1);
+      contentH = 38 + 96 + 12 + runnerUpCount * 84;
+      if (data.overflowPlayerCount && data.overflowPlayerCount > 0) {
+        contentH += 44;
+      }
+    }
+  } else if (data.mode === 'win_only') {
+    const winners = data.winners || [];
+    const winBoxH = winners.length > 1 ? 190 : 155;
+    contentH = 38 + winBoxH + 34 + 130;
+  } else if (data.mode === 'coop') {
+    const bannerH = 130;
+    const scoreH = data.teamScoreFormatted ? 94 : 0;
+    const squadH = 130;
+    contentH = 38 + bannerH + (scoreH ? scoreH + 24 : 0) + 34 + squadH;
+  }
+
+  const totalCalculated = baseHeaderHeroH + contentH + baseFooterH + 40;
+  // Dynamic height clamped to comfortable bounds (never leaves huge blank space)
+  return Math.max(980, Math.min(1600, totalCalculated));
+}
+
+/**
+ * Renders the HTML5 Canvas 2D Session Share Card as a Warm Editorial Poster.
+ * Dynamic height, atmospheric cover backdrop, real player avatars, and score bars.
  */
 export async function renderSessionShareCard(
   data: SessionShareCardData,
@@ -205,7 +349,7 @@ export async function renderSessionShareCard(
   const themeKey = options.theme || 'dark';
   const palette = PALETTES[themeKey];
 
-  // Wait for document fonts to be ready for accurate typography
+  // Wait for document fonts to be ready
   if (typeof document !== 'undefined' && document.fonts?.ready) {
     try {
       await document.fonts.ready;
@@ -214,11 +358,57 @@ export async function renderSessionShareCard(
     }
   }
 
-  // Load cover image safely (timeout protected & crossOrigin)
-  const coverImg = await loadSafeImage(data.coverUrl, 3500);
+  // Choose image source for cover & atmospheric backdrop
+  const primaryCoverUrl = data.coverUrl;
+  const tablePhotoUrl = options.useTablePhoto && data.tablePhotoUrl ? data.tablePhotoUrl : undefined;
 
+  // Load images in parallel with CORS safety
+  const [coverImg, tablePhotoImg] = await Promise.all([
+    loadCanvasImageSafe(primaryCoverUrl),
+    tablePhotoUrl ? loadCanvasImageSafe(tablePhotoUrl) : Promise.resolve(null),
+  ]);
+
+  const backdropImg = tablePhotoImg || coverImg;
+
+  // Load player avatar images in parallel
+  const avatarImagePromises: Array<Promise<{ key: string; img: HTMLImageElement | null }>> = [];
+
+  const addAvatarLoad = (key: string, url?: string) => {
+    if (url) {
+      avatarImagePromises.push(
+        loadCanvasImageSafe(url, 3000).then((img) => ({ key, img }))
+      );
+    }
+  };
+
+  if (data.mode === 'points' && data.leaderboard) {
+    for (const p of data.leaderboard) {
+      addAvatarLoad(p.playerName, p.avatarUrl);
+    }
+  } else if (data.mode === 'win_only') {
+    for (const p of data.winners || []) {
+      addAvatarLoad(p.playerName, p.avatarUrl);
+    }
+    for (const p of data.otherPlayers || []) {
+      addAvatarLoad(p.playerName, p.avatarUrl);
+    }
+  } else if (data.mode === 'coop') {
+    for (const p of data.teamPlayers || []) {
+      addAvatarLoad(p.playerName, p.avatarUrl);
+    }
+  }
+
+  const loadedAvatars = await Promise.all(avatarImagePromises);
+  const avatarImgMap = new Map<string, HTMLImageElement | null>();
+  for (const item of loadedAvatars) {
+    if (item.img) {
+      avatarImgMap.set(item.key, item.img);
+    }
+  }
+
+  // Dynamic canvas dimension calculation
   const width = 1080;
-  const height = 1350;
+  const height = calculateDynamicCanvasHeight(data);
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -237,20 +427,68 @@ export async function renderSessionShareCard(
   ctx.fillRect(0, 0, width, height);
 
   // 2. Draw card container
-  const cardX = 48;
-  const cardY = 48;
-  const cardW = width - 96;
-  const cardH = height - 96;
-  const cardR = 32;
+  const cardMargin = 40;
+  const cardX = cardMargin;
+  const cardY = cardMargin;
+  const cardW = width - cardMargin * 2;
+  const cardH = height - cardMargin * 2;
+  const cardR = 28;
 
+  ctx.save();
   drawRoundRect(ctx, cardX, cardY, cardW, cardH, cardR);
+  ctx.clip();
+
+  // Fill card background
   ctx.fillStyle = palette.cardBg;
-  ctx.fill();
+  ctx.fillRect(cardX, cardY, cardW, cardH);
+
+  // 3. Atmospheric Cover Backdrop (Safari / WebKit 100% compatible downscale blur)
+  const backdropH = 430;
+  if (backdropImg) {
+    try {
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = 48;
+      offCanvas.height = 48;
+      const offCtx = offCanvas.getContext('2d');
+      if (offCtx) {
+        offCtx.imageSmoothingEnabled = true;
+        offCtx.drawImage(backdropImg, 0, 0, 48, 48);
+
+        ctx.save();
+        ctx.globalAlpha = themeKey === 'dark' ? 0.35 : 0.22;
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(offCanvas, cardX, cardY, cardW, backdropH);
+        ctx.restore();
+      }
+    } catch {
+      // Non-fatal if offscreen canvas fails
+    }
+
+    // Gradient scrim fading smoothly to card background
+    const scrim = ctx.createLinearGradient(0, cardY, 0, cardY + backdropH);
+    if (themeKey === 'dark') {
+      scrim.addColorStop(0, 'rgba(29, 33, 27, 0.40)');
+      scrim.addColorStop(0.65, 'rgba(29, 33, 27, 0.85)');
+      scrim.addColorStop(1, palette.cardBg);
+    } else {
+      scrim.addColorStop(0, 'rgba(255, 255, 255, 0.40)');
+      scrim.addColorStop(0.65, 'rgba(255, 255, 255, 0.88)');
+      scrim.addColorStop(1, palette.cardBg);
+    }
+    ctx.fillStyle = scrim;
+    ctx.fillRect(cardX, cardY, cardW, backdropH);
+  }
+
+  // Restore clip for inner content
+  ctx.restore();
+
+  // Draw card border
+  drawRoundRect(ctx, cardX, cardY, cardW, cardH, cardR);
   ctx.lineWidth = 2;
   ctx.strokeStyle = palette.border;
   ctx.stroke();
 
-  // 3. Top Bar
+  // 4. Top Bar
   // Left: Brand
   ctx.fillStyle = palette.accent;
   ctx.font = `bold 16px ${fontSans}`;
@@ -310,33 +548,45 @@ export async function renderSessionShareCard(
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  // 4. Hero Block
+  // 5. Hero Block
   const heroX = cardX + 36;
   const heroY = divY1 + 24;
-  const coverSize = 190;
+  const coverW = 200;
+  const coverH = 240;
   const coverR = 18;
 
   if (coverImg) {
     ctx.save();
-    drawRoundRect(ctx, heroX, heroY, coverSize, coverSize, coverR);
+    // Drop shadow behind box cover
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.40)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 8;
+
+    drawRoundRect(ctx, heroX, heroY, coverW, coverH, coverR);
+    ctx.fillStyle = palette.surface;
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    drawRoundRect(ctx, heroX, heroY, coverW, coverH, coverR);
     ctx.clip();
 
-    const scale = Math.max(coverSize / coverImg.naturalWidth, coverSize / coverImg.naturalHeight);
-    const sw = coverSize / scale;
-    const sh = coverSize / scale;
+    const scale = Math.max(coverW / coverImg.naturalWidth, coverH / coverImg.naturalHeight);
+    const sw = coverW / scale;
+    const sh = coverH / scale;
     const sx = (coverImg.naturalWidth - sw) / 2;
     const sy = (coverImg.naturalHeight - sh) / 2;
-    ctx.drawImage(coverImg, sx, sy, sw, sh, heroX, heroY, coverSize, coverSize);
+    ctx.drawImage(coverImg, sx, sy, sw, sh, heroX, heroY, coverW, coverH);
     ctx.restore();
 
     // Border around cover
-    drawRoundRect(ctx, heroX, heroY, coverSize, coverSize, coverR);
+    drawRoundRect(ctx, heroX, heroY, coverW, coverH, coverR);
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = palette.borderLight;
     ctx.stroke();
   } else {
     // Editorial Monogram Frame
-    drawRoundRect(ctx, heroX, heroY, coverSize, coverSize, coverR);
+    drawRoundRect(ctx, heroX, heroY, coverW, coverH, coverR);
     ctx.fillStyle = palette.surface;
     ctx.fill();
     ctx.lineWidth = 1.5;
@@ -344,7 +594,7 @@ export async function renderSessionShareCard(
     ctx.stroke();
 
     // Inner subtle box
-    drawRoundRect(ctx, heroX + 8, heroY + 8, coverSize - 16, coverSize - 16, coverR - 6);
+    drawRoundRect(ctx, heroX + 8, heroY + 8, coverW - 16, coverH - 16, coverR - 6);
     ctx.lineWidth = 1;
     ctx.strokeStyle = palette.border;
     ctx.stroke();
@@ -354,28 +604,28 @@ export async function renderSessionShareCard(
     ctx.font = `italic bold 52px ${fontSerif}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(getMonogram(data.gameTitle), heroX + coverSize / 2, heroY + coverSize / 2);
+    ctx.fillText(getMonogram(data.gameTitle), heroX + coverW / 2, heroY + coverH / 2);
   }
 
-  // Title and metadata to the right of cover
-  const textX = heroX + coverSize + 32;
-  const maxTitleW = cardW - 72 - coverSize - 32;
+  // Right Content Box
+  const textX = heroX + coverW + 34;
+  const maxTitleW = cardW - 72 - coverW - 34;
 
   ctx.fillStyle = palette.text;
-  ctx.font = `bold 38px ${fontSerif}`;
+  ctx.font = `bold 50px ${fontSerif}`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
 
   const titleLines = wrapText(ctx, data.gameTitle, maxTitleW, 2);
-  const lineH = 46;
-  let currentY = heroY + 12;
+  const lineH = 58;
+  let currentY = heroY + 8;
   for (const line of titleLines) {
     ctx.fillText(line, textX, currentY);
     currentY += lineH;
   }
 
-  // Metadata line
-  currentY = Math.max(currentY + 6, heroY + coverSize - 44);
+  // Metadata pills row
+  currentY = Math.max(currentY + 12, heroY + coverH - 52);
   const metaParts = [
     data.dateFormatted,
     data.locationName,
@@ -386,10 +636,10 @@ export async function renderSessionShareCard(
   ctx.fillStyle = palette.textMuted;
   ctx.font = `500 18px ${fontSans}`;
   ctx.textBaseline = 'top';
-  ctx.fillText(metaParts.join('  ·  '), textX, currentY);
+  ctx.fillText(metaParts.join('   ·   '), textX, currentY);
 
   // Hero divider
-  const divY2 = heroY + coverSize + 28;
+  const divY2 = heroY + coverH + 26;
   ctx.beginPath();
   ctx.moveTo(cardX + 36, divY2);
   ctx.lineTo(cardX + cardW - 36, divY2);
@@ -397,7 +647,7 @@ export async function renderSessionShareCard(
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  // 5. Main Result Block
+  // 6. Main Result Block
   const blockX = cardX + 36;
   const blockY = divY2 + 24;
   const blockW = cardW - 72;
@@ -412,21 +662,20 @@ export async function renderSessionShareCard(
 
     const rowStartY = blockY + 30;
     const players = data.leaderboard || [];
-    const maxRows = 8;
-    const rowH = 68;
-    const rowGap = 10;
 
-    for (let i = 0; i < players.length && i < maxRows; i++) {
+    let currentCardY = rowStartY;
+
+    for (let i = 0; i < players.length; i++) {
       const p = players[i];
-      const rY = rowStartY + i * (rowH + rowGap);
       const isFirst = p.rank === 1;
+      const rowH = isFirst ? 94 : 74;
 
-      // Row background
-      drawRoundRect(ctx, blockX, rY, blockW, rowH, 16);
+      drawRoundRect(ctx, blockX, currentCardY, blockW, rowH, isFirst ? 20 : 16);
+
       if (isFirst) {
         ctx.fillStyle = palette.accentSoft;
         ctx.fill();
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 2;
         ctx.strokeStyle = palette.accent;
         ctx.stroke();
       } else {
@@ -438,54 +687,139 @@ export async function renderSessionShareCard(
       }
 
       // Rank badge
-      const badgeSize = 38;
+      const badgeW = isFirst ? 42 : 36;
+      const badgeH = isFirst ? 42 : 36;
       const badgeX = blockX + 16;
-      const badgeY = rY + (rowH - badgeSize) / 2;
-      drawRoundRect(ctx, badgeX, badgeY, badgeSize, badgeSize, 10);
+      const badgeY = currentCardY + (rowH - badgeH) / 2;
+
+      drawRoundRect(ctx, badgeX, badgeY, badgeW, badgeH, 10);
       ctx.fillStyle = isFirst ? palette.accent : palette.surfaceAlt;
       ctx.fill();
 
       ctx.fillStyle = isFirst ? '#FFFFFF' : palette.textMuted;
-      ctx.font = `bold 16px ${fontSans}`;
+      ctx.font = `bold ${isFirst ? 16 : 15}px ${fontSans}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(isFirst ? '👑' : `#${p.rank}`, badgeX + badgeSize / 2, badgeY + badgeSize / 2);
+      ctx.fillText(isFirst ? '👑' : `#${p.rank}`, badgeX + badgeW / 2, badgeY + badgeH / 2);
 
-      // Player name
-      ctx.fillStyle = palette.text;
-      ctx.font = `600 22px ${fontSans}`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      const nameX = badgeX + badgeSize + 18;
-      ctx.fillText(p.playerName, nameX, rY + rowH / 2);
+      // Avatar
+      const avatarDiameter = isFirst ? 66 : 52;
+      const avatarCx = badgeX + badgeW + 16 + avatarDiameter / 2;
+      const avatarCy = currentCardY + rowH / 2;
+      const pImg = avatarImgMap.get(p.playerName) || null;
+      const ringColor = isFirst ? palette.accent : palette.borderLight;
+
+      drawPlayerAvatarOnCanvas(
+        ctx,
+        pImg,
+        p,
+        avatarCx,
+        avatarCy,
+        avatarDiameter,
+        ringColor,
+        isFirst ? 2.5 : 1.5
+      );
+
+      // Name & details
+      const infoX = avatarCx + avatarDiameter / 2 + 18;
+
+      if (isFirst) {
+        ctx.fillStyle = palette.text;
+        ctx.font = `bold 26px ${fontSans}`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(p.playerName, infoX, currentCardY + 22);
+
+        // Micro-tag (e.g. "+32 pts margin" or "Photo Finish · +1 pt" or "Shared Victory")
+        if (p.microTag) {
+          const tagMetrics = ctx.measureText(p.microTag);
+          const tagW = tagMetrics.width + 20;
+          const tagH = 26;
+          const tagY = currentCardY + 54;
+
+          drawRoundRect(ctx, infoX, tagY, tagW, tagH, 8);
+          ctx.fillStyle = palette.surface;
+          ctx.fill();
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = palette.border;
+          ctx.stroke();
+
+          ctx.fillStyle = palette.accent;
+          ctx.font = `bold 13px ${fontSans}`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.microTag, infoX + tagW / 2, tagY + tagH / 2);
+        }
+      } else {
+        ctx.fillStyle = palette.text;
+        ctx.font = `600 22px ${fontSans}`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(p.playerName, infoX, currentCardY + 16);
+
+        // Proportional Score Bar
+        const barW = 200;
+        const barH = 6;
+        const barY = currentCardY + 48;
+
+        drawRoundRect(ctx, infoX, barY, barW, barH, 3);
+        ctx.fillStyle = palette.border;
+        ctx.fill();
+
+        const fillW = Math.max(8, (barW * p.scorePercentage) / 100);
+        drawRoundRect(ctx, infoX, barY, fillW, barH, 3);
+        ctx.fillStyle = palette.accent;
+        ctx.fill();
+      }
 
       // Score
       ctx.textAlign = 'right';
-      ctx.font = `bold 26px ${fontSans}`;
-      ctx.fillStyle = isFirst ? palette.accent : palette.text;
-      ctx.fillText(p.scoreFormatted, blockX + blockW - 64, rY + rowH / 2);
+      ctx.textBaseline = 'middle';
+      if (isFirst) {
+        ctx.font = `bold 44px ${fontSans}`;
+        ctx.fillStyle = palette.accent;
+        ctx.fillText(p.scoreFormatted, blockX + blockW - 68, currentCardY + rowH / 2);
+      } else {
+        ctx.font = `bold 28px ${fontSans}`;
+        ctx.fillStyle = palette.text;
+        ctx.fillText(p.scoreFormatted, blockX + blockW - 68, currentCardY + rowH / 2);
+      }
 
       // "pts" label
       ctx.font = `500 15px ${fontSans}`;
       ctx.fillStyle = palette.textMuted;
-      ctx.fillText('pts', blockX + blockW - 20, rY + rowH / 2 + 1);
+      ctx.fillText('pts', blockX + blockW - 20, currentCardY + rowH / 2 + 1);
+
+      currentCardY += rowH + (isFirst ? 12 : 10);
     }
 
     if (data.overflowPlayerCount && data.overflowPlayerCount > 0) {
-      const overflowY = rowStartY + players.length * (rowH + rowGap) + 12;
       ctx.fillStyle = palette.textMuted;
       ctx.font = `italic 16px ${fontSans}`;
       ctx.textAlign = 'center';
-      ctx.fillText(`+${data.overflowPlayerCount} more players`, blockX + blockW / 2, overflowY);
+      ctx.textBaseline = 'top';
+      ctx.fillText(
+        `+${data.overflowPlayerCount} more players`,
+        blockX + blockW / 2,
+        currentCardY + 8
+      );
     }
   } else if (data.mode === 'win_only') {
-    // WINNER / WINNERS Section
+    // Header
+    ctx.fillStyle = palette.textSubMuted;
+    ctx.font = `bold 14px ${fontSans}`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('MATCH RESULT', blockX, blockY);
+
     const winners = data.winners || [];
     const isMultiWinner = winners.length > 1;
     const winnerHeader = isMultiWinner ? '👑 WINNERS' : '👑 WINNER';
 
-    const winBoxH = isMultiWinner ? 180 : 150;
-    drawRoundRect(ctx, blockX, blockY, blockW, winBoxH, 22);
+    const winBoxH = isMultiWinner ? 190 : 155;
+    const startY = blockY + 28;
+
+    drawRoundRect(ctx, blockX, startY, blockW, winBoxH, 22);
     ctx.fillStyle = palette.accentSoft;
     ctx.fill();
     ctx.lineWidth = 2;
@@ -497,32 +831,40 @@ export async function renderSessionShareCard(
     ctx.font = `bold 15px ${fontSans}`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(winnerHeader, blockX + 28, blockY + 22);
+    ctx.fillText(winnerHeader, blockX + 28, startY + 20);
 
-    // Winner Name(s)
-    if (isMultiWinner) {
-      const winnerNames = winners.map((w) => w.playerName).join('  ·  ');
+    // Winners row
+    let wX = blockX + 28;
+    const wY = startY + (isMultiWinner ? 105 : 90);
+
+    for (const w of winners) {
+      const pImg = avatarImgMap.get(w.playerName) || null;
+      const avatarSize = 56;
+      drawPlayerAvatarOnCanvas(
+        ctx,
+        pImg,
+        w,
+        wX + avatarSize / 2,
+        wY,
+        avatarSize,
+        palette.accent,
+        2.5
+      );
+
       ctx.fillStyle = palette.text;
-      ctx.font = `bold 32px ${fontSerif}`;
+      ctx.font = `bold ${isMultiWinner ? 26 : 34}px ${fontSerif}`;
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      const winnerLines = wrapText(ctx, winnerNames, blockW - 56, 2);
-      let wY = blockY + 70;
-      for (const line of winnerLines) {
-        ctx.fillText(line, blockX + 28, wY);
-        wY += 38;
-      }
-    } else {
-      const singleName = winners[0]?.playerName || 'Winner';
-      ctx.fillStyle = palette.text;
-      ctx.font = `bold 42px ${fontSerif}`;
-      ctx.textBaseline = 'middle';
-      ctx.fillText(singleName, blockX + 28, blockY + winBoxH / 2 + 10);
+      ctx.fillText(w.playerName, wX + avatarSize + 16, wY);
+
+      wX += avatarSize + ctx.measureText(w.playerName).width + 48;
+      if (wX > blockX + blockW - 100) break;
     }
 
     // ALSO PLAYED Section
     const otherPlayers = data.otherPlayers || [];
     if (otherPlayers.length > 0) {
-      const alsoY = blockY + winBoxH + 34;
+      const alsoY = startY + winBoxH + 34;
       ctx.fillStyle = palette.textSubMuted;
       ctx.font = `bold 14px ${fontSans}`;
       ctx.textAlign = 'left';
@@ -530,47 +872,62 @@ export async function renderSessionShareCard(
       ctx.fillText('ALSO PLAYED', blockX, alsoY);
 
       let pillX = blockX;
-      let pillY = alsoY + 28;
+      let pillY = alsoY + 26;
       const pillGap = 12;
-      const pillH = 46;
+      const pillH = 50;
 
-      ctx.font = `500 18px ${fontSans}`;
       for (const other of otherPlayers) {
+        ctx.font = `500 18px ${fontSans}`;
         const textMetrics = ctx.measureText(other.playerName);
-        const pW = textMetrics.width + 36;
+        const avatarSize = 34;
+        const pW = avatarSize + textMetrics.width + 46;
+
         if (pillX + pW > blockX + blockW) {
           pillX = blockX;
           pillY += pillH + pillGap;
         }
 
-        drawRoundRect(ctx, pillX, pillY, pW, pillH, 14);
+        drawRoundRect(ctx, pillX, pillY, pW, pillH, 16);
         ctx.fillStyle = palette.surface;
         ctx.fill();
         ctx.lineWidth = 1;
         ctx.strokeStyle = palette.border;
         ctx.stroke();
 
+        const pImg = avatarImgMap.get(other.playerName) || null;
+        drawPlayerAvatarOnCanvas(
+          ctx,
+          pImg,
+          other,
+          pillX + 14 + avatarSize / 2,
+          pillY + pillH / 2,
+          avatarSize,
+          palette.borderLight,
+          1.5
+        );
+
         ctx.fillStyle = palette.text;
-        ctx.textAlign = 'center';
+        ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(other.playerName, pillX + pW / 2, pillY + pillH / 2);
+        ctx.fillText(other.playerName, pillX + 14 + avatarSize + 10, pillY + pillH / 2);
 
         pillX += pW + pillGap;
       }
 
       if (data.overflowOtherCount && data.overflowOtherCount > 0) {
         const moreText = `+${data.overflowOtherCount} more`;
-        const mMetrics = ctx.measureText(moreText);
-        const mW = mMetrics.width + 32;
+        ctx.font = `500 16px ${fontSans}`;
+        const mW = ctx.measureText(moreText).width + 32;
         if (pillX + mW > blockX + blockW) {
           pillX = blockX;
           pillY += pillH + pillGap;
         }
-        drawRoundRect(ctx, pillX, pillY, mW, pillH, 14);
+        drawRoundRect(ctx, pillX, pillY, mW, pillH, 16);
         ctx.fillStyle = palette.surfaceAlt;
         ctx.fill();
         ctx.fillStyle = palette.textMuted;
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText(moreText, pillX + mW / 2, pillY + pillH / 2);
       }
     }
@@ -612,7 +969,7 @@ export async function renderSessionShareCard(
       ctx.fillText('FINAL TEAM SCORE', blockX + 28, nextBlockY + scoreBoxH / 2);
 
       ctx.fillStyle = palette.accent;
-      ctx.font = `bold 32px ${fontSans}`;
+      ctx.font = `bold 34px ${fontSans}`;
       ctx.textAlign = 'right';
       ctx.fillText(`${data.teamScoreFormatted} pts`, blockX + blockW - 28, nextBlockY + scoreBoxH / 2);
 
@@ -629,54 +986,69 @@ export async function renderSessionShareCard(
       ctx.fillText('THE SQUAD', blockX, nextBlockY);
 
       let pillX = blockX;
-      let pillY = nextBlockY + 28;
+      let pillY = nextBlockY + 26;
       const pillGap = 12;
-      const pillH = 46;
+      const pillH = 50;
 
-      ctx.font = `500 18px ${fontSans}`;
       for (const member of teamPlayers) {
+        ctx.font = `500 18px ${fontSans}`;
         const textMetrics = ctx.measureText(member.playerName);
-        const pW = textMetrics.width + 36;
+        const avatarSize = 34;
+        const pW = avatarSize + textMetrics.width + 46;
+
         if (pillX + pW > blockX + blockW) {
           pillX = blockX;
           pillY += pillH + pillGap;
         }
 
-        drawRoundRect(ctx, pillX, pillY, pW, pillH, 14);
+        drawRoundRect(ctx, pillX, pillY, pW, pillH, 16);
         ctx.fillStyle = palette.surface;
         ctx.fill();
         ctx.lineWidth = 1;
         ctx.strokeStyle = palette.border;
         ctx.stroke();
 
+        const pImg = avatarImgMap.get(member.playerName) || null;
+        drawPlayerAvatarOnCanvas(
+          ctx,
+          pImg,
+          member,
+          pillX + 14 + avatarSize / 2,
+          pillY + pillH / 2,
+          avatarSize,
+          palette.borderLight,
+          1.5
+        );
+
         ctx.fillStyle = palette.text;
-        ctx.textAlign = 'center';
+        ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(member.playerName, pillX + pW / 2, pillY + pillH / 2);
+        ctx.fillText(member.playerName, pillX + 14 + avatarSize + 10, pillY + pillH / 2);
 
         pillX += pW + pillGap;
       }
 
       if (data.overflowTeamCount && data.overflowTeamCount > 0) {
         const moreText = `+${data.overflowTeamCount} more`;
-        const mMetrics = ctx.measureText(moreText);
-        const mW = mMetrics.width + 32;
+        ctx.font = `500 16px ${fontSans}`;
+        const mW = ctx.measureText(moreText).width + 32;
         if (pillX + mW > blockX + blockW) {
           pillX = blockX;
           pillY += pillH + pillGap;
         }
-        drawRoundRect(ctx, pillX, pillY, mW, pillH, 14);
+        drawRoundRect(ctx, pillX, pillY, mW, pillH, 16);
         ctx.fillStyle = palette.surfaceAlt;
         ctx.fill();
         ctx.fillStyle = palette.textMuted;
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText(moreText, pillX + mW / 2, pillY + pillH / 2);
       }
     }
   }
 
-  // 6. Footer
-  const footerY = cardY + cardH - 52;
+  // 7. Footer
+  const footerY = cardY + cardH - 46;
   ctx.beginPath();
   ctx.moveTo(cardX + 36, footerY - 18);
   ctx.lineTo(cardX + cardW - 36, footerY - 18);
@@ -685,13 +1057,13 @@ export async function renderSessionShareCard(
   ctx.stroke();
 
   ctx.fillStyle = palette.textSubMuted;
-  ctx.font = `500 14px ${fontSans}`;
+  ctx.font = `500 15px ${fontSans}`;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText('HEO — BOARD GAME COLLECTION', cardX + 36, footerY);
 
   ctx.textAlign = 'right';
-  ctx.fillText('Recorded with precision', cardX + cardW - 36, footerY);
+  ctx.fillText(data.venueDateFormatted, cardX + cardW - 36, footerY);
 
   // Return PNG Blob
   return new Promise<Blob>((resolve, reject) => {
