@@ -171,7 +171,7 @@ export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
                 </div>
                 <GameCoverImage
                   game={{ name: g.name, thumbnail: g.thumbnail }}
-                  className="w-full aspect-square rounded-xl border border-[var(--line)]"
+                  className="w-full aspect-[4/3] rounded-xl border border-[var(--line)]"
                   fallbackIconSize="text-3xl"
                 />
                 <div>

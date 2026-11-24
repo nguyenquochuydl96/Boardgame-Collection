@@ -125,7 +125,7 @@ const GameCardComponent: React.FC<GameCardProps> = ({
         {/* Album Cover Art */}
         <GameCoverImage
           game={game}
-          className="aspect-square w-full rounded-2xl border border-[var(--line)]"
+          className="aspect-[3/4] w-full rounded-2xl border border-[var(--line)]"
           imgClassName="transition-transform duration-300 ease-out group-hover:scale-105"
           fallbackIconClassName="w-10 h-10"
         >
