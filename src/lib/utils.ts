@@ -1574,3 +1574,114 @@ export function deduplicateLocationsList(
 
   return result;
 }
+
+export interface RematchDraftResult {
+  draft: SessionDraft;
+  targetStep: 4 | 5;
+  isCoop: boolean;
+  gameExists: boolean;
+}
+
+/**
+ * Builds a clean, pre-filled rematch draft from an existing completed session.
+ * - Preserves: gameId, location (matched to canonical venue if available), players in exact seat order.
+ * - Updates player names/avatars to latest store profile if available, falls back to session name for guests.
+ * - Identifies Co-op vs Competitive:
+ *     Co-op: targetStep = 5 (jumps directly to Scores/Play, bypassing First Player picker).
+ *     Competitive: targetStep = 4 (jumps directly to First Player picker).
+ * - Resets cleanly: firstPlayerId (undefined), datePlayed (today), scores/breakdowns/ranks (empty),
+ *     durationMinutes ('0'), timer state (fresh), coopOutcome (default 'won', never copies old defeat),
+ *     notes (''), photos ([]).
+ * - Safely handles missing location or deleted game.
+ */
+export function buildRematchDraftFromSession(
+  session: PlaySession,
+  options?: {
+    games?: BoardGame[];
+    players?: Player[];
+    locations?: GameLocation[];
+    now?: number;
+  }
+): RematchDraftResult {
+  const template = getScoringTemplateForGame(session.gameName);
+  const isCoop = isCoopSession(session) || Boolean(session.isCoop) || Boolean(template?.isCoop);
+  const targetStep: 4 | 5 = isCoop ? 5 : 4;
+
+  const gameExists = options?.games
+    ? options.games.some((g) => g.id === session.gameId)
+    : Boolean(session.gameId);
+
+  // Match location to canonical store venue if present
+  let canonicalLocation = (session.location || '').trim();
+  if (canonicalLocation && options?.locations && options.locations.length > 0) {
+    const locKey = normalizeLocationKey(canonicalLocation);
+    const matched = options.locations.find((l) => normalizeLocationKey(l.name) === locKey);
+    if (matched) {
+      canonicalLocation = matched.name;
+    }
+  }
+
+  // Preserve players in exact seat order, updating names/avatars from store
+  const selectedPlayerIds: string[] = [];
+  const oneOffPlayers: Player[] = [];
+  const playersStoreMap = new Map<string, Player>(
+    (options?.players || []).map((p) => [p.id, p])
+  );
+
+  if (Array.isArray(session.players)) {
+    for (const p of session.players) {
+      if (!p.playerId) continue;
+      selectedPlayerIds.push(p.playerId);
+
+      const inStore = playersStoreMap.get(p.playerId);
+      if (!inStore) {
+        // Guest player: create local oneOffPlayer record to maintain avatar & name
+        oneOffPlayers.push({
+          id: p.playerId,
+          name: p.playerName,
+          avatar: '🎲',
+          color: '#6366f1',
+          createdAt: new Date().toISOString(),
+        });
+      }
+    }
+  }
+
+  const startMs = options?.now ?? Date.now();
+  const todayDate = getLocalDateString(options?.now ? new Date(options.now) : new Date());
+
+  const draft: SessionDraft = {
+    gameId: session.gameId,
+    datePlayed: todayDate,
+    location: canonicalLocation,
+    durationMinutes: '0',
+    elapsedSeconds: 0,
+    sessionStartTime: startMs,
+    isTimerRunning: true,
+    pausedDurationMs: 0,
+    pauseStartTime: undefined,
+    selectedPlayerIds,
+    oneOffPlayers,
+    firstPlayerId: undefined, // Reset clean for Step 4 picker
+    firstPlayerMethod: 'random_wheel',
+    firstPlayerAnimStyle: 'card_shuffle',
+    scoresByPlayerId: {}, // Reset clean
+    breakdownsByPlayerId: {}, // Reset clean (Ark Nova, etc.)
+    manualWinnerIds: [], // Reset clean
+    coopOutcome: 'won', // Reset to default clean state
+    hasManualDuration: false,
+    lowScoreWins: template?.lowestScoreWins ?? false,
+    scoringMode: (template && template.categories && template.categories.length > 0) ? 'detailed' : 'quick',
+    photos: [], // Reset clean
+    notes: '', // Reset clean
+    currentStep: targetStep,
+    lastUpdated: new Date(startMs).toISOString(),
+  };
+
+  return {
+    draft,
+    targetStep,
+    isCoop,
+    gameExists,
+  };
+}

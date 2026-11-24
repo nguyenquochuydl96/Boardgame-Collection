@@ -15,6 +15,7 @@ import {
   Coffee,
   ArrowUpRight,
   Upload,
+  RotateCcw,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { GameStatusBadge } from '../components/game/GameStatusBadge';
@@ -290,12 +291,29 @@ export const GameDetailPage: React.FC = () => {
                   </span>
                 </div>
 
-                <Link to={`/sessions/new?gameId=${game.id}`}>
-                  <Button variant="primary">
-                    <Play className="w-4 h-4 fill-current" />
-                    Record New Session
-                  </Button>
-                </Link>
+                <div className="flex flex-wrap items-center gap-2">
+                  {gameSessions.length > 0 && (
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        navigate('/sessions/new', {
+                          state: { rematchSession: gameSessions[0] },
+                        })
+                      }
+                      className="min-h-[40px] px-3 font-bold"
+                      title="Play again with same players and venue from most recent session"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-1.5" />
+                      Play Again
+                    </Button>
+                  )}
+                  <Link to={`/sessions/new?gameId=${game.id}`}>
+                    <Button variant="primary">
+                      <Play className="w-4 h-4 fill-current" />
+                      Record New Session
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -543,11 +561,29 @@ export const GameDetailPage: React.FC = () => {
                 <h2 className="font-display font-bold text-lg text-[var(--ink)]">
                   Play History ({formatNumber(gameSessions.length)})
                 </h2>
-                <Link to={`/sessions/new?gameId=${game.id}`}>
-                  <Button variant="ghost" size="sm">
-                    + Log Session
-                  </Button>
-                </Link>
+                <div className="flex items-center gap-2">
+                  {gameSessions.length > 0 && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        navigate('/sessions/new', {
+                          state: { rematchSession: gameSessions[0] },
+                        })
+                      }
+                      className="font-bold text-xs"
+                      title="Play again with same players and venue from most recent session"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5 mr-1" />
+                      Play Again
+                    </Button>
+                  )}
+                  <Link to={`/sessions/new?gameId=${game.id}`}>
+                    <Button variant="ghost" size="sm">
+                      + Log Session
+                    </Button>
+                  </Link>
+                </div>
               </div>
 
               {gameSessions.length > 0 ? (

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams, Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   ArrowLeft,
@@ -8,9 +8,11 @@ import {
   Clock,
   Play,
   Pause,
+  RotateCcw,
 } from 'lucide-react';
 import { PageTransition } from '../components/layout/PageTransition';
 import { Button } from '../components/ui/Button';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { cn } from '../components/ui/cn';
 import { useGameStore } from '../store/useGameStore';
 import { usePlayerStore } from '../store/usePlayerStore';
@@ -18,6 +20,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import { useLocationStore } from '../store/useLocationStore';
 import {
   FirstPlayerMethod,
+  PlaySession,
   Player,
   PlayerScore,
   SessionDraft,
@@ -30,6 +33,7 @@ import {
   buildLocalDateTimeISO,
   resolveCoopWinnerIds,
   formatCount,
+  buildRematchDraftFromSession,
 } from '../lib/utils';
 import { getScoringTemplateForGame } from '../lib/scoringPresets';
 import { pushVaultToCloud } from '../lib/supabaseSync';
@@ -58,13 +62,17 @@ const ONE_OFF_COLORS = ['#f97316', '#22d3ee', '#a855f7', '#10b981', '#ec4899'];
 
 export const NewSessionPage: React.FC = () => {
   const navigate = useNavigate();
+  const routerLocation = useLocation();
   const [searchParams] = useSearchParams();
+  const locationState = routerLocation.state as { rematchSession?: PlaySession } | null | undefined;
+  const rematchSessionId = searchParams.get('rematchSessionId') || (searchParams.get('mode') === 'rematch' ? searchParams.get('sessionId') : null);
+  const isRematchMode = searchParams.get('mode') === 'rematch' || Boolean(locationState?.rematchSession);
+
   const preselectedGameId = searchParams.get('gameId');
   const initialStepParam = Number(searchParams.get('step'));
   const preselectedFirstPlayerId = searchParams.get('firstPlayerId');
   const preselectedPlayerIds = searchParams.get('playerIds')?.split(',').filter(Boolean);
   const preselectedLocation = searchParams.get('location');
-  const isRematchMode = searchParams.get('mode') === 'rematch';
 
   const games = useGameStore((s) => s.games);
   const savedPlayers = usePlayerStore((s) => s.players);
@@ -75,6 +83,15 @@ export const NewSessionPage: React.FC = () => {
   const defaultLocation = useLocationStore(
     (s) => s.locations.find((l) => l.isDefault)?.name || s.locations[0]?.name || ''
   );
+
+  const rematchSource =
+    locationState?.rematchSession ||
+    (rematchSessionId ? sessions.find((s) => s.id === rematchSessionId) : undefined);
+
+  const [pendingRematchSession, setPendingRematchSession] = useState<PlaySession | null>(null);
+  const [isConfirmOverwriteOpen, setIsConfirmOverwriteOpen] = useState(false);
+  const [rematchBanner, setRematchBanner] = useState<{ isCoop: boolean; message: string } | null>(null);
+  const rematchProcessedRef = useRef(false);
 
   const [currentStep, setCurrentStep] = useState<number>(
     initialStepParam >= 1 && initialStepParam <= 6 ? initialStepParam : 1
@@ -140,9 +157,114 @@ export const NewSessionPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const isSubmittedRef = useRef(false);
 
-  // Detect and offer restoring previous draft on mount (skip in rematch mode)
+  const applyRematch = (sourceSession: PlaySession) => {
+    const result = buildRematchDraftFromSession(sourceSession, {
+      games,
+      players: savedPlayers,
+      locations: useLocationStore.getState().locations,
+    });
+
+    const { draft, targetStep } = result;
+
+    setSelectedGameId(draft.gameId);
+    setDatePlayed(draft.datePlayed);
+    setLocation(draft.location);
+    setDurationMinutes(draft.durationMinutes);
+    setSessionStartTime(draft.sessionStartTime);
+    setIsTimerRunning(draft.isTimerRunning);
+    setPausedDurationMs(draft.pausedDurationMs);
+    setPauseStartTime(draft.pauseStartTime);
+    setSelectedPlayerIds(draft.selectedPlayerIds || []);
+    setOneOffPlayers(draft.oneOffPlayers || []);
+    if (draft.oneOffPlayers && draft.oneOffPlayers.length > 0) {
+      draft.oneOffPlayers.forEach((g) => registerGuestPlayer(g));
+    }
+    setFirstPlayerId(draft.firstPlayerId);
+    setFirstPlayerMethod(draft.firstPlayerMethod);
+    setFirstPlayerAnimStyle(
+      draft.firstPlayerAnimStyle === 'wheel' ? 'card_shuffle' : (draft.firstPlayerAnimStyle || 'card_shuffle')
+    );
+    setScoresByPlayerId(draft.scoresByPlayerId || {});
+    setBreakdownsByPlayerId(draft.breakdownsByPlayerId || {});
+    setManualWinnerIds(draft.manualWinnerIds || []);
+    setCoopOutcome(draft.coopOutcome === 'lost' ? 'lost' : 'won');
+    hasManualDurationRef.current = Boolean(draft.hasManualDuration);
+    setLowScoreWins(draft.lowScoreWins ?? false);
+    setScoringMode(draft.scoringMode || 'quick');
+    setPhotos(draft.photos || []);
+    setNotes(draft.notes || '');
+    setCurrentStep(targetStep);
+    setExistingDraft(null);
+
+    setRematchBanner({
+      isCoop: result.isCoop,
+      message: result.isCoop
+        ? 'Co-op rematch prefilled · Tap Back to edit players/venue'
+        : 'Rematch prefilled · Pick first player or tap Back to edit setup',
+    });
+
+    try {
+      localStorage.setItem('boardgame_session_draft', JSON.stringify(draft));
+      window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
+    } catch {}
+
+    try {
+      window.history.replaceState({}, '', window.location.pathname);
+    } catch {}
+  };
+
+  // Process 1-Tap Rematch intent on mount with Active Draft Protection
   useEffect(() => {
-    if (isRematchMode) return;
+    if (rematchProcessedRef.current) return;
+    if (!rematchSource) return;
+
+    rematchProcessedRef.current = true;
+
+    try {
+      const raw = localStorage.getItem('boardgame_session_draft');
+      if (raw) {
+        const parsed = JSON.parse(raw) as SessionDraft;
+        const isGhostDraft =
+          !parsed.gameId ||
+          (parsed.currentStep === 1 &&
+            (!parsed.selectedPlayerIds || parsed.selectedPlayerIds.length === 0) &&
+            (!parsed.notes || parsed.notes.trim() === '') &&
+            (!parsed.photos || parsed.photos.length === 0));
+
+        const isCompleted = isDraftMatchingCompletedSession(parsed, sessions);
+
+        if (!isGhostDraft && !isCompleted) {
+          // Active draft exists: prompt user before discarding
+          setPendingRematchSession(rematchSource);
+          setIsConfirmOverwriteOpen(true);
+          return;
+        }
+      }
+    } catch {}
+
+    // No active draft or only ghost draft: apply rematch directly
+    applyRematch(rematchSource);
+  }, [rematchSource, sessions, games, savedPlayers, registerGuestPlayer]);
+
+  const handleConfirmDiscardActiveDraft = () => {
+    if (pendingRematchSession) {
+      applyRematch(pendingRematchSession);
+    }
+    setIsConfirmOverwriteOpen(false);
+    setPendingRematchSession(null);
+  };
+
+  const handleCancelRematch = () => {
+    setIsConfirmOverwriteOpen(false);
+    setPendingRematchSession(null);
+    try {
+      window.history.replaceState({}, '', window.location.pathname);
+    } catch {}
+  };
+
+  // Detect and offer restoring previous draft on mount (skip in rematch mode or when rematch is active)
+  useEffect(() => {
+    if (isRematchMode || rematchSource || pendingRematchSession) return;
     const shouldAutoResume = searchParams.get('resume') === '1' || searchParams.get('resume') === 'true';
 
     try {
@@ -201,7 +323,7 @@ export const NewSessionPage: React.FC = () => {
     } catch {
       // Ignore parse errors
     }
-  }, [isRematchMode, sessions, searchParams, registerGuestPlayer]);
+  }, [isRematchMode, rematchSource, pendingRematchSession, sessions, searchParams, registerGuestPlayer]);
 
   // Ensure draft is cleared if session has been submitted
   useEffect(() => {
@@ -784,9 +906,11 @@ export const NewSessionPage: React.FC = () => {
         {/* Wizard Step Progress Bar */}
         <div className="flex sm:grid sm:grid-cols-6 gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none">
           {WIZARD_STEPS.map((s) => {
+            const isCoopSkipped = Boolean(scoringTemplate.isCoop) && s.step === 4;
             const isActive = currentStep === s.step;
-            const isDone = currentStep > s.step;
+            const isDone = currentStep > s.step && !isCoopSkipped;
             const isLocked =
+              isCoopSkipped ||
               (s.step >= 2 && !selectedGame) ||
               (s.step >= 4 && activeSessionPlayers.length === 0);
             return (
@@ -808,10 +932,15 @@ export const NewSessionPage: React.FC = () => {
                     ? 'bg-[var(--good-soft)] border-[var(--good)]/30 text-[var(--good)]'
                     : 'bg-[var(--card)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
                 )}
+                title={isCoopSkipped ? 'Skipped for Co-op games' : undefined}
               >
                 <div className="flex items-center justify-between text-[11px] font-mono">
                   <span>0{s.step}</span>
-                  {isDone && <Check className="w-3.5 h-3.5 text-[var(--good)]" />}
+                  {isCoopSkipped ? (
+                    <span className="text-[9px] uppercase tracking-wider text-[var(--muted)] font-sans">N/A</span>
+                  ) : isDone ? (
+                    <Check className="w-3.5 h-3.5 text-[var(--good)]" />
+                  ) : null}
                 </div>
                 <p className="font-display font-bold text-xs truncate mt-0.5">
                   {s.title}
@@ -932,6 +1061,35 @@ export const NewSessionPage: React.FC = () => {
             </Button>
           </div>
         </div>
+
+        {/* Rematch Status Banner */}
+        <AnimatePresence>
+          {rematchBanner && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="p-3 sm:p-3.5 rounded-2xl bg-[var(--card)] border border-[var(--accent)]/40 shadow-xs flex items-center justify-between gap-3 text-xs sm:text-sm"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="p-1.5 rounded-lg bg-[var(--accent)]/15 text-[var(--accent)] shrink-0">
+                  <RotateCcw className="w-4 h-4" />
+                </span>
+                <span className="text-[var(--ink)] font-medium truncate">
+                  {rematchBanner.message}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRematchBanner(null)}
+                className="text-[var(--muted)] hover:text-[var(--ink)] text-xs font-bold px-2 py-1 rounded-lg hover:bg-[var(--card-2)] transition-colors cursor-pointer shrink-0"
+                title="Dismiss banner"
+              >
+                Dismiss
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Animated Wizard Step Content */}
         <AnimatePresence mode="wait">
@@ -1062,7 +1220,12 @@ export const NewSessionPage: React.FC = () => {
           <Button
             variant="secondary"
             disabled={currentStep === 1}
-            onClick={() => setCurrentStep((s) => Math.max(1, s - 1))}
+            onClick={() =>
+              setCurrentStep((s) => {
+                if (scoringTemplate.isCoop && s === 5) return 3;
+                return Math.max(1, s - 1);
+              })
+            }
           >
             <ArrowLeft className="w-4 h-4" />
             Previous Step
@@ -1075,7 +1238,12 @@ export const NewSessionPage: React.FC = () => {
                 (currentStep === 1 && !selectedGame) ||
                 (currentStep === 3 && activeSessionPlayers.length === 0)
               }
-              onClick={() => setCurrentStep((s) => Math.min(6, s + 1))}
+              onClick={() =>
+                setCurrentStep((s) => {
+                  if (scoringTemplate.isCoop && s === 3) return 5;
+                  return Math.min(6, s + 1);
+                })
+              }
             >
               Next Step
               <ArrowRight className="w-4 h-4" />
@@ -1092,6 +1260,18 @@ export const NewSessionPage: React.FC = () => {
             </Button>
           )}
         </div>
+
+        {/* Active Draft Overwrite Confirmation Modal for Rematch */}
+        <ConfirmModal
+          isOpen={isConfirmOverwriteOpen}
+          title="Discard Active Draft?"
+          message="You have an unfinished game session in progress. Starting a rematch will discard the active draft. Do you want to proceed?"
+          confirmLabel="Discard & Rematch"
+          cancelLabel="Keep Active Draft"
+          variant="warning"
+          onConfirm={handleConfirmDiscardActiveDraft}
+          onCancel={handleCancelRematch}
+        />
       </div>
     </PageTransition>
   );

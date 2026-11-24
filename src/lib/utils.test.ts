@@ -26,6 +26,7 @@ import {
   sortVenuesByPlayCount,
   deduplicateLocationsList,
   sortPlayersByPlayCount,
+  buildRematchDraftFromSession,
 } from './utils';
 import { healIncomingGames, isRealtimeSelfReflection } from './supabaseSync';
 import { BoardGame, PlaySession, Player, SessionDraft, GameLocation } from '../types';
@@ -1807,5 +1808,162 @@ test('isRealtimeSelfReflection suppresses own push echoes while allowing genuine
   // Missing or malformed timestamp returns false safely
   assert.equal(isRealtimeSelfReflection(undefined, new Date(baseMs).toISOString(), baseMs), false);
   assert.equal(isRealtimeSelfReflection('not-a-date', new Date(baseMs).toISOString(), baseMs), false);
+});
+
+test('buildRematchDraftFromSession sets targetStep=4 for Competitive game, resets firstPlayer, keeps seat order, updates renamed player and canonical venue', () => {
+  const session: PlaySession = {
+    id: 's-brass-1',
+    gameId: 'g-brass',
+    gameName: 'Brass: Birmingham',
+    gameThumbnail: 'https://example.com/brass.png',
+    datePlayed: '2026-10-15',
+    createdAt: '2026-10-15T12:00:00Z',
+    location: '   lafam   ',
+    firstPlayerMethod: 'random_wheel',
+    firstPlayerId: 'p-seat1',
+    durationMinutes: 120,
+    players: [
+      { playerId: 'p-seat1', playerName: 'Old Huy', score: 142, isWinner: true },
+      { playerId: 'p-seat2', playerName: 'Hang', score: 130, isWinner: false },
+      { playerId: 'p-guest', playerName: 'Guest Dave', score: 110, isWinner: false },
+    ],
+    notes: 'Epic network phase',
+    photos: ['idb://old_photo_1'],
+  };
+
+  const games: BoardGame[] = [
+    {
+      id: 'g-brass',
+      name: 'Brass: Birmingham',
+      status: 'own',
+      yearPublished: 2018,
+      minPlayers: 2,
+      maxPlayers: 4,
+      playingTime: 120,
+      thumbnail: '',
+      image: '',
+      description: '',
+      addedDate: '2026-01-01',
+    },
+  ];
+
+  const players: Player[] = [
+    { id: 'p-seat1', name: 'Huy Nguyen', avatar: '🦁', color: '#ff0000', createdAt: '2026-01-01' },
+    { id: 'p-seat2', name: 'Hang Tran', avatar: '🐱', color: '#00ff00', createdAt: '2026-01-01' },
+  ];
+
+  const locations: GameLocation[] = [
+    { id: 'loc-1', name: 'Lafam', address: '123 Nguyen Trai', isDefault: true, createdAt: '2026-01-01' },
+  ];
+
+  const fixedNow = Date.parse('2026-11-24T18:00:00.000Z');
+  const result = buildRematchDraftFromSession(session, {
+    games,
+    players,
+    locations,
+    now: fixedNow,
+  });
+
+  // 1. Competitive game -> Step 4 (First Player)
+  assert.equal(result.targetStep, 4);
+  assert.equal(result.isCoop, false);
+  assert.equal(result.gameExists, true);
+
+  // 2. First player must be reset clean to undefined
+  assert.equal(result.draft.firstPlayerId, undefined);
+
+  // 3. Exact seat order preserved
+  assert.deepEqual(result.draft.selectedPlayerIds, ['p-seat1', 'p-seat2', 'p-guest']);
+
+  // 4. Guest player handled in oneOffPlayers
+  assert.equal(result.draft.oneOffPlayers.length, 1);
+  assert.equal(result.draft.oneOffPlayers[0].id, 'p-guest');
+  assert.equal(result.draft.oneOffPlayers[0].name, 'Guest Dave');
+
+  // 5. Canonical venue matched from store
+  assert.equal(result.draft.location, 'Lafam');
+
+  // 6. Scores, duration, notes, photos reset clean
+  assert.deepEqual(result.draft.scoresByPlayerId, {});
+  assert.deepEqual(result.draft.breakdownsByPlayerId, {});
+  assert.deepEqual(result.draft.manualWinnerIds, []);
+  assert.equal(result.draft.durationMinutes, '0');
+  assert.equal(result.draft.elapsedSeconds, 0);
+  assert.equal(result.draft.notes, '');
+  assert.deepEqual(result.draft.photos, []);
+  assert.equal(result.draft.sessionStartTime, fixedNow);
+  assert.equal(result.draft.currentStep, 4);
+});
+
+test('buildRematchDraftFromSession sets targetStep=5 for Co-op game and resets coopOutcome', () => {
+  const session: PlaySession = {
+    id: 's-coop-1',
+    gameId: 'g-stardew',
+    gameName: 'Stardew Valley: The Board Game',
+    gameThumbnail: '',
+    datePlayed: '2026-11-10',
+    createdAt: '2026-11-10T12:00:00Z',
+    isCoop: true,
+    firstPlayerMethod: 'manual',
+    firstPlayerId: 'p1',
+    winnerId: 'coop_victory',
+    durationMinutes: 90,
+    players: [
+      { playerId: 'p1', playerName: 'Player 1', isWinner: false },
+      { playerId: 'p2', playerName: 'Player 2', isWinner: false },
+    ],
+    notes: 'Failed winter season objective',
+    photos: ['idb://defeat_screenshot'],
+  };
+
+  const result = buildRematchDraftFromSession(session);
+
+  // 1. Co-op game -> Step 5 (Scoring/Play, bypassing First Player picker)
+  assert.equal(result.targetStep, 5);
+  assert.equal(result.isCoop, true);
+
+  // 2. coopOutcome must be reset to default 'won', never copying old defeat
+  assert.equal(result.draft.coopOutcome, 'won');
+
+  // 3. Reset scores, duration, notes, photos
+  assert.deepEqual(result.draft.scoresByPlayerId, {});
+  assert.equal(result.draft.durationMinutes, '0');
+  assert.equal(result.draft.notes, '');
+  assert.deepEqual(result.draft.photos, []);
+  assert.equal(result.draft.currentStep, 5);
+});
+
+test('buildRematchDraftFromSession resets custom categories for Ark Nova and handles deleted game / missing venue', () => {
+  const session: PlaySession = {
+    id: 's-ark-1',
+    gameId: 'g-ark',
+    gameName: 'Ark Nova',
+    gameThumbnail: '',
+    datePlayed: '2026-11-01',
+    createdAt: '2026-11-01T12:00:00Z',
+    firstPlayerMethod: 'random_wheel',
+    firstPlayerId: 'p1',
+    players: [
+      { playerId: 'p1', playerName: 'Huy', score: 142, isWinner: true },
+      { playerId: 'p2', playerName: 'Hang', score: 98, isWinner: false },
+    ],
+    notes: 'Marine world expansion',
+    photos: ['idb://zoo_photo'],
+  };
+
+  // Ark Nova is competitive -> targetStep 4
+  const result = buildRematchDraftFromSession(session, {
+    games: [], // Game was deleted from store
+    locations: [], // Empty venue list
+  });
+
+  assert.equal(result.targetStep, 4);
+  assert.equal(result.isCoop, false);
+  assert.equal(result.gameExists, false); // Deleted game identified safely
+  assert.equal(result.draft.location, ''); // Handled safely when missing
+  assert.deepEqual(result.draft.breakdownsByPlayerId, {});
+  assert.deepEqual(result.draft.scoresByPlayerId, {});
+  assert.equal(result.draft.notes, '');
+  assert.deepEqual(result.draft.photos, []);
 });
 

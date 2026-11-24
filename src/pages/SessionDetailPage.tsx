@@ -26,6 +26,7 @@ import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Input } from '../components/ui/Input';
 import { PlayerAvatar } from '../components/player/PlayerAvatar';
 import { GameCoverImage } from '../components/game/GameCoverImage';
+import { useGameStore } from '../store/useGameStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useResolvedMedia } from '../hooks/useResolvedMedia';
@@ -92,6 +93,7 @@ import {
   formatDate,
   formatDuration,
   formatNumber,
+  formatCount,
 } from '../lib/utils';
 import { PlayerScore, Player } from '../types';
 import { ScoringSheetMatrix } from '../components/session/ScoringSheetMatrix';
@@ -123,6 +125,9 @@ export const SessionDetailPage: React.FC = () => {
   const updateSession = useSessionStore((s) => s.updateSession);
   const deleteSession = useSessionStore((s) => s.deleteSession);
   const savedPlayers = usePlayerStore((s) => s.players);
+  const games = useGameStore((s) => s.games);
+
+  const gameExists = Boolean(session?.gameId && games.some((g) => g.id === session.gameId));
 
   const [fullscreenPhoto, setFullscreenPhoto] = useState<string | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -502,13 +507,10 @@ export const SessionDetailPage: React.FC = () => {
   };
 
   const handleRematch = () => {
-    if (!session) return;
-    const playerIds = (session.players || []).map((p) => p.playerId).join(',');
-    const encodedLocation = encodeURIComponent(session.location || '');
-    // Navigate straight to Step 4 (Who Goes First) in rematch mode
-    navigate(
-      `/sessions/new?gameId=${session.gameId}&playerIds=${playerIds}&location=${encodedLocation}&step=4&mode=rematch`
-    );
+    if (!session || !gameExists) return;
+    navigate('/sessions/new', {
+      state: { rematchSession: session },
+    });
   };
 
   const availablePlayersToAdd = savedPlayers.filter(
@@ -533,11 +535,12 @@ export const SessionDetailPage: React.FC = () => {
               variant="primary"
               size="sm"
               onClick={handleRematch}
-              className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] shadow-md shadow-[var(--accent-glow)] font-bold text-xs sm:text-sm px-2.5 sm:px-3"
-              title="Launch rematch keeping game, players, and location, skipping to first player picker"
+              disabled={!gameExists}
+              className="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] shadow-md shadow-[var(--accent-glow)] font-bold text-xs sm:text-sm min-h-[40px] px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={gameExists ? "Launch rematch with same game, players, and location" : "Game is no longer in your collection"}
             >
               <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
-              Rematch
+              Play Again
             </Button>
             <Button variant="secondary" size="sm" onClick={handleOpenEdit} className="text-xs sm:text-sm px-2.5 sm:px-3">
               <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5 text-[var(--accent-neon)]" />
@@ -865,17 +868,19 @@ export const SessionDetailPage: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-[var(--text-secondary)]">
-              Instantly launch a rematch with <strong>{session.gameName}</strong>, <strong>{session.players.length} players</strong> at <strong>{session.location || 'current venue'}</strong>, skipping directly to first player picker!
+              Instantly launch a rematch with <strong>{session.gameName}</strong>, <strong>{formatCount(session.players.length, 'player')}</strong> at <strong>{session.location || 'current venue'}</strong>!
             </p>
           </div>
           <Button
             variant="primary"
             size="md"
             onClick={handleRematch}
-            className="shrink-0 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] shadow-lg shadow-[var(--accent-glow)] font-bold"
+            disabled={!gameExists}
+            className="shrink-0 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] shadow-lg shadow-[var(--accent-glow)] font-bold min-h-[40px] px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={gameExists ? "Launch rematch with same game, players, and location" : "Game is no longer in your collection"}
           >
             <RotateCcw className="w-4 h-4 mr-2" />
-            Play Rematch
+            Play Again
           </Button>
         </Card>
 
