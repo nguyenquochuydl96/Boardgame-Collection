@@ -3,8 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Play, X, Dices } from 'lucide-react';
 import { SessionDraft } from '../../types';
 import { useGameStore } from '../../store/useGameStore';
-import { useSessionStore } from '../../store/useSessionStore';
-import { isDraftMatchingCompletedSession } from '../../lib/utils';
+import { DRAFT_STORAGE_KEY, parseSessionDraft, removeDraftIfUnchanged } from '../../lib/draftSafety';
 import { Button } from '../ui/Button';
 import { ConfirmModal } from '../ui/ConfirmModal';
 
@@ -12,32 +11,17 @@ export const ResumeSessionBanner: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const getGameById = useGameStore((s) => s.getGameById);
-  const sessions = useSessionStore((s) => s.sessions);
   const [draft, setDraft] = useState<SessionDraft | null>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [discardRaw, setDiscardRaw] = useState<string | null>(null);
 
   const checkDraft = useCallback(() => {
     try {
-      const raw = localStorage.getItem('boardgame_session_draft');
-      if (!raw) {
-        setDraft(null);
-        return;
-      }
-      const parsed = JSON.parse(raw) as SessionDraft;
-      if (
-        !parsed ||
-        !parsed.gameId ||
-        (parsed.sessionStartTime && Date.now() - parsed.sessionStartTime > 36 * 60 * 60 * 1000) ||
-        isDraftMatchingCompletedSession(parsed, sessions)
-      ) {
-        setDraft(null);
-        return;
-      }
-      setDraft(parsed);
+      setDraft(parseSessionDraft(localStorage.getItem(DRAFT_STORAGE_KEY), Date.now()));
     } catch {
       setDraft(null);
     }
-  }, [sessions]);
+  }, []);
 
   useEffect(() => {
     checkDraft();
@@ -69,14 +53,20 @@ export const ResumeSessionBanner: React.FC = () => {
 
   const handleRequestDiscard = (e: React.MouseEvent) => {
     e.stopPropagation();
+    try {
+      setDiscardRaw(localStorage.getItem(DRAFT_STORAGE_KEY));
+    } catch {
+      setDiscardRaw(null);
+    }
     setShowDiscardConfirm(true);
   };
 
   const handleConfirmDiscard = () => {
     try {
-      localStorage.removeItem('boardgame_session_draft');
+      removeDraftIfUnchanged(localStorage, discardRaw);
     } catch {}
     setShowDiscardConfirm(false);
+    setDiscardRaw(null);
     setDraft(null);
     window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
   };

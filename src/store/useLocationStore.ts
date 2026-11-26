@@ -3,22 +3,6 @@ import { persist } from 'zustand/middleware';
 import { GameLocation, PlaySession } from '../types';
 import { generateId, normalizeLocationKey, deduplicateLocationsList } from '../lib/utils';
 
-export const FAKE_LOCATION_NAMES = new Set([
-  'huy’s game room, district 3',
-  'the boardgame loft cafe',
-  'minh quân’s apartment',
-  'linh’s studio',
-  'nhà huy (quận 3)',
-  'the boardgame cafe',
-  'nhà lộc',
-  'quán cafe / trà sữa',
-  'văn phòng công ty',
-  'huy’s house (district 3)',
-  'loc’s house',
-  'board game cafe / tea lounge',
-  'company office',
-].map((n) => normalizeLocationKey(n)));
-
 export const INITIAL_LOCATIONS: GameLocation[] = [];
 
 export interface LocationStore {
@@ -48,19 +32,9 @@ export const useLocationStore = create<LocationStore>()(
       },
       bulkAddLocations: (newLocs, replaceExisting = false) => {
         set((state) => {
-          const filtered = newLocs.filter(
-            (l) =>
-              !FAKE_LOCATION_NAMES.has(normalizeLocationKey(l.name)) &&
-              !l.id.startsWith('loc-huy') &&
-              !l.id.startsWith('loc-boardgame') &&
-              !l.id.startsWith('loc-quan') &&
-              !l.id.startsWith('loc-linh') &&
-              !l.id.startsWith('loc-loc') &&
-              !l.id.startsWith('loc-cafe') &&
-              !l.id.startsWith('loc-office')
-          );
+          // A name or ID prefix alone cannot distinguish a sample from a real venue.
           const base = replaceExisting ? [] : state.locations;
-          const deduped = deduplicateLocationsList([...base, ...filtered]);
+          const deduped = deduplicateLocationsList([...base, ...newLocs]);
 
           // Ensure default exists
           if (!deduped.some((l) => l.isDefault) && deduped.length > 0) {
@@ -127,6 +101,12 @@ export const useLocationStore = create<LocationStore>()(
             .replace(/[–—]/g, '-')
             .trim()
             .replace(/\s+/g, ' ');
+          const key = normalizeLocationKey(cleanName);
+          // Sessions refer to names, so reject a conflicting rename rather than merge
+          // two venues and silently discard their distinct metadata.
+          if (state.locations.some((loc) => loc.id !== id && normalizeLocationKey(loc.name) === key)) {
+            return state;
+          }
           return {
             locations: state.locations.map((loc) => {
               if (loc.id === id) {
@@ -174,7 +154,7 @@ export const useLocationStore = create<LocationStore>()(
         );
         const newLocs: GameLocation[] = [];
 
-        // Check real sessions in history (ignore any fake location names)
+        // Recover venues from session history without classifying names as fake.
         for (const s of sessions) {
           if (!s.location || !s.location.trim()) continue;
           const trimmed = s.location
@@ -184,7 +164,7 @@ export const useLocationStore = create<LocationStore>()(
             .trim()
             .replace(/\s+/g, ' ');
           const key = normalizeLocationKey(trimmed);
-          if (!key || FAKE_LOCATION_NAMES.has(key)) continue;
+          if (!key) continue;
 
           if (!existingKeys.has(key)) {
             existingKeys.add(key);
@@ -208,19 +188,7 @@ export const useLocationStore = create<LocationStore>()(
       name: 'boardgame_locations_v2',
       onRehydrateStorage: () => (state) => {
         if (state) {
-          // Permanently purge any fake locations that might have been saved in browser cache
-          const nonFake = state.locations.filter(
-            (l) =>
-              !FAKE_LOCATION_NAMES.has(normalizeLocationKey(l.name)) &&
-              !l.id.startsWith('loc-huy') &&
-              !l.id.startsWith('loc-boardgame') &&
-              !l.id.startsWith('loc-quan') &&
-              !l.id.startsWith('loc-linh') &&
-              !l.id.startsWith('loc-loc') &&
-              !l.id.startsWith('loc-cafe') &&
-              !l.id.startsWith('loc-office')
-          );
-          state.locations = deduplicateLocationsList(nonFake);
+          state.locations = deduplicateLocationsList(state.locations);
           // Ensure at least one default exists
           if (!state.locations.some((l) => l.isDefault) && state.locations.length > 0) {
             state.locations[0].isDefault = true;

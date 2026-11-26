@@ -472,7 +472,49 @@ test('pruneOrphanMedia removes unreferenced media while keeping game, player, se
       return lsMap.size;
     },
   };
-  (globalThis as unknown as Record<string, unknown>).window = { localStorage: mockLs };
+  // Model committed IndexedDB records rather than relying on the old volatile fallback.
+  const records = new Map<string, string>();
+  const mockDb = {
+    transaction() {
+      const changes: Array<() => void> = [];
+      let scheduled = false;
+      const tx = {
+        error: null,
+        oncomplete: null as (() => void) | null,
+        onerror: null as (() => void) | null,
+        onabort: null as (() => void) | null,
+        objectStore() {
+          function makeRequest<T>(result: T, change?: () => void) {
+            const req = { result, error: null, onsuccess: null as (() => void) | null, onerror: null as (() => void) | null };
+            if (change) changes.push(change);
+            queueMicrotask(() => req.onsuccess?.());
+            if (!scheduled) {
+              scheduled = true;
+              setTimeout(() => { changes.forEach((apply) => apply()); tx.oncomplete?.(); }, 0);
+            }
+            return req;
+          }
+          return {
+            put: (row: { id: string; data: string }) => makeRequest(row.id, () => records.set(row.id, row.data)),
+            get: (id: string) => makeRequest(records.has(id) ? { id, data: records.get(id) } : undefined),
+            getAllKeys: () => makeRequest(Array.from(records.keys())),
+            delete: (id: string) => makeRequest(undefined, () => { records.delete(id); }),
+          };
+        },
+      };
+      return tx;
+    },
+    close() {},
+    onversionchange: null,
+  };
+  const mockIndexedDB = {
+    open() {
+      const req = { result: mockDb, error: null, onsuccess: null as (() => void) | null, onerror: null as (() => void) | null };
+      queueMicrotask(() => req.onsuccess?.());
+      return req;
+    },
+  };
+  (globalThis as unknown as Record<string, unknown>).window = { localStorage: mockLs, indexedDB: mockIndexedDB };
 
   try {
     const gameImgRef = await saveMediaImage('data:image/jpeg;base64,GAME_IMG');
@@ -480,6 +522,7 @@ test('pruneOrphanMedia removes unreferenced media while keeping game, player, se
     const sessionPhotoRef = await saveMediaImage('data:image/jpeg;base64,SESSION_PHOTO');
     const draftPhotoRef = await saveMediaImage('data:image/jpeg;base64,DRAFT_PHOTO');
     const orphanRef = await saveMediaImage('data:image/jpeg;base64,ORPHAN_JUNK');
+    assert.equal(records.size, 5, 'all media are committed to IndexedDB');
 
     useGameStore.setState({
       games: [makeGame({ id: 'g-media', image: gameImgRef, thumbnail: gameImgRef })],
@@ -509,6 +552,8 @@ test('pruneOrphanMedia removes unreferenced media while keeping game, player, se
     const { prunedCount, keptCount } = await pruneOrphanMedia();
     assert.equal(keptCount, 4);
     assert.ok(prunedCount >= 1);
+    assert.equal(records.size, 4);
+    assert.equal(records.has(orphanRef.slice('idb://'.length)), false);
 
     assert.equal(await getMediaImage(gameImgRef), 'data:image/jpeg;base64,GAME_IMG');
     assert.equal(await getMediaImage(playerAvatarRef), 'data:image/jpeg;base64,PLAYER_AVATAR');

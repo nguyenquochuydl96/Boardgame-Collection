@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import {
   Dices,
@@ -21,6 +21,7 @@ import { Button } from '../ui/Button';
 import { PoweredByBGG } from '../ui/PoweredByBGG';
 import { cn } from '../ui/cn';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { useOnlineStatus, resolveEffectiveSyncStatus } from '../../hooks/useOnlineStatus';
 import { useSyncStore } from '../../store/useSyncStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useSessionStore } from '../../store/useSessionStore';
@@ -29,6 +30,8 @@ import { useLocationStore } from '../../store/useLocationStore';
 import { isSyncApplyingRemote } from '../../lib/syncGuard';
 import { ResumeSessionBanner } from '../session/ResumeSessionBanner';
 import { PwaUpdateToast } from '../pwa/PwaUpdateToast';
+import { getSyncStatusView, nextConflictPresentation } from '../sync/syncStatus';
+import type { SyncConflict } from '../sync/SyncConflictModal';
 
 // Lazy load modals on-demand to keep core AppShell bundle ultra-lightweight
 const BGGConfigModal = React.lazy(() =>
@@ -39,6 +42,9 @@ const PwaInstallModal = React.lazy(() =>
 );
 const CloudSyncModal = React.lazy(() =>
   import('../sync/CloudSyncModal').then((m) => ({ default: m.CloudSyncModal }))
+);
+const SyncConflictModal = React.lazy(() =>
+  import('../sync/SyncConflictModal').then((m) => ({ default: m.SyncConflictModal }))
 );
 
 export interface AppShellProps {
@@ -112,6 +118,35 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const isSyncEnabled = useSyncStore((s) => s.isEnabled);
   const autoSync = useSyncStore((s) => s.autoSync);
   const syncStatus = useSyncStore((s) => s.syncStatus);
+  const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
+  const hasCompletedInitialPull = useSyncStore((s) => s.hasCompletedInitialPull);
+  const hasKnownBaseline = useSyncStore((s) => Boolean(s.syncBaseline));
+  const pendingChanges = useSyncStore((s) => s.pendingChanges);
+  const syncConflict = useSyncStore((s) => s.syncConflict);
+  const [conflictDeferred, setConflictDeferred] = useState(false);
+  const conflictActive = syncStatus === 'conflict' || Boolean(syncConflict);
+  const conflictDetails: SyncConflict = syncConflict ?? {
+    reason: 'The cloud collection and this device need review.',
+    remoteUpdatedAt: null,
+  };
+  const isOnline = useOnlineStatus();
+  const wasOnlineRef = useRef(isOnline);
+  const effectiveSyncStatus = resolveEffectiveSyncStatus(syncStatus, isOnline, conflictActive);
+  const statusView = getSyncStatusView({ isEnabled: isSyncEnabled, status: effectiveSyncStatus, lastSyncedAt, hasConflict: conflictActive, hasCompletedInitialPull, hasKnownBaseline, pendingChanges });
+  const openCloudStatus = () => {
+    if (conflictActive) {
+      setConflictDeferred(nextConflictPresentation(conflictDeferred, 'reopen'));
+      setShowSyncModal(false);
+    } else {
+      setShowSyncModal(true);
+    }
+  };
+
+  // A deferred conflict stays visible as status; a newly raised conflict opens once.
+  useEffect(() => {
+    setConflictDeferred((prev) => nextConflictPresentation(prev, conflictActive ? 'update' : 'clear'));
+  }, [conflictActive, syncConflict?.remoteUpdatedAt]);
+
   const syncHistoricalLocations = useLocationStore((s) => s.syncHistoricalLocations);
   const locationsCount = useLocationStore((s) => s.locations.length);
 
@@ -233,6 +268,31 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       unsubLocations();
     };
   }, [isSyncEnabled, autoSync]);
+
+  // Resume pending push or verify cloud state when returning online
+  useEffect(() => {
+    const wasOnline = wasOnlineRef.current;
+    wasOnlineRef.current = isOnline;
+    if (!isOnline || wasOnline) return;
+    if (!isSyncEnabled || !autoSync || !hasCompletedInitialPull || conflictActive) return;
+
+    import('../../lib/supabaseSync').then((sync) => {
+      if (isSyncApplyingRemote()) return;
+      const syncState = useSyncStore.getState();
+      if (syncState.syncConflict || syncState.syncStatus === 'conflict') return;
+      const localGames = useGameStore.getState().games.length;
+      const localSessions = useSessionStore.getState().sessions.length;
+      if (syncState.pendingChanges) {
+        if (localGames > 0 || localSessions > 0) {
+          sync.pushVaultToCloud();
+        }
+        return;
+      }
+      if (syncState.syncStatus === 'offline') {
+        sync.pullVaultFromCloud(localGames === 0 && localSessions === 0 ? 'replace' : 'merge');
+      }
+    });
+  }, [isOnline, isSyncEnabled, autoSync, hasCompletedInitialPull, conflictActive]);
 
   useEffect(() => {
     const handleOpenInstall = () => setShowInstallModal(true);
@@ -407,21 +467,21 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                   type="button"
                   className={cn(
                     'flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl text-[11px] leading-tight transition-colors font-semibold cursor-pointer',
-                    isSyncEnabled
-                      ? syncStatus === 'error'
-                        ? 'text-[var(--bad)] bg-[var(--bad-soft)]'
-                        : 'text-[var(--good)] bg-[var(--good-soft)]'
+                    statusView.tone === 'bad' ? 'text-[var(--bad)] bg-[var(--bad-soft)]'
+                      : statusView.tone === 'warn' ? 'text-[var(--warn)] bg-[var(--warn-soft)]'
+                      : statusView.tone === 'good' ? 'text-[var(--good)] bg-[var(--good-soft)]'
                       : 'text-[var(--sidebar-ink)] opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10'
                   )}
-                  onClick={() => setShowSyncModal(true)}
-                  title={isSyncEnabled ? 'Cloud Synced' : 'Cloud Sync'}
+                  onClick={openCloudStatus}
+                  title={`Cloud sync: ${statusView.label}`}
+                  aria-label={`Cloud sync: ${statusView.label}`}
                 >
-                  {isSyncEnabled ? (
-                    <CloudCheck className="w-4 h-4 text-[var(--good)] shrink-0" />
+                  {statusView.tone === 'good' ? (
+                    <CloudCheck className="w-4 h-4 shrink-0" />
                   ) : (
                     <Cloud className="w-4 h-4 shrink-0" />
                   )}
-                  <span>{isSyncEnabled ? 'Synced' : 'Cloud'}</span>
+                  <span>{statusView.label}</span>
                 </button>
 
                 <button
@@ -502,20 +562,19 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             {/* Mobile Cloud Sync Icon */}
             <button
               type="button"
-              onClick={() => setShowSyncModal(true)}
-              aria-label={isSyncEnabled ? 'Cloud Sync Settings (Synced)' : 'Connect Cloud Sync'}
+              onClick={openCloudStatus}
+              aria-label={`Cloud sync: ${statusView.label}`}
               className={cn(
-                'w-10 h-10 rounded-xl flex items-center justify-center transition-colors cursor-pointer relative',
-                isSyncEnabled
-                  ? syncStatus === 'error'
-                    ? 'text-[var(--bad)] bg-[var(--bad-soft)]'
-                    : 'text-[var(--good)] bg-[var(--good-soft)]'
+                'w-11 h-11 rounded-xl flex items-center justify-center transition-colors cursor-pointer relative',
+                statusView.tone === 'bad' ? 'text-[var(--bad)] bg-[var(--bad-soft)]'
+                  : statusView.tone === 'warn' ? 'text-[var(--warn)] bg-[var(--warn-soft)]'
+                  : statusView.tone === 'good' ? 'text-[var(--good)] bg-[var(--good-soft)]'
                   : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)]'
               )}
-              title={isSyncEnabled ? 'Cloud Synced' : 'Connect Cloud Sync'}
+              title={`Cloud sync: ${statusView.label}`}
             >
-              {isSyncEnabled ? (
-                <CloudCheck className="w-4 h-4 text-[var(--good)]" />
+              {statusView.tone === 'good' ? (
+                <CloudCheck className="w-4 h-4" />
               ) : (
                 <Cloud className="w-4 h-4" />
               )}
@@ -681,22 +740,22 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             {/* Cloud Sync Status Pill */}
             <button
               type="button"
-              onClick={() => setShowSyncModal(true)}
+              onClick={openCloudStatus}
+              aria-label={`Cloud sync: ${statusView.label}`}
               className={cn(
                 'px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border shadow-xs',
-                isSyncEnabled
-                  ? syncStatus === 'error'
-                    ? 'bg-rose-500/10 border-rose-500/20 text-rose-600'
-                    : 'bg-[var(--good-soft)] border-[var(--good)]/20 text-[var(--good)]'
+                statusView.tone === 'bad' ? 'bg-[var(--bad-soft)] border-[var(--bad)]/30 text-[var(--bad)]'
+                  : statusView.tone === 'warn' ? 'bg-[var(--warn-soft)] border-[var(--warn)]/30 text-[var(--warn)]'
+                  : statusView.tone === 'good' ? 'bg-[var(--good-soft)] border-[var(--good)]/20 text-[var(--good)]'
                   : 'bg-[var(--card)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
               )}
             >
-              {isSyncEnabled ? (
-                <CloudCheck className="w-3.5 h-3.5 text-[var(--good)]" />
+              {statusView.tone === 'good' ? (
+                <CloudCheck className="w-3.5 h-3.5" />
               ) : (
                 <Cloud className="w-3.5 h-3.5" />
               )}
-              <span>{isSyncEnabled ? (syncStatus === 'syncing' ? 'Syncing...' : 'Synced') : 'Cloud Off'}</span>
+              <span>{statusView.label}</span>
             </button>
 
             {/* Force Refresh */}
@@ -726,6 +785,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       <PwaUpdateToast />
 
       {!isNewSession && <BottomNavBar />}
+
+      {/* The conflict dialog is global and can be reopened from any cloud status control. */}
+      {isSyncEnabled && conflictActive && !conflictDeferred && (
+        <Suspense fallback={null}>
+          <SyncConflictModal conflict={conflictDetails} onDeferred={() => setConflictDeferred(true)} />
+        </Suspense>
+      )}
 
       {/* Modals rendered on-demand */}
       {showBGGModal && (

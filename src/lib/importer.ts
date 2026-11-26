@@ -1,7 +1,7 @@
 import JSZip from 'jszip';
 import { BoardGame, GameStatus, Player, PlaySession, GameLocation } from '../types';
-import { generateId, compressImage, normalizeLocationKey } from './utils';
-import { saveMediaImage } from './mediaStorage';
+import { normalizeLocationKey } from './utils';
+import { assertValidBGCatalogInput, type RestoreSelection } from './restoreValidation';
 
 export interface ImportPreviewItem {
   name: string;
@@ -16,6 +16,7 @@ export interface ImportPreviewItem {
   lentToName?: string;
   notes?: string;
   thumbnail?: string;
+  tags?: string[];
   selected: boolean;
 }
 
@@ -24,6 +25,7 @@ export interface FullBGCatalogImportResult {
   players: Player[];
   sessions: PlaySession[];
   locations?: GameLocation[];
+  present?: RestoreSelection;
   summary: {
     gameCount: number;
     playCount: number;
@@ -181,30 +183,14 @@ export async function parseBGCatalogZip(
   const zip = await JSZip.loadAsync(file);
   const imageMap: Record<string, string> = {};
 
-  // Extract all jpg/png files into base64 data URIs, compress, and store to IndexedDB
-  const imageFileNames = Object.keys(zip.files).filter((fn) =>
-    /\.(jpe?g|png|webp)$/i.test(fn)
-  );
-
+  // Keep preview side-effect free: media is held in memory until restore is confirmed.
+  const imageFileNames = Object.keys(zip.files).filter((fn) => /\.(jpe?g|png|webp)$/i.test(fn));
   for (const fileName of imageFileNames) {
     const entry = zip.files[fileName];
     if (entry && !entry.dir) {
       const cleanName = fileName.replace(/^.*[\\/]/, '');
-      try {
-        const blob = await entry.async('blob');
-        const compressed = await compressImage(blob, 1024, 1024, 0.7);
-        if (compressed) {
-          const idbRef = await saveMediaImage(compressed);
-          imageMap[cleanName] = idbRef;
-        }
-      } catch (err) {
-        console.warn(`Failed to compress zip image ${fileName}, falling back to direct save:`, err);
-        const base64 = await entry.async('base64');
-        const ext = fileName.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
-        const dataUrl = `data:image/${ext};base64,${base64}`;
-        const idbRef = await saveMediaImage(dataUrl);
-        imageMap[cleanName] = idbRef;
-      }
+      const extension = fileName.toLowerCase().endsWith('.png') ? 'png' : fileName.toLowerCase().endsWith('.webp') ? 'webp' : 'jpeg';
+      imageMap[cleanName] = `data:image/${extension};base64,${await entry.async('base64')}`;
     }
   }
 
@@ -233,6 +219,7 @@ export function parseBGCatalogJsonObject(
   data: RawBGCatalogExport,
   imageMap: Record<string, string> = {}
 ): FullBGCatalogImportResult {
+  assertValidBGCatalogInput(data);
   const rawGames = data.games || [];
   const rawPlayers = data.players || [];
   const rawPlays = data.plays || [];
@@ -413,6 +400,12 @@ export function parseBGCatalogJsonObject(
     players,
     sessions,
     locations,
+    present: {
+      games: Object.prototype.hasOwnProperty.call(data, 'games'),
+      players: Object.prototype.hasOwnProperty.call(data, 'players'),
+      sessions: Object.prototype.hasOwnProperty.call(data, 'plays'),
+      locations: Object.prototype.hasOwnProperty.call(data, 'locations'),
+    },
     summary: {
       gameCount: games.length,
       playCount: sessions.length,
@@ -525,9 +518,8 @@ export function parseImportFile(content: string): ImportPreviewItem[] {
   const nameIdx = headers.findIndex((h) =>
     ['name', 'objectname', 'title', 'gamename'].includes(h)
   );
-  const idIdx = headers.findIndex((h) =>
-    ['objectid', 'bggid', 'id'].includes(h)
-  );
+  // A bare ID is this app's local identifier, not a BoardGameGeek ID.
+  const idIdx = headers.findIndex((h) => ['objectid', 'bggid'].includes(h));
   const yearIdx = headers.findIndex((h) =>
     ['yearpublished', 'year', 'published'].includes(h)
   );
@@ -541,13 +533,13 @@ export function parseImportFile(content: string): ImportPreviewItem[] {
     ['maxplayers', 'maxplayer', 'max'].includes(h)
   );
   const playTimeIdx = headers.findIndex((h) =>
-    ['playingtime', 'playtime', 'duration', 'time'].includes(h)
+    ['playingtime', 'playtime', 'playtimemin', 'playingtimemin', 'duration', 'time'].includes(h)
   );
   const statusIdx = headers.findIndex((h) =>
     ['status', 'own', 'collectionstatus', 'ownership'].includes(h)
   );
   const priceIdx = headers.findIndex((h) =>
-    ['purchaseprice', 'price', 'cost', 'buyprice'].includes(h)
+    ['purchaseprice', 'purchasepricevnd', 'price', 'cost', 'buyprice'].includes(h)
   );
   const lentIdx = headers.findIndex((h) =>
     ['lentto', 'lenttoname', 'borrower', 'lent'].includes(h)
@@ -559,7 +551,10 @@ export function parseImportFile(content: string): ImportPreviewItem[] {
     ['thumbnail', 'image', 'cover', 'picture'].includes(h)
   );
 
+  // Session CSV is a human-readable report, not a games catalog or backup.
+  if (headers.includes('sessionid') && headers.includes('dateplayed')) return [];
   if (nameIdx === -1) return [];
+  const tagsIdx = headers.indexOf('tags');
 
   const items: ImportPreviewItem[] = [];
 
@@ -612,11 +607,26 @@ export function parseImportFile(content: string): ImportPreviewItem[] {
       notes: notesIdx !== -1 && row[notesIdx] ? row[notesIdx].trim() : undefined,
       thumbnail:
         thumbIdx !== -1 && row[thumbIdx] ? row[thumbIdx].trim() : undefined,
+      tags: parseTagsField(tagsIdx !== -1 ? row[tagsIdx] : undefined),
       selected: true,
     });
   }
 
   return items;
+}
+
+/** New exports encode tags as a JSON array in one CSV field; legacy files used comma-delimited tags. */
+function parseTagsField(value: string | undefined): string[] | undefined {
+  if (!value) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (Array.isArray(parsed) && parsed.every((tag) => typeof tag === 'string')) {
+      return parsed.filter((tag) => tag.length > 0);
+    }
+  } catch {
+    // Read older HEO CSV exports below.
+  }
+  return value.split(',').map((tag) => tag.trim()).filter(Boolean);
 }
 
 function normalizeStatus(val: string): GameStatus {

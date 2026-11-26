@@ -31,7 +31,9 @@ import {
 } from '../../lib/supabaseSync';
 import { useGameStore } from '../../store/useGameStore';
 import { useSessionStore } from '../../store/useSessionStore';
-import { formatNumber } from '../../lib/utils';
+import { useOnlineStatus, resolveEffectiveSyncStatus } from '../../hooks/useOnlineStatus';
+import { getSyncStatusView } from './syncStatus';
+import { ConflictBackupRecovery } from './ConflictBackupRecovery';
 
 interface CloudSyncModalProps {
   isOpen: boolean;
@@ -47,14 +49,20 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
     autoSync,
     lastSyncedAt,
     syncStatus,
+    syncConflict,
+    hasCompletedInitialPull,
+    syncBaseline,
+    pendingChanges,
     errorMessage,
     setCredentials,
     setAutoSync,
     disconnect,
   } = useSyncStore();
 
-  const games = useGameStore((s) => s.games);
-  const sessions = useSessionStore((s) => s.sessions);
+  const isOnline = useOnlineStatus();
+  const conflictActive = syncStatus === 'conflict' || Boolean(syncConflict);
+  const effectiveSyncStatus = resolveEffectiveSyncStatus(syncStatus, isOnline, conflictActive);
+  const statusView = getSyncStatusView({ isEnabled, status: effectiveSyncStatus, lastSyncedAt, hasConflict: conflictActive, hasCompletedInitialPull, hasKnownBaseline: Boolean(syncBaseline), pendingChanges });
 
   const [activeTab, setActiveTab] = useState<'status' | 'connect' | 'guide'>(
     isEnabled ? 'status' : 'connect'
@@ -131,9 +139,10 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
     setIsSyncing(false);
 
     if (pullRes.success) {
-      setActionSuccess('Connected and synced your collection with Supabase Cloud!');
+      setActionSuccess('Connected. Review cloud sync status below.');
       setActiveTab('status');
     } else {
+      setActionSuccess(null);
       setActionError(pullRes.error || 'Failed to sync initial collection data.');
     }
   };
@@ -147,7 +156,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
     setIsSyncing(false);
 
     if (res.success) {
-      setActionSuccess(`Uploaded ${formatNumber(games.length)} games and ${formatNumber(sessions.length)} sessions to Cloud!`);
+      setActionSuccess('Upload request completed. Check the sync status for any remaining changes.');
     } else {
       setActionError(res.error || 'Upload failed.');
     }
@@ -162,9 +171,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
     setIsSyncing(false);
 
     if (res.success) {
-      setActionSuccess(
-        `Downloaded ${formatNumber(res.count?.games ?? 0)} games and ${formatNumber(res.count?.sessions ?? 0)} sessions from Cloud!`
-      );
+      setActionSuccess('Cloud review completed. Check the sync status for any remaining changes.');
     } else {
       setActionError(res.error || 'Download failed.');
     }
@@ -266,24 +273,22 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
           <div className="space-y-4">
             {/* Realtime Status Banner */}
             <div className="p-4 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-[var(--good-soft)] text-[var(--good)] flex items-center justify-center shadow-sm">
-                    <Radio className="w-5 h-5 animate-pulse text-[var(--good)]" />
+                  <div className="w-9 h-9 rounded-xl bg-[var(--card)] text-[var(--ink)] flex items-center justify-center shadow-sm">
+                    <Radio className="w-5 h-5" aria-hidden="true" />
                   </div>
                   <div>
-                    <h4 className="font-display font-bold text-sm text-[var(--text-primary)]">
-                      Supabase Real-Time Sync Active
-                    </h4>
-                    <p className="text-[11px] text-[var(--text-secondary)]">
-                      Changes made on PC or Phone sync immediately across both devices
-                    </p>
+                    <h4 className="font-display font-bold text-sm text-[var(--text-primary)]">Cloud Sync</h4>
+                    <p className="text-[11px] text-[var(--text-secondary)]">Sync may wait for a connection or your review.</p>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded-full bg-[var(--good-soft)] border border-[var(--good)]/40 text-[var(--good)] text-[11px] font-bold">
-                  Live
+                <span className="px-2.5 py-1 rounded-full border border-[var(--line)] text-[11px] font-bold" role="status">
+                  {statusView.label}
                 </span>
               </div>
+              {errorMessage && <p role="alert" className="text-sm text-[var(--bad)] break-words">{errorMessage}</p>}
+              {conflictActive && <p className="text-sm text-[var(--bad)]">A conflict needs review. Close this panel and select cloud status to review it.</p>}
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2 border-t border-[var(--line)] text-xs">
                 <div>
@@ -308,9 +313,19 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
                   <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider block font-bold">
                     Auto-Sync
                   </span>
-                  <span className="text-[var(--good)] font-semibold block mt-0.5">
-                    {autoSync ? 'Enabled' : 'Manual'}
-                  </span>
+                  <button
+                    type="button"
+                    aria-pressed={autoSync}
+                    onClick={() => setAutoSync(!autoSync)}
+                    className={cn(
+                      'mt-0.5 inline-flex items-center gap-1.5 font-semibold cursor-pointer hover:underline',
+                      autoSync ? 'text-[var(--good)]' : 'text-[var(--warn)]'
+                    )}
+                    title="Click to toggle Auto-Sync"
+                  >
+                    <span>{autoSync ? 'Enabled' : 'Manual'}</span>
+                    <span className="text-[10px] font-normal text-[var(--muted)]">(toggle)</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -325,7 +340,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
                   variant="primary"
                   size="sm"
                   onClick={handleManualPush}
-                  disabled={isSyncing}
+                  disabled={isSyncing || conflictActive || syncStatus === 'syncing'}
                   className="flex-1 min-w-[140px] justify-center"
                 >
                   <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', isSyncing && 'animate-spin')} />
@@ -335,7 +350,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
                   variant="secondary"
                   size="sm"
                   onClick={handleManualPull}
-                  disabled={isSyncing}
+                  disabled={isSyncing || conflictActive || syncStatus === 'syncing'}
                   className="flex-1 min-w-[140px] justify-center"
                 >
                   <Cloud className="w-3.5 h-3.5 mr-1.5 text-cyan-400" />
@@ -381,6 +396,9 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
                 </Button>
               </div>
             </div>
+
+            {/* Conflict Backup Recovery (IndexedDB snapshots saved before conflict overwrites) */}
+            <ConflictBackupRecovery />
 
             {/* Disconnect Option */}
             <div className="pt-2 flex justify-between items-center text-xs text-[var(--text-muted)]">
@@ -592,21 +610,14 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
             <span
               className={cn(
                 'w-2.5 h-2.5 rounded-full',
-                isEnabled
-                  ? syncStatus === 'error'
-                    ? 'bg-[var(--bad)] animate-pulse'
-                    : 'bg-[var(--good)]'
+                statusView.tone === 'bad' ? 'bg-[var(--bad)]'
+                  : statusView.tone === 'warn' ? 'bg-[var(--warn)]'
+                  : statusView.tone === 'good' ? 'bg-[var(--good)]'
                   : 'bg-[var(--muted)]'
               )}
             />
             <span className="text-xs text-[var(--text-secondary)] font-medium">
-              {isEnabled
-                ? syncStatus === 'syncing'
-                  ? 'Syncing changes...'
-                  : syncStatus === 'error'
-                  ? 'Sync Error'
-                  : 'Connected & Synced'
-                : 'Not Connected'}
+              {statusView.label}
             </span>
           </div>
           <Button variant="secondary" size="sm" onClick={onClose}>

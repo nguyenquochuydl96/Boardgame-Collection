@@ -5,15 +5,10 @@ import {
   Check,
   AlertCircle,
   Sparkles,
-  User,
   Database,
-  Gamepad2,
-  Users,
-  Trophy,
   Archive,
   Download,
   HardDriveDownload,
-  ArrowDownUp,
 } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
@@ -24,7 +19,6 @@ import {
   parseBGCatalogZip,
   parseBGCatalogJsonObject,
   ImportPreviewItem,
-  FullBGCatalogImportResult,
 } from '../../lib/importer';
 import { importBGGCollection } from '../../lib/bgg';
 import { useGameStore } from '../../store/useGameStore';
@@ -33,7 +27,8 @@ import { useSessionStore } from '../../store/useSessionStore';
 import { useLocationStore } from '../../store/useLocationStore';
 import { createGameCoverDataUri, getGameThumbnail } from '../../lib/utils';
 import { exportVaultJSON, exportGamesCSV, exportSessionsCSV } from '../../lib/exportVault';
-import { migrateBase64ImagesToIdb } from '../../lib/mediaStorage';
+import { useSyncStore } from '../../store/useSyncStore';
+import { applyValidatedRestore, assertRestorePersisted, getRestoreCounts, getRestorePresence, restoreCategories, validateRestoreData, type RestoreCategory, type RestoreSelection } from '../../lib/restoreValidation';
 import { GameStatus } from '../../types';
 import { PoweredByBGG } from '../ui/PoweredByBGG';
 import { GameCoverImage } from './GameCoverImage';
@@ -81,16 +76,25 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
   // Simple game preview list (from CSV or basic JSON)
   const [previewItems, setPreviewItems] = useState<ImportPreviewItem[]>([]);
 
-  // Full backup result (from BG Catalog ZIP or complete JSON)
-  const [fullBackup, setFullBackup] =
-    useState<FullBGCatalogImportResult | null>(null);
-  const [importOptions, setImportOptions] = useState({
-    games: true,
-    players: true,
-    sessions: true,
-    locations: true,
-    replaceExisting: true,
+  // Keep the original categories and their presence; an absent category is not empty.
+  const [fullBackup, setFullBackup] = useState<Record<string, unknown> | null>(null);
+  const [importOptions, setImportOptions] = useState<RestoreSelection & { replaceExisting: boolean }>({
+    games: true, players: true, sessions: true, locations: true, replaceExisting: false,
   });
+  const [confirmRestore, setConfirmRestore] = useState(false);
+  const syncEnabled = useSyncStore((s) => s.isEnabled);
+  const autoSync = useSyncStore((s) => s.autoSync);
+  const syncStatus = useSyncStore((s) => s.syncStatus);
+  const present = getRestorePresence(fullBackup);
+  const counts = getRestoreCounts(fullBackup);
+  const restoreValidation = fullBackup ? validateRestoreData(fullBackup, importOptions) : null;
+
+  const showBackup = (backup: Record<string, unknown>) => {
+    const available = getRestorePresence(backup);
+    setFullBackup(backup);
+    setImportOptions({ ...available, replaceExisting: false });
+    setConfirmRestore(false);
+  };
 
   // Handle File Upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,7 +113,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
       // Case 1: ZIP file (e.g. BGGCatalogExport_*.zip)
       if (fileName.endsWith('.zip')) {
         const result = await parseBGCatalogZip(file);
-        setFullBackup(result);
+        showBackup({ ...result });
         setLoading(false);
         return;
       }
@@ -119,36 +123,16 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
         const text = await file.text();
         const parsed = JSON.parse(text);
 
-        // Check if it's our own BoardGameVault full backup
-        if (parsed.vaultBackup === true || (parsed.games && parsed.sessions && parsed.players)) {
-          const result: FullBGCatalogImportResult = {
-            games: parsed.games || [],
-            players: parsed.players || [],
-            sessions: parsed.sessions || [],
-            locations: parsed.locations || [],
-            summary: {
-              gameCount: parsed.games?.length || 0,
-              playCount: parsed.sessions?.length || 0,
-              playerCount: parsed.players?.length || 0,
-              locationCount: parsed.locations?.length || 0,
-              ownCount: (parsed.games || []).filter((g: any) => g.status === 'own').length,
-              rentedCount: (parsed.games || []).filter((g: any) => g.status === 'rented').length,
-              soldCount: (parsed.games || []).filter((g: any) => g.status === 'sold').length,
-              prevOwnedCount: (parsed.games || []).filter((g: any) => g.status === 'previously_owned').length,
-              wishlistCount: (parsed.games || []).filter((g: any) => g.status === 'wishlist').length,
-            },
-          };
-          setFullBackup(result);
-          setLoading(false);
-          return;
-        }
-
-        // Check if it's a full BG Catalog export object
-        if (parsed.games && (parsed.plays || parsed.players)) {
-          const result = parseBGCatalogJsonObject(parsed);
-          setFullBackup(result);
-          setLoading(false);
-          return;
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          // Do not coerce missing or malformed categories to empty arrays.
+          if (parsed.vaultBackup === true || 'sessions' in parsed) {
+            showBackup(parsed);
+            return;
+          }
+          if ('plays' in parsed || 'playersPlays' in parsed || ('games' in parsed && 'players' in parsed)) {
+            showBackup({ ...parseBGCatalogJsonObject(parsed) });
+            return;
+          }
         }
 
         // Otherwise treat as simple games list
@@ -179,37 +163,32 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
     }
   };
 
-  // Handle Full BG Catalog Import (1-Click Restore)
+  // Each localStorage write is verified separately. This is not an atomic restore.
   const handleExecuteFullRestore = () => {
-    if (!fullBackup) return;
-
-    const { games, players, sessions, summary } = fullBackup;
-    const replace = importOptions.replaceExisting;
-
-    if (importOptions.games && games.length > 0) {
-      bulkAddGames(games, replace);
+    if (!fullBackup || !confirmRestore) return;
+    setError(null);
+    setSuccessMessage(null);
+    const sync = useSyncStore.getState();
+    if ((sync.isEnabled && sync.autoSync) || sync.syncStatus === 'syncing') {
+      setError('Turn off automatic sync and wait for any active sync before restoring. In-flight or realtime changes may still occur; disconnect from the network if necessary.');
+      return;
     }
-
-    if (importOptions.players && players.length > 0) {
-      bulkAddPlayers(players, replace);
-    }
-
-    if (importOptions.sessions && sessions.length > 0) {
-      bulkAddSessions(sessions, replace);
-    }
-
-    if (importOptions.locations && fullBackup.locations && fullBackup.locations.length > 0) {
-      bulkAddLocations(fullBackup.locations, replace);
-    }
-
-    migrateBase64ImagesToIdb().catch((err) => {
-      console.warn('[CollectionImportModal] Failed to migrate backup images to IDB:', err);
+    const verify = (key: string, category: RestoreCategory, current: unknown[]) =>
+      assertRestorePersisted((storageKey) => window.localStorage.getItem(storageKey), key, category, current);
+    const result = applyValidatedRestore(fullBackup, importOptions, importOptions.replaceExisting, {
+      games: (data, replace) => { bulkAddGames(data, replace); verify('bg-vault-games-v2', 'games', useGameStore.getState().games); },
+      players: (data, replace) => { bulkAddPlayers(data, replace); verify('bg-vault-players-v1', 'players', usePlayerStore.getState().players); },
+      sessions: (data, replace) => { bulkAddSessions(data, replace); verify('bg-vault-sessions-v2', 'sessions', useSessionStore.getState().sessions); },
+      locations: (data, replace) => { bulkAddLocations(data, replace); verify('boardgame_locations_v2', 'locations', useLocationStore.getState().locations); },
     });
-
-    setSuccessMessage(
-      `Successfully restored ${importOptions.games ? `${summary.gameCount} board games, ` : ''}${importOptions.players ? `${summary.playerCount} players, ` : ''}${importOptions.sessions ? `${summary.playCount} sessions, ` : ''}${importOptions.locations && summary.locationCount ? `${summary.locationCount} locations` : ''} into your collection!`
-    );
+    if (!result.ok) {
+      setError(result.errors.slice(0, 5).join('; '));
+      setConfirmRestore(false);
+      return;
+    }
+    setSuccessMessage('Selected categories were applied locally and their localStorage values verified. Review the result before re-enabling sync; media availability and interruption recovery are not guaranteed.');
     setFullBackup(null);
+    setConfirmRestore(false);
   };
 
   // Handle BGG Username Sync
@@ -294,6 +273,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
         purchasePrice: item.purchasePrice,
         lentToName: item.lentToName,
         notes: item.notes,
+        tags: item.tags,
         thumbnail: cover,
         image: cover,
         description: `${item.name} imported into collection.`,
@@ -364,7 +344,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                 </p>
                 <p className="text-xs text-[var(--muted)] mt-1 max-w-md mx-auto">
                   Supports <strong className="text-[var(--ink)]">.ZIP</strong> or{' '}
-                  <strong className="text-[var(--ink)]">.JSON</strong> backups from BG Catalog (iOS) or HEO Board Game Collection, and <strong className="text-[var(--ink)]">.CSV</strong> catalogs. Automatically restores games, players, venues, and play sessions!
+                  <strong className="text-[var(--ink)]">.JSON</strong> backups from BG Catalog (iOS) or HEO Board Game Collection, and <strong className="text-[var(--ink)]">.CSV</strong> game catalogs. Preview and confirm backup restores before applying changes.
                 </p>
               </div>
               <div>
@@ -430,126 +410,69 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
           </div>
         )}
 
-        {/* FULL BG CATALOG BACKUP PREVIEW CARD */}
+        {/* Validate and preview selected categories before any store changes. */}
         {fullBackup && (
           <div className="p-5 rounded-2xl bg-[var(--card-2)] border border-[var(--accent)] space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[var(--line)]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center text-xl shadow-md">
-                  🎉
-                </div>
-                <div>
-                  <h4 className="font-bold text-[var(--ink)] text-sm">
-                    Complete BG Catalog Backup Detected!
-                  </h4>
-                  <p className="text-xs text-[var(--muted)]">
-                    This export contains your games library, player profiles, locations, and tabletop match history.
-                  </p>
-                </div>
-              </div>
+            <div>
+              <h4 className="font-bold text-[var(--ink)]">Backup preview</h4>
+              <p className="text-xs text-[var(--muted)]">Select categories to apply. An absent category is not the same as an empty one.</p>
             </div>
-
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
-              <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)] space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-sky-500 font-bold">
-                  <Gamepad2 className="w-4 h-4" />
-                  <span>Board Games</span>
-                </div>
-                <p className="text-2xl font-black text-[var(--ink)] tabular-nums">
-                  {fullBackup.summary.gameCount}
-                </p>
-                <p className="text-[10px] text-[var(--muted)]">
-                  {fullBackup.summary.ownCount} owned{Boolean(fullBackup.summary.rentedCount) ? ' · ' + fullBackup.summary.rentedCount + ' rented' : ''} · {fullBackup.summary.soldCount} sold
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)] space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-purple-500 font-bold">
-                  <Users className="w-4 h-4" />
-                  <span>Players</span>
-                </div>
-                <p className="text-2xl font-black text-[var(--ink)] tabular-nums">
-                  {fullBackup.summary.playerCount}
-                </p>
-                <p className="text-[10px] text-[var(--muted)] truncate">
-                  {fullBackup.players.map((p) => p.name).slice(0, 3).join(', ')}...
-                </p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)] space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-rose-500 font-bold">
-                  <Trophy className="w-4 h-4" />
-                  <span>Sessions Played</span>
-                </div>
-                <p className="text-2xl font-black text-[var(--ink)] tabular-nums">
-                  {fullBackup.summary.playCount}
-                </p>
-                <p className="text-[10px] text-[var(--muted)]">With scores &amp; winners</p>
-              </div>
-            </div>
-
-            {/* Options */}
-            <div className="pt-2 border-t border-[var(--line)] space-y-2 text-xs">
-              <p className="font-bold text-[var(--ink)]">Import options:</p>
-              <div className="flex flex-wrap gap-4 text-[var(--muted)]">
-                <label className="flex items-center gap-1.5 cursor-pointer">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 text-xs">
+              {restoreCategories.map((category) => (
+                <label key={category} className="p-3 rounded-xl bg-[var(--card)] border border-[var(--line)] flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={importOptions.games}
-                    onChange={(e) =>
-                      setImportOptions((o) => ({ ...o, games: e.target.checked }))
-                    }
-                    className="rounded text-[var(--accent)]"
+                    checked={importOptions[category]}
+                    disabled={!present[category]}
+                    onChange={(event) => {
+                      setImportOptions((options) => ({ ...options, [category]: event.target.checked }));
+                      setConfirmRestore(false);
+                    }}
                   />
-                  <span>Import {fullBackup.summary.gameCount} Games</span>
+                  <span className="capitalize">{category}: {present[category] ? (counts[category] ?? 'invalid') : 'absent'}</span>
                 </label>
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={importOptions.players}
-                    onChange={(e) =>
-                      setImportOptions((o) => ({ ...o, players: e.target.checked }))
-                    }
-                    className="rounded text-[var(--accent)]"
-                  />
-                  <span>Import {fullBackup.summary.playerCount} Players</span>
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={importOptions.sessions}
-                    onChange={(e) =>
-                      setImportOptions((o) => ({ ...o, sessions: e.target.checked }))
-                    }
-                    className="rounded text-[var(--accent)]"
-                  />
-                  <span>Import {fullBackup.summary.playCount} Sessions</span>
-                </label>
-                {fullBackup.locations && fullBackup.locations.length > 0 && (
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={importOptions.locations}
-                      onChange={(e) =>
-                        setImportOptions((o) => ({ ...o, locations: e.target.checked }))
-                      }
-                      className="rounded text-[var(--accent)]"
-                    />
-                    <span>Import {fullBackup.locations.length} Locations</span>
-                  </label>
-                )}
-              </div>
+              ))}
             </div>
-
-            {/* Actions */}
+            <label className="flex items-center gap-2 text-xs font-semibold">
+              <input type="checkbox" checked={importOptions.replaceExisting} onChange={(event) => {
+                setImportOptions((options) => ({ ...options, replaceExisting: event.target.checked }));
+                setConfirmRestore(false);
+              }} />
+              Replace selected categories instead of merging
+            </label>
+            <div className="rounded-xl border border-[var(--warn)] p-3 text-xs space-y-2">
+              <p><strong>Replacement warning:</strong> selected local categories can be overwritten, including when a backup category is empty. Existing store rules preserve guest players and recent sessions; venue filtering/deduplication may omit records. Merging can skip duplicates.</p>
+              <p>Storage writes happen separately, not atomically. Closing the app, quota errors, or interruption may leave only some changes applied. There is no automatic rollback. Download a separate backup and keep the original safe before continuing.</p>
+              <p>ZIP images are held in memory for preview and restored as embedded data; large files may exceed localStorage quota. Media and cloud consistency are not guaranteed.</p>
+              <p>Turn off automatic cloud sync and wait for active sync before restoring. In-flight operations, realtime updates, or other devices can still change data; consider disconnecting from the network. Review local data before re-enabling sync.</p>
+            </div>
+            <Button variant="secondary" size="sm" disabled={isExporting} onClick={async () => {
+              setError(null);
+              try {
+                setIsExporting(true);
+                await exportVaultJSON();
+                setSuccessMessage('Pre-restore backup download was requested. Verify the downloaded file before continuing.');
+              } catch {
+                setError('Could not create the pre-restore backup. No restore was started.');
+              } finally { setIsExporting(false); }
+            }}>
+              <Download className="w-4 h-4 mr-1.5" />{isExporting ? 'Preparing backup...' : 'Download current backup'}
+            </Button>
+            {restoreValidation && !restoreValidation.ok && (
+              <div className="text-xs text-[var(--bad)]" role="alert">
+                Invalid selection: {restoreValidation.errors.slice(0, 5).join('; ')}{restoreValidation.errors.length > 5 ? '…' : ''}
+              </div>
+            )}
+            {syncEnabled && autoSync && <p className="text-xs text-[var(--bad)]">Automatic sync is enabled. Turn it off in Cloud Sync before restoring.</p>}
+            {syncStatus === 'syncing' && <p className="text-xs text-[var(--bad)]">A sync is active. Wait before restoring.</p>}
+            <label className="flex items-start gap-2 text-xs">
+              <input type="checkbox" checked={confirmRestore} onChange={(event) => setConfirmRestore(event.target.checked)} />
+              <span>I understand the selected data may be replaced and an interruption can leave a partial restore.</span>
+            </label>
             <div className="flex justify-end gap-2 pt-3 border-t border-[var(--line)]">
-              <Button variant="ghost" size="sm" onClick={() => setFullBackup(null)}>
-                Cancel
-              </Button>
-              <Button variant="primary" onClick={handleExecuteFullRestore}>
-                <Sparkles className="w-4 h-4 mr-1.5" />
-                Restore All Data
+              <Button variant="ghost" size="sm" onClick={() => setFullBackup(null)}>Cancel</Button>
+              <Button variant="primary" onClick={handleExecuteFullRestore} disabled={!confirmRestore || !restoreValidation?.ok || isExporting || (syncEnabled && autoSync) || syncStatus === 'syncing'}>
+                <Sparkles className="w-4 h-4 mr-1.5" />Apply selected data
               </Button>
             </div>
           </div>
@@ -625,6 +548,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
                   Export CSV Spreadsheets (Excel / Google Sheets)
                 </h4>
               </div>
+              <p className="text-xs text-[var(--muted)]">Games CSV imports only the columns shown and creates new local IDs; it is not a full backup. Session CSV is a report and cannot restore sessions. Use JSON for backup and recovery.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <button
                   type="button"

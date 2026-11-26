@@ -146,11 +146,14 @@ export const GameDetailPage: React.FC = () => {
       try {
         const ref = await saveMediaImage(dataUrl);
         setEditCoverUrl(ref);
-      } catch {
-        setEditCoverUrl(dataUrl);
+        setEditError(null);
+      } catch (err) {
+        console.error('Failed to persist uploaded cover image in IndexedDB:', err);
+        setEditError('Could not save cover image to IndexedDB storage. Free up device storage or check browser storage permissions before trying again.');
       }
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
   };
 
   const handleSaveEdit = (e: React.FormEvent) => {

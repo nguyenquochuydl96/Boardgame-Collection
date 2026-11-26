@@ -6,7 +6,8 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { useLocationStore } from '../store/useLocationStore';
 import { BoardGame, PlaySession, Player, GameLocation } from '../types';
 import { setSyncApplyingRemote, isSyncApplyingRemote } from './syncGuard';
-import { isIdbMediaRef, getMediaImage, saveMediaImage } from './mediaStorage';
+import { backupSyncSide, saveIncomingSyncMedia } from './syncPrivate';
+import { resolvePortableVaultMedia } from './portableVaultMedia';
 import {
   getGameThumbnail,
   isLowResBGGThumbnail,
@@ -20,32 +21,22 @@ let cachedClient: SupabaseClient | null = null;
 let cachedUrl = '';
 let cachedKey = '';
 let activeChannel: RealtimeChannel | null = null;
-let inFlightPushPromise: Promise<{ success: boolean; error?: string }> | null = null;
-let queuedPushRequested = false;
-let lastLocalPushTimestampMs = 0;
+let operationTail: Promise<unknown> = Promise.resolve();
 
-/**
- * Pure helper determining whether an incoming Realtime record timestamp
- * reflects this client's own recent push (within 2.5s tolerance).
- */
+function serialize<T>(task: () => Promise<T>): Promise<T> {
+  const operation = operationTail.then(task, task);
+  operationTail = operation.catch(() => undefined);
+  return operation;
+}
+
+// Kept for source compatibility. Realtime never trusts timestamp proximity.
 export function isRealtimeSelfReflection(
   recordUpdatedAt: string | undefined,
   localLastSyncedAt: string | null | undefined,
-  recentPushMs: number = lastLocalPushTimestampMs
+  recentPushMs: number = 0
 ): boolean {
-  const recordTime = recordUpdatedAt ? new Date(recordUpdatedAt).getTime() : 0;
-  if (!recordTime || Number.isNaN(recordTime)) return false;
-
-  if (recentPushMs > 0 && Math.abs(recordTime - recentPushMs) < 2500) {
-    return true;
-  }
-
-  const localTime = localLastSyncedAt ? new Date(localLastSyncedAt).getTime() : 0;
-  if (localTime > 0 && Math.abs(recordTime - localTime) < 1500) {
-    return true;
-  }
-
-  return false;
+  if (!recordUpdatedAt || !localLastSyncedAt) return false;
+  return recordUpdatedAt === localLastSyncedAt;
 }
 
 /**
@@ -264,8 +255,7 @@ async function processIncomingMedia(
             !p.avatar.startsWith('data:image/svg+xml') &&
             p.avatar.length > 5000
           ) {
-            const existingId = `player_avatar_${p.id}`;
-            const idbRef = await saveMediaImage(p.avatar, existingId);
+            const idbRef = await saveIncomingSyncMedia(p.avatar);
             return { ...p, avatar: idbRef };
           }
           return p;
@@ -279,7 +269,7 @@ async function processIncomingMedia(
           if (s.photos && s.photos.length > 0) {
             let changed = false;
             const newPhotos = await Promise.all(
-              s.photos.map(async (photo, idx) => {
+              s.photos.map(async (photo) => {
                 if (
                   photo &&
                   typeof photo === 'string' &&
@@ -288,8 +278,7 @@ async function processIncomingMedia(
                   photo.length > 5000
                 ) {
                   changed = true;
-                  const existingId = `session_photo_${s.id}_${idx}`;
-                  return await saveMediaImage(photo, existingId);
+                  return await saveIncomingSyncMedia(photo);
                 }
                 return photo;
               })
@@ -304,365 +293,358 @@ async function processIncomingMedia(
   return { players: processedPlayers, sessions: processedSessions };
 }
 
-/**
- * Push current local state to Supabase Cloud (serialized with an in-flight mutex)
- */
-export async function pushVaultToCloud(): Promise<{ success: boolean; error?: string }> {
-  if (inFlightPushPromise) {
-    queuedPushRequested = true;
-    return inFlightPushPromise;
-  }
+type SyncResult = { success: boolean; error?: string };
+type PullResult = SyncResult & { count?: { games: number; sessions: number; players: number } };
+type Scope = { url: string; vaultId: string; key: string };
+type LocalData = { games: BoardGame[]; sessions: PlaySession[]; players: Player[]; locations: GameLocation[] };
 
-  const runLoop = async (): Promise<{ success: boolean; error?: string }> => {
-    let lastResult: { success: boolean; error?: string } = { success: true };
-    do {
-      queuedPushRequested = false;
-      lastResult = await executeSinglePushToCloud();
-      if (!lastResult.success) {
-        queuedPushRequested = false;
-        break;
-      }
-    } while (queuedPushRequested);
-    return lastResult;
-  };
+function currentScope(): Scope {
+  const state = useSyncStore.getState();
+  return { url: state.supabaseUrl, vaultId: state.vaultId, key: state.supabaseAnonKey };
+}
 
-  inFlightPushPromise = runLoop().finally(() => {
-    inFlightPushPromise = null;
+function scopeMatches(scope: Scope): boolean {
+  const state = useSyncStore.getState();
+  return state.isEnabled && state.supabaseUrl === scope.url && state.vaultId === scope.vaultId && state.supabaseAnonKey === scope.key;
+}
+
+function requireScope(scope: Scope): void {
+  if (!scopeMatches(scope)) throw new Error('Sync settings changed during the operation');
+}
+
+function snapshotLocal(): LocalData {
+  // Clone so async media processing cannot observe a partially changed snapshot.
+  return JSON.parse(JSON.stringify({
+    games: useGameStore.getState().games,
+    sessions: useSessionStore.getState().sessions,
+    players: usePlayerStore.getState().players,
+    locations: useLocationStore.getState().locations,
+  }));
+}
+
+function hasLocalData(local: LocalData): boolean {
+  return Boolean(local.games.length || local.sessions.length || local.players.length || local.locations.length);
+}
+
+function currentRevision(): number {
+  return useSyncStore.getState().localRevision;
+}
+
+function hasKnownBase(scope: Scope): boolean {
+  const baseline = useSyncStore.getState().syncBaseline;
+  return Boolean(baseline && baseline.url === scope.url && baseline.vaultId === scope.vaultId && baseline.updatedAt);
+}
+
+function baseMatches(scope: Scope, row: VaultPayload | null): boolean {
+  const baseline = useSyncStore.getState().syncBaseline;
+  return Boolean(hasKnownBase(scope) && row && baseline?.updatedAt === row.updated_at);
+}
+
+function conflict(reason: string, row: VaultPayload | null): SyncResult {
+  useSyncStore.getState().setSyncConflict({
+    reason,
+    remoteUpdatedAt: row?.updated_at || null,
+    ...(row ? { remoteCounts: {
+      games: row.games.length, sessions: row.sessions.length,
+      players: row.players.length, locations: row.locations.length,
+    } } : {}),
   });
-
-  return inFlightPushPromise;
+  return { success: false, error: reason };
 }
 
-async function executeSinglePushToCloud(): Promise<{ success: boolean; error?: string }> {
-  const client = getSupabaseClient();
-  const { vaultId, isEnabled, setSyncStatus, setLastSyncedAt } = useSyncStore.getState();
+function fail(err: unknown): SyncResult {
+  const message = err instanceof Error ? err.message : String(err || 'Sync failed');
+  const state = useSyncStore.getState();
+  // Keep the conflict and its message visible if the protective action fails.
+  state.setSyncStatus(state.syncConflict ? 'conflict' : 'error', message);
+  return { success: false, error: message };
+}
 
-  if (!client || !isEnabled || !vaultId) {
-    return { success: false, error: 'Sync is not configured or disabled' };
+function validateRow(data: any, vaultId: string): VaultPayload {
+  if (!data || data.vault_id !== vaultId || typeof data.updated_at !== 'string' || !data.updated_at ||
+      !Array.isArray(data.games) || !Array.isArray(data.sessions) || !Array.isArray(data.players) || !Array.isArray(data.locations)) {
+    throw new Error('Cloud returned an incomplete vault; no data was replaced');
   }
+  return data as VaultPayload;
+}
 
-  if (isSyncApplyingRemote()) {
-    return { success: true };
+async function readRemote(client: SupabaseClient, scope: Scope): Promise<VaultPayload | null> {
+  const { data, error } = await client.from('vaults').select('*').eq('vault_id', scope.vaultId).maybeSingle();
+  requireScope(scope);
+  if (error) throw new Error(error.message);
+  return data === null ? null : validateRow(data, scope.vaultId);
+}
+
+function verifyStoredArray(key: string, field: string, expected: unknown): void {
+  if (typeof window === 'undefined' || !window.localStorage) throw new Error('Local storage is unavailable');
+  const raw = window.localStorage.getItem(key);
+  if (!raw || JSON.stringify(JSON.parse(raw)?.state?.[field]) !== JSON.stringify(expected)) {
+    throw new Error(`Local persistence verification failed for ${field}`);
   }
+}
 
-  const games = useGameStore.getState().games;
-  const sessions = useSessionStore.getState().sessions;
-  const { hasCompletedInitialPull } = useSyncStore.getState();
+function verifyDurableLocal(): void {
+  verifyStoredArray('bg-vault-games-v2', 'games', useGameStore.getState().games);
+  verifyStoredArray('bg-vault-sessions-v2', 'sessions', useSessionStore.getState().sessions);
+  verifyStoredArray('bg-vault-players-v1', 'players', usePlayerStore.getState().players);
+  verifyStoredArray('boardgame_locations_v2', 'locations', useLocationStore.getState().locations);
+}
 
-  // Guard against pushing empty local state before initial cloud pull completes
-  if (!hasCompletedInitialPull && games.length === 0 && sessions.length === 0) {
-    return {
-      success: false,
-      error: 'Cannot push empty collection before initial cloud pull has completed',
-    };
-  }
-
-  // Catastrophic data loss protection: Never overwrite a populated cloud vault with an empty local store
-  if (games.length === 0 && sessions.length === 0) {
-    try {
-      const { data: remoteData } = await client
-        .from('vaults')
-        .select('games, sessions')
-        .eq('vault_id', vaultId)
-        .maybeSingle();
-
-      const remoteGamesCount = Array.isArray(remoteData?.games) ? remoteData.games.length : 0;
-      const remoteSessionsCount = Array.isArray(remoteData?.sessions) ? remoteData.sessions.length : 0;
-
-      if (remoteGamesCount > 0 || remoteSessionsCount > 0) {
-        console.warn(
-          `[supabaseSync] Blocked push of empty collection: remote has ${remoteGamesCount} games and ${remoteSessionsCount} sessions.`
-        );
-        return {
-          success: false,
-          error: 'Accidental overwrite blocked: remote collection has data while local is empty.',
-        };
-      }
-    } catch (checkErr) {
-      console.warn('[supabaseSync] Error verifying remote vault content:', checkErr);
-      return { success: false, error: 'Could not verify remote state before pushing empty data.' };
-    }
-  }
-
-  setSyncStatus('syncing');
-  const prevSyncedAt = useSyncStore.getState().lastSyncedAt;
-  const prevPushMs = lastLocalPushTimestampMs;
-
+function acknowledge(scope: Scope, updatedAt: string, revision: number, stillDirty = false): void {
+  requireScope(scope);
+  const previous = useSyncStore.getState();
   try {
-    const latestGames = useGameStore.getState().games;
-    const latestSessions = useSessionStore.getState().sessions;
-    const players = usePlayerStore.getState().players;
-    const locations = useLocationStore.getState().locations;
-    const nowDate = new Date();
-    const nowIso = nowDate.toISOString();
-
-    // Resolve idb:// references to data URLs before uploading to cloud so other devices can access images
-    const cloudPlayers = await Promise.all(
-      players.map(async (p) => {
-        if (p.avatar && isIdbMediaRef(p.avatar)) {
-          const resolved = await getMediaImage(p.avatar);
-          return resolved ? { ...p, avatar: resolved } : p;
-        }
-        return p;
-      })
-    );
-
-    const cloudSessions = await Promise.all(
-      latestSessions.map(async (s) => {
-        if (s.photos && s.photos.some((ph) => isIdbMediaRef(ph))) {
-          const resolvedPhotos = await Promise.all(
-            s.photos.map(async (ph) => {
-              if (isIdbMediaRef(ph)) {
-                const resolved = await getMediaImage(ph);
-                return resolved || ph;
-              }
-              return ph;
-            })
-          );
-          return { ...s, photos: resolvedPhotos };
-        }
-        return s;
-      })
-    );
-
-    const rawLocations = useLocationStore.getState().locations;
-    const cleanLocations = deduplicateLocationsList(rawLocations, latestSessions);
-
-    const payload: VaultPayload = {
-      vault_id: vaultId,
-      games: latestGames,
-      sessions: cloudSessions,
-      players: cloudPlayers,
-      locations: cleanLocations,
-      updated_at: nowIso,
-    };
-
-    // Record push timestamp BEFORE upsert so Realtime echo arriving before HTTP response is ignored
-    lastLocalPushTimestampMs = nowDate.getTime();
-    setLastSyncedAt(nowIso);
-
-    const { error } = await client.from('vaults').upsert(payload, { onConflict: 'vault_id' });
-
-    if (error) {
-      lastLocalPushTimestampMs = prevPushMs;
-      if (prevSyncedAt) setLastSyncedAt(prevSyncedAt);
-      setSyncStatus('error', error.message);
-      return { success: false, error: error.message };
+    previous.acknowledgeSync({ url: scope.url, vaultId: scope.vaultId, updatedAt }, revision, stillDirty);
+    if (typeof window === 'undefined' || !window.localStorage) throw new Error('Sync settings storage is unavailable');
+    const persisted = JSON.parse(window.localStorage.getItem('bg-vault-sync-settings') || 'null')?.state;
+    if (persisted?.syncBaseline?.url !== scope.url || persisted?.syncBaseline?.vaultId !== scope.vaultId ||
+        persisted?.syncBaseline?.updatedAt !== updatedAt || persisted?.lastSyncedAt !== updatedAt) {
+      throw new Error('Sync acknowledgement could not be persisted');
     }
-
-    setSyncStatus('synced');
-    return { success: true };
-  } catch (err: any) {
-    lastLocalPushTimestampMs = prevPushMs;
-    if (prevSyncedAt) setLastSyncedAt(prevSyncedAt);
-    const msg = err?.message || 'Unknown network error';
-    setSyncStatus('error', msg);
-    return { success: false, error: msg };
+  } catch (err) {
+    // Zustand updates in-memory before persisting; restore the prior acknowledgement on failure.
+    try { useSyncStore.setState({
+      syncBaseline: previous.syncBaseline, lastSyncedAt: previous.lastSyncedAt,
+      pendingChanges: true, syncConflict: previous.syncConflict,
+      hasCompletedInitialPull: previous.hasCompletedInitialPull,
+    }); } catch { /* the in-memory rollback still happened */ }
+    throw err;
   }
 }
 
-/**
- * Pull latest state from Supabase Cloud and update local stores
- */
-export async function pullVaultFromCloud(mode: 'replace' | 'merge' = 'replace'): Promise<{
-  success: boolean;
-  error?: string;
-  count?: { games: number; sessions: number; players: number };
-}> {
-  const client = getSupabaseClient();
-  const { vaultId, isEnabled, setSyncStatus, setLastSyncedAt } = useSyncStore.getState();
+// PostgreSQL compares timestamptz by instant, including microseconds. Never use
+// this for conflict ordering: it only prevents us from writing the same DB value.
+function timestampMicros(value: string): bigint | null {
+  const match = /^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.(\d{1,6}))?(Z|[+-]\d\d(?::?\d\d)?)$/i.exec(value);
+  if (!match) return null;
+  const millis = Date.parse(`${match[1]}${match[3]}`);
+  if (!Number.isFinite(millis)) return null;
+  return BigInt(millis) * 1000n + BigInt((match[2] || '').padEnd(6, '0'));
+}
 
-  if (!client || !isEnabled || !vaultId) {
-    return { success: false, error: 'Sync is not configured' };
+async function makePayload(local: LocalData, vaultId: string, previousToken: string | null): Promise<VaultPayload> {
+  const portable = await resolvePortableVaultMedia(local);
+  // Legacy schema accepts client-written timestamptz. Add random microseconds to
+  // reduce equal-token collisions, without treating timestamps as clocks/winners.
+  const previousMicros = previousToken ? timestampMicros(previousToken) : null;
+  if (previousToken && previousMicros === null) throw new Error('Cloud timestamp cannot be safely compared by the database');
+  let updatedAt = '';
+  do {
+    const micros = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    updatedAt = new Date().toISOString().replace('Z', `${micros}Z`);
+  } while (timestampMicros(updatedAt) === previousMicros);
+  return {
+    vault_id: vaultId, games: portable.games, sessions: portable.sessions, players: portable.players,
+    locations: deduplicateLocationsList(local.locations, portable.sessions), updated_at: updatedAt,
+  };
+}
+
+async function writeGuarded(client: SupabaseClient, scope: Scope, prior: VaultPayload | null, payload: VaultPayload): Promise<SyncResult> {
+  requireScope(scope);
+  const result = prior
+    ? await client.from('vaults').update(payload).eq('vault_id', scope.vaultId).eq('updated_at', prior.updated_at).select('*')
+    : await client.from('vaults').insert(payload).select('*');
+  requireScope(scope);
+  if (result.error) {
+    if (result.error.code === '23505') return conflict('Another device created this room. Review the cloud collection.', await readRemote(client, scope));
+    throw new Error(result.error.message);
   }
+  if (Array.isArray(result.data) && result.data.length === 0) {
+    return conflict('Cloud changed while saving. Review both collections.', await readRemote(client, scope));
+  }
+  if (!Array.isArray(result.data) || result.data.length !== 1) throw new Error('Cloud did not acknowledge exactly one written row');
+  const written = validateRow(result.data[0], scope.vaultId);
+  const writtenMicros = timestampMicros(written.updated_at);
+  const proposedMicros = timestampMicros(payload.updated_at);
+  const previousMicros = prior ? timestampMicros(prior.updated_at) : null;
+  if (writtenMicros === null || proposedMicros === null || writtenMicros !== proposedMicros ||
+      (prior && (previousMicros === null || writtenMicros === previousMicros))) {
+    throw new Error('Cloud did not acknowledge the expected new update token');
+  }
+  return { success: true, error: written.updated_at };
+}
 
-  setSyncStatus('syncing');
-
+async function pushImpl(scope: Scope): Promise<SyncResult> {
   try {
-    const { data, error } = await client
-      .from('vaults')
-      .select('*')
-      .eq('vault_id', vaultId)
-      .maybeSingle();
-
-    if (error) {
-      setSyncStatus('error', error.message);
-      return { success: false, error: error.message };
+    requireScope(scope);
+    const client = getSupabaseClient();
+    if (!client || !scope.vaultId) throw new Error('Sync is not configured or disabled');
+    const state = useSyncStore.getState();
+    if (state.syncConflict) return { success: false, error: state.syncConflict.reason };
+    if (isSyncApplyingRemote()) throw new Error('A remote collection is being applied');
+    state.setSyncStatus('syncing');
+    const remote = await readRemote(client, scope);
+    const now = useSyncStore.getState();
+    if (remote && (!hasKnownBase(scope) || !baseMatches(scope, remote))) {
+      return conflict('Cloud changed or the last common version is unknown. Review both collections.', remote);
     }
-
-    if (!data) {
-      // Remote vault does not exist yet.
-      useSyncStore.getState().setHasCompletedInitialPull(true);
-      const currentGames = useGameStore.getState().games;
-      const currentSessions = useSessionStore.getState().sessions;
-
-      // Only push if local actually has data to initialize the vault
-      if (currentGames.length > 0 || currentSessions.length > 0) {
-        const pushRes = await pushVaultToCloud();
-        return {
-          success: pushRes.success,
-          error: pushRes.error,
-          count: {
-            games: currentGames.length,
-            sessions: currentSessions.length,
-            players: usePlayerStore.getState().players.length,
-          },
-        };
-      }
-
-      setSyncStatus('synced');
-      return {
-        success: true,
-        count: { games: 0, sessions: 0, players: 0 },
-      };
+    if (!remote && hasKnownBase(scope)) return conflict('The cloud collection is missing. Review before creating it again.', null);
+    const revision = now.localRevision;
+    const local = snapshotLocal();
+    if (!hasLocalData(local)) {
+      if (!remote) throw new Error('Nothing was written: the local collection and cloud room are empty');
+      if (hasLocalData(remote)) return conflict('An empty local collection cannot overwrite a populated cloud collection.', remote);
     }
-
-    // Apply remote data
-    setSyncApplyingRemote(true);
-    try {
-      const remoteGames = (data.games || []) as BoardGame[];
-      const rawSessions = (data.sessions || []) as PlaySession[];
-      const rawPlayers = (data.players || []) as Player[];
-      const rawLocations = (data.locations || []) as GameLocation[];
-      const { players: remotePlayers, sessions: remoteSessions } = await processIncomingMedia(
-        rawPlayers,
-        rawSessions
-      );
-      const remoteLocations = deduplicateLocationsList(rawLocations, remoteSessions);
-
-      const localGames = useGameStore.getState().games;
-      const localSessions = useSessionStore.getState().sessions;
-      const isLocalEmpty = localGames.length === 0 && localSessions.length === 0;
-
-      // Prioritize replace when local is empty
-      const effectiveMode = isLocalEmpty ? 'replace' : mode;
-
-      const rawCandidateGames = effectiveMode === 'replace' ? remoteGames : mergeById(localGames, remoteGames);
-      const { games: processedGames, wasHealed } = healIncomingGames(rawCandidateGames, localGames);
-
-      useGameStore.getState().bulkAddGames(processedGames, true);
-
-      if (effectiveMode === 'replace') {
-        useSessionStore.getState().bulkAddSessions(remoteSessions, true);
-        usePlayerStore.getState().bulkAddPlayers(remotePlayers, true);
-        useLocationStore.getState().bulkAddLocations(remoteLocations, true);
-      } else {
-        const mergedSessions = mergeById(localSessions, remoteSessions);
-        const mergedPlayers = mergeById(usePlayerStore.getState().players, remotePlayers);
-        const mergedLocations = deduplicateLocationsList(
-          mergeById(useLocationStore.getState().locations, remoteLocations),
-          remoteSessions
-        );
-
-        useSessionStore.getState().bulkAddSessions(mergedSessions, true);
-        usePlayerStore.getState().bulkAddPlayers(mergedPlayers, true);
-        useLocationStore.getState().bulkAddLocations(mergedLocations, true);
-      }
-
-      // If local games were healed (Iron Clays or sharp catalog images), push back to Cloud
-      // so Cloud is also updated with the repaired images and never pushes back broken images
-      if (wasHealed) {
-        setTimeout(() => {
-          pushVaultToCloud();
-        }, 1500);
-      }
-
-      setLastSyncedAt(data.updated_at || new Date().toISOString());
-      useSyncStore.getState().setHasCompletedInitialPull(true);
-      setSyncStatus('synced');
-
-      return {
-        success: true,
-        count: {
-          games: remoteGames.length,
-          sessions: remoteSessions.length,
-          players: remotePlayers.length,
-        },
-      };
-    } finally {
-      setSyncApplyingRemote(false);
-    }
-  } catch (err: any) {
-    const msg = err?.message || 'Failed to pull cloud vault data';
-    setSyncStatus('error', msg);
-    return { success: false, error: msg };
+    const payload = await makePayload(local, scope.vaultId, remote?.updated_at || null);
+    requireScope(scope);
+    const result = await writeGuarded(client, scope, remote, payload);
+    if (!result.success) return result;
+    acknowledge(scope, result.error!, revision);
+    return { success: true };
+  } catch (err) {
+    return fail(err);
   }
 }
 
-/**
- * Listen for real-time changes published by Supabase Realtime channel
- */
+export function pushVaultToCloud(): Promise<SyncResult> {
+  const scope = currentScope();
+  return serialize(() => pushImpl(scope));
+}
+
+async function applyRemote(scope: Scope, remote: VaultPayload, mode: 'replace' | 'merge', revision: number, before: LocalData): Promise<PullResult> {
+  const { players, sessions } = await processIncomingMedia(remote.players, remote.sessions);
+  requireScope(scope);
+  if (currentRevision() !== revision) return conflict('Local data changed while the cloud collection was loading.', remote);
+  const remoteLocations = deduplicateLocationsList(remote.locations, sessions);
+  const candidates = mode === 'merge' ? mergeById(before.games, remote.games) : remote.games;
+  const games = healIncomingGames(candidates, before.games).games;
+  const nextSessions = mode === 'merge' ? mergeById(before.sessions, sessions) : sessions;
+  const nextPlayers = mode === 'merge' ? mergeById(before.players, players) : players;
+  const nextLocations = mode === 'merge'
+    ? deduplicateLocationsList(mergeById(before.locations, remoteLocations), nextSessions) : remoteLocations;
+
+  // Only the synchronous store writes are suppressed. Async reads/media above
+  // remain tracked, so a user edit during loading can never be discarded.
+  setSyncApplyingRemote(true);
+  try {
+    useGameStore.getState().bulkAddGames(games, true);
+    useSessionStore.getState().bulkAddSessions(nextSessions, true); // preserves recent sessions
+    usePlayerStore.getState().bulkAddPlayers(nextPlayers, true); // preserves guests
+    useLocationStore.setState({ locations: nextLocations, hasSyncedHistory: true });
+    verifyDurableLocal();
+  } catch (err) {
+    // Best-effort rollback; localStorage and IndexedDB do not form a transaction.
+    try { useGameStore.setState({ games: before.games }); } catch { /* in-memory update occurred */ }
+    try { useSessionStore.setState({ sessions: before.sessions }); } catch { /* in-memory update occurred */ }
+    try { usePlayerStore.setState({ players: before.players }); } catch { /* in-memory update occurred */ }
+    try { useLocationStore.setState({ locations: before.locations }); } catch { /* in-memory update occurred */ }
+    throw err;
+  } finally {
+    setSyncApplyingRemote(false);
+  }
+  const applied = snapshotLocal();
+  const remoteComparable = { games: remote.games, sessions, players, locations: remote.locations };
+  const stillDirty = JSON.stringify(applied) !== JSON.stringify(remoteComparable);
+  acknowledge(scope, remote.updated_at, revision, stillDirty);
+  return { success: true, count: { games: remote.games.length, sessions: sessions.length, players: players.length } };
+}
+
+async function pullImpl(scope: Scope, mode: 'replace' | 'merge'): Promise<PullResult> {
+  try {
+    requireScope(scope);
+    const client = getSupabaseClient();
+    if (!client || !scope.vaultId) throw new Error('Sync is not configured');
+    const state = useSyncStore.getState();
+    if (state.syncConflict) return { success: false, error: state.syncConflict.reason };
+    const revision = state.localRevision;
+    state.setSyncStatus('syncing');
+    const remote = await readRemote(client, scope);
+    const current = useSyncStore.getState();
+    const local = snapshotLocal();
+    if (!remote) {
+      if (hasKnownBase(scope)) return conflict('The cloud collection is missing. Review before creating it again.', null);
+      current.setHasCompletedInitialPull(true);
+      current.setSyncStatus(current.pendingChanges || hasLocalData(local) ? 'pending' : 'idle');
+      return { success: false, error: 'Cloud room does not exist; no collection was applied.' };
+    }
+    if ((!hasKnownBase(scope) && (hasLocalData(local) || current.pendingChanges)) ||
+        (!baseMatches(scope, remote) && (current.pendingChanges || current.localRevision !== revision))) {
+      return conflict('Cloud changed or the last common version is unknown. Review both collections.', remote);
+    }
+    if (baseMatches(scope, remote) && current.pendingChanges) {
+      current.setSyncStatus('pending');
+      return { success: false, error: 'Local changes are pending; cloud was not applied.' };
+    }
+    return await applyRemote(scope, remote, mode, current.localRevision, local);
+  } catch (err) {
+    return fail(err);
+  }
+}
+
+export function pullVaultFromCloud(mode: 'replace' | 'merge' = 'replace'): Promise<PullResult> {
+  const scope = currentScope();
+  return serialize(() => pullImpl(scope, mode));
+}
+
+export function getSyncConflictSummary() {
+  return useSyncStore.getState().syncConflict;
+}
+
+export function resolveSyncConflict(choice: 'cloud' | 'local' | 'later'): Promise<SyncResult> {
+  const scope = currentScope();
+  return serialize(async () => {
+    try {
+      requireScope(scope);
+      const state = useSyncStore.getState();
+      if (!state.syncConflict) throw new Error('There is no sync conflict to resolve');
+      if (choice === 'later') return { success: true };
+      if (choice !== 'cloud' && choice !== 'local') throw new Error('Invalid conflict choice');
+      const client = getSupabaseClient();
+      if (!client) throw new Error('Sync is not configured');
+      const expected = state.syncConflict.remoteUpdatedAt;
+      const revision = state.localRevision;
+      const before = snapshotLocal();
+      const remote = await readRemote(client, scope);
+      if (!remote || remote.updated_at !== expected) {
+        return conflict('Cloud changed again. Review the latest collection before deciding.', remote);
+      }
+      if (choice === 'cloud') {
+        await backupSyncSide('local', scope.url, scope.vaultId, before);
+        requireScope(scope);
+        if (currentRevision() !== revision) return conflict('Local data changed during backup. Review again.', remote);
+        return await applyRemote(scope, remote, 'replace', revision, before);
+      }
+      await backupSyncSide('cloud', scope.url, scope.vaultId, remote);
+      requireScope(scope);
+      const sentRevision = currentRevision();
+      const local = snapshotLocal();
+      const payload = await makePayload(local, scope.vaultId, remote.updated_at);
+      const result = await writeGuarded(client, scope, remote, payload);
+      if (!result.success) return result;
+      acknowledge(scope, result.error!, sentRevision);
+      return { success: true };
+    } catch (err) {
+      const result = fail(err);
+      return { success: false, error: `Conflict resolution failed: ${result.error}` };
+    }
+  });
+}
+
+/** Realtime is only an invalidation; all reads and applies use the same queue. */
 export function startVaultRealtimeSubscription(): () => void {
   const client = getSupabaseClient();
-  const { vaultId, isEnabled, autoSync, setLastSyncedAt, setSyncStatus } =
-    useSyncStore.getState();
-
-  if (!client || !isEnabled || !vaultId || !autoSync) {
-    return () => {};
-  }
-
-  // Cleanup existing channel
-  if (activeChannel) {
-    client.removeChannel(activeChannel);
-    activeChannel = null;
-  }
-
-  activeChannel = client
-    .channel(`vault-${vaultId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'vaults',
-        filter: `vault_id=eq.${vaultId}`,
-      },
-      (payload) => {
-        if (!payload.new) return;
-        const record = payload.new as VaultPayload;
-        const localLastSynced = useSyncStore.getState().lastSyncedAt;
-
-        // If this update was triggered by another device (check timestamp & pre-upsert push guard)
-        const isSelfReflection = isRealtimeSelfReflection(record.updated_at, localLastSynced);
-
-        if (record.updated_at && !isSelfReflection) {
-          setSyncApplyingRemote(true);
-          processIncomingMedia(record.players, record.sessions)
-            .then(({ players: processedPlayers, sessions: processedSessions }) => {
-              if (record.games) {
-                const currentLocal = useGameStore.getState().games;
-                const { games: healedRealtime } = healIncomingGames(record.games, currentLocal);
-                useGameStore.getState().bulkAddGames(healedRealtime, true);
-              }
-              if (record.sessions) useSessionStore.getState().bulkAddSessions(processedSessions, true);
-              if (record.players) usePlayerStore.getState().bulkAddPlayers(processedPlayers, true);
-              if (record.locations) useLocationStore.getState().bulkAddLocations(record.locations, true);
-
-              setLastSyncedAt(record.updated_at);
-              setSyncStatus('synced');
-            })
-            .catch((err) => {
-              console.warn('[supabaseSync] Error processing incoming realtime media:', err);
-            })
-            .finally(() => {
-              setSyncApplyingRemote(false);
-            });
-        }
-      }
-    )
+  const scope = currentScope();
+  const { isEnabled, autoSync } = useSyncStore.getState();
+  if (!client || !isEnabled || !scope.vaultId || !autoSync) return () => {};
+  if (activeChannel) client.removeChannel(activeChannel);
+  const channel = client.channel(`vault-${scope.vaultId}`)
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'vaults', filter: `vault_id=eq.${scope.vaultId}`,
+    }, () => {
+      if (scopeMatches(scope)) void serialize(() => pullImpl(scope, 'replace'));
+    })
     .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        setSyncStatus('synced');
-      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        setSyncStatus('error', 'Realtime sync channel disconnected');
+      if (!scopeMatches(scope)) return;
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        const state = useSyncStore.getState();
+        state.setSyncStatus(state.syncConflict ? 'conflict' : 'offline', 'Realtime sync channel disconnected');
       }
+      // Subscribing is not proof that any data was read or written.
     });
-
+  activeChannel = channel;
   return () => {
-    if (activeChannel && client) {
-      client.removeChannel(activeChannel);
-      activeChannel = null;
-    }
+    client.removeChannel(channel);
+    if (activeChannel === channel) activeChannel = null;
   };
 }
 

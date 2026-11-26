@@ -3,7 +3,7 @@ import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useLocationStore } from '../store/useLocationStore';
 import { BoardGame, Player, PlaySession, GameLocation } from '../types';
-import { isIdbMediaRef, getMediaImage } from './mediaStorage';
+import { resolvePortableVaultMedia } from './portableVaultMedia';
 import { getSessionWinners } from './utils';
 
 export interface VaultBackupData {
@@ -42,63 +42,12 @@ function downloadFile(content: string, fileName: string, contentType: string) {
  * Export 100% full JSON backup of the entire Vault
  */
 export async function exportVaultJSON(): Promise<VaultBackupData> {
-  const rawGames = useGameStore.getState().games;
-  const rawPlayers = usePlayerStore.getState().players;
-  const rawSessions = useSessionStore.getState().sessions;
-  const locations = useLocationStore.getState().locations;
-
-  // Resolve custom game cover art from idb://
-  const games: BoardGame[] = await Promise.all(
-    rawGames.map(async (g) => {
-      const hasIdbImage = Boolean(g.image && isIdbMediaRef(g.image));
-      const hasIdbThumb = Boolean(g.thumbnail && isIdbMediaRef(g.thumbnail));
-      if (!hasIdbImage && !hasIdbThumb) return g;
-
-      const resolvedImage = hasIdbImage ? (await getMediaImage(g.image!)) || g.image : g.image;
-      const resolvedThumb =
-        hasIdbThumb
-          ? g.thumbnail === g.image
-            ? resolvedImage
-            : (await getMediaImage(g.thumbnail!)) || g.thumbnail
-          : g.thumbnail;
-
-      return {
-        ...g,
-        image: resolvedImage,
-        thumbnail: resolvedThumb,
-      };
-    })
-  );
-
-  // Resolve player avatars from idb://
-  const players: Player[] = await Promise.all(
-    rawPlayers.map(async (p) => {
-      if (p.avatar && isIdbMediaRef(p.avatar)) {
-        const resolved = await getMediaImage(p.avatar);
-        return { ...p, avatar: resolved || p.avatar };
-      }
-      return p;
-    })
-  );
-
-  // Resolve session photos from idb://
-  const sessions: PlaySession[] = await Promise.all(
-    rawSessions.map(async (s) => {
-      if (s.photos && s.photos.length > 0) {
-        const resolvedPhotos = await Promise.all(
-          s.photos.map(async (photo) => {
-            if (photo && isIdbMediaRef(photo)) {
-              const resolved = await getMediaImage(photo);
-              return resolved || photo;
-            }
-            return photo;
-          })
-        );
-        return { ...s, photos: resolvedPhotos };
-      }
-      return s;
-    })
-  );
+  const { games, players, sessions, locations } = await resolvePortableVaultMedia({
+    games: useGameStore.getState().games,
+    players: usePlayerStore.getState().players,
+    sessions: useSessionStore.getState().sessions,
+    locations: useLocationStore.getState().locations,
+  });
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const payload: VaultBackupData = {
@@ -159,7 +108,7 @@ export function exportGamesCSV() {
     g.bggRating ?? '',
     g.purchasePrice ?? '',
     `"${(g.lentToName || '').replace(/"/g, '""')}"`,
-    `"${(g.tags || []).join(', ')}"`,
+    `"${JSON.stringify(g.tags ?? null).replace(/"/g, '""')}"`,
     `"${(g.notes || '').replace(/"/g, '""')}"`,
   ]);
 

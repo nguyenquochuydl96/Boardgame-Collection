@@ -28,7 +28,6 @@ import {
 } from '../types';
 import {
   generateId,
-  isDraftMatchingCompletedSession,
   compressImage,
   getLocalDateString,
   buildLocalDateTimeISO,
@@ -39,6 +38,13 @@ import {
   resolveLowestScoreWins,
   sortPlayersByPlayCount,
 } from '../lib/utils';
+import {
+  DRAFT_STORAGE_KEY,
+  parseSessionDraft,
+  removeDraftIfUnchanged,
+  saveSessionAndCleanDraft,
+  writeDraftIfSafe,
+} from '../lib/draftSafety';
 import { getScoringTemplateForGame } from '../lib/scoringPresets';
 import { pushVaultToCloud } from '../lib/supabaseSync';
 import { saveMediaImage } from '../lib/mediaStorage';
@@ -125,8 +131,29 @@ export const NewSessionPage: React.FC = () => {
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(true);
   const [pausedDurationMs, setPausedDurationMs] = useState<number>(0);
   const [pauseStartTime, setPauseStartTime] = useState<number | undefined>(undefined);
-  const [existingDraft, setExistingDraft] = useState<SessionDraft | null>(null);
-  const [quotaError, setQuotaError] = useState<string | null>(null);
+  // Capture the persisted draft synchronously: lifecycle events can fire before effects run.
+  const [initialDraft] = useState(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      return { raw, draft: parseSessionDraft(raw, Date.now()), unavailable: false };
+    } catch {
+      return { raw: null, draft: null, unavailable: true };
+    }
+  });
+  const pendingDraftRawRef = useRef<string | null>(initialDraft.raw);
+  const expectedDraftRawRef = useRef<string | null>(null);
+  const decisionPendingRef = useRef(initialDraft.raw !== null || initialDraft.unavailable);
+  const restoringRef = useRef(false);
+  const [restoring, setRestoring] = useState(false);
+  const [existingDraft, setExistingDraft] = useState<SessionDraft | null>(
+    isRematchMode || rematchSource ? null : initialDraft.draft
+  );
+  const [unreadableDraft, setUnreadableDraft] = useState(
+    initialDraft.raw !== null && !initialDraft.draft && !isRematchMode && !rematchSource
+  );
+  const [quotaError, setQuotaError] = useState<string | null>(
+    initialDraft.unavailable ? 'Local storage is unavailable. Draft changes are not being saved.' : null
+  );
 
   // Step 3: Players
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>(() => {
@@ -164,7 +191,29 @@ export const NewSessionPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const isSubmittedRef = useRef(false);
 
-  const applyRematch = (sourceSession: PlaySession) => {
+  const showStorageConflict = () => {
+    decisionPendingRef.current = true;
+    try {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      pendingDraftRawRef.current = raw;
+      if (raw === null) {
+        expectedDraftRawRef.current = null;
+        decisionPendingRef.current = false;
+        setExistingDraft(null);
+        setUnreadableDraft(false);
+        setQuotaError('The previous draft was removed elsewhere. You may continue.');
+        return;
+      }
+      const parsed = parseSessionDraft(raw, Date.now());
+      setExistingDraft(parsed);
+      setUnreadableDraft(raw !== null && !parsed);
+      setQuotaError('The saved draft changed elsewhere. Resume or discard it before continuing.');
+    } catch {
+      setQuotaError('Local storage is unavailable. Draft changes are not being saved.');
+    }
+  };
+
+  const applyRematch = (sourceSession: PlaySession, expected: string | null) => {
     const result = buildRematchDraftFromSession(sourceSession, {
       games,
       players: savedPlayers,
@@ -172,6 +221,24 @@ export const NewSessionPage: React.FC = () => {
     });
 
     const { draft, targetStep } = result;
+    try {
+      const write = writeDraftIfSafe(localStorage, draft, expected, false);
+      if (write.status !== 'saved') {
+        showStorageConflict();
+        return;
+      }
+      expectedDraftRawRef.current = write.raw;
+      pendingDraftRawRef.current = null;
+      decisionPendingRef.current = true;
+      restoringRef.current = true;
+      setRestoring(true);
+      setUnreadableDraft(false);
+      setQuotaError(null);
+      window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
+    } catch {
+      setQuotaError('Could not save the rematch locally. The existing draft was kept.');
+      return;
+    }
 
     setSelectedGameId(draft.gameId);
     setActiveScoringMode(result.scoringMode);
@@ -214,51 +281,25 @@ export const NewSessionPage: React.FC = () => {
     });
 
     try {
-      localStorage.setItem('boardgame_session_draft', JSON.stringify(draft));
-      window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
-    } catch {}
-
-    try {
       window.history.replaceState({}, '', window.location.pathname);
     } catch {}
   };
 
-  // Process 1-Tap Rematch intent on mount with Active Draft Protection
+  // Rematch never replaces even an old or legacy draft without an explicit decision.
   useEffect(() => {
-    if (rematchProcessedRef.current) return;
-    if (!rematchSource) return;
-
+    if (rematchProcessedRef.current || !rematchSource) return;
     rematchProcessedRef.current = true;
-
-    try {
-      const raw = localStorage.getItem('boardgame_session_draft');
-      if (raw) {
-        const parsed = JSON.parse(raw) as SessionDraft;
-        const isGhostDraft =
-          !parsed.gameId ||
-          (parsed.currentStep === 1 &&
-            (!parsed.selectedPlayerIds || parsed.selectedPlayerIds.length === 0) &&
-            (!parsed.notes || parsed.notes.trim() === '') &&
-            (!parsed.photos || parsed.photos.length === 0));
-
-        const isCompleted = isDraftMatchingCompletedSession(parsed, sessions);
-
-        if (!isGhostDraft && !isCompleted) {
-          // Active draft exists: prompt user before discarding
-          setPendingRematchSession(rematchSource);
-          setIsConfirmOverwriteOpen(true);
-          return;
-        }
-      }
-    } catch {}
-
-    // No active draft or only ghost draft: apply rematch directly
-    applyRematch(rematchSource);
-  }, [rematchSource, sessions, games, savedPlayers, registerGuestPlayer]);
+    if (decisionPendingRef.current) {
+      setPendingRematchSession(rematchSource);
+      setIsConfirmOverwriteOpen(true);
+      return;
+    }
+    applyRematch(rematchSource, null);
+  }, [rematchSource]);
 
   const handleConfirmDiscardActiveDraft = () => {
     if (pendingRematchSession) {
-      applyRematch(pendingRematchSession);
+      applyRematch(pendingRematchSession, pendingDraftRawRef.current);
     }
     setIsConfirmOverwriteOpen(false);
     setPendingRematchSession(null);
@@ -267,93 +308,29 @@ export const NewSessionPage: React.FC = () => {
   const handleCancelRematch = () => {
     setIsConfirmOverwriteOpen(false);
     setPendingRematchSession(null);
+    setExistingDraft(parseSessionDraft(pendingDraftRawRef.current, Date.now()));
+    setUnreadableDraft(pendingDraftRawRef.current !== null && !parseSessionDraft(pendingDraftRawRef.current, Date.now()));
     try {
       window.history.replaceState({}, '', window.location.pathname);
     } catch {}
   };
 
-  // Detect and offer restoring previous draft on mount (skip in rematch mode or when rematch is active)
-  useEffect(() => {
-    if (isRematchMode || rematchSource || pendingRematchSession) return;
-    const shouldAutoResume = searchParams.get('resume') === '1' || searchParams.get('resume') === 'true';
-
-    try {
-      const raw = localStorage.getItem('boardgame_session_draft');
-      if (raw) {
-        const parsed = JSON.parse(raw) as SessionDraft;
-        const isGhostDraft =
-          !parsed.gameId ||
-          (parsed.currentStep === 1 &&
-            (!parsed.selectedPlayerIds || parsed.selectedPlayerIds.length === 0) &&
-            (!parsed.notes || parsed.notes.trim() === '') &&
-            (!parsed.photos || parsed.photos.length === 0));
-
-        if (isGhostDraft || isDraftMatchingCompletedSession(parsed, sessions)) {
-          localStorage.removeItem('boardgame_session_draft');
-          window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
-          setExistingDraft(null);
-          return;
-        }
-        if (parsed && (!parsed.sessionStartTime || Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000)) {
-          if (shouldAutoResume) {
-            setSelectedGameId(parsed.gameId);
-            setDatePlayed(parsed.datePlayed);
-            setLocation(parsed.location);
-            setDurationMinutes(parsed.durationMinutes);
-            setSessionStartTime(parsed.sessionStartTime);
-            setIsTimerRunning(parsed.isTimerRunning);
-            setPausedDurationMs(parsed.pausedDurationMs);
-            setPauseStartTime(parsed.pauseStartTime);
-            setSelectedPlayerIds(parsed.selectedPlayerIds || []);
-            setOneOffPlayers(parsed.oneOffPlayers || []);
-            if (parsed.oneOffPlayers?.length > 0) {
-              parsed.oneOffPlayers.forEach((g) => registerGuestPlayer(g));
-            }
-            setFirstPlayerId(parsed.firstPlayerId);
-            setFirstPlayerMethod(parsed.firstPlayerMethod);
-            setFirstPlayerAnimStyle(parsed.firstPlayerAnimStyle === 'wheel' ? 'card_shuffle' : (parsed.firstPlayerAnimStyle || 'card_shuffle'));
-            setScoresByPlayerId(parsed.scoresByPlayerId || {});
-            setBreakdownsByPlayerId(parsed.breakdownsByPlayerId || {});
-            setManualWinnerIds(parsed.manualWinnerIds || []);
-            if (parsed.coopOutcome === 'won' || parsed.coopOutcome === 'lost') {
-              setCoopOutcome(parsed.coopOutcome);
-            }
-            if (parsed.gameScoringMode) {
-              setActiveScoringMode(parsed.gameScoringMode);
-            }
-            setLogTeamScore(Boolean(parsed.logTeamScore));
-            setTeamScore(parsed.teamScore);
-            hasManualDurationRef.current = Boolean(parsed.hasManualDuration);
-            setLowScoreWins(parsed.lowScoreWins ?? false);
-            setScoringMode(parsed.scoringMode || 'quick');
-            setPhotos(parsed.photos || []);
-            setNotes(parsed.notes || '');
-            setCurrentStep(parsed.currentStep || 1);
-            setExistingDraft(null);
-          } else {
-            setExistingDraft(parsed);
-          }
-        }
-      }
-    } catch {
-      // Ignore parse errors
-    }
-  }, [isRematchMode, rematchSource, pendingRematchSession, sessions, searchParams, registerGuestPlayer]);
-
-  // Ensure draft is cleared if session has been submitted
-  useEffect(() => {
-    return () => {
-      if (isSubmittedRef.current) {
-        try {
-          localStorage.removeItem('boardgame_session_draft');
-          window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
-        } catch {}
-      }
-    };
-  }, []);
-
   const handleRestoreDraft = () => {
     if (!existingDraft) return;
+    try {
+      if (localStorage.getItem(DRAFT_STORAGE_KEY) !== pendingDraftRawRef.current) {
+        showStorageConflict();
+        return;
+      }
+    } catch {
+      setQuotaError('Local storage is unavailable. Draft changes are not being saved.');
+      return;
+    }
+    expectedDraftRawRef.current = pendingDraftRawRef.current;
+    pendingDraftRawRef.current = null;
+    // Keep lifecycle flushes blocked until the restored React state has committed.
+    restoringRef.current = true;
+    setRestoring(true);
     setSelectedGameId(existingDraft.gameId);
     setDatePlayed(existingDraft.datePlayed);
     setLocation(existingDraft.location);
@@ -390,19 +367,48 @@ export const NewSessionPage: React.FC = () => {
     setExistingDraft(null);
   };
 
+  // The explicit Resume link also uses the same guarded restore path.
+  const autoResumeHandledRef = useRef(false);
+  useEffect(() => {
+    if (autoResumeHandledRef.current || isRematchMode || rematchSource || !existingDraft) return;
+    if (searchParams.get('resume') === '1' || searchParams.get('resume') === 'true') {
+      autoResumeHandledRef.current = true;
+      handleRestoreDraft();
+    }
+  }, [existingDraft, isRematchMode, rematchSource, searchParams]);
+
+  // This effect runs only after restored state has been committed, before autosave.
+  useEffect(() => {
+    if (restoring && restoringRef.current) {
+      restoringRef.current = false;
+      decisionPendingRef.current = false;
+      setRestoring(false);
+    }
+  }, [restoring]);
+
   const handleDiscardDraft = () => {
     try {
-      localStorage.removeItem('boardgame_session_draft');
+      if (!removeDraftIfUnchanged(localStorage, pendingDraftRawRef.current)) {
+        showStorageConflict();
+        return;
+      }
+      pendingDraftRawRef.current = null;
+      expectedDraftRawRef.current = null;
+      decisionPendingRef.current = false;
+      setExistingDraft(null);
+      setUnreadableDraft(false);
+      setQuotaError(null);
       window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
-    } catch {}
-    setExistingDraft(null);
+    } catch {
+      setQuotaError('Could not discard the saved draft locally.');
+    }
   };
 
   // Synchronous flush function: writes draft immediately to localStorage without debounce delay
   const flushDraftNow = (overrides?: Partial<SessionDraft>) => {
-    if (isSaving || isSubmittedRef.current) return;
+    if (isSaving || isSubmittedRef.current) return false;
     const targetGameId = overrides?.gameId ?? selectedGameId;
-    if (!targetGameId) return;
+    if (!targetGameId) return false;
 
     const timerRunning = overrides?.isTimerRunning !== undefined ? overrides.isTimerRunning : isTimerRunning;
     const startMs = overrides?.sessionStartTime ?? sessionStartTime;
@@ -447,16 +453,26 @@ export const NewSessionPage: React.FC = () => {
     };
 
     try {
-      localStorage.setItem('boardgame_session_draft', JSON.stringify(draft));
+      const result = writeDraftIfSafe(localStorage, draft, expectedDraftRawRef.current, decisionPendingRef.current);
+      if (result.status === 'blocked') return false;
+      if (result.status === 'conflict') {
+        showStorageConflict();
+        return false;
+      }
+      expectedDraftRawRef.current = result.raw;
       setQuotaError(null);
       window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
+      return true;
     } catch (err: unknown) {
       if (
         err instanceof DOMException &&
         (err.name === 'QuotaExceededError' || err.code === 22 || err.code === 1014)
       ) {
         setQuotaError('Storage quota exceeded: Draft cannot be saved locally.');
+      } else {
+        setQuotaError('Local storage is unavailable. Draft changes are not being saved.');
       }
+      return false;
     }
   };
 
@@ -561,7 +577,7 @@ export const NewSessionPage: React.FC = () => {
   // Debounced auto-save draft effect to LocalStorage for typing/scoring changes
   useEffect(() => {
     if (isSaving || isSubmittedRef.current) return;
-    if (!selectedGameId || existingDraft) return;
+    if (!selectedGameId || existingDraft || unreadableDraft || restoring || decisionPendingRef.current) return;
 
     const hasMeaningfulProgress =
       currentStep > 1 ||
@@ -606,6 +622,8 @@ export const NewSessionPage: React.FC = () => {
     currentStep,
     isSaving,
     existingDraft,
+    unreadableDraft,
+    restoring,
   ]);
 
   const selectedGame = useMemo(
@@ -892,7 +910,8 @@ export const NewSessionPage: React.FC = () => {
           setPhotos((prev) => [...prev, idbRef]);
         }
       } catch (err) {
-        console.error('Failed to compress image:', err);
+        console.error('Failed to compress or save session photo:', err);
+        setQuotaError('Could not save photo to IndexedDB storage. Check available device storage or browser permissions before trying again.');
       }
     }
     e.target.value = '';
@@ -906,12 +925,24 @@ export const NewSessionPage: React.FC = () => {
       return;
     }
 
+    if (decisionPendingRef.current || restoringRef.current) {
+      setQuotaError('Resume or discard the pending draft before saving this session.');
+      return;
+    }
+    try {
+      if (localStorage.getItem(DRAFT_STORAGE_KEY) !== expectedDraftRawRef.current) {
+        showStorageConflict();
+        return;
+      }
+    } catch {
+      setQuotaError('Local storage is unavailable. The session was not saved.');
+      return;
+    }
+
+    // Persist the latest wizard contents before attempting to save the session.
+    if (!flushDraftNow()) return;
     isSubmittedRef.current = true;
     setIsSaving(true);
-
-    try {
-      localStorage.removeItem('boardgame_session_draft');
-    } catch {}
 
     oneOffPlayers.forEach((g) => {
       registerGuestPlayer(g);
@@ -925,7 +956,8 @@ export const NewSessionPage: React.FC = () => {
     const cleanDate = (datePlayed || '').split('T')[0] || getLocalDateString();
     const computedIsoDate = buildLocalDateTimeISO(cleanDate, new Date());
 
-    const created = addSession({
+    try {
+      const { session: created, durable, draftRemoved } = saveSessionAndCleanDraft(localStorage, expectedDraftRawRef.current, () => addSession({
       status: 'completed',
       gameId: selectedGame.id,
       gameName: selectedGame.name,
@@ -942,19 +974,27 @@ export const NewSessionPage: React.FC = () => {
       firstPlayerId: isCoop ? undefined : (firstPlayerId || activeSessionPlayers[0]?.id),
       photos: photos.length > 0 ? photos : undefined,
       notes: notes.trim() || undefined,
-    });
+      }));
 
-    try {
-      pushVaultToCloud();
-    } catch (err) {
-      console.warn('Immediate sync push after session save skipped or failed:', err);
+      if (!durable) {
+        isSubmittedRef.current = false;
+        setIsSaving(false);
+        setQuotaError('The session could not be verified in local storage. The draft was kept; check storage before trying again.');
+        return;
+      }
+      if (draftRemoved) window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
+
+      try {
+        pushVaultToCloud();
+      } catch (err) {
+        console.warn('Immediate sync push after session save skipped or failed:', err);
+      }
+      navigate(`/sessions/${created.id}`, { replace: true });
+    } catch {
+      isSubmittedRef.current = false;
+      setIsSaving(false);
+      setQuotaError('Could not save the session locally. The draft was kept.');
     }
-
-    try {
-      localStorage.removeItem('boardgame_session_draft');
-    } catch {}
-
-    navigate(`/sessions/${created.id}`, { replace: true });
   };
 
   return (
@@ -1052,6 +1092,13 @@ export const NewSessionPage: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {unreadableDraft && (
+          <div className="p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-400 flex items-center justify-between gap-4">
+            <p className="text-sm">A saved draft could not be read. It will be kept until you explicitly discard it.</p>
+            <Button variant="ghost" size="sm" onClick={handleDiscardDraft}>Discard unreadable draft</Button>
+          </div>
+        )}
 
         {/* Quota Exceeded Warning Banner */}
         {quotaError && (

@@ -1799,23 +1799,21 @@ test('findPreviousLoser emits Technical English reason strings without Vietnames
   assert.doesNotMatch(result.reason, /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i);
 });
 
-test('isRealtimeSelfReflection suppresses own push echoes while allowing genuine remote updates', () => {
-  const baseMs = Date.parse('2026-11-23T12:00:00.000Z');
-  const recordIso = new Date(baseMs + 800).toISOString();
+test('isRealtimeSelfReflection strictly requires exact opaque timestamp equality', () => {
+  const baseIso = '2026-11-23T12:00:00.000Z';
+  const sameIso = '2026-11-23T12:00:00.000Z';
+  const slightlyLaterIso = '2026-11-23T12:00:00.800Z';
 
-  // Matches recent in-flight/just-finished push timestamp (within 2.5s)
-  assert.equal(isRealtimeSelfReflection(recordIso, null, baseMs), true);
+  // Exact opaque equality returns true
+  assert.equal(isRealtimeSelfReflection(sameIso, baseIso), true);
 
-  // Matches local lastSyncedAt timestamp (within 1.5s)
-  assert.equal(isRealtimeSelfReflection(recordIso, new Date(baseMs).toISOString(), 0), true);
-
-  // Genuine remote update 10 seconds later must NOT be suppressed
-  const remoteLaterIso = new Date(baseMs + 10_000).toISOString();
-  assert.equal(isRealtimeSelfReflection(remoteLaterIso, new Date(baseMs).toISOString(), baseMs), false);
+  // Near timestamps (+800ms or +10s) must NOT be suppressed by proximity anymore
+  assert.equal(isRealtimeSelfReflection(slightlyLaterIso, baseIso), false);
+  assert.equal(isRealtimeSelfReflection('2026-11-23T12:00:10.000Z', baseIso), false);
 
   // Missing or malformed timestamp returns false safely
-  assert.equal(isRealtimeSelfReflection(undefined, new Date(baseMs).toISOString(), baseMs), false);
-  assert.equal(isRealtimeSelfReflection('not-a-date', new Date(baseMs).toISOString(), baseMs), false);
+  assert.equal(isRealtimeSelfReflection(undefined, baseIso), false);
+  assert.equal(isRealtimeSelfReflection('not-a-date', baseIso), false);
 });
 
 test('buildRematchDraftFromSession sets targetStep=4 for Competitive game, resets firstPlayer, keeps seat order, updates renamed player and canonical venue', () => {

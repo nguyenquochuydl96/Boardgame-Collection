@@ -7,7 +7,6 @@ const STORE_NAME = 'images';
 const MAX_LRU_ITEMS = 100;
 
 const lruCache = new Map<string, string>();
-const fallbackStore = new Map<string, string>();
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 function hasIndexedDB(): boolean {
@@ -39,9 +38,10 @@ function lruDelete(key: string): void {
 function openMediaDB(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise;
 
-  dbPromise = new Promise((resolve, reject) => {
+  const opening = new Promise<IDBDatabase>((resolve, reject) => {
     if (!hasIndexedDB()) {
-      return reject(new Error('IndexedDB not supported'));
+      reject(new Error('IndexedDB not supported'));
+      return;
     }
     const request = window.indexedDB.open(DB_NAME, 1);
     request.onupgradeneeded = (event) => {
@@ -54,17 +54,18 @@ function openMediaDB(): Promise<IDBDatabase> {
       const db = request.result;
       db.onversionchange = () => {
         db.close();
-        dbPromise = null;
+        if (dbPromise === opening) dbPromise = null;
       };
       resolve(db);
     };
-    request.onerror = () => {
-      dbPromise = null;
-      reject(request.error);
-    };
+    request.onerror = () => reject(request.error ?? new Error('Failed to open IndexedDB'));
   });
-
-  return dbPromise;
+  dbPromise = opening;
+  // A rejected open (including synchronous failure) must not poison future retries.
+  void opening.catch(() => {
+    if (dbPromise === opening) dbPromise = null;
+  });
+  return opening;
 }
 
 /**
@@ -75,48 +76,46 @@ export function isIdbMediaRef(val?: string | null): boolean {
 }
 
 /**
- * Save an image dataUrl to IndexedDB with LRU cache, returning an idb://<id> reference
+ * Save to IndexedDB, returning a reference only after the transaction commits.
+ * Reject on storage failure; a memory-only value is not a durable reference.
  */
 export async function saveMediaImage(dataUrl: string, existingId?: string): Promise<string> {
   if (!dataUrl) return '';
-  if (isIdbMediaRef(dataUrl)) return dataUrl;
-
-  const id = existingId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
-  lruSet(id, dataUrl);
-
-  if (hasIndexedDB()) {
-    try {
-      const db = await openMediaDB();
-      await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.put({ id, data: dataUrl });
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(req.error);
-      });
-    } catch (err) {
-      console.warn('[mediaStorage] Failed to write to IndexedDB, fallback active:', err);
-      fallbackStore.set(id, dataUrl);
-    }
-  } else {
-    fallbackStore.set(id, dataUrl);
+  if (isIdbMediaRef(dataUrl)) {
+    const stored = await getMediaImage(dataUrl, { requireStored: true });
+    if (!stored || isIdbMediaRef(stored)) throw new Error('Could not resolve an IndexedDB media reference.');
+    return dataUrl;
   }
 
+  const id = existingId || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
+  if (!hasIndexedDB()) throw new Error('IndexedDB not supported');
+  const db = await openMediaDB();
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const req = tx.objectStore(STORE_NAME).put({ id, data: dataUrl });
+    req.onerror = () => reject(req.error ?? new Error('IndexedDB media write failed'));
+    tx.onerror = () => reject(tx.error ?? new Error('IndexedDB media transaction failed'));
+    tx.onabort = () => reject(tx.error ?? new Error('IndexedDB media transaction aborted'));
+    tx.oncomplete = () => resolve();
+  });
+  lruSet(id, dataUrl);
   return `idb://${id}`;
 }
 
 /**
  * Retrieve an image from memory LRU cache or IndexedDB
  */
-export async function getMediaImage(ref: string): Promise<string | null> {
+export async function getMediaImage(ref: string, options?: { requireStored?: boolean }): Promise<string | null> {
   if (!ref) return null;
   if (!isIdbMediaRef(ref)) {
     return ref;
   }
 
   const id = ref.replace('idb://', '');
-  const cached = lruGet(id);
-  if (cached) return cached;
+  if (!options?.requireStored) {
+    const cached = lruGet(id);
+    if (cached) return cached;
+  }
 
   if (hasIndexedDB()) {
     try {
@@ -136,11 +135,10 @@ export async function getMediaImage(ref: string): Promise<string | null> {
         req.onerror = () => reject(req.error);
       });
     } catch {
-      return fallbackStore.get(id) || null;
+      return null;
     }
-  } else {
-    return fallbackStore.get(id) || null;
   }
+  return null;
 }
 
 /**
@@ -164,8 +162,6 @@ export async function deleteMediaImage(ref: string): Promise<void> {
     } catch {
       // ignore
     }
-  } else {
-    fallbackStore.delete(id);
   }
 }
 
@@ -180,86 +176,78 @@ function isLargeBase64Image(val?: string | null): val is string {
 }
 
 /**
- * Scan stores (games, players, sessions) and migrate large base64 images (> 5000 chars, non-svg) to IndexedDB
+ * Migrate large inline media only if each source still matches after the write.
+ * IndexedDB and Zustand are separate stores; interrupted or skipped writes may
+ * leave unreferenced media for the existing orphan-pruning routine.
  */
 export async function migrateBase64ImagesToIdb(): Promise<{ migratedCount: number; savedBytes: number }> {
   let migratedCount = 0;
   let savedBytes = 0;
 
   try {
-    // 1. Custom game cover art (image & thumbnail)
-    const games = useGameStore.getState().games;
+    const games = useGameStore.getState().games.map(({ id, image, thumbnail }) => ({ id, image, thumbnail }));
     for (const g of games) {
-      let nextImage = g.image;
-      let nextThumb = g.thumbnail;
-      let changed = false;
-
       if (isLargeBase64Image(g.image)) {
-        const originalLen = g.image.length;
         const ref = await saveMediaImage(g.image);
-        nextImage = ref;
-        if (g.thumbnail === g.image) {
-          nextThumb = ref;
+        const current = useGameStore.getState().games.find((game) => game.id === g.id);
+        const updates: { image?: string; thumbnail?: string } = {};
+        if (current?.image === g.image) updates.image = ref;
+        if (g.thumbnail === g.image && current?.thumbnail === g.thumbnail) updates.thumbnail = ref;
+        if (updates.image || updates.thumbnail) {
+          useGameStore.getState().updateGame(g.id, updates);
+          migratedCount++;
+          savedBytes += (g.image.length - ref.length) * Object.keys(updates).length;
         }
-        migratedCount++;
-        savedBytes += originalLen - ref.length;
-        changed = true;
       }
-
-      if (isLargeBase64Image(nextThumb)) {
-        const originalLen = nextThumb.length;
-        const ref = await saveMediaImage(nextThumb);
-        nextThumb = ref;
-        migratedCount++;
-        savedBytes += originalLen - ref.length;
-        changed = true;
-      }
-
-      if (changed) {
-        useGameStore.getState().updateGame(g.id, {
-          image: nextImage,
-          thumbnail: nextThumb,
-        });
+      if (g.thumbnail !== g.image && isLargeBase64Image(g.thumbnail)) {
+        const ref = await saveMediaImage(g.thumbnail);
+        const current = useGameStore.getState().games.find((game) => game.id === g.id);
+        if (current?.thumbnail === g.thumbnail) {
+          useGameStore.getState().updateGame(g.id, { thumbnail: ref });
+          migratedCount++;
+          savedBytes += g.thumbnail.length - ref.length;
+        }
       }
     }
 
-    // 2. Player avatars
-    const players = usePlayerStore.getState().players;
+    const players = usePlayerStore.getState().players.map(({ id, avatar }) => ({ id, avatar }));
     for (const p of players) {
       if (isLargeBase64Image(p.avatar)) {
-        const originalLen = p.avatar.length;
         const ref = await saveMediaImage(p.avatar);
-        usePlayerStore.getState().updatePlayer(p.id, { avatar: ref });
-        migratedCount++;
-        savedBytes += originalLen - ref.length;
+        const current = usePlayerStore.getState().players.find((player) => player.id === p.id);
+        if (current?.avatar === p.avatar) {
+          usePlayerStore.getState().updatePlayer(p.id, { avatar: ref });
+          migratedCount++;
+          savedBytes += p.avatar.length - ref.length;
+        }
       }
     }
 
-    // 3. Session memory photos
-    const sessions = useSessionStore.getState().sessions;
+    const sessions = useSessionStore.getState().sessions.map(({ id, photos }) => ({ id, photos: photos?.slice() }));
     for (const s of sessions) {
-      if (s.photos && s.photos.length > 0) {
-        let changed = false;
-        const newPhotos: string[] = [];
-        for (const photo of s.photos) {
-          if (isLargeBase64Image(photo)) {
-            const originalLen = photo.length;
-            const ref = await saveMediaImage(photo);
-            newPhotos.push(ref);
-            migratedCount++;
-            savedBytes += originalLen - ref.length;
-            changed = true;
-          } else {
-            newPhotos.push(photo);
-          }
-        }
-        if (changed) {
-          useSessionStore.getState().updateSession(s.id, { photos: newPhotos });
+      if (!s.photos?.some(isLargeBase64Image)) continue;
+      const newPhotos: string[] = [];
+      let sessionCount = 0;
+      let sessionBytes = 0;
+      for (const photo of s.photos) {
+        if (isLargeBase64Image(photo)) {
+          const ref = await saveMediaImage(photo);
+          newPhotos.push(ref);
+          sessionCount++;
+          sessionBytes += photo.length - ref.length;
+        } else {
+          newPhotos.push(photo);
         }
       }
+      const currentPhotos = useSessionStore.getState().sessions.find((session) => session.id === s.id)?.photos;
+      if (currentPhotos && currentPhotos.length === s.photos.length && currentPhotos.every((photo, i) => photo === s.photos![i])) {
+        useSessionStore.getState().updateSession(s.id, { photos: newPhotos });
+        migratedCount += sessionCount;
+        savedBytes += sessionBytes;
+      }
     }
-  } catch (err) {
-    console.warn('[mediaStorage] Migration error:', err);
+  } catch {
+    console.warn('[mediaStorage] Migration stopped because an IndexedDB media write failed.');
   }
 
   return { migratedCount, savedBytes };
@@ -383,7 +371,6 @@ export async function pruneOrphanMedia(
           for (const key of orphanKeys) {
             store.delete(key);
             lruDelete(key);
-            fallbackStore.delete(key);
           }
           tx.oncomplete = () => resolve();
           tx.onerror = () => reject(tx.error);
@@ -392,16 +379,6 @@ export async function pruneOrphanMedia(
       }
     } catch (err) {
       console.warn('[mediaStorage] Failed to prune IndexedDB orphan media:', err);
-    }
-  } else {
-    for (const key of Array.from(fallbackStore.keys())) {
-      if (keepSet.has(key)) {
-        keptCount++;
-      } else {
-        fallbackStore.delete(key);
-        lruDelete(key);
-        prunedCount++;
-      }
     }
   }
 
