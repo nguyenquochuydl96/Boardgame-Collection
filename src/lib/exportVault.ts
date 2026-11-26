@@ -108,7 +108,7 @@ export function exportGamesCSV() {
     g.bggRating ?? '',
     g.purchasePrice ?? '',
     `"${(g.lentToName || '').replace(/"/g, '""')}"`,
-    `"${JSON.stringify(g.tags ?? null).replace(/"/g, '""')}"`,
+    `"${JSON.stringify(g.tags?.length ? g.tags : []).replace(/"/g, '""')}"`,
     `"${(g.notes || '').replace(/"/g, '""')}"`,
   ]);
 

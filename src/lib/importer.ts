@@ -617,11 +617,11 @@ export function parseImportFile(content: string): ImportPreviewItem[] {
 
 /** New exports encode tags as a JSON array in one CSV field; legacy files used comma-delimited tags. */
 function parseTagsField(value: string | undefined): string[] | undefined {
-  if (!value) return undefined;
+  if (!value || value === 'null') return undefined;
   try {
     const parsed: unknown = JSON.parse(value);
-    if (Array.isArray(parsed) && parsed.every((tag) => typeof tag === 'string')) {
-      return parsed.filter((tag) => tag.length > 0);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((tag): tag is string => typeof tag === 'string' && tag.length > 0);
     }
   } catch {
     // Read older HEO CSV exports below.
