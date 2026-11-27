@@ -816,9 +816,12 @@ test('Tier 5 (Adversarial): Negative scores, co-op multi-winner ties and special
   const p2Streaks = calculatePlayerStreaks('p2', useSessionStore.getState().sessions);
   const p3Streaks = calculatePlayerStreaks('p3', useSessionStore.getState().sessions);
 
-  assert.equal(p1Streaks.longestWinStreak.count, 1);
-  assert.equal(p2Streaks.longestWinStreak.count, 1);
-  assert.equal(p3Streaks.longestWinStreak.count, 1);
+  // Competitive is the default: a co-op victory is tracked separately and does
+  // not create individual competitive streaks.
+  assert.equal(p1Streaks.longestWinStreak.count, 0);
+  assert.equal(p2Streaks.longestWinStreak.count, 0);
+  assert.equal(p3Streaks.longestWinStreak.count, 0);
+  assert.equal(calculatePlayerStreaks('p1', useSessionStore.getState().sessions, 'all').longestWinStreak.count, 1);
 
   // 3. Special characters & XSS payload injection resistance
   const xssNotes = '<script>alert("xss")</script> & <test> "quotes"';

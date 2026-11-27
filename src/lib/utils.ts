@@ -778,19 +778,63 @@ export interface PlayerLossRecord {
   losses: number;
   lossRate: number;
   wins: number;
-  lowestScore?: number;
   lastPlayedDate?: string;
   lastPlayedSessionId?: string;
 }
 
+export interface CoopOutcomeSummary {
+  coopPlays: number;
+  teamWins: number;
+  teamLosses: number;
+  teamWinRate: number;
+}
+
 export interface GameStatsSummary {
   totalPlays: number;
+  competitivePlays: number;
+  coopOutcomes: CoopOutcomeSummary;
   averageDuration: number;
   highestScore: GameScoreRecord | null;
   lowestScore: GameScoreRecord | null;
   playerWinRates: PlayerWinRate[];
   mostWinsPlayer?: PlayerWinRate | null;
   mostLossesPlayer?: PlayerLossRecord | null;
+}
+
+export type SessionRecordScope = 'competitive' | 'all';
+export const DEFAULT_RECORD_SCOPE: SessionRecordScope = 'competitive';
+
+/** Filters individual-record calculations; Co-op remains available as an explicit scope. */
+export function filterSessionsByRecordScope(
+  sessions: PlaySession[],
+  scope: SessionRecordScope = DEFAULT_RECORD_SCOPE,
+  gamesById?: ReadonlyMap<string, BoardGame>
+): PlaySession[] {
+  if (scope === 'all') return sessions;
+  return sessions.filter((session) => !isCoopSession(session, gamesById?.get(session.gameId)));
+}
+
+/** Team outcomes are always counted separately from competitive individual records. */
+export function calculateCoopOutcomes(
+  sessions: PlaySession[],
+  gamesById?: ReadonlyMap<string, BoardGame>
+): CoopOutcomeSummary {
+  let coopPlays = 0;
+  let teamWins = 0;
+  for (const session of sessions) {
+    const game = gamesById?.get(session.gameId);
+    if (!isCoopSession(session, game)) continue;
+    coopPlays += 1;
+    const teamWon = session.coopOutcome === 'won'
+      || (session.coopOutcome === undefined && getSessionWinners(session, game).length > 0);
+    if (teamWon) teamWins += 1;
+  }
+  return {
+    coopPlays,
+    teamWins,
+    teamLosses: coopPlays - teamWins,
+    teamWinRate: coopPlays > 0 ? Math.round((teamWins / coopPlays) * 100) : 0,
+  };
 }
 
 /**
@@ -833,12 +877,17 @@ export function formatRecordTimeAgo(isoDate?: string): string {
 
 export function calculateGameStats(
   sessions: PlaySession[],
-  minPlaysThreshold = 5
+  minPlaysThreshold = 5,
+  gamesById?: ReadonlyMap<string, BoardGame>
 ): GameStatsSummary {
   const totalPlays = sessions.length;
+  const competitiveSessions = filterSessionsByRecordScope(sessions, DEFAULT_RECORD_SCOPE, gamesById);
+  const coopOutcomes = calculateCoopOutcomes(sessions, gamesById);
   if (totalPlays === 0) {
     return {
       totalPlays: 0,
+      competitivePlays: 0,
+      coopOutcomes,
       averageDuration: 0,
       highestScore: null,
       lowestScore: null,
@@ -867,7 +916,6 @@ export function calculateGameStats(
       plays: number;
       wins: number;
       losses: number;
-      lowestScore?: number;
       lastWonDate?: string;
       lastWonSessionId?: string;
       lastPlayedDate?: string;
@@ -876,15 +924,16 @@ export function calculateGameStats(
   >();
 
   // Chronological sort to accurately track lastWonDate / lastPlayedDate
-  const chrono = [...sessions].sort(
+  const chrono = [...competitiveSessions].sort(
     (a, b) => new Date(a.datePlayed).getTime() - new Date(b.datePlayed).getTime()
   );
 
   for (const session of chrono) {
     const sDate = session.datePlayed;
-    const isWinOnly = isWinOnlySession(session);
-    const isCoop = isCoopSession(session);
-    const winners = getSessionWinners(session);
+    const game = gamesById?.get(session.gameId);
+    const isWinOnly = isWinOnlySession(session, game);
+    const isCoop = isCoopSession(session, game);
+    const winners = getSessionWinners(session, game);
     for (const p of (session.players || [])) {
       // Team scores are not individual score records, including legacy sessions
       // that copied one team value to every participant.
@@ -913,7 +962,6 @@ export function calculateGameStats(
         plays: 0,
         wins: 0,
         losses: 0,
-        lowestScore: undefined,
         lastWonDate: undefined,
         lastWonSessionId: undefined,
         lastPlayedDate: undefined,
@@ -933,12 +981,6 @@ export function calculateGameStats(
         existing.losses += 1;
       }
 
-      if (!isWinOnly && !isCoop && typeof p.score === 'number' && !Number.isNaN(p.score)) {
-        existing.lowestScore =
-          existing.lowestScore === undefined
-            ? p.score
-            : Math.min(existing.lowestScore, p.score);
-      }
 
       playerMap.set(p.playerId, existing);
     }
@@ -977,11 +1019,12 @@ export function calculateGameStats(
   // 2. Must meet the qualification threshold of plays (plays >= minPlaysThreshold, default: 5)
   //    to filter out playtest / sample noise (e.g. 1 loss in 1 play = 100%).
   //
-  // Tie-break rules:
+  // Tie-break rules deliberately avoid raw score values: score direction differs
+  // by game, so a lower score is not universally a worse result.
   // 1. Highest loss rate (exact loss ratio: b.losses / b.plays vs a.losses / a.plays)
   // 2. More total losses (b.losses - a.losses)
   // 3. More total plays (b.plays - a.plays)
-  // 4. Lower lowestScore ((a.lowestScore ?? 0) - (b.lowestScore ?? 0))
+  // 4. Stable alphabetical player name
   const mostLossesPlayer: PlayerLossRecord | null =
     Array.from(playerMap.values())
       .filter((item) => item.losses > 0 && item.plays >= minPlaysThreshold)
@@ -992,7 +1035,6 @@ export function calculateGameStats(
         losses: item.losses,
         lossRate: item.plays > 0 ? Math.round((item.losses / item.plays) * 100) : 0,
         wins: item.wins,
-        lowestScore: item.lowestScore,
         lastPlayedDate: item.lastPlayedDate,
         lastPlayedSessionId: item.lastPlayedSessionId,
       }))
@@ -1002,13 +1044,13 @@ export function calculateGameStats(
         if (Math.abs(rateB - rateA) > 1e-6) return rateB - rateA;
         if (b.losses !== a.losses) return b.losses - a.losses;
         if (b.plays !== a.plays) return b.plays - a.plays;
-        const scoreA = a.lowestScore !== undefined ? a.lowestScore : Infinity;
-        const scoreB = b.lowestScore !== undefined ? b.lowestScore : Infinity;
-        return scoreA - scoreB;
+        return a.playerName.localeCompare(b.playerName);
       })[0] || null;
 
   return {
     totalPlays,
+    competitivePlays: competitiveSessions.length,
+    coopOutcomes,
     averageDuration,
     highestScore,
     lowestScore,
@@ -1043,9 +1085,11 @@ export interface PlayerStreakDetails {
  */
 export function calculatePlayerStreaks(
   playerId: string,
-  sessions: PlaySession[]
+  sessions: PlaySession[],
+  scope: SessionRecordScope = DEFAULT_RECORD_SCOPE,
+  gamesById?: ReadonlyMap<string, BoardGame>
 ): PlayerStreakDetails {
-  const sorted = [...sessions]
+  const sorted = filterSessionsByRecordScope(sessions, scope, gamesById)
     .filter((s) => s.players?.some((p) => p.playerId === playerId))
     .sort((a, b) => (a.datePlayed || '').localeCompare(b.datePlayed || ''));
 
@@ -1056,7 +1100,7 @@ export function calculatePlayerStreaks(
   let maxLosses: PlaySession[] = [];
 
   for (const s of sorted) {
-    const winners = getSessionWinners(s);
+    const winners = getSessionWinners(s, gamesById?.get(s.gameId));
     const won = winners.some((w) => w.playerId === playerId);
 
     if (won) {
@@ -1109,16 +1153,20 @@ export function calculatePlayerStreaks(
 
 export function calculateLongestWinStreak(
   playerId: string,
-  sessions: PlaySession[]
+  sessions: PlaySession[],
+  scope: SessionRecordScope = DEFAULT_RECORD_SCOPE,
+  gamesById?: ReadonlyMap<string, BoardGame>
 ): number {
-  return calculatePlayerStreaks(playerId, sessions).longestWinStreak.count;
+  return calculatePlayerStreaks(playerId, sessions, scope, gamesById).longestWinStreak.count;
 }
 
 export function calculateLongestLossStreak(
   playerId: string,
-  sessions: PlaySession[]
+  sessions: PlaySession[],
+  scope: SessionRecordScope = DEFAULT_RECORD_SCOPE,
+  gamesById?: ReadonlyMap<string, BoardGame>
 ): number {
-  return calculatePlayerStreaks(playerId, sessions).longestLossStreak.count;
+  return calculatePlayerStreaks(playerId, sessions, scope, gamesById).longestLossStreak.count;
 }
 
 export interface HeadToHeadSummary {
@@ -1141,10 +1189,12 @@ export interface HeadToHeadSummary {
 
 export function calculateHeadToHead(
   selectedPlayers: Player[],
-  allSessions: PlaySession[]
+  allSessions: PlaySession[],
+  scope: SessionRecordScope = DEFAULT_RECORD_SCOPE,
+  gamesById?: ReadonlyMap<string, BoardGame>
 ): HeadToHeadSummary {
   const selectedIds = selectedPlayers.map((p) => p.id);
-  const sharedSessions = allSessions.filter((s) =>
+  const sharedSessions = filterSessionsByRecordScope(allSessions, scope, gamesById).filter((s) =>
     selectedIds.every((id) => (s.players || []).some((p) => p.playerId === id))
   );
 
@@ -1157,7 +1207,7 @@ export function calculateHeadToHead(
     for (const session of sharedSessions) {
       const entry = (session.players || []).find((p) => p.playerId === player.id);
       if (!entry) continue;
-      const winners = getSessionWinners(session);
+      const winners = getSessionWinners(session, gamesById?.get(session.gameId));
       if (winners.some((w) => w.playerId === player.id)) {
         winsInShared += 1;
       }
@@ -1203,7 +1253,7 @@ export function calculateHeadToHead(
       winsByPlayerId: {},
     };
     existing.plays += 1;
-    const winners = getSessionWinners(session);
+    const winners = getSessionWinners(session, gamesById?.get(session.gameId));
     for (const id of selectedIds) {
       if (winners.some((w) => w.playerId === id)) {
         existing.winsByPlayerId[id] = (existing.winsByPlayerId[id] || 0) + 1;

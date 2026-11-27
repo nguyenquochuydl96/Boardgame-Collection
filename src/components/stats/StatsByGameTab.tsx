@@ -75,14 +75,19 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
       return filteredGamesByStatus[0] || games[0];
     }, [filteredGamesByStatus, selectedGameId, games]);
 
+    const gamesById = useMemo(
+      () => new Map(games.map((g) => [g.id, g])),
+      [games]
+    );
+
     const activeGameSessions = useMemo(
       () => (activeGame ? sessions.filter((s) => s.gameId === activeGame.id) : []),
       [sessions, activeGame]
     );
 
     const activeGameStats: GameStatsSummary = useMemo(
-      () => calculateGameStats(activeGameSessions),
-      [activeGameSessions]
+      () => calculateGameStats(activeGameSessions, 5, gamesById),
+      [activeGameSessions, gamesById]
     );
 
     const allGamesBreakdownList = useMemo(() => {
@@ -96,7 +101,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
       return games
         .map((g) => {
           const gSessions = gameSessionsMap.get(g.id) || [];
-          const stats = calculateGameStats(gSessions);
+          const stats = calculateGameStats(gSessions, 5, gamesById);
           const totalDuration = getTotalPlayDurationMinutes(gSessions);
 
           return {
@@ -111,7 +116,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
           };
         })
         .sort((a, b) => b.totalPlays - a.totalPlays);
-    }, [games, sessions]);
+    }, [games, sessions, gamesById]);
 
     const gamesBreakdownList = useMemo(() => {
       let list = allGamesBreakdownList;
@@ -246,6 +251,23 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
                 ))}
               </select>
             </div>
+
+            {activeGameStats.coopOutcomes.coopPlays > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-[var(--good-soft)] border border-[var(--good)]/25 text-xs tabular-nums">
+                <div>
+                  <span className="block text-[var(--muted)] font-semibold">Co-op Plays</span>
+                  <strong className="text-base text-[var(--good)]">{pluralize(activeGameStats.coopOutcomes.coopPlays, 'play')}</strong>
+                </div>
+                <div>
+                  <span className="block text-[var(--muted)] font-semibold">Team Wins</span>
+                  <strong className="text-base text-[var(--good)]">{pluralize(activeGameStats.coopOutcomes.teamWins, 'win')}</strong>
+                </div>
+                <div>
+                  <span className="block text-[var(--muted)] font-semibold">Team Win Rate</span>
+                  <strong className="text-base text-[var(--good)]">{formatNumber(activeGameStats.coopOutcomes.teamWinRate)}%</strong>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 tabular-nums">
               {/* 1. TOTAL PLAYS */}
@@ -530,7 +552,7 @@ export const StatsByGameTab: React.FC<StatsByGameTabProps> = React.memo(
             {/* Win rates for this game */}
             {activeGameStats.playerWinRates.length > 0 && (
               <div className="space-y-3 pt-3 border-t border-[var(--line)]">
-                <h3 className="font-bold text-sm text-[var(--ink)]">Player Performance in this Game</h3>
+                <h3 className="font-bold text-sm text-[var(--ink)]">Competitive Player Performance</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {activeGameStats.playerWinRates.map((pw) => (
                     <div

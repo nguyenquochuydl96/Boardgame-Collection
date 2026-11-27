@@ -98,7 +98,10 @@ export const GameDetailPage: React.FC = () => {
       .sort((a, b) => (b.datePlayed || '').localeCompare(a.datePlayed || ''));
   }, [allSessions, game?.id]);
 
-  const stats = React.useMemo(() => calculateGameStats(gameSessions), [gameSessions]);
+  const stats = React.useMemo(
+    () => calculateGameStats(gameSessions, 5, game ? new Map([[game.id, game]]) : undefined),
+    [gameSessions, game]
+  );
 
   const playersById = React.useMemo(
     () => Object.fromEntries(players.map((p) => [p.id, p])),
@@ -447,6 +450,23 @@ export const GameDetailPage: React.FC = () => {
                 Stats for {game.name}
               </h2>
 
+              {stats.coopOutcomes.coopPlays > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-[var(--good-soft)] border border-[var(--good)]/25 text-xs tabular-nums">
+                  <div>
+                    <span className="block text-[var(--muted)]">Co-op Plays</span>
+                    <strong className="text-base text-[var(--good)]">{formatNumber(stats.coopOutcomes.coopPlays)}</strong>
+                  </div>
+                  <div>
+                    <span className="block text-[var(--muted)]">Team Wins</span>
+                    <strong className="text-base text-[var(--good)]">{formatNumber(stats.coopOutcomes.teamWins)}</strong>
+                  </div>
+                  <div>
+                    <span className="block text-[var(--muted)]">Team Win Rate</span>
+                    <strong className="text-base text-[var(--good)]">{formatNumber(stats.coopOutcomes.teamWinRate)}%</strong>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 tabular-nums">
                 {stats.totalPlays > 0 ? (
                   <Link
@@ -545,7 +565,7 @@ export const GameDetailPage: React.FC = () => {
               {stats.playerWinRates.length > 0 && (
                 <div className="space-y-2.5 pt-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                    Win Rate Per Player
+                    Competitive Win Rate Per Player
                   </h3>
                   <div className="space-y-2">
                     {stats.playerWinRates.map((pw) => (

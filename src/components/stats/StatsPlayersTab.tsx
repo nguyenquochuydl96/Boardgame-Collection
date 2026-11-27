@@ -4,7 +4,8 @@ import { Card } from '../ui/Card';
 import { PlayerChip } from '../player/PlayerChip';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { PlayerLeaderboardSection } from '../dashboard/PlayerLeaderboardSection';
-import { calculateHeadToHead, formatNumber, pluralize } from '../../lib/utils';
+import { calculateHeadToHead, DEFAULT_RECORD_SCOPE, formatNumber, pluralize } from '../../lib/utils';
+import { useGameStore } from '../../store/useGameStore';
 import { PlaySession, Player } from '../../types';
 
 interface StatsPlayersTabProps {
@@ -14,6 +15,11 @@ interface StatsPlayersTabProps {
 
 export const StatsPlayersTab: React.FC<StatsPlayersTabProps> = React.memo(
   ({ sessions, players }) => {
+    const games = useGameStore((s) => s.games);
+    const gamesById = useMemo(
+      () => new Map(games.map((g) => [g.id, g])),
+      [games]
+    );
     const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>(() =>
       players.slice(0, 2).map((p) => p.id)
     );
@@ -47,8 +53,8 @@ export const StatsPlayersTab: React.FC<StatsPlayersTabProps> = React.memo(
     );
 
     const headToHead = useMemo(
-      () => calculateHeadToHead(activeComparisonPlayers, sessions),
-      [activeComparisonPlayers, sessions]
+      () => calculateHeadToHead(activeComparisonPlayers, sessions, DEFAULT_RECORD_SCOPE, gamesById),
+      [activeComparisonPlayers, sessions, gamesById]
     );
 
     return (
@@ -66,7 +72,7 @@ export const StatsPlayersTab: React.FC<StatsPlayersTabProps> = React.memo(
               </h2>
             </div>
             <p className="text-xs text-[var(--muted)]">
-              Select 2 or more players to compare head-to-head records at the same table
+              Competitive sessions by default — select 2 or more players to compare shared-table records
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
               {players.map((p) => (

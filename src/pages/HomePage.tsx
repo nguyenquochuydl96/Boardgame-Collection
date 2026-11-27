@@ -32,6 +32,7 @@ import {
   getTotalPlayHours,
   isDraftMatchingCompletedSession,
   calculatePlayerStreaks,
+  filterSessionsByRecordScope,
   pluralize,
   isCoopSession,
   isWinOnlySession,
@@ -113,12 +114,16 @@ export const HomePage: React.FC = () => {
     }).format(new Date());
   }, []);
 
-  // Primary user streak calculation
+  // Primary user streak defaults to competitive sessions; team outcomes stay separate.
+  const competitiveSessions = useMemo(
+    () => filterSessionsByRecordScope(sessions, 'competitive', gamesById),
+    [sessions, gamesById]
+  );
   const heoStreak = useMemo(() => {
     const heo = players.find((p) => p.name.toLowerCase() === 'heo') || players[0];
     if (!heo) return null;
-    return calculatePlayerStreaks(heo.id, sessions);
-  }, [players, sessions]);
+    return calculatePlayerStreaks(heo.id, competitiveSessions, 'all');
+  }, [players, competitiveSessions]);
 
   // High-performance memoized calculations across all games and sessions
   const {
@@ -298,7 +303,7 @@ export const HomePage: React.FC = () => {
                 value={heoStreak.currentStreak.count}
                 suffix={heoStreak.currentStreak.type === 'win' ? ' Win' : ' Loss'}
                 icon={<Flame className="w-5 h-5" />}
-                subtitle={heoStreak.currentStreak.type === 'win' ? 'Consecutive wins' : 'Current games streak'}
+                subtitle={heoStreak.currentStreak.type === 'win' ? 'Consecutive competitive wins' : 'Current competitive streak'}
                 href="/players"
                 tileIndex={4}
               />

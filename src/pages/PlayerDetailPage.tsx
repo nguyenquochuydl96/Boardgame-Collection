@@ -31,7 +31,15 @@ import { GameCoverImage } from '../components/game/GameCoverImage';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useSessionStore } from '../store/useSessionStore';
 import { useGameStore } from '../store/useGameStore';
-import { calculatePlayerStreaks, formatDate, formatNumber, formatCount, getSessionWinners } from '../lib/utils';
+import {
+  calculateCoopOutcomes,
+  calculatePlayerStreaks,
+  filterSessionsByRecordScope,
+  formatDate,
+  formatNumber,
+  formatCount,
+  getSessionWinners,
+} from '../lib/utils';
 import { getPlayStyleInfo } from '../lib/boardgameAvatars';
 import { cn } from '../components/ui/cn';
 
@@ -62,13 +70,27 @@ export const PlayerDetailPage: React.FC = () => {
       .sort((a, b) => (b.datePlayed || '').localeCompare(a.datePlayed || ''));
   }, [allSessions, player?.id]);
 
-  const totalPlays = playerSessions.length;
+  // Individual record defaults to competitive sessions. Co-op participation is a
+  // separate team outcome, not an individual win/loss or streak event.
+  const competitivePlayerSessions = useMemo(
+    () => filterSessionsByRecordScope(playerSessions, 'competitive', gamesById),
+    [playerSessions, gamesById]
+  );
+  const coopPlayerSessions = useMemo(
+    () => playerSessions.filter((session) => !competitivePlayerSessions.some((competitive) => competitive.id === session.id)),
+    [playerSessions, competitivePlayerSessions]
+  );
+  const totalPlays = competitivePlayerSessions.length;
   const totalWins = useMemo(() => {
     if (!player) return 0;
-    return playerSessions.filter((s) =>
+    return competitivePlayerSessions.filter((s) =>
       getSessionWinners(s, gamesById.get(s.gameId)).some((w) => w.playerId === player.id)
     ).length;
-  }, [playerSessions, player?.id, gamesById]);
+  }, [competitivePlayerSessions, player?.id, gamesById]);
+  const coopOutcomes = useMemo(
+    () => calculateCoopOutcomes(coopPlayerSessions, gamesById),
+    [coopPlayerSessions, gamesById]
+  );
 
   const overallWinRate =
     totalPlays > 0 ? Math.round((totalWins / totalPlays) * 100) : 0;
@@ -82,8 +104,8 @@ export const PlayerDetailPage: React.FC = () => {
         currentStreak: { type: 'none' as const, count: 0, sessions: [] },
       };
     }
-    return calculatePlayerStreaks(player.id, allSessions);
-  }, [player?.id, allSessions]);
+    return calculatePlayerStreaks(player.id, competitivePlayerSessions, 'all');
+  }, [player?.id, competitivePlayerSessions]);
 
   // Per-game breakdown
   const perGameStats = useMemo(() => {
@@ -93,7 +115,7 @@ export const PlayerDetailPage: React.FC = () => {
       { gameId: string; gameName: string; thumbnail?: string; plays: number; wins: number }
     >();
 
-    for (const s of playerSessions) {
+    for (const s of competitivePlayerSessions) {
       const g = gamesById.get(s.gameId);
       const existing = gameMap.get(s.gameId) || {
         gameId: s.gameId,
@@ -114,7 +136,7 @@ export const PlayerDetailPage: React.FC = () => {
       ...g,
       winRate: g.plays > 0 ? Math.round((g.wins / g.plays) * 100) : 0,
     }));
-  }, [playerSessions, player?.id, gamesById]);
+  }, [competitivePlayerSessions, player?.id, gamesById]);
 
   // Favorite Game: Pinned or Highest Plays
   const favoriteGame = useMemo(() => {
@@ -204,7 +226,7 @@ export const PlayerDetailPage: React.FC = () => {
       { plays: number; playerWins: number; opponentWins: number }
     >();
 
-    for (const s of playerSessions) {
+    for (const s of competitivePlayerSessions) {
       const winners = getSessionWinners(s, gamesById.get(s.gameId));
       const isPlayerWin = winners.some((w) => w.playerId === player.id);
 
@@ -240,7 +262,7 @@ export const PlayerDetailPage: React.FC = () => {
       playerWins: rivalStat?.playerWins || 0,
       rivalWins: rivalStat?.opponentWins || 0,
     };
-  }, [playerSessions, player?.id, allPlayers]);
+  }, [competitivePlayerSessions, player?.id, allPlayers, gamesById]);
 
   // Filtered & Sorted breakdown list
   const filteredBreakdown = useMemo(() => {
@@ -381,17 +403,17 @@ export const PlayerDetailPage: React.FC = () => {
 
           {/* 5 INTERACTIVE QUICK STAT BADGES */}
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 w-full lg:w-auto tabular-nums">
-            {/* 1. Total Plays */}
+            {/* 1. Competitive Plays */}
             <div className="p-3 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] text-center min-w-[95px]">
-              <span className="text-[11px] text-[var(--muted)] block">Total Plays</span>
+              <span className="text-[11px] text-[var(--muted)] block">Competitive Plays</span>
               <p className="font-display font-extrabold text-xl text-[var(--ink)] mt-0.5">
                 {formatNumber(totalPlays)}
               </p>
             </div>
 
-            {/* 2. Win Rate */}
+            {/* 2. Competitive Win Rate */}
             <div className="p-3 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] text-center min-w-[95px]">
-              <span className="text-[11px] text-[var(--muted)] block">Win Rate</span>
+              <span className="text-[11px] text-[var(--muted)] block">Competitive Win Rate</span>
               <p className="font-display font-extrabold text-xl text-[var(--good)] mt-0.5">
                 {overallWinRate}%
               </p>
@@ -457,6 +479,31 @@ export const PlayerDetailPage: React.FC = () => {
             )}
           </div>
         </Card>
+
+        {coopOutcomes.coopPlays > 0 && (
+          <Card className="p-4 bg-[var(--good-soft)] border border-[var(--good)]/25">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="font-display font-bold text-base text-[var(--ink)]">Co-op Team Outcomes</h2>
+                <p className="text-xs text-[var(--muted)]">Separate from competitive wins, losses, and streaks.</p>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-right tabular-nums">
+                <div>
+                  <span className="block text-[10px] uppercase font-bold text-[var(--muted)]">Co-op Plays</span>
+                  <strong className="text-base text-[var(--good)]">{formatNumber(coopOutcomes.coopPlays)}</strong>
+                </div>
+                <div>
+                  <span className="block text-[10px] uppercase font-bold text-[var(--muted)]">Team Wins</span>
+                  <strong className="text-base text-[var(--good)]">{formatNumber(coopOutcomes.teamWins)}</strong>
+                </div>
+                <div>
+                  <span className="block text-[10px] uppercase font-bold text-[var(--muted)]">Team Win Rate</span>
+                  <strong className="text-base text-[var(--good)]">{formatNumber(coopOutcomes.teamWinRate)}%</strong>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* 3 GAME IDENTITIES: FAVORITE, SIGNATURE, NEMESIS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -637,7 +684,7 @@ export const PlayerDetailPage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="font-display font-bold text-lg text-[var(--ink)]">
-                Detailed Per-Game Performance
+                Detailed Competitive Performance
               </h2>
               <p className="text-xs text-[var(--muted)]">
                 Competed across {formatNumber(perGameStats.length)} different boardgame titles

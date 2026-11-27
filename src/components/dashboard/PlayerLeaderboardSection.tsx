@@ -14,10 +14,12 @@ import {
   calculateMinRequiredPlays,
   formatNumber,
   formatCount,
-  isCoopSession,
   isWinOnlySession,
   getSessionWinners,
   calculatePlayerStreaks,
+  calculateCoopOutcomes,
+  filterSessionsByRecordScope,
+  DEFAULT_RECORD_SCOPE,
   StreakData,
 } from '../../lib/utils';
 import { useGameStore } from '../../store/useGameStore';
@@ -235,7 +237,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
     const [activeGroup, setActiveGroup] = useState<LeaderboardGroup>('all');
     const [activeCriterionId, setActiveCriterionId] = useState<LeaderboardCriterion>('win_rate');
     const [showAllPlayers, setShowAllPlayers] = useState(false);
-    const [sessionScope, setSessionScope] = useState<'competitive' | 'all'>('all');
+    const [sessionScope, setSessionScope] = useState<'competitive' | 'all'>(DEFAULT_RECORD_SCOPE);
 
     const games = useGameStore((s) => s.games);
     const gamesById = useMemo(() => {
@@ -252,11 +254,16 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
     const [selectedStreakData, setSelectedStreakData] = useState<StreakData | null>(null);
     const [isStreakModalOpen, setIsStreakModalOpen] = useState(false);
 
-    // Filter sessions at the first level based on sessionScope
-    const activeSessions = useMemo(() => {
-      if (sessionScope === 'all') return sessions;
-      return sessions.filter((s) => !isCoopSession(s, gamesById.get(s.gameId)));
-    }, [sessions, sessionScope, gamesById]);
+    // Individual wins, losses and streaks default to competitive-only; callers can
+    // explicitly include Co-op with the existing scope switch.
+    const activeSessions = useMemo(
+      () => filterSessionsByRecordScope(sessions, sessionScope, gamesById),
+      [sessions, sessionScope, gamesById]
+    );
+    const coopOutcomes = useMemo(
+      () => calculateCoopOutcomes(sessions, gamesById),
+      [sessions, gamesById]
+    );
 
     // Dynamic qualification threshold: >= 5% of total recorded sessions (uncapped)
     const minRequiredPlays = useMemo(
@@ -361,7 +368,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
       });
 
       return Array.from(statsMap.values()).filter((st) => st.plays > 0);
-    }, [players, activeSessions]);
+    }, [players, activeSessions, gamesById]);
 
     // 2. Filter criteria options by group (All, Positive, Negative)
     const availableCriteria = useMemo(() => {
@@ -398,7 +405,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
     const currentStreakType: 'win' | 'loss' = activeCriterion.id === 'cold_streak' ? 'loss' : 'win';
 
     const handleStreakClick = (player: Player) => {
-      const streaks = calculatePlayerStreaks(player.id, activeSessions);
+      const streaks = calculatePlayerStreaks(player.id, activeSessions, 'all');
       setSelectedStreakPlayer(player);
       setSelectedStreakType(currentStreakType);
       setSelectedStreakData(
@@ -423,7 +430,7 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-[var(--muted)] font-medium">
-            Rankings across all dimensions ·{' '}
+            Competitive record by default · use the scope switch to include Co-op ·{' '}
             {showAllPlayers ? (
               <span className="text-amber-500 font-semibold">All Players view (≥ 1 play)</span>
             ) : (
@@ -433,6 +440,23 @@ export const PlayerLeaderboardSection: React.FC<PlayerLeaderboardSectionProps> =
             )}
           </p>
         </div>
+
+        {coopOutcomes.coopPlays > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs tabular-nums">
+            <div className="p-3 rounded-xl bg-[var(--good-soft)] border border-[var(--good)]/25">
+              <span className="block text-[var(--muted)] font-semibold">Co-op Plays</span>
+              <strong className="text-base text-[var(--good)]">{formatCount(coopOutcomes.coopPlays, 'play')}</strong>
+            </div>
+            <div className="p-3 rounded-xl bg-[var(--good-soft)] border border-[var(--good)]/25">
+              <span className="block text-[var(--muted)] font-semibold">Team Wins</span>
+              <strong className="text-base text-[var(--good)]">{formatCount(coopOutcomes.teamWins, 'win')}</strong>
+            </div>
+            <div className="p-3 rounded-xl bg-[var(--good-soft)] border border-[var(--good)]/25">
+              <span className="block text-[var(--muted)] font-semibold">Team Win Rate</span>
+              <strong className="text-base text-[var(--good)]">{formatNumber(coopOutcomes.teamWinRate)}%</strong>
+            </div>
+          </div>
+        )}
 
         {/* CONTROLS TOOLBAR - TIER 2: STABLE DEDICATED TOOLBAR */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 pt-0">

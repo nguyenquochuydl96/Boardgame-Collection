@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { Trophy, Swords } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Player, PlaySession } from '../../types';
-import { calculateHeadToHead, HeadToHeadSummary } from '../../lib/utils';
+import { calculateHeadToHead, DEFAULT_RECORD_SCOPE, HeadToHeadSummary } from '../../lib/utils';
+import { useGameStore } from '../../store/useGameStore';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 
 export interface PlayerCompareModalProps {
@@ -18,12 +19,18 @@ export const PlayerCompareModal: React.FC<PlayerCompareModalProps> = ({
   players,
   sessions,
 }) => {
+  const games = useGameStore((s) => s.games);
+  const gamesById = useMemo(
+    () => new Map(games.map((g) => [g.id, g])),
+    [games]
+  );
+
   const summary: HeadToHeadSummary = useMemo(() => {
     if (!isOpen || players.length < 2) {
       return { sharedSessionsCount: 0, playerStats: [], perGameBreakdown: [] };
     }
-    return calculateHeadToHead(players, sessions);
-  }, [isOpen, players, sessions]);
+    return calculateHeadToHead(players, sessions, DEFAULT_RECORD_SCOPE, gamesById);
+  }, [isOpen, players, sessions, gamesById]);
 
   return (
     <Modal
@@ -46,7 +53,7 @@ export const PlayerCompareModal: React.FC<PlayerCompareModalProps> = ({
                   Shared Table Sessions
                 </p>
                 <p className="text-xs text-[var(--muted)]">
-                  Games where all {players.length} selected players competed together
+                  Competitive games where all {players.length} selected players played together
                 </p>
               </div>
             </div>

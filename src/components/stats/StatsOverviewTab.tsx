@@ -22,6 +22,8 @@ import {
   calculateLongestWinStreak,
   calculateMinRequiredPlays,
   calculatePlayerStreaks,
+  calculateCoopOutcomes,
+  filterSessionsByRecordScope,
   StreakData,
   formatDate,
   formatDuration,
@@ -112,6 +114,19 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
         return true;
       });
     }, [sessions, selectedYears, startDate, endDate]);
+
+    const gamesById = useMemo(
+      () => new Map(games.map((game) => [game.id, game])),
+      [games]
+    );
+    const competitiveOverviewSessions = useMemo(
+      () => filterSessionsByRecordScope(overviewSessions, 'competitive', gamesById),
+      [overviewSessions, gamesById]
+    );
+    const coopOutcomes = useMemo(
+      () => calculateCoopOutcomes(overviewSessions, gamesById),
+      [overviewSessions, gamesById]
+    );
 
     const hasActiveTimeFilter = selectedYears.length > 0 || !!startDate || !!endDate;
 
@@ -227,11 +242,12 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
       return g?.thumbnail || g?.image;
     }, [shortestSession, games]);
 
-    // Winning streaks per player
+    // Competitive winning streaks per player. Co-op outcomes never create or break
+    // an individual's competitive streak.
     const playerStreaks = useMemo(() => {
-      const minRequiredPlays = calculateMinRequiredPlays(overviewSessions.length, 0.05);
+      const minRequiredPlays = calculateMinRequiredPlays(competitiveOverviewSessions.length, 0.05);
       const playerPlaysMap = new Map<string, number>();
-      overviewSessions.forEach((s) => {
+      competitiveOverviewSessions.forEach((s) => {
         s.players?.forEach((p) => {
           playerPlaysMap.set(p.playerId, (playerPlaysMap.get(p.playerId) || 0) + 1);
         });
@@ -241,11 +257,11 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
         .filter((p) => (playerPlaysMap.get(p.id) || 0) >= minRequiredPlays)
         .map((p) => ({
           player: p,
-          streak: calculateLongestWinStreak(p.id, overviewSessions),
+          streak: calculateLongestWinStreak(p.id, competitiveOverviewSessions, 'all'),
         }))
         .filter((x) => x.streak > 0)
         .sort((a, b) => b.streak - a.streak);
-    }, [players, overviewSessions]);
+    }, [players, competitiveOverviewSessions]);
 
     // Monthly play frequency
     const monthlyFrequency = useMemo(() => {
@@ -458,6 +474,31 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
             </div>
           </div>
         </div>
+
+        {coopOutcomes.coopPlays > 0 && (
+          <Card className="p-4 bg-[var(--good-soft)] border border-[var(--good)]/25">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="font-display font-bold text-base text-[var(--ink)]">Co-op Team Outcomes</h2>
+                <p className="text-xs text-[var(--muted)]">Tracked separately from competitive wins, losses, and streaks.</p>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-right tabular-nums">
+                <div>
+                  <span className="block text-[10px] uppercase font-bold text-[var(--muted)]">Co-op Plays</span>
+                  <strong className="text-base text-[var(--good)]">{formatNumber(coopOutcomes.coopPlays)}</strong>
+                </div>
+                <div>
+                  <span className="block text-[10px] uppercase font-bold text-[var(--muted)]">Team Wins</span>
+                  <strong className="text-base text-[var(--good)]">{formatNumber(coopOutcomes.teamWins)}</strong>
+                </div>
+                <div>
+                  <span className="block text-[10px] uppercase font-bold text-[var(--muted)]">Team Win Rate</span>
+                  <strong className="text-base text-[var(--good)]">{formatNumber(coopOutcomes.teamWinRate)}%</strong>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* H-INDEX SPECIAL HERO BANNER */}
         <div className="relative rounded-[24px] p-6 sm:p-8 bg-amber-500/10 dark:bg-amber-950/30 border-2 border-amber-500/35 shadow-lg overflow-hidden">
@@ -721,7 +762,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                   Longest Win Streak
                 </h2>
                 <p className="text-xs text-[var(--muted)]">
-                  Consecutive wins across all games (≥ 5% sessions played)
+                  Consecutive competitive wins (≥ 5% competitive sessions played)
                 </p>
               </div>
             </div>
@@ -731,7 +772,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                 <div
                   key={player.id}
                   onClick={() => {
-                    const sDetails = calculatePlayerStreaks(player.id, overviewSessions);
+                    const sDetails = calculatePlayerStreaks(player.id, competitiveOverviewSessions, 'all');
                     setSelectedStreakPlayer(player);
                     setSelectedStreakData(sDetails.longestWinStreak);
                   }}

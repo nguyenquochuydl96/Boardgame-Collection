@@ -10,6 +10,9 @@ import {
   calculateGameStats,
   calculateLongestWinStreak,
   calculateHeadToHead,
+  calculateCoopOutcomes,
+  filterSessionsByRecordScope,
+  DEFAULT_RECORD_SCOPE,
   getCollectionTotalValue,
   isDraftMatchingCompletedSession,
   calculateMinRequiredPlays,
@@ -150,13 +153,107 @@ test('calculateGameStats computes plays, average duration, score records, and wi
   assert.equal(stats.mostLossesPlayer?.lastPlayedSessionId, 's2');
 });
 
-test('calculateGameStats accurately breaks ties for mostLossesPlayer', async () => {
+test('competitive record defaults exclude co-op streaks and preserve separate team outcomes', () => {
+  const players: Player[] = [
+    { id: 'p1', name: 'Alice', color: '#f00', createdAt: '2026-01-01T00:00:00.000Z' },
+    { id: 'p2', name: 'Bob', color: '#0f0', createdAt: '2026-01-01T00:00:00.000Z' },
+  ];
+  const sessions: PlaySession[] = [
+    {
+      id: 'competitive-win', gameId: 'g-comp', gameName: 'Catan', gameThumbnail: '',
+      datePlayed: '2026-01-01T10:00:00.000Z', createdAt: '2026-01-01T11:00:00.000Z',
+      firstPlayerMethod: 'manual', winnerIds: ['p1'],
+      players: [
+        { playerId: 'p1', playerName: 'Alice', score: 10, isWinner: true },
+        { playerId: 'p2', playerName: 'Bob', score: 8, isWinner: false },
+      ],
+    },
+    {
+      id: 'coop-win', gameId: 'g-coop', gameName: 'Spirit Island', gameThumbnail: '',
+      datePlayed: '2026-01-02T10:00:00.000Z', createdAt: '2026-01-02T11:00:00.000Z',
+      firstPlayerMethod: 'manual', scoringMode: 'coop', coopOutcome: 'won',
+      players: [
+        { playerId: 'p1', playerName: 'Alice', isWinner: true },
+        { playerId: 'p2', playerName: 'Bob', isWinner: true },
+      ],
+    },
+    {
+      id: 'competitive-loss', gameId: 'g-comp', gameName: 'Catan', gameThumbnail: '',
+      datePlayed: '2026-01-03T10:00:00.000Z', createdAt: '2026-01-03T11:00:00.000Z',
+      firstPlayerMethod: 'manual', winnerIds: ['p2'],
+      players: [
+        { playerId: 'p1', playerName: 'Alice', score: 7, isWinner: false },
+        { playerId: 'p2', playerName: 'Bob', score: 11, isWinner: true },
+      ],
+    },
+  ];
+
+  assert.equal(DEFAULT_RECORD_SCOPE, 'competitive');
+  assert.deepEqual(filterSessionsByRecordScope(sessions).map((session) => session.id), ['competitive-win', 'competitive-loss']);
+  assert.equal(calculatePlayerStreaks('p1', sessions).longestWinStreak.count, 1);
+  assert.equal(calculatePlayerStreaks('p1', sessions, 'all').longestWinStreak.count, 2);
+  assert.equal(calculateHeadToHead(players, sessions).sharedSessionsCount, 2);
+  assert.equal(calculateHeadToHead(players, sessions, 'all').sharedSessionsCount, 3);
+
+  const outcomes = calculateCoopOutcomes(sessions);
+  assert.deepEqual(outcomes, { coopPlays: 1, teamWins: 1, teamLosses: 0, teamWinRate: 100 });
+  const stats = calculateGameStats(sessions, 1);
+  assert.equal(stats.competitivePlays, 2);
+  assert.deepEqual(stats.coopOutcomes, outcomes);
+  assert.equal(stats.playerWinRates.find((player) => player.playerId === 'p1')?.plays, 2);
+
+  // Game-level co-op override (legacy session without session.scoringMode)
+  const gamesById = new Map<string, BoardGame>([
+    [
+      'g-custom-coop',
+      {
+        id: 'g-custom-coop',
+        name: 'Custom Co-op',
+        thumbnail: '',
+        image: '',
+        description: '',
+        minPlayers: 1,
+        maxPlayers: 4,
+        playingTime: 60,
+        yearPublished: 2026,
+        status: 'own',
+        addedDate: '2026-01-01T00:00:00.000Z',
+        tags: [],
+        scoringMode: 'coop',
+      },
+    ],
+  ]);
+  const mixedSessions: PlaySession[] = [
+    ...sessions,
+    {
+      id: 'legacy-coop-loss',
+      gameId: 'g-custom-coop',
+      gameName: 'Custom Co-op',
+      gameThumbnail: '',
+      datePlayed: '2026-01-04T10:00:00.000Z',
+      createdAt: '2026-01-04T11:00:00.000Z',
+      firstPlayerMethod: 'manual',
+      players: [
+        { playerId: 'p1', playerName: 'Alice', isWinner: false },
+        { playerId: 'p2', playerName: 'Bob', isWinner: false },
+      ],
+    },
+  ];
+  assert.equal(calculatePlayerStreaks('p1', mixedSessions, 'competitive', gamesById).longestLossStreak.count, 1);
+  assert.equal(calculateHeadToHead(players, mixedSessions, 'competitive', gamesById).sharedSessionsCount, 2);
+  const gameAwareStats = calculateGameStats(mixedSessions, 1, gamesById);
+  assert.equal(gameAwareStats.competitivePlays, 2);
+  assert.deepEqual(gameAwareStats.coopOutcomes, { coopPlays: 2, teamWins: 1, teamLosses: 1, teamWinRate: 50 });
+});
+
+test('calculateGameStats resolves most-losses ties without score direction bias', async () => {
   const { calculateGameStats } = await import('./utils');
   const sessions: PlaySession[] = [
     {
       id: 's1',
       gameId: 'g1',
-      gameName: 'Test Game',
+      gameName: 'Low Score Wins Game',
+      lowestScoreWins: true,
       gameThumbnail: '',
       datePlayed: '2026-01-01T10:00:00.000Z',
       firstPlayerMethod: 'manual',
@@ -171,7 +268,8 @@ test('calculateGameStats accurately breaks ties for mostLossesPlayer', async () 
     {
       id: 's2',
       gameId: 'g1',
-      gameName: 'Test Game',
+      gameName: 'Low Score Wins Game',
+      lowestScoreWins: true,
       gameThumbnail: '',
       datePlayed: '2026-01-02T10:00:00.000Z',
       firstPlayerMethod: 'manual',
@@ -186,8 +284,9 @@ test('calculateGameStats accurately breaks ties for mostLossesPlayer', async () 
   ];
 
   const stats = calculateGameStats(sessions, 1);
-  // Both p1 and p2 have 2 losses and 2 plays. p2 has lower lowestScore (20 vs 30).
-  assert.equal(stats.mostLossesPlayer?.playerName, 'Player 2');
+  // Both players have the same loss rate, losses and plays. Scores must not
+  // decide the record because low-score-wins games invert their meaning.
+  assert.equal(stats.mostLossesPlayer?.playerName, 'Player 1');
   assert.equal(stats.mostLossesPlayer?.losses, 2);
 });
 
@@ -1245,12 +1344,15 @@ test('isCoopSession accurately detects cooperative sessions and competitive filt
   assert.equal(competitiveSessions.length, 2);
   assert.equal(competitiveSessions.some((s) => s.gameName === 'Pandemic'), false);
 
-  // When All (incl. Co-op) is selected: Alice won sess-1 and sess-2 consecutively -> Win Streak = 2
-  const allStreaks = calculatePlayerStreaks('p1', sampleSessions);
+  // Competitive is the default: Alice won sess-1, then lost sess-3 -> streak = 1.
+  const defaultStreaks = calculatePlayerStreaks('p1', sampleSessions);
+  assert.equal(defaultStreaks.longestWinStreak.count, 1);
+
+  // All (incl. Co-op) remains explicit: Alice won sess-1 and sess-2 -> streak = 2.
+  const allStreaks = calculatePlayerStreaks('p1', sampleSessions, 'all');
   assert.equal(allStreaks.longestWinStreak.count, 2);
 
-  // When Competitive Only is selected: Alice won sess-1, then lost sess-3 -> Win Streak = 1
-  const compStreaks = calculatePlayerStreaks('p1', competitiveSessions);
+  const compStreaks = calculatePlayerStreaks('p1', competitiveSessions, 'all');
   assert.equal(compStreaks.longestWinStreak.count, 1);
 });
 

@@ -33,7 +33,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import { useLocationStore } from '../store/useLocationStore';
 import { useGameStore } from '../store/useGameStore';
 import { getPlayStyleInfo } from '../lib/boardgameAvatars';
-import { formatNumber, formatCount, normalizeLocationKey, sortVenuesByPlayCount, sortPlayersByPlayCount, getSessionWinners } from '../lib/utils';
+import { formatNumber, formatCount, normalizeLocationKey, sortVenuesByPlayCount, sortPlayersByPlayCount, getSessionWinners, filterSessionsByRecordScope } from '../lib/utils';
 import { Player, GameLocation } from '../types';
 
 export const PlayersPage: React.FC = () => {
@@ -97,13 +97,14 @@ export const PlayersPage: React.FC = () => {
     return map;
   }, [games]);
 
-  // 1. Precompute player stats in a single pass O(S) to avoid heavy re-filtering on mobile
+  // 1. Precompute competitive player stats in a single pass O(S); Co-op stays separate
   const playerStatsMap = useMemo(() => {
     const stats: Record<string, { totalGames: number; wins: number; winRate: number }> = {};
     for (const p of players) {
       stats[p.id] = { totalGames: 0, wins: 0, winRate: 0 };
     }
-    for (const s of sessions) {
+    const competitiveSessions = filterSessionsByRecordScope(sessions, 'competitive', gamesById);
+    for (const s of competitiveSessions) {
       if (!s.players) continue;
       const game = gamesById.get(s.gameId);
       const winners = getSessionWinners(s, game);
@@ -502,7 +503,7 @@ export const PlayersPage: React.FC = () => {
                           <div className="p-2.5 rounded-xl bg-[var(--bg-surface)] text-center">
                             <span className="text-[11px] text-[var(--text-secondary)] inline-flex items-center gap-1">
                               <Gamepad2 className="w-3 h-3 text-[var(--accent-neon)]" />
-                              Plays
+                              Comp. Plays
                             </span>
                             <p className="font-display font-extrabold text-lg text-[var(--text-primary)] mt-0.5">
                               {formatNumber(totalGames)}
@@ -512,7 +513,7 @@ export const PlayersPage: React.FC = () => {
                           <div className="p-2.5 rounded-xl bg-[var(--bg-surface)] text-center">
                             <span className="text-[11px] text-[var(--text-secondary)] inline-flex items-center gap-1">
                               <Trophy className="w-3 h-3 text-amber-400" />
-                              Win Rate
+                              Comp. Win Rate
                             </span>
                             <p className="font-display font-extrabold text-lg text-[var(--good)] mt-0.5">
                               {winRate}%
