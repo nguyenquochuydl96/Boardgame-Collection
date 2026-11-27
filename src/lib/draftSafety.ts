@@ -36,7 +36,7 @@ export function parseSessionDraft(raw: string | null, now: number): SessionDraft
     if (typeof draft.gameId !== 'string' || !draft.gameId) return null;
     draft.datePlayed ??= new Date(now).toLocaleDateString('en-CA');
     draft.location ??= '';
-    draft.durationMinutes ??= '60';
+    draft.durationMinutes ??= '';
     draft.elapsedSeconds ??= 0;
     draft.sessionStartTime ??= now - draft.elapsedSeconds * 1000;
     draft.isTimerRunning ??= true;

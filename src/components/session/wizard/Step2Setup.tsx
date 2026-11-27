@@ -74,7 +74,7 @@ export const Step2Setup: React.FC<Step2SetupProps> = React.memo(
             <input
               id="manual-duration-input"
               type="number"
-              min={1}
+              min={0}
               value={durationMinutes}
               onChange={(e) => setDurationMinutes(e.target.value)}
               className="w-full min-h-[44px] rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-4 py-2 font-mono font-bold text-xl text-[var(--text-primary)] tabular-nums focus:outline-none focus:border-[var(--accent-primary)]"

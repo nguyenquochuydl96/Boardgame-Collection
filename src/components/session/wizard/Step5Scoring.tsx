@@ -7,7 +7,7 @@ import { PlayerAvatar } from '../../player/PlayerAvatar';
 import { cn } from '../../ui/cn';
 import { Crown, Check, AlertCircle } from 'lucide-react';
 import { GameScoringMode, Player, PlayerScore } from '../../../types';
-import { GameScoringTemplate } from '../../../lib/scoringPresets';
+import { GameScoringTemplate, ScoringCategory } from '../../../lib/scoringPresets';
 
 interface Step5ScoringProps {
   gameScoringMode: GameScoringMode;
@@ -26,8 +26,9 @@ interface Step5ScoringProps {
   activeSessionPlayers: Player[];
   breakdownsByPlayerId: Record<string, Record<string, number>>;
   onScoresUpdate: (
-    totals: Record<string, number | undefined>,
-    breakdowns: Record<string, Record<string, number>>
+    totals: Record<string, number>,
+    breakdowns: Record<string, Record<string, number>>,
+    categories: ScoringCategory[]
   ) => void;
   computedPlayerScores: PlayerScore[];
   allAvailablePlayers: Player[];
@@ -329,6 +330,7 @@ export const Step5Scoring: React.FC<Step5ScoringProps> = React.memo(
                       playerScore={ps}
                       player={pl}
                       isCoop={false}
+                      winnerReadOnly={true}
                       onScoreChange={onScoreChange}
                       onToggleWinner={onToggleManualWinner}
                     />

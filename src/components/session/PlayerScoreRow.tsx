@@ -8,6 +8,7 @@ export interface PlayerScoreRowProps {
   playerScore: PlayerScore;
   player?: Player;
   isCoop?: boolean;
+  winnerReadOnly?: boolean;
   onScoreChange: (playerId: string, score: number | undefined) => void;
   onToggleWinner: (playerId: string) => void;
 }
@@ -16,6 +17,7 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
   playerScore,
   player,
   isCoop = false,
+  winnerReadOnly = false,
   onScoreChange,
   onToggleWinner,
 }) => {
@@ -157,18 +159,26 @@ export const PlayerScoreRow: React.FC<PlayerScoreRowProps> = ({
 
         <button
           type="button"
-          onClick={() => onToggleWinner(playerScore.playerId)}
+          disabled={winnerReadOnly}
+          aria-disabled={winnerReadOnly || undefined}
+          title={winnerReadOnly ? 'Winners are automatically calculated from scores' : undefined}
+          onClick={() => { if (!winnerReadOnly) onToggleWinner(playerScore.playerId); }}
           aria-label={
             isCoop
               ? `Toggle team victory for ${playerScore.playerName}`
+              : winnerReadOnly
+              ? `${playerScore.playerName} ${playerScore.isWinner ? 'is winner' : 'score status'}`
               : `Mark ${playerScore.playerName} as winner`
           }
           className={cn(
-            'min-h-[38px] sm:min-h-[42px] min-w-[38px] sm:min-w-[42px] px-2 sm:px-3 rounded-xl border inline-flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer select-none',
+            'min-h-[38px] sm:min-h-[42px] min-w-[38px] sm:min-w-[42px] px-2 sm:px-3 rounded-xl border inline-flex items-center justify-center gap-1.5 text-xs font-bold transition-all select-none',
+            winnerReadOnly ? 'cursor-default' : 'cursor-pointer',
             playerScore.isWinner
               ? isCoop
                 ? 'bg-[var(--good)] text-white border-[var(--good)] shadow-sm font-black'
                 : 'bg-amber-500 text-[#161311] border-amber-400 shadow-sm font-black'
+              : winnerReadOnly
+              ? 'bg-[var(--card-2)] text-[var(--muted)]/50 border-[var(--line)]'
               : 'bg-[var(--card-2)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)] hover:border-[var(--line-2)]'
           )}
         >

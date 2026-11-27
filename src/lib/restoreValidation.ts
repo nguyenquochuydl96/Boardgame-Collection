@@ -40,6 +40,19 @@ function checkFields(value: unknown, path: string, required: Record<string, Chec
 const strings = (...names: string[]): Record<string, Check> => Object.fromEntries(names.map((name) => [name, text]));
 const ids = (...names: string[]): Record<string, Check> => Object.fromEntries(names.map((name) => [name, nonempty]));
 const scores = (value: unknown): boolean => record(value) && Object.values(value).every(finite);
+const scoringSheetSnapshot = (value: unknown): boolean =>
+  record(value)
+  && value.formulaVersion === 1
+  && (value.templateName === undefined || text(value.templateName))
+  && Array.isArray(value.categories)
+  && value.categories.every((category) =>
+    record(category)
+    && nonempty(category.id)
+    && nonempty(category.name)
+    && (category.description === undefined || text(category.description))
+    && (category.icon === undefined || text(category.icon))
+    && (category.multiplier === undefined || finite(category.multiplier))
+  );
 const gameRequired = { ...ids('id', 'name'), thumbnail: portableMedia, image: portableMedia, description: text, minPlayers: finite, maxPlayers: finite, playingTime: finite, yearPublished: finite, status: oneOf('own', 'lent_out', 'borrowed', 'rented', 'sold', 'wishlist', 'previously_owned'), addedDate: date };
 const gameOptional = { bggId: nonempty, bggRating: finite, scoringMode: oneOf('points', 'win_only', 'coop'), lowestScoreWins: bool, purchasePrice: finite, sellPrice: finite, ...strings('lentToName', 'lentDate', 'notes'), tags: stringArray };
 const playerRequired = { ...ids('id', 'name'), color: nonempty, createdAt: date };
@@ -47,7 +60,20 @@ const playerOptional = { ...strings('nickname', 'bio', 'playStyle', 'specialtyGa
 const locationRequired = { ...ids('id', 'name'), createdAt: date };
 const locationOptional = { ...strings('address', 'notes'), isDefault: bool };
 const sessionRequired = { ...ids('id', 'gameId', 'gameName'), gameThumbnail: portableMedia, datePlayed: date, players: Array.isArray, firstPlayerMethod: oneOf('random_wheel', 'manual', 'previous_loser', 'previous_winner'), createdAt: date };
-const sessionOptional = { status: oneOf('completed', 'in_progress', 'draft'), ...strings('location', 'notes'), ...ids('winnerId', 'firstPlayerId'), durationMinutes: finite, isCoop: bool, scoringMode: oneOf('points', 'win_only', 'coop'), coopOutcome: oneOf('won', 'lost'), photos: portableMediaArray };
+const sessionOptional = {
+  status: oneOf('completed', 'in_progress', 'draft'),
+  ...strings('location', 'notes'),
+  ...ids('winnerId', 'firstPlayerId'),
+  winnerIds: stringArray,
+  durationMinutes: finite,
+  lowestScoreWins: bool,
+  teamScore: finite,
+  scoringSheetSnapshot,
+  isCoop: bool,
+  scoringMode: oneOf('points', 'win_only', 'coop'),
+  coopOutcome: oneOf('won', 'lost'),
+  photos: portableMediaArray,
+};
 const playerScoreRequired = { ...ids('playerId', 'playerName'), isWinner: bool };
 const playerScoreOptional = { score: finite, rank: finite, scoreBreakdown: scores };
 

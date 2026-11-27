@@ -1,6 +1,7 @@
 import { BoardGame, GameStatus, GameScoringMode, PlaySession, Player, SessionDraft, GameLocation } from '../types';
 import { EXPANDED_BGG_CATALOG } from './bggCatalogData';
 import { getScoringTemplateForGame } from './scoringPresets';
+import { resolveSessionLowestScoreWins } from './sessionResults';
 import {
   GAME_SCORING_PRESETS,
   KNOWN_COOP_FRANCHISE_KEYWORDS,
@@ -882,9 +883,12 @@ export function calculateGameStats(
   for (const session of chrono) {
     const sDate = session.datePlayed;
     const isWinOnly = isWinOnlySession(session);
+    const isCoop = isCoopSession(session);
     const winners = getSessionWinners(session);
     for (const p of (session.players || [])) {
-      if (!isWinOnly && typeof p.score === 'number' && !Number.isNaN(p.score)) {
+      // Team scores are not individual score records, including legacy sessions
+      // that copied one team value to every participant.
+      if (!isWinOnly && !isCoop && typeof p.score === 'number' && !Number.isNaN(p.score)) {
         if (!highestScore || p.score > highestScore.score) {
           highestScore = {
             score: p.score,
@@ -929,7 +933,7 @@ export function calculateGameStats(
         existing.losses += 1;
       }
 
-      if (!isWinOnly && typeof p.score === 'number' && !Number.isNaN(p.score)) {
+      if (!isWinOnly && !isCoop && typeof p.score === 'number' && !Number.isNaN(p.score)) {
         existing.lowestScore =
           existing.lowestScore === undefined
             ? p.score
@@ -1661,7 +1665,7 @@ export function buildRematchDraftFromSession(
   const scoringMode: GameScoringMode = session.scoringMode || (isCoop ? 'coop' : resolveGameScoringMode(matchedGame));
   const targetStep: 4 | 5 = isCoop ? 5 : 4;
   const template = getScoringTemplateForGame(session.gameName);
-  const lowScoreWins = resolveLowestScoreWins(matchedGame);
+  const lowScoreWins = resolveSessionLowestScoreWins(session, matchedGame);
 
   const gameExists = options?.games
     ? options.games.some((g) => g.id === session.gameId)

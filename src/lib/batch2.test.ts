@@ -15,6 +15,9 @@ import {
 } from './utils';
 import { decodeHtml, importBGGCollection, saveBGGSettings } from './bgg';
 import { safeParseIsoDate, parseImportFile, parseBGCatalogJsonObject } from './importer';
+import { normalizeSessionResult, resolveSessionLowestScoreWins, resolveSessionTeamScore } from './sessionResults';
+import { buildSessionShareCardData } from './shareCard';
+import { validateRestoreData } from './restoreValidation';
 import {
   saveMediaImage,
   getMediaImage,
@@ -448,7 +451,141 @@ test('parseImportFile parses quoted CSV fields and parseBGCatalogJsonObject safe
 });
 
 // ============================================================================
-// 6. MediaStorage: Orphan Pruning Preserves Game/Player/Session/Draft Refs
+// 6. Canonical Session Results, Snapshots & Compatibility
+// ============================================================================
+
+test('normalizeSessionResult only ranks complete point totals and preserves zero scores', () => {
+  const partial = normalizeSessionResult({
+    mode: 'points',
+    players: [
+      { playerId: 'a', playerName: 'Alice', score: 10, isWinner: false },
+      { playerId: 'b', playerName: 'Bob', isWinner: false },
+    ],
+  });
+  assert.deepEqual(partial.winnerIds, []);
+  assert.equal(partial.players[0].rank, undefined);
+  assert.match(partial.errors[0], /every player/i);
+
+  const tiedZero = normalizeSessionResult({
+    mode: 'points',
+    players: [
+      { playerId: 'a', playerName: 'Alice', score: 0, isWinner: false },
+      { playerId: 'b', playerName: 'Bob', score: 0, isWinner: false },
+      { playerId: 'c', playerName: 'Cara', score: -2, isWinner: false },
+    ],
+  });
+  assert.deepEqual(tiedZero.winnerIds, ['a', 'b']);
+  assert.deepEqual(tiedZero.players.map((player) => player.rank), [1, 1, 3]);
+  assert.equal(tiedZero.players[0].isWinner, true);
+
+  const lowWins = normalizeSessionResult({
+    mode: 'points',
+    lowestScoreWins: true,
+    players: [
+      { playerId: 'a', playerName: 'Alice', score: 12, isWinner: false },
+      { playerId: 'b', playerName: 'Bob', score: 4, isWinner: false },
+    ],
+  });
+  assert.deepEqual(lowWins.winnerIds, ['b']);
+  assert.deepEqual(lowWins.players.map((player) => player.rank), [2, 1]);
+});
+
+test('normalizeSessionResult keeps co-op team outcome separate from individual points', () => {
+  const won = normalizeSessionResult({
+    mode: 'coop',
+    coopOutcome: 'won',
+    players: [
+      { playerId: 'a', playerName: 'Alice', score: 182, isWinner: false },
+      { playerId: 'b', playerName: 'Bob', score: 182, isWinner: false },
+    ],
+  });
+  assert.deepEqual(won.winnerIds, ['a', 'b']);
+  assert.equal(won.winnerId, undefined);
+  assert.deepEqual(won.players.map((player) => player.score), [undefined, undefined]);
+  assert.deepEqual(won.players.map((player) => player.isWinner), [true, true]);
+});
+
+test('session snapshots override changed game rules in Share Card and restore validation accepts new fields', () => {
+  const game = makeGame({ id: 'g-snapshot', lowestScoreWins: false });
+  const session = makeSession({
+    id: 's-snapshot',
+    gameId: game.id,
+    gameName: game.name,
+    scoringMode: 'points',
+    lowestScoreWins: true,
+    winnerIds: ['b'],
+    players: [
+      { playerId: 'a', playerName: 'Alice', score: 12, rank: 2, isWinner: false },
+      { playerId: 'b', playerName: 'Bob', score: 4, rank: 1, isWinner: true },
+    ],
+    scoringSheetSnapshot: {
+      templateName: 'Archived Sheet',
+      formulaVersion: 1,
+      categories: [{ id: 'bonus', name: 'Bonus', multiplier: 1 }],
+    },
+  });
+  assert.equal(resolveSessionLowestScoreWins(session, game), true);
+  const card = buildSessionShareCardData(session, { game, allSessions: [session] });
+  assert.equal(card.lowestScoreWins, true);
+  assert.equal(card.leaderboard?.[0].playerName, 'Bob');
+  assert.equal(card.leaderboard?.[0].isWinner, true);
+
+  const restored = validateRestoreData(
+    { games: [], players: [], locations: [], sessions: [session] },
+    { games: false, players: false, locations: false, sessions: true }
+  );
+  assert.deepEqual(restored, { ok: true });
+});
+
+test('BG Catalog import does not fabricate ranks for incomplete scores', () => {
+  const parsed = parseBGCatalogJsonObject({
+    games: [{ id: 1, name: 'Custom Game', own: 1, minPlayers: 2, maxPlayers: 4 }],
+    players: [{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }],
+    plays: [{ id: 1, gameId: 1, playDate: '2026-01-01', length: 0 }],
+    playersPlays: [
+      { playId: 1, playerId: 1, score: 10, winner: 1 },
+      { playId: 1, playerId: 2, score: '', winner: 0 },
+    ],
+  });
+  assert.equal(parsed.sessions[0].players[0].rank, undefined);
+  assert.equal(parsed.sessions[0].players[1].rank, undefined);
+  assert.deepEqual(parsed.sessions[0].winnerIds, ['player-1']);
+});
+
+test('resolveSessionTeamScore and Share Card support zero and legacy copied co-op team scores', () => {
+  const zeroTeamSession = makeSession({
+    id: 's-coop-zero',
+    scoringMode: 'coop',
+    isCoop: true,
+    coopOutcome: 'lost',
+    teamScore: 0,
+    players: [
+      { playerId: 'a', playerName: 'Alice', isWinner: false },
+      { playerId: 'b', playerName: 'Bob', isWinner: false },
+    ],
+  });
+  assert.equal(resolveSessionTeamScore(zeroTeamSession), 0);
+  const zeroCard = buildSessionShareCardData(zeroTeamSession, { allSessions: [zeroTeamSession] });
+  assert.equal(zeroCard.mode, 'coop');
+  assert.equal(zeroCard.teamScoreFormatted, '0');
+
+  const legacyCoopSession = makeSession({
+    id: 's-coop-legacy',
+    scoringMode: 'coop',
+    isCoop: true,
+    coopOutcome: 'won',
+    players: [
+      { playerId: 'a', playerName: 'Alice', score: 182, isWinner: true },
+      { playerId: 'b', playerName: 'Bob', score: 182, isWinner: true },
+    ],
+  });
+  assert.equal(resolveSessionTeamScore(legacyCoopSession), 182);
+  const legacyCard = buildSessionShareCardData(legacyCoopSession, { allSessions: [legacyCoopSession] });
+  assert.equal(legacyCard.teamScoreFormatted, '182');
+});
+
+// ============================================================================
+// 7. MediaStorage: Orphan Pruning Preserves Game/Player/Session/Draft Refs
 // ============================================================================
 
 test('pruneOrphanMedia removes unreferenced media while keeping game, player, session, and draft refs', async () => {

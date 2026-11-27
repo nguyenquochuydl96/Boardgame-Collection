@@ -103,6 +103,7 @@ import { PlayerScore, Player, GameScoringMode } from '../types';
 import { ScoringSheetMatrix } from '../components/session/ScoringSheetMatrix';
 import { LocationSelector } from '../components/session/LocationSelector';
 import { getScoringTemplateForGame, ScoringCategory } from '../lib/scoringPresets';
+import { normalizeSessionResult, resolveSessionLowestScoreWins, resolveSessionTeamScore } from '../lib/sessionResults';
 import { cn } from '../components/ui/cn';
 
 interface EditablePlayerRow {
@@ -146,10 +147,12 @@ export const SessionDetailPage: React.FC = () => {
   const [editDatetime, setEditDatetime] = useState('');
   const [editLocation, setEditLocation] = useState('');
   const [editDuration, setEditDuration] = useState('60');
+  const [editTeamScore, setEditTeamScore] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editPlayers, setEditPlayers] = useState<EditablePlayerRow[]>([]);
   const [addPlayerSelectId, setAddPlayerSelectId] = useState('');
   const [editBreakdowns, setEditBreakdowns] = useState<Record<string, Record<string, number>>>({});
+  const [editSheetCategories, setEditSheetCategories] = useState<ScoringCategory[]>([]);
   const [editScoreMode, setEditScoreMode] = useState<'quick' | 'detailed'>('quick');
   const [editLowScoreWins, setEditLowScoreWins] = useState(false);
   const [editScoringMode, setEditScoringMode] = useState<GameScoringMode>('points');
@@ -173,8 +176,9 @@ export const SessionDetailPage: React.FC = () => {
     if (!session || !hasBreakdown) return [];
     const catMap = new Map<string, ScoringCategory>();
 
-    // Add template categories first
-    scoringTemplate.categories.forEach((c) => catMap.set(c.id, c));
+    // A recorded sheet is immutable: display its categories before live templates.
+    (session.scoringSheetSnapshot?.categories || scoringTemplate.categories)
+      .forEach((c) => catMap.set(c.id, c));
 
     // Add any extra custom category found in players' scoreBreakdowns
     session.players.forEach((p) => {
@@ -198,7 +202,8 @@ export const SessionDetailPage: React.FC = () => {
           (p) =>
             typeof p.scoreBreakdown?.[cat.id] === 'number' &&
             p.scoreBreakdown?.[cat.id] !== 0
-        ) || scoringTemplate.categories.some((tc) => tc.id === cat.id)
+        ) || (session.scoringSheetSnapshot?.categories || scoringTemplate.categories)
+          .some((templateCategory) => templateCategory.id === cat.id)
       );
     });
   }, [session, hasBreakdown, scoringTemplate]);
@@ -230,9 +235,28 @@ export const SessionDetailPage: React.FC = () => {
     [editPlayersIdsKey, playersById]
   );
 
+  const editPointsWinnerIds = React.useMemo(() => {
+    if (editScoringMode !== 'points') return null;
+    const normalized = normalizeSessionResult({
+      mode: 'points',
+      players: editPlayers.map((p) => {
+        const trimmed = p.score.trim();
+        const num = trimmed === '' || trimmed === '-' ? undefined : Number(trimmed);
+        return { playerId: p.playerId, playerName: p.playerName, score: num, isWinner: false };
+      }),
+      lowestScoreWins: editLowScoreWins,
+    });
+    return new Set(normalized.winnerIds);
+  }, [editScoringMode, editPlayers, editLowScoreWins]);
+
   const handleScoresUpdate = React.useCallback(
-    (totals: Record<string, number>, breakdowns: Record<string, Record<string, number>>) => {
+    (
+      totals: Record<string, number>,
+      breakdowns: Record<string, Record<string, number>>,
+      categories: ScoringCategory[]
+    ) => {
       setEditBreakdowns(breakdowns);
+      setEditSheetCategories(categories);
       setEditPlayers((prev) => {
         let hasChanges = false;
         const next = prev.map((p) => {
@@ -271,22 +295,14 @@ export const SessionDetailPage: React.FC = () => {
     (p) => p.playerId === session.firstPlayerId
   );
 
-  const sessionLowScoreWins = (() => {
-    if (typeof scoringTemplate.lowestScoreWins === 'boolean') {
-      return scoringTemplate.lowestScoreWins;
-    }
-    const validScores = (session.players || [])
-      .map((p) => p.score)
-      .filter((s): s is number => typeof s === 'number');
-    if (validScores.length < 2) return false;
-    const minScore = Math.min(...validScores);
-    const maxScore = Math.max(...validScores);
-    if (minScore >= maxScore) return false;
-    const winner = (session.players || []).find(
-      (p) => p.isWinner || (session.winnerId && p.playerId === session.winnerId)
-    );
-    return winner?.score === minScore;
-  })();
+  const sessionLowScoreWins = resolveSessionLowestScoreWins(session, game);
+  const resolvedTeamScore = isCoopSession ? resolveSessionTeamScore(session) : undefined;
+
+  const canonicalWinnerIds = Array.isArray(session.winnerIds)
+    ? new Set(session.winnerIds)
+    : undefined;
+  const isCanonicalWinner = (playerId: string, legacyWinner: boolean) =>
+    canonicalWinnerIds ? canonicalWinnerIds.has(playerId) : legacyWinner;
 
   const sortedResults = [...(session.players || [])].sort((a, b) => {
     const rankA = typeof a.rank === 'number' && a.rank > 0 ? a.rank : undefined;
@@ -306,14 +322,20 @@ export const SessionDetailPage: React.FC = () => {
   const handleOpenEdit = () => {
     setEditDatetime(toDatetimeLocal(session.datePlayed));
     setEditLocation(session.location || '');
-    setEditDuration(String(session.durationMinutes || 60));
+    setEditDuration(session.durationMinutes === undefined ? '' : String(session.durationMinutes));
+    setEditTeamScore(resolvedTeamScore === undefined ? '' : String(resolvedTeamScore));
     setEditNotes(session.notes || '');
 
+    const canonicalWinnerIds = Array.isArray(session.winnerIds)
+      ? new Set(session.winnerIds)
+      : undefined;
     const rows: EditablePlayerRow[] = (session.players || []).map((p) => ({
       playerId: p.playerId,
       playerName: p.playerName,
       score: typeof p.score === 'number' ? String(p.score) : '',
-      isWinner: Boolean(p.isWinner || session.winnerId === p.playerId),
+      isWinner: canonicalWinnerIds
+        ? canonicalWinnerIds.has(p.playerId)
+        : Boolean(p.isWinner || session.winnerId === p.playerId),
       isFirstPlayer: session.firstPlayerId === p.playerId,
     }));
 
@@ -327,6 +349,10 @@ export const SessionDetailPage: React.FC = () => {
       }
     });
     setEditBreakdowns(initialBreakdowns);
+    setEditSheetCategories(
+      session.scoringSheetSnapshot?.categories ||
+      (hasBreakdown ? breakdownCategories : [])
+    );
     setEditScoreMode(hasBreakdown ? 'detailed' : 'quick');
 
     setEditLowScoreWins(sessionLowScoreWins);
@@ -415,111 +441,66 @@ export const SessionDetailPage: React.FC = () => {
     setAddPlayerSelectId('');
   };
 
-  // Auto pick best score as winner (supports lowScoreWins and ties)
-  const handleAutoWinner = () => {
-    const validScores: { playerId: string; score: number }[] = [];
-    for (const p of editPlayers) {
-      const num = p.score.trim() === '' ? NaN : Number(p.score);
-      if (!isNaN(num)) {
-        validScores.push({ playerId: p.playerId, score: num });
-      }
-    }
-    if (validScores.length === 0) return;
-
-    const target = editLowScoreWins
-      ? Math.min(...validScores.map((x) => x.score))
-      : Math.max(...validScores.map((x) => x.score));
-
-    const bestPlayerIds = new Set(
-      validScores.filter((x) => x.score === target).map((x) => x.playerId)
-    );
-
-    setEditPlayers((prev) =>
-      prev.map((p) => ({
-        ...p,
-        isWinner: bestPlayerIds.has(p.playerId),
-      }))
-    );
-  };
-
-  // Save changes
+  // Save through the same normalizer used by the creation wizard.
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    const isEditingCoop = editScoringMode === 'coop';
-    const isEditingWinOnly = editScoringMode === 'win_only';
-
-    // Map rows to PlayerScore[]
-    const updatedScores: PlayerScore[] = editPlayers.map((p) => {
-      const num = isEditingWinOnly || p.score.trim() === '' ? undefined : Number(p.score);
-      const bd = editBreakdowns[p.playerId];
-      const hasBd = !isEditingWinOnly && bd && Object.values(bd).some((v) => v !== 0);
+    const rawPlayers: PlayerScore[] = editPlayers.map((p) => {
+      const numericScore = p.score.trim() === '' ? undefined : Number(p.score);
+      const breakdown = editBreakdowns[p.playerId];
       return {
         playerId: p.playerId,
         playerName: p.playerName,
-        score: num,
+        score: editScoringMode === 'points' ? numericScore : undefined,
         isWinner: p.isWinner,
-        rank: isEditingCoop ? undefined : isEditingWinOnly ? (p.isWinner ? 1 : 2) : 1,
-        scoreBreakdown: hasBd ? bd : undefined,
+        scoreBreakdown: editScoringMode === 'points' && breakdown && Object.values(breakdown).some((value) => value !== 0)
+          ? breakdown : undefined,
       };
     });
-
-    // Sort to recalculate ranks using Standard Competition Ranking ("1224") for competitive games
-    const sorted = isEditingCoop
-      ? updatedScores
-      : [...updatedScores].sort((a, b) => {
-          // Winners first
-          if (a.isWinner && !b.isWinner) return -1;
-          if (!a.isWinner && b.isWinner) return 1;
-
-          if (isEditingWinOnly) return 0;
-
-          const sa = a.score;
-          const sb = b.score;
-          if (sa === undefined && sb === undefined) return 0;
-          if (sa === undefined) return 1;
-          if (sb === undefined) return -1;
-          return editLowScoreWins ? sa - sb : sb - sa;
-        });
-
-    if (!isEditingCoop && !isEditingWinOnly) {
-      // Compute standard competition rank (1, 1, 3 for ties)
-      let currentRank = 1;
-      for (let i = 0; i < sorted.length; i++) {
-        if (i > 0) {
-          const prev = sorted[i - 1];
-          const curr = sorted[i];
-          if (curr.isWinner !== prev.isWinner || curr.score !== prev.score) {
-            currentRank = i + 1;
-          }
-        }
-        sorted[i].rank = currentRank;
-      }
-    }
-
-    const anyWinner = editPlayers.some((p) => p.isWinner);
-    const activeWinner = editPlayers.find((p) => p.isWinner);
-    const activeFirstPlayer = editPlayers.find((p) => p.isFirstPlayer);
-
-    const newDate = editDatetime
-      ? new Date(editDatetime).toISOString()
-      : session.datePlayed;
-
-    updateSession(session.id, {
-      datePlayed: newDate,
-      location: editLocation.trim() || undefined,
-      durationMinutes: Number(editDuration) || session.durationMinutes,
-      notes: editNotes.trim() || undefined,
-      players: sorted,
-      winnerId: isEditingCoop
-        ? (anyWinner ? editPlayers[0]?.playerId : undefined)
-        : (activeWinner ? activeWinner.playerId : undefined),
-      firstPlayerId: isEditingCoop ? undefined : (activeFirstPlayer ? activeFirstPlayer.playerId : undefined),
-      isCoop: isEditingCoop,
-      scoringMode: editScoringMode,
-      coopOutcome: isEditingCoop ? (anyWinner ? 'won' : 'lost') : undefined,
+    const normalized = normalizeSessionResult({
+      mode: editScoringMode,
+      players: rawPlayers,
+      winnerIds: editPlayers.filter((p) => p.isWinner).map((p) => p.playerId),
+      lowestScoreWins: editLowScoreWins,
+      coopOutcome: editPlayers.some((p) => p.isWinner) ? 'won' : 'lost',
     });
-
+    if (normalized.errors.length > 0) {
+      alert(normalized.errors[0]);
+      return;
+    }
+    const durationText = editDuration.trim();
+    const durationMinutes = durationText === '' ? undefined : Number(durationText);
+    if (durationMinutes !== undefined && (!Number.isFinite(durationMinutes) || durationMinutes < 0)) {
+      alert('Duration must be a non-negative number of minutes or left blank.');
+      return;
+    }
+    const teamScoreText = editTeamScore.trim();
+    const teamScore = teamScoreText === '' ? undefined : Number(teamScoreText);
+    if (teamScore !== undefined && (!Number.isFinite(teamScore))) {
+      alert('Team score must be a finite number or left blank.');
+      return;
+    }
+    const activeFirstPlayer = editPlayers.find((p) => p.isFirstPlayer);
+    const categories = editSheetCategories.length > 0 ? editSheetCategories : breakdownCategories;
+    updateSession(session.id, {
+      datePlayed: editDatetime ? new Date(editDatetime).toISOString() : session.datePlayed,
+      location: editLocation.trim() || undefined,
+      durationMinutes,
+      notes: editNotes.trim() || undefined,
+      players: normalized.players,
+      winnerIds: normalized.winnerIds,
+      winnerId: normalized.winnerId,
+      lowestScoreWins: normalized.lowestScoreWins,
+      teamScore: editScoringMode === 'coop' ? teamScore : undefined,
+      scoringSheetSnapshot: editScoreMode === 'detailed' && categories.length > 0 ? {
+        templateName: session.scoringSheetSnapshot?.templateName || scoringTemplate.displayName,
+        formulaVersion: 1,
+        categories: categories.map(({ id, name, description, icon, multiplier }) => ({ id, name, description, icon, multiplier })),
+      } : undefined,
+      firstPlayerId: editScoringMode === 'coop' ? undefined : activeFirstPlayer?.playerId,
+      isCoop: editScoringMode === 'coop',
+      scoringMode: editScoringMode,
+      coopOutcome: normalized.coopOutcome,
+    });
     setIsEditOpen(false);
   };
 
@@ -618,7 +599,7 @@ export const SessionDetailPage: React.FC = () => {
                 <Calendar className="w-4 h-4 text-[var(--accent-neon)]" />
                 {formatDate(session.datePlayed)}
               </span>
-              {session.durationMinutes && (
+              {typeof session.durationMinutes === 'number' && (
                 <span className="inline-flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-[var(--accent-secondary)]" />
                   {formatDuration(session.durationMinutes)}
@@ -650,10 +631,17 @@ export const SessionDetailPage: React.FC = () => {
 
         {/* Player Results Table */}
         <Card className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
-              Leaderboard &amp; Rankings
-            </h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="font-display font-bold text-xl text-[var(--text-primary)]">
+                Leaderboard &amp; Rankings
+              </h2>
+              {isCoopSession && typeof resolvedTeamScore === 'number' && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--good-soft)] border border-[var(--good)]/30 text-[var(--good)] text-xs font-bold tabular-nums">
+                  Team Score: {formatNumber(resolvedTeamScore)}
+                </span>
+              )}
+            </div>
             <Button variant="ghost" size="sm" onClick={handleOpenEdit}>
               <Edit3 className="w-3.5 h-3.5 mr-1" />
               Edit Scores &amp; Winner
@@ -671,10 +659,12 @@ export const SessionDetailPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)] bg-[var(--bg-surface)] tabular-nums">
-                {sortedResults.map((entry, idx) => {
+                {sortedResults.map((entry) => {
                   const savedPlayer = playersById[entry.playerId];
-                  const isWin =
-                    entry.isWinner || session.winnerId === entry.playerId;
+                  const isWin = isCanonicalWinner(
+                    entry.playerId,
+                    Boolean(entry.isWinner || session.winnerId === entry.playerId)
+                  );
 
                   return (
                     <tr
@@ -682,7 +672,7 @@ export const SessionDetailPage: React.FC = () => {
                       className={isWin ? (isCoopSession ? 'bg-[var(--good-soft)]' : 'bg-amber-500/[0.08]') : ''}
                     >
                       <td className="py-3.5 px-4 font-mono font-bold text-[var(--text-secondary)]">
-                        {isCoopSession ? '🤝' : isWinOnly ? (isWin ? '#1' : '—') : `#${entry.rank || idx + 1}`}
+                        {isCoopSession ? '🤝' : entry.rank ? `#${entry.rank}` : '—'}
                       </td>
                       <td className="py-3.5 px-4">
                         <Link
@@ -743,7 +733,7 @@ export const SessionDetailPage: React.FC = () => {
                     Scoring Breakdown Details
                   </h2>
                   <p className="text-xs text-[var(--text-secondary)]">
-                    {scoringTemplate.displayName} · Detailed category score analysis
+                    {session.scoringSheetSnapshot?.templateName || scoringTemplate.displayName} · Detailed category score analysis
                   </p>
                 </div>
               </div>
@@ -761,7 +751,10 @@ export const SessionDetailPage: React.FC = () => {
                     </th>
                     {session.players.map((p) => {
                       const savedPlayer = playersById[p.playerId];
-                      const isLeader = isCoopSession ? false : (p.isWinner || session.winnerId === p.playerId);
+                      const isLeader = isCoopSession ? false : isCanonicalWinner(
+                        p.playerId,
+                        Boolean(p.isWinner || session.winnerId === p.playerId)
+                      );
                       return (
                         <th
                           key={p.playerId}
@@ -833,14 +826,17 @@ export const SessionDetailPage: React.FC = () => {
                   <tr className="bg-[var(--bg-elevated)] border-t-2 border-[var(--border-glow)] font-bold">
                     <td className="py-3 px-4 font-extrabold text-[var(--text-primary)]">
                       <div>TOTAL SCORE</div>
-                      {isCoopSession && (
+                      {isCoopSession && typeof resolvedTeamScore === 'number' && (
                         <div className="text-[10px] font-semibold text-[var(--good)] mt-0.5">
-                          Team: {formatNumber(session.players.reduce((a, b) => a + (typeof b.score === 'number' ? b.score : 0), 0))}
+                          Team: {formatNumber(resolvedTeamScore)}
                         </div>
                       )}
                     </td>
                     {session.players.map((p) => {
-                      const isLeader = isCoopSession ? false : (p.isWinner || session.winnerId === p.playerId);
+                      const isLeader = isCoopSession ? false : isCanonicalWinner(
+                        p.playerId,
+                        Boolean(p.isWinner || session.winnerId === p.playerId)
+                      );
                       return (
                         <td
                           key={p.playerId}
@@ -958,11 +954,11 @@ export const SessionDetailPage: React.FC = () => {
                 </label>
                 <input
                   type="number"
-                  min="1"
+                  min="0"
                   value={editDuration}
                   onChange={(e) => setEditDuration(e.target.value)}
                   className="w-full min-h-[44px] rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-                  placeholder="60"
+                  placeholder="Optional"
                 />
               </div>
 
@@ -1020,6 +1016,21 @@ export const SessionDetailPage: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {editScoringMode === 'coop' && (
+              <div className="pt-3 border-t border-[var(--border-subtle)]">
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
+                  Team Score (optional)
+                </label>
+                <input
+                  type="number"
+                  value={editTeamScore}
+                  onChange={(e) => setEditTeamScore(e.target.value)}
+                  placeholder="Optional"
+                  className="w-full min-h-[44px] rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                />
+              </div>
+            )}
 
             {/* 3. Players & Scores Section */}
             <div className="space-y-3 pt-3 border-t border-[var(--border-subtle)]">
@@ -1079,14 +1090,6 @@ export const SessionDetailPage: React.FC = () => {
                     >
                       {editPlayers.some((p) => p.isWinner) ? '🤝 Team Victory' : '💀 Team Defeat'}
                     </button>
-                  ) : editScoringMode === 'points' ? (
-                    <button
-                      type="button"
-                      onClick={handleAutoWinner}
-                      className="px-2 sm:px-2.5 py-1 rounded-xl text-xs font-semibold bg-[var(--bg-elevated)] text-[var(--accent-secondary)] hover:brightness-110 border border-[var(--border-subtle)] cursor-pointer"
-                    >
-                      ⚡ Auto Winner
-                    </button>
                   ) : null}
                 </div>
               </div>
@@ -1094,15 +1097,21 @@ export const SessionDetailPage: React.FC = () => {
               {editScoringMode === 'points' && editScoreMode === 'detailed' ? (
                 <div className="space-y-3 p-3 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
                   <div className="text-xs font-bold text-[var(--accent-neon)]">
-                    📊 {scoringTemplate.displayName}
+                    📊 {session.scoringSheetSnapshot?.templateName || scoringTemplate.displayName}
                   </div>
                   <ScoringSheetMatrix
                     players={matrixPlayers}
-                    initialCategories={scoringTemplate.categories}
+                    initialCategories={editSheetCategories.length > 0 ? editSheetCategories : scoringTemplate.categories}
                     initialBreakdowns={editBreakdowns}
                     lowScoreWins={editLowScoreWins}
                     isCoop={false}
-                    computeTotal={scoringTemplate.computeTotal}
+                    computeTotal={
+                      !session.scoringSheetSnapshot ||
+                      !session.scoringSheetSnapshot.templateName ||
+                      session.scoringSheetSnapshot.templateName === scoringTemplate.displayName
+                        ? scoringTemplate.computeTotal
+                        : undefined
+                    }
                     onScoresUpdate={handleScoresUpdate}
                   />
                 </div>
@@ -1112,12 +1121,13 @@ export const SessionDetailPage: React.FC = () => {
               <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                 {editPlayers.map((p) => {
                   const saved = playersById[p.playerId];
+                  const rowIsWinner = editPointsWinnerIds ? editPointsWinnerIds.has(p.playerId) : p.isWinner;
                   return (
                     <div
                       key={p.playerId}
                       className={cn(
                         'flex items-center justify-between gap-3 p-2.5 rounded-xl border transition-colors',
-                        p.isWinner
+                        rowIsWinner
                           ? 'bg-amber-500/10 border-amber-500/30'
                           : 'bg-[var(--bg-surface)] border-[var(--border-subtle)]'
                       )}
@@ -1152,18 +1162,28 @@ export const SessionDetailPage: React.FC = () => {
                         {/* Winner Crown button */}
                         <button
                           type="button"
+                          disabled={editScoringMode === 'points'}
                           onClick={() => handleToggleWinner(p.playerId)}
-                          title={p.isWinner ? 'Remove winner status' : 'Set as winner'}
+                          title={
+                            editScoringMode === 'points'
+                              ? 'Winners are automatically calculated from scores'
+                              : rowIsWinner
+                              ? 'Remove winner status'
+                              : 'Set as winner'
+                          }
                           className={cn(
-                            'p-1.5 rounded-lg border transition-colors cursor-pointer flex items-center gap-1 text-xs font-bold',
-                            p.isWinner
+                            'p-1.5 rounded-lg border transition-colors flex items-center gap-1 text-xs font-bold',
+                            editScoringMode === 'points' ? 'cursor-default' : 'cursor-pointer',
+                            rowIsWinner
                               ? 'bg-amber-500 text-[#161311] border-amber-400 shadow-md'
+                              : editScoringMode === 'points'
+                              ? 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]/50 border-[var(--border-subtle)]'
                               : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-amber-400'
                           )}
                         >
                           <Crown className="w-3.5 h-3.5 fill-current" />
                           <span className="text-[10px] hidden sm:inline">
-                            {p.isWinner ? (editScoringMode === 'coop' ? 'Victory' : 'Winner') : 'Defeat'}
+                            {rowIsWinner ? (editScoringMode === 'coop' ? 'Victory' : 'Winner') : editScoringMode === 'coop' ? 'Defeat' : '—'}
                           </span>
                         </button>
 

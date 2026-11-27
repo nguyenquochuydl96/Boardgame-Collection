@@ -157,8 +157,10 @@ export const Step6Memories: React.FC<Step6MemoriesProps> = React.memo(
                 Ready to Record Session
               </span>
               <span className="text-xs text-[var(--muted)] tabular-nums">
-                {formatDate(datePlayed)} ·{' '}
-                {formatDuration(Number(durationMinutes) || 60)}
+                {formatDate(datePlayed)}
+                {Number.isFinite(Number(durationMinutes)) && durationMinutes.trim() !== ''
+                  ? ` · ${formatDuration(Number(durationMinutes))}`
+                  : ''}
               </span>
             </div>
 

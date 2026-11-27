@@ -31,7 +31,6 @@ import {
   compressImage,
   getLocalDateString,
   buildLocalDateTimeISO,
-  resolveCoopWinnerIds,
   formatCount,
   buildRematchDraftFromSession,
   resolveGameScoringMode,
@@ -45,7 +44,8 @@ import {
   saveSessionAndCleanDraft,
   writeDraftIfSafe,
 } from '../lib/draftSafety';
-import { getScoringTemplateForGame } from '../lib/scoringPresets';
+import { getScoringTemplateForGame, ScoringCategory } from '../lib/scoringPresets';
+import { normalizeSessionResult } from '../lib/sessionResults';
 import { pushVaultToCloud } from '../lib/supabaseSync';
 import { saveMediaImage } from '../lib/mediaStorage';
 import { PickerItem } from '../components/picker/MysteryCardShuffle';
@@ -123,7 +123,7 @@ export const NewSessionPage: React.FC = () => {
     }
   }, [defaultLocation, location]);
 
-  const [durationMinutes, setDurationMinutes] = useState<string>('60');
+  const [durationMinutes, setDurationMinutes] = useState<string>('');
   const hasManualDurationRef = useRef<boolean>(false);
 
   // Auto-Timer & Session Draft state
@@ -180,10 +180,10 @@ export const NewSessionPage: React.FC = () => {
   const [lowScoreWins, setLowScoreWins] = useState(false);
   const [scoringMode, setScoringMode] = useState<'detailed' | 'quick'>('quick');
   const [breakdownsByPlayerId, setBreakdownsByPlayerId] = useState<Record<string, Record<string, number>>>({});
+  const [scoringSheetCategories, setScoringSheetCategories] = useState<ScoringCategory[]>([]);
   const [scoresByPlayerId, setScoresByPlayerId] = useState<Record<string, number | undefined>>({});
   const [manualWinnerIds, setManualWinnerIds] = useState<string[]>([]);
   const [coopOutcome, setCoopOutcome] = useState<'won' | 'lost'>('won');
-  const [hasTouchedMatrix, setHasTouchedMatrix] = useState(false);
 
   // Step 6: Memories
   const [photos, setPhotos] = useState<string[]>([]);
@@ -544,6 +544,7 @@ export const NewSessionPage: React.FC = () => {
     setManualWinnerIds([]);
     setScoresByPlayerId({});
     setBreakdownsByPlayerId({});
+    setScoringSheetCategories([]);
     setLogTeamScore(false);
     setTeamScore(undefined);
   };
@@ -720,118 +721,27 @@ export const NewSessionPage: React.FC = () => {
     return allAvailablePlayers.find((p) => p.id === firstPlayerId);
   }, [allAvailablePlayers, firstPlayerId]);
 
-  // Compute ranked PlayerScore list
+  // One canonical resolver keeps wizard output consistent with edit/import paths.
   const computedPlayerScores: PlayerScore[] = useMemo(() => {
-    if (activeScoringMode === 'coop') {
-      const coopWinnerIds = resolveCoopWinnerIds(
-        coopOutcome,
-        activeSessionPlayers.map((p) => p.id)
-      );
-      const coopScore = logTeamScore ? teamScore : undefined;
-
-      return activeSessionPlayers.map((p) => ({
-        playerId: p.id,
-        playerName: p.name,
-        score: coopScore,
-        rank: undefined,
-        isWinner: coopWinnerIds.includes(p.id),
-        scoreBreakdown: undefined,
-      }));
-    }
-
-    if (activeScoringMode === 'win_only') {
-      return activeSessionPlayers.map((p) => {
-        const isWinner = manualWinnerIds.includes(p.id);
-        return {
-          playerId: p.id,
-          playerName: p.name,
-          score: undefined,
-          rank: isWinner ? 1 : 2,
-          isWinner,
-          scoreBreakdown: undefined,
-        };
-      });
-    }
-
-    const hasAnyNumericScore =
-      hasTouchedMatrix ||
-      activeSessionPlayers.some((p) => typeof scoresByPlayerId[p.id] === 'number');
-
-    if (hasAnyNumericScore && manualWinnerIds.length === 0) {
-      const validScores = activeSessionPlayers
-        .map((p) => scoresByPlayerId[p.id])
-        .filter((v): v is number => typeof v === 'number');
-      const targetBest =
-        validScores.length > 0
-          ? lowScoreWins
-            ? Math.min(...validScores)
-            : Math.max(...validScores)
-          : undefined;
-
-      const sortedForRank = [...activeSessionPlayers].sort((a, b) => {
-        const sa = scoresByPlayerId[a.id];
-        const sb = scoresByPlayerId[b.id];
-        if (sa === undefined && sb === undefined) return 0;
-        if (sa === undefined) return 1;
-        if (sb === undefined) return -1;
-        return lowScoreWins ? sa - sb : sb - sa;
-      });
-
-      // Standard Competition Ranking (1, 1, 3 for ties)
-      const ranksByPlayerId: Record<string, number> = {};
-      let currentRank = 1;
-      for (let i = 0; i < sortedForRank.length; i++) {
-        const p = sortedForRank[i];
-        const sc = scoresByPlayerId[p.id];
-        if (sc === undefined) continue;
-        if (i > 0) {
-          const prevScore = scoresByPlayerId[sortedForRank[i - 1].id];
-          if (sc !== prevScore) {
-            currentRank = i + 1;
-          }
-        }
-        ranksByPlayerId[p.id] = currentRank;
-      }
-
-      return activeSessionPlayers.map((p) => {
-        const sc = scoresByPlayerId[p.id];
-        const bd = breakdownsByPlayerId[p.id];
-        const hasBd = bd && Object.values(bd).some((v) => v !== 0);
-        return {
-          playerId: p.id,
-          playerName: p.name,
-          score: sc,
-          rank: ranksByPlayerId[p.id],
-          isWinner: sc !== undefined && targetBest !== undefined && sc === targetBest,
-          scoreBreakdown: hasBd ? bd : undefined,
-        };
-      });
-    }
-
-    return activeSessionPlayers.map((p, idx) => {
-      const bd = breakdownsByPlayerId[p.id];
-      const hasBd = bd && Object.values(bd).some((v) => v !== 0);
+    const rawPlayers = activeSessionPlayers.map((player) => {
+      const breakdown = breakdownsByPlayerId[player.id];
+      const hasBreakdown = breakdown && Object.values(breakdown).some((value) => value !== 0);
       return {
-        playerId: p.id,
-        playerName: p.name,
-        score: scoresByPlayerId[p.id],
-        rank: idx + 1,
-        isWinner: manualWinnerIds.includes(p.id),
-        scoreBreakdown: hasBd ? bd : undefined,
+        playerId: player.id,
+        playerName: player.name,
+        score: activeScoringMode === 'points' ? scoresByPlayerId[player.id] : undefined,
+        isWinner: manualWinnerIds.includes(player.id),
+        scoreBreakdown: activeScoringMode === 'points' && hasBreakdown ? breakdown : undefined,
       };
     });
-  }, [
-    activeScoringMode,
-    activeSessionPlayers,
-    coopOutcome,
-    logTeamScore,
-    teamScore,
-    manualWinnerIds,
-    hasTouchedMatrix,
-    scoresByPlayerId,
-    lowScoreWins,
-    breakdownsByPlayerId,
-  ]);
+    return normalizeSessionResult({
+      mode: activeScoringMode,
+      players: rawPlayers,
+      winnerIds: manualWinnerIds,
+      lowestScoreWins: lowScoreWins,
+      coopOutcome,
+    }).players;
+  }, [activeScoringMode, activeSessionPlayers, coopOutcome, manualWinnerIds, scoresByPlayerId, lowScoreWins, breakdownsByPlayerId]);
 
   const handleTogglePlayer = (playerId: string) => {
     setSelectedPlayerIds((prev) =>
@@ -920,11 +830,6 @@ export const NewSessionPage: React.FC = () => {
   const handleSaveSession = () => {
     if (!selectedGame || activeSessionPlayers.length === 0 || isSaving || isSubmittedRef.current) return;
 
-    if (activeScoringMode === 'win_only' && manualWinnerIds.length === 0) {
-      alert('Please select at least one winner before saving.');
-      return;
-    }
-
     if (decisionPendingRef.current || restoringRef.current) {
       setQuotaError('Resume or discard the pending draft before saving this session.');
       return;
@@ -939,6 +844,25 @@ export const NewSessionPage: React.FC = () => {
       return;
     }
 
+    const normalizedResult = normalizeSessionResult({
+      mode: activeScoringMode,
+      players: computedPlayerScores,
+      winnerIds: manualWinnerIds,
+      lowestScoreWins: lowScoreWins,
+      coopOutcome,
+    });
+    if (normalizedResult.errors.length > 0) {
+      alert(normalizedResult.errors[0]);
+      return;
+    }
+
+    const durationText = durationMinutes.trim();
+    const parsedDuration = durationText === '' ? undefined : Number(durationText);
+    if (parsedDuration !== undefined && (!Number.isFinite(parsedDuration) || parsedDuration < 0)) {
+      alert('Duration must be a non-negative number of minutes or left blank.');
+      return;
+    }
+
     // Persist the latest wizard contents before attempting to save the session.
     if (!flushDraftNow()) return;
     isSubmittedRef.current = true;
@@ -949,9 +873,19 @@ export const NewSessionPage: React.FC = () => {
     });
 
     const isCoop = activeScoringMode === 'coop';
-    const winnerEntry = isCoop
-      ? (coopOutcome === 'won' ? computedPlayerScores[0] : undefined)
-      : (computedPlayerScores.find((p) => p.isWinner) || computedPlayerScores[0]);
+    const recordedTeamScore = isCoop && logTeamScore && typeof teamScore === 'number' && Number.isFinite(teamScore)
+      ? teamScore
+      : undefined;
+    const sheetCategories = scoringSheetCategories.length > 0
+      ? scoringSheetCategories
+      : scoringMode === 'detailed' ? getScoringTemplateForGame(selectedGame.name).categories : [];
+    const scoringSheetSnapshot = scoringMode === 'detailed' && sheetCategories.length > 0
+      ? {
+          templateName: getScoringTemplateForGame(selectedGame.name).displayName,
+          formulaVersion: 1 as const,
+          categories: sheetCategories.map(({ id, name, description, icon, multiplier }) => ({ id, name, description, icon, multiplier })),
+        }
+      : undefined;
 
     const cleanDate = (datePlayed || '').split('T')[0] || getLocalDateString();
     const computedIsoDate = buildLocalDateTimeISO(cleanDate, new Date());
@@ -964,12 +898,16 @@ export const NewSessionPage: React.FC = () => {
       gameThumbnail: selectedGame.thumbnail || selectedGame.image || '',
       datePlayed: computedIsoDate,
       location: location.trim() || undefined,
-      durationMinutes: Math.max(5, Number(durationMinutes) || 60),
-      players: computedPlayerScores,
-      winnerId: winnerEntry?.playerId,
+      durationMinutes: parsedDuration,
+      players: normalizedResult.players,
+      winnerIds: normalizedResult.winnerIds,
+      winnerId: normalizedResult.winnerId,
+      lowestScoreWins: normalizedResult.lowestScoreWins,
+      teamScore: recordedTeamScore,
+      scoringSheetSnapshot,
       isCoop: isCoop,
       scoringMode: activeScoringMode,
-      coopOutcome: isCoop ? coopOutcome : undefined,
+      coopOutcome: normalizedResult.coopOutcome,
       firstPlayerMethod: isCoop ? 'manual' : firstPlayerMethod,
       firstPlayerId: isCoop ? undefined : (firstPlayerId || activeSessionPlayers[0]?.id),
       photos: photos.length > 0 ? photos : undefined,
@@ -1295,7 +1233,7 @@ export const NewSessionPage: React.FC = () => {
                   } else if (mode === 'win_only') {
                     setScoresByPlayerId({});
                     setBreakdownsByPlayerId({});
-                    setHasTouchedMatrix(false);
+                    setScoringSheetCategories([]);
                   }
                 }}
                 lowScoreWins={lowScoreWins}
@@ -1311,10 +1249,10 @@ export const NewSessionPage: React.FC = () => {
                 setTeamScore={setTeamScore}
                 activeSessionPlayers={activeSessionPlayers}
                 breakdownsByPlayerId={breakdownsByPlayerId}
-                onScoresUpdate={(totals, breakdowns) => {
-                  setHasTouchedMatrix(true);
+                onScoresUpdate={(totals, breakdowns, categories) => {
                   setScoresByPlayerId(totals);
                   setBreakdownsByPlayerId(breakdowns);
+                  setScoringSheetCategories(categories);
                   if (activeScoringMode !== 'coop') {
                     setManualWinnerIds([]);
                   }

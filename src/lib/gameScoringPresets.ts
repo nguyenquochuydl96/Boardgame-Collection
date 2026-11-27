@@ -422,9 +422,13 @@ export function getSessionWinners<T extends { playerId: string; isWinner?: boole
     return session.players.filter((p) => p.isWinner || session.coopOutcome === 'won') as unknown as T[];
   }
 
-  // Competitive (points or win_only)
+  // Competitive (points or win_only). winnerIds is canonical; older records fall
+  // back to their persisted player flags and the legacy single winnerId.
+  const winnerIds = Array.isArray(session.winnerIds) ? new Set(session.winnerIds) : undefined;
   return session.players.filter(
-    (p) => Boolean(p.isWinner || (session.winnerId && p.playerId === session.winnerId))
+    (p) => winnerIds
+      ? winnerIds.has(p.playerId)
+      : Boolean(p.isWinner || (session.winnerId && p.playerId === session.winnerId))
   ) as unknown as T[];
 }
 

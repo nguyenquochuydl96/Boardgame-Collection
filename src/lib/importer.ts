@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
-import { BoardGame, GameStatus, Player, PlaySession, GameLocation } from '../types';
-import { normalizeLocationKey } from './utils';
+import { BoardGame, GameStatus, Player, PlayerScore, PlaySession, GameLocation } from '../types';
+import { normalizeLocationKey, resolveGameScoringMode, resolveLowestScoreWins } from './utils';
 import { assertValidBGCatalogInput, type RestoreSelection } from './restoreValidation';
 
 export interface ImportPreviewItem {
@@ -320,35 +320,42 @@ export function parseBGCatalogJsonObject(
     const g = gameMap.get(play.gameId);
     const pps = playersPlaysByPlayId.get(play.id) || [];
 
-    const scores = pps.map((pp) => {
+    const sessionGame = g
+      ? games.find((game) => game.id === `bgg-${g.bggId || g.id}`)
+      : undefined;
+    const scoringMode = resolveGameScoringMode(sessionGame);
+    const lowestScoreWins = scoringMode === 'points' ? resolveLowestScoreWins(sessionGame) : undefined;
+    const scores: PlayerScore[] = pps.map((pp) => {
       const pl = playerMap.get(pp.playerId);
+      const score =
+        pp.score !== null &&
+        pp.score !== undefined &&
+        String(pp.score).trim() !== '' &&
+        !isNaN(Number(pp.score))
+          ? Number(pp.score)
+          : undefined;
       return {
         playerId: `player-${pp.playerId}`,
         playerName: pl?.name || pp.nickname || 'Guest',
-        score:
-          pp.score !== null &&
-          pp.score !== undefined &&
-          String(pp.score).trim() !== '' &&
-          !isNaN(Number(pp.score))
-            ? Number(pp.score)
-            : undefined,
+        score,
         isWinner: pp.winner === 1,
-        rank: 1,
       };
     });
 
-    // Rank sorting - competition ranking (1, 1, 3 for ties)
-    const sorted = [...scores].sort(
-      (a, b) => (b.score ?? -999999) - (a.score ?? -999999)
-    );
-    sorted.forEach((item, idx) => {
-      if (idx > 0 && item.score !== undefined && item.score === sorted[idx - 1].score) {
-        item.rank = sorted[idx - 1].rank;
-      } else {
-        item.rank = idx + 1;
-      }
-    });
+    // Import winner flags exactly as supplied. Ranks are only inferred when every
+    // participant has a score and the score direction is known.
+    const canInferRanks = scoringMode === 'points' && scores.length > 0 && scores.every((item) => typeof item.score === 'number');
+    if (canInferRanks) {
+      const sorted = [...scores].sort((a, b) => lowestScoreWins
+        ? (a.score as number) - (b.score as number)
+        : (b.score as number) - (a.score as number));
+      sorted.forEach((item, index) => {
+        const previous = sorted[index - 1];
+        item.rank = index > 0 && item.score === previous.score ? previous.rank : index + 1;
+      });
+    }
 
+    const winnerIds = scores.filter((item) => item.isWinner).map((item) => item.playerId);
     const winner = pps.find((pp) => pp.winner === 1);
     const starter = pps.find((pp) => pp.startPlayer === 1);
 
@@ -368,7 +375,10 @@ export function parseBGCatalogJsonObject(
       durationMinutes: play.length ? Number(play.length) : undefined,
       firstPlayerMethod: starter ? 'manual' : 'random_wheel',
       firstPlayerId: starter ? `player-${starter.playerId}` : undefined,
+      winnerIds: winnerIds.length > 0 ? winnerIds : undefined,
       winnerId: winner ? `player-${winner.playerId}` : undefined,
+      lowestScoreWins,
+      scoringMode,
       players: scores,
       photos,
       notes: (play.notes || '').replace(/#BGCatalog/g, '').trim() || undefined,

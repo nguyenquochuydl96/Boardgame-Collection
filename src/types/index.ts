@@ -99,6 +99,21 @@ export interface PlayerScore {
   scoreBreakdown?: Record<string, number>; // for custom scoring sheets
 }
 
+export interface ScoringSheetCategorySnapshot {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  multiplier?: number;
+}
+
+/** Immutable display metadata captured when a detailed score sheet is recorded. */
+export interface ScoringSheetSnapshot {
+  templateName?: string;
+  formulaVersion: 1;
+  categories: ScoringSheetCategorySnapshot[];
+}
+
 export type FirstPlayerMethod = 'random_wheel' | 'manual' | 'previous_loser' | 'previous_winner';
 
 export interface PlaySession {
@@ -111,7 +126,15 @@ export interface PlaySession {
   location?: string;
   durationMinutes?: number;
   players: PlayerScore[];
+  /** Canonical set of winners; `winnerId` remains only for legacy compatibility. */
+  winnerIds?: string[];
   winnerId?: string;
+  /** Immutable scoring direction captured when the result was recorded. */
+  lowestScoreWins?: boolean;
+  /** Optional team score for co-op sessions; never copied to individual players. */
+  teamScore?: number;
+  /** Immutable metadata for a detailed score sheet. */
+  scoringSheetSnapshot?: ScoringSheetSnapshot;
   isCoop?: boolean;
   scoringMode?: GameScoringMode;
   coopOutcome?: 'won' | 'lost';

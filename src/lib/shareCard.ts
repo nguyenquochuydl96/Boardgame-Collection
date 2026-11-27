@@ -10,8 +10,8 @@ import {
   isWinOnlySession,
   normalizeLocationKey,
   resolveAvatarImage,
-  resolveLowestScoreWins,
 } from './utils';
+import { resolveSessionLowestScoreWins, resolveSessionTeamScore } from './sessionResults';
 
 export type ShareCardMode = 'points' | 'win_only' | 'coop';
 
@@ -253,8 +253,8 @@ export function buildSessionShareCardData(
     return streak >= 2 ? streak : undefined;
   };
 
-  // Lowest score wins resolution
-  const lowestScoreWins = resolveLowestScoreWins(game);
+  // Session snapshots score direction so historical cards do not change with game edits.
+  const lowestScoreWins = resolveSessionLowestScoreWins(session, game);
 
   // 3. Mode-specific data preparation
   if (mode === 'points') {
@@ -272,6 +272,11 @@ export function buildSessionShareCardData(
       }
       return (a.playerName || '').localeCompare(b.playerName || '');
     });
+
+    const canonicalWinnerIds = new Set(getSessionWinners(session, game).map((player) => player.playerId));
+    const hasCompleteScores = rawPlayers.length > 0 && rawPlayers.every(
+      (player) => typeof player.score === 'number' && Number.isFinite(player.score)
+    );
 
     // Compute standard ranks with tie breaking
     const rankedPlayersWithoutPct: Array<{
@@ -296,9 +301,9 @@ export function buildSessionShareCardData(
         currentRank = i + 1;
       }
 
-      const isWinner = Boolean(
-        p.isWinner || (session.winnerId && p.playerId === session.winnerId) || currentRank === 1
-      );
+      const isWinner = canonicalWinnerIds.size > 0
+        ? canonicalWinnerIds.has(p.playerId)
+        : hasCompleteScores && currentRank === 1;
 
       const { resolvedName, avatar } = getPlayerDetails(p);
 
@@ -354,9 +359,9 @@ export function buildSessionShareCardData(
     }
 
     // Determine Callout Badge & Winner Micro-Tag
-    const rank1Players = rankedPlayersWithoutPct.filter((p) => p.rank === 1);
+    const rank1Players = rankedPlayersWithoutPct.filter((p) => p.isWinner);
     let rank1MicroTag: string | undefined;
-    let calloutBadge = 'SOLO VICTORY';
+    let calloutBadge = rank1Players.length === 0 ? 'RESULT PENDING' : 'SOLO VICTORY';
 
     if (isNewRecord) {
       calloutBadge = '★ NEW RECORD';
@@ -560,13 +565,8 @@ export function buildSessionShareCardData(
   const calloutBadge = isWon ? 'TEAM VICTORY' : 'TEAM DEFEAT';
 
   let teamScoreFormatted: string | undefined;
-  const rawTeamScore =
-    (session as any).coopScore ?? (session as any).teamScore;
-  if (
-    typeof rawTeamScore === 'number' &&
-    Number.isFinite(rawTeamScore) &&
-    rawTeamScore > 0
-  ) {
+  const rawTeamScore = resolveSessionTeamScore(session);
+  if (typeof rawTeamScore === 'number' && Number.isFinite(rawTeamScore)) {
     teamScoreFormatted = formatNumber(rawTeamScore);
   }
 

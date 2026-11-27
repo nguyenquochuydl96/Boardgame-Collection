@@ -12,6 +12,8 @@ import {
   formatWinnerBadgeText,
 } from '../../lib/utils';
 import { useGameStore } from '../../store/useGameStore';
+import { formatNumber } from '../../lib/utils';
+import { resolveSessionTeamScore } from '../../lib/sessionResults';
 import { PlayerAvatar } from '../player/PlayerAvatar';
 import { GameCoverImage } from '../game/GameCoverImage';
 
@@ -35,6 +37,7 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
   const isCoop = isCoopSession(session, game);
   const isWinOnly = isWinOnlySession(session, game);
   const winners = getSessionWinners(session, game);
+  const coopTeamScore = isCoop ? resolveSessionTeamScore(session) : undefined;
   const winnerBadge = formatWinnerBadgeText(winners);
   const scoreSuffix =
     !isWinOnly &&
@@ -79,11 +82,17 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--good-soft)] text-[var(--good)] border border-[var(--good)]/30 text-xs font-bold shrink-0">
                 <span>🤝</span>
                 <span>Team Win</span>
+                {typeof coopTeamScore === 'number' && (
+                  <span className="font-mono tabular-nums">· {formatNumber(coopTeamScore)}</span>
+                )}
               </span>
             ) : isCoop ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--bad-soft)] text-[var(--bad)] border border-[var(--bad)]/30 text-xs font-bold shrink-0">
                 <span>💀</span>
                 <span>Team Defeat</span>
+                {typeof coopTeamScore === 'number' && (
+                  <span className="font-mono tabular-nums">· {formatNumber(coopTeamScore)}</span>
+                )}
               </span>
             ) : winners.length > 0 ? (
               <span
@@ -102,7 +111,7 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
               <Calendar className="w-3.5 h-3.5 text-[var(--accent)]" />
               {formatDate(session.datePlayed)}
             </span>
-            {session.durationMinutes ? (
+            {typeof session.durationMinutes === 'number' ? (
               <>
                 <span aria-hidden="true" className="opacity-40">·</span>
                 <span className="inline-flex items-center gap-1">

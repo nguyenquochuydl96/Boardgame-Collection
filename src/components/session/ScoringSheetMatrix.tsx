@@ -16,7 +16,8 @@ export interface ScoringSheetMatrixProps {
   computeTotal?: (values: Record<string, number>) => number;
   onScoresUpdate: (
     totalScores: Record<string, number>,
-    breakdowns: Record<string, Record<string, number>>
+    breakdowns: Record<string, Record<string, number>>,
+    categories: ScoringCategory[]
   ) => void;
 }
 
@@ -91,7 +92,7 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
 
   // Notify parent on change only when totals or breakdowns actually change, and NEVER unconditionally on initial mount
   useEffect(() => {
-    const serialized = JSON.stringify({ totals: playerTotals, breakdowns });
+    const serialized = JSON.stringify({ totals: playerTotals, breakdowns, categories });
     if (!isMountedRef.current) {
       isMountedRef.current = true;
       lastEmittedRef.current = serialized;
@@ -100,9 +101,9 @@ export const ScoringSheetMatrix: React.FC<ScoringSheetMatrixProps> = ({
 
     if (serialized !== lastEmittedRef.current) {
       lastEmittedRef.current = serialized;
-      onScoresUpdate(playerTotals, breakdowns);
+      onScoresUpdate(playerTotals, breakdowns, categories);
     }
-  }, [playerTotals, breakdowns, onScoresUpdate]);
+  }, [playerTotals, breakdowns, categories, onScoresUpdate]);
 
   // Handle cell value change (supports negative numbers e.g. -6 for Kansas City, disallows negative for penalty rows)
   const handleCellChange = (playerId: string, categoryId: string, valStr: string) => {
