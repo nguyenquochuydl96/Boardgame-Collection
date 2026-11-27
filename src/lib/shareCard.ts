@@ -14,6 +14,16 @@ import {
 import { resolveSessionLowestScoreWins, resolveSessionTeamScore } from './sessionResults';
 
 export type ShareCardMode = 'points' | 'win_only' | 'coop';
+export type ShareCardTone = 'celebrate' | 'roast';
+export type ShareCardResultStatus = 'resolved' | 'pending';
+
+export interface ShareCardPresentationOptions {
+  tone?: ShareCardTone;
+  shuffleSeed?: number;
+  customCaption?: string;
+}
+
+export type ShareCardVibeTag = string;
 
 export interface ShareCardPlayerAvatar {
   avatarUrl?: string;
@@ -23,6 +33,7 @@ export interface ShareCardPlayerAvatar {
 }
 
 export interface ShareCardPointsPlayer extends ShareCardPlayerAvatar {
+  playerId: string;
   rank: number;
   playerName: string;
   score: number;
@@ -30,19 +41,26 @@ export interface ShareCardPointsPlayer extends ShareCardPlayerAvatar {
   isWinner: boolean;
   scorePercentage: number; // 0 to 100
   microTag?: string; // e.g. "+32 pts margin", "Photo Finish · +1 pt", "Shared Victory"
+  vibeTag?: ShareCardVibeTag; // Presentation-only celebrate/roast line
   gapFromLeaderText?: string; // e.g. "-32" or "+4"
 }
 
 export interface ShareCardWinnerPlayer extends ShareCardPlayerAvatar {
+  playerId: string;
   playerName: string;
+  vibeTag?: ShareCardVibeTag;
 }
 
 export interface ShareCardOtherPlayer extends ShareCardPlayerAvatar {
+  playerId: string;
   playerName: string;
+  vibeTag?: ShareCardVibeTag;
 }
 
 export interface ShareCardTeamPlayer extends ShareCardPlayerAvatar {
+  playerId: string;
   playerName: string;
+  vibeTag?: ShareCardVibeTag;
 }
 
 export interface SessionShareCardData {
@@ -63,6 +81,12 @@ export interface SessionShareCardData {
   winnerGameStreak?: number; // e.g. 3 for 3-win streak on this specific game
   ticketSerial: string; // e.g. "NO. 0041"
   ticketBarcode: string; // e.g. "HEO-41-20261122"
+  resultStatus: ShareCardResultStatus;
+  tone: ShareCardTone;
+  shuffleSeed: number;
+  headline: string;
+  stamp: string;
+  customCaption?: string;
 
   // Points mode
   leaderboard?: ShareCardPointsPlayer[];
@@ -80,7 +104,7 @@ export interface SessionShareCardData {
   overflowTeamCount?: number;
 }
 
-export interface BuildShareCardContext {
+export interface BuildShareCardContext extends ShareCardPresentationOptions {
   game?: BoardGame | null;
   allSessions?: PlaySession[];
   players?: Player[];
@@ -142,6 +166,78 @@ function resolvePlayerAvatar(
   };
 }
 
+function stableHash(value: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function pickVibe(seed: number, salt: number, variants: readonly string[]): string {
+  if (variants.length === 0) return '';
+  const value = (Math.abs(seed) + salt * 1103515245) >>> 0;
+  return variants[value % variants.length];
+}
+
+function cleanCustomCaption(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  const compact = value.normalize('NFC').trim().replace(/\s+/g, ' ');
+  return Array.from(compact).slice(0, 120).join('') || undefined;
+}
+
+function pendingPresentation(): Pick<SessionShareCardData, 'resultStatus' | 'headline' | 'stamp'> {
+  return {
+    resultStatus: 'pending',
+    headline: 'Scores Still Pending… Suspense!',
+    stamp: 'RESULT PENDING',
+  };
+}
+
+function resolvedPresentation(
+  mode: ShareCardMode,
+  tone: ShareCardTone,
+  seed: number,
+  details: { margin?: number; sharedWinner?: boolean; coopOutcome?: 'won' | 'lost' }
+): Pick<SessionShareCardData, 'resultStatus' | 'headline' | 'stamp'> {
+  if (mode === 'coop') {
+    if (details.coopOutcome === 'won') {
+      return tone === 'roast'
+        ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Dream Team!', 'Co-op Chaos, Perfected!', 'The Island Never Stood a Chance.']), stamp: pickVibe(seed, 2, ['GG EZ!', 'TEAM CARRIED!', 'VICTORY LAP!']) }
+        : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Dream Team!', 'Together, Unstoppable!', 'Co-op Heroes!']), stamp: pickVibe(seed, 2, ['TEAM WIN!', 'ALL FOR ONE!', 'HIGH FIVE!']) };
+    }
+    return tone === 'roast'
+      ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Friendship Tested!', 'Blame the Strategist!', 'The Table Has Questions.']), stamp: pickVibe(seed, 2, ['TEAM WIPED!', 'ROASTED!', 'TRY AGAIN!']) }
+      : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Friendship Tested!', 'One More Round?', 'The Team Will Rebuild.']), stamp: pickVibe(seed, 2, ['REGROUP!', 'NEXT TIME!', 'STILL FRIENDS!']) };
+  }
+
+  if (mode === 'win_only') {
+    return tone === 'roast'
+      ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Victory Secured. Receipts Saved.', 'Rules Lawyers Feared Them.', 'GG EZ? Debatable.']), stamp: pickVibe(seed, 2, ['GG EZ!', 'OUTPLAYED!', 'CROWN CLAIMED!']) }
+      : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Victory Secured!', 'Champions of the Table!', 'Game Night Legends!']), stamp: pickVibe(seed, 2, ['WINNER!', 'CLUTCH!', 'CROWN CLAIMED!']) };
+  }
+
+  if (details.sharedWinner) {
+    return tone === 'roast'
+      ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Nobody Blinked. Nobody Won Alone.', 'A Tie? The Drama Continues.', 'Shared Glory, Shared Trash Talk.']), stamp: 'SHARED VICTORY' }
+      : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Shared Glory!', 'Two Crowns, One Table!', 'A Legendary Tie!']), stamp: 'SHARED VICTORY' };
+  }
+  if ((details.margin ?? 0) <= 2) {
+    return tone === 'roast'
+      ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Clutch by a Whisker!', 'The Dice Chose Violence.', 'One Point, Infinite Salt.']), stamp: pickVibe(seed, 2, ['CLUTCH!', 'PHOTO FINISH!', 'SO CLOSE!']) }
+      : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['What a Finish!', 'A True Photo Finish!', 'Clutch at the Buzzer!']), stamp: 'PHOTO FINISH!' };
+  }
+  if ((details.margin ?? 0) >= 15) {
+    return tone === 'roast'
+      ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Carried? No, Crushed!', 'Absolute Menace.', 'The Scoreboard Needs Therapy.']), stamp: `NO MERCY · +${formatNumber(details.margin ?? 0)}` }
+      : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Absolute Menace!', 'A Legendary Performance!', 'Dominance Delivered!']), stamp: `BLOWOUT · +${formatNumber(details.margin ?? 0)}` };
+  }
+  return tone === 'roast'
+    ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['The Crown Stays Loud.', 'A Clean Table Takeover.', 'Scoreboard Says Enough.']), stamp: pickVibe(seed, 2, ['DESTROYED!', 'CROWN CLAIMED!', 'GG EZ!']) }
+    : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Game Night Champion!', 'A Tabletop Triumph!', 'Victory Looks Good!']), stamp: pickVibe(seed, 2, ['WINNER!', 'CROWN CLAIMED!', 'NICE PLAY!']) };
+}
+
 /**
  * Pure data builder preparing display payload for the Session Share Card.
  * Fully decoupled from DOM/Canvas to enable deterministic unit testing.
@@ -150,7 +246,20 @@ export function buildSessionShareCardData(
   session: PlaySession,
   context: BuildShareCardContext = {}
 ): SessionShareCardData {
-  const { game, allSessions = [], players = [], locations = [], useTablePhoto = false } = context;
+  const {
+    game,
+    allSessions = [],
+    players = [],
+    locations = [],
+    useTablePhoto = false,
+    tone = 'roast',
+    shuffleSeed,
+    customCaption,
+  } = context;
+  const resolvedShuffleSeed = Number.isFinite(shuffleSeed)
+    ? Math.trunc(shuffleSeed as number)
+    : stableHash(`${session.id}|${session.createdAt}|${session.gameId}`);
+  const resolvedCustomCaption = cleanCustomCaption(customCaption);
 
   // 1. Resolve scoring mode via Single Source of Truth
   let mode: ShareCardMode = 'points';
@@ -363,11 +472,12 @@ export function buildSessionShareCardData(
     let rank1MicroTag: string | undefined;
     let calloutBadge = rank1Players.length === 0 ? 'RESULT PENDING' : 'SOLO VICTORY';
 
-    if (isNewRecord) {
+    if (hasCompleteScores && isNewRecord) {
       calloutBadge = '★ NEW RECORD';
-    } else if (rank1Players.length > 1) {
+    } else if (hasCompleteScores && rank1Players.length > 1) {
       calloutBadge = 'SHARED VICTORY';
     } else if (
+      hasCompleteScores &&
       rankedPlayersWithoutPct.length > 1 &&
       typeof rankedPlayersWithoutPct[0].score === 'number' &&
       typeof rankedPlayersWithoutPct[1].score === 'number'
@@ -393,6 +503,7 @@ export function buildSessionShareCardData(
     if (rank1Players.length > 1) {
       rank1MicroTag = 'Shared Victory';
     } else if (
+      hasCompleteScores &&
       rankedPlayersWithoutPct.length > 1 &&
       typeof rankedPlayersWithoutPct[0].score === 'number' &&
       typeof rankedPlayersWithoutPct[1].score === 'number'
@@ -410,6 +521,24 @@ export function buildSessionShareCardData(
     // Winner Game Streak (only when single winner)
     const singleWinnerPlayerId = rank1Players.length === 1 ? rank1Players[0].playerId : undefined;
     const winnerGameStreak = computeWinnerGameStreak(singleWinnerPlayerId);
+
+    const resultStatus: ShareCardResultStatus = hasCompleteScores && rankedPlayersWithoutPct.length > 0
+      ? 'resolved'
+      : 'pending';
+    const resolvedMargin = resultStatus === 'resolved' && rank1Players.length === 1 && rankedPlayersWithoutPct.length > 1
+      ? Math.abs(rankedPlayersWithoutPct[0].score - rankedPlayersWithoutPct[1].score)
+      : undefined;
+    const presentation = resultStatus === 'pending'
+      ? pendingPresentation()
+      : resolvedPresentation('points', tone, resolvedShuffleSeed, {
+          margin: resolvedMargin,
+          sharedWinner: rank1Players.length > 1,
+        });
+    const lastRank = Math.max(...rankedPlayersWithoutPct.map((player) => player.rank));
+    if (resultStatus === 'pending') {
+      calloutBadge = 'RESULT PENDING';
+      rank1MicroTag = undefined;
+    }
 
     // Determine Proportional Score Bar Percentage & Gap for each player
     const topScore = rankedPlayersWithoutPct[0]?.score ?? 100;
@@ -441,14 +570,31 @@ export function buildSessionShareCardData(
         gapFromLeaderText = lowestScoreWins ? `+${formatNumber(diff)}` : `-${formatNumber(diff)}`;
       }
 
+      let vibeTag: ShareCardVibeTag | undefined;
+      if (resultStatus === 'resolved') {
+        if (p.isWinner) {
+          vibeTag = tone === 'roast' && (resolvedMargin ?? 0) >= 15
+            ? 'Absolute Menace'
+            : tone === 'roast' ? 'Crown Claimed' : 'Table Champion';
+        } else if (p.rank === 2 && (resolvedMargin ?? 0) <= 2) {
+          vibeTag = tone === 'roast'
+            ? `Robbed by ${formatNumber(resolvedMargin ?? 0)} ${resolvedMargin === 1 ? 'pt' : 'pts'}`
+            : 'So Close!';
+        } else if (rankedPlayersWithoutPct.length >= 3 && p.rank === lastRank) {
+          vibeTag = tone === 'roast' ? 'Chair Warmer' : 'Still in the Fight';
+        }
+      }
+
       return {
+        playerId: p.playerId,
         rank: p.rank,
         playerName: p.playerName,
         score: p.score,
         scoreFormatted: p.scoreFormatted,
-        isWinner: p.isWinner,
+        isWinner: resultStatus === 'resolved' && p.isWinner,
         scorePercentage,
-        microTag: p.rank === 1 ? rank1MicroTag : undefined,
+        microTag: resultStatus === 'resolved' && p.rank === 1 ? rank1MicroTag : undefined,
+        vibeTag,
         gapFromLeaderText,
         avatarUrl: p.avatar.avatarUrl,
         avatarEmoji: p.avatar.avatarEmoji,
@@ -477,12 +623,16 @@ export function buildSessionShareCardData(
       playerCountFormatted,
       playIndexFormatted,
       playNumber,
-      isNewRecord,
+      isNewRecord: resultStatus === 'resolved' && isNewRecord,
       lowestScoreWins,
       calloutBadge,
-      winnerGameStreak,
+      winnerGameStreak: resultStatus === 'resolved' ? winnerGameStreak : undefined,
       ticketSerial,
       ticketBarcode,
+      ...presentation,
+      tone,
+      shuffleSeed: resolvedShuffleSeed,
+      customCaption: resolvedCustomCaption,
       leaderboard,
       overflowPlayerCount,
     };
@@ -499,6 +649,7 @@ export function buildSessionShareCardData(
       const { resolvedName, avatar } = getPlayerDetails(p);
       const isWinner = winnerIdSet.has(p.playerId) || Boolean(p.isWinner);
       const playerItem = {
+        playerId: p.playerId,
         playerName: resolvedName,
         avatarUrl: avatar.avatarUrl,
         avatarEmoji: avatar.avatarEmoji,
@@ -524,14 +675,27 @@ export function buildSessionShareCardData(
       }
     }
 
+    const resultStatus: ShareCardResultStatus = winners.length > 0 ? 'resolved' : 'pending';
+    const presentation = resultStatus === 'pending'
+      ? pendingPresentation()
+      : resolvedPresentation('win_only', tone, resolvedShuffleSeed, {});
+    const winnersWithVibes = winners.map((player) => ({
+      ...player,
+      vibeTag: tone === 'roast' ? 'Rules Lawyers Feared Them' : 'Table Champion',
+    }));
+    const othersWithVibes = otherPlayers.map((player) => ({
+      ...player,
+      vibeTag: tone === 'roast' ? 'Plot Armor Missing' : 'Still in the Fight',
+    }));
+
     let calloutBadge = 'SOLO VICTORY';
     if (winners.length > 1) {
       calloutBadge = `${formatNumber(winners.length)} WINNERS`;
     } else if (winners.length === 0) {
-      calloutBadge = 'NO WINNER';
+      calloutBadge = 'RESULT PENDING';
     }
 
-    const singleWinnerPlayerId = winners.length === 1 ? winnerRecords[0]?.playerId : undefined;
+    const singleWinnerPlayerId = resultStatus === 'resolved' && winners.length === 1 ? winnerRecords[0]?.playerId : undefined;
     const winnerGameStreak = computeWinnerGameStreak(singleWinnerPlayerId);
 
     return {
@@ -549,20 +713,34 @@ export function buildSessionShareCardData(
       isNewRecord: false,
       lowestScoreWins: false,
       calloutBadge,
-      winnerGameStreak,
+      winnerGameStreak: resultStatus === 'resolved' ? winnerGameStreak : undefined,
       ticketSerial,
       ticketBarcode,
-      winners,
-      otherPlayers: finalOther,
+      ...presentation,
+      tone,
+      shuffleSeed: resolvedShuffleSeed,
+      customCaption: resolvedCustomCaption,
+      winners: winnersWithVibes,
+      otherPlayers: othersWithVibes.slice(0, finalOther.length),
       overflowOtherCount,
     };
   }
 
-  // Co-op mode
-  const isWon =
-    session.coopOutcome === 'won' || rawPlayers.some((p) => p.isWinner);
+  // Co-op mode: a legacy session without an explicit outcome or winning members
+  // remains pending rather than inventing a team defeat.
+  const hasExplicitCoopResult =
+    session.coopOutcome === 'won' ||
+    session.coopOutcome === 'lost' ||
+    rawPlayers.some((player) => player.isWinner);
+  const isWon = session.coopOutcome === 'won' || rawPlayers.some((player) => player.isWinner);
   const coopOutcome: 'won' | 'lost' = isWon ? 'won' : 'lost';
-  const calloutBadge = isWon ? 'TEAM VICTORY' : 'TEAM DEFEAT';
+  const resultStatus: ShareCardResultStatus = hasExplicitCoopResult ? 'resolved' : 'pending';
+  const presentation = resultStatus === 'pending'
+    ? pendingPresentation()
+    : resolvedPresentation('coop', tone, resolvedShuffleSeed, { coopOutcome });
+  const calloutBadge = resultStatus === 'pending'
+    ? 'RESULT PENDING'
+    : isWon ? 'TEAM VICTORY' : 'TEAM DEFEAT';
 
   let teamScoreFormatted: string | undefined;
   const rawTeamScore = resolveSessionTeamScore(session);
@@ -573,7 +751,13 @@ export function buildSessionShareCardData(
   const teamPlayers = rawPlayers.map((p) => {
     const { resolvedName, avatar } = getPlayerDetails(p);
     return {
+      playerId: p.playerId,
       playerName: resolvedName,
+      vibeTag: resultStatus === 'resolved'
+        ? isWon
+          ? tone === 'roast' ? 'Dream Team' : 'Co-op Hero'
+          : tone === 'roast' ? 'Friendship Tested' : 'Next Time'
+        : undefined,
       avatarUrl: avatar.avatarUrl,
       avatarEmoji: avatar.avatarEmoji,
       color: avatar.color,
@@ -606,6 +790,10 @@ export function buildSessionShareCardData(
     winnerGameStreak: undefined,
     ticketSerial,
     ticketBarcode,
+    ...presentation,
+    tone,
+    shuffleSeed: resolvedShuffleSeed,
+    customCaption: resolvedCustomCaption,
     coopOutcome,
     teamScoreFormatted,
     teamPlayers: finalTeam,

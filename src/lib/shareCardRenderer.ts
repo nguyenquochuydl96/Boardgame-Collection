@@ -1,8 +1,8 @@
 import { getMediaImage } from './mediaStorage';
 import { SessionShareCardData, ShareCardPlayerAvatar, buildProxiedImageUrl } from './shareCard';
 
-export type ShareCardTheme = 'dark' | 'light';
-export type ShareCardStyle = 'poster' | 'ticket';
+export type ShareCardTheme = 'dark' | 'light' | 'arcade' | 'party';
+export type ShareCardStyle = 'poster' | 'ticket' | 'podium';
 
 export interface RenderShareCardOptions {
   theme?: ShareCardTheme;
@@ -74,6 +74,48 @@ const PALETTES: Record<ShareCardTheme, Palette> = {
     redBg: '#FDF0F0',
     redText: '#B83232',
     redBorder: '#F1B2B2',
+  },
+  arcade: {
+    bg: '#100824',
+    cardBg: '#160B35',
+    surface: '#24104E',
+    surfaceAlt: '#32166B',
+    surfaceHover: '#45228D',
+    border: 'rgba(109, 247, 255, 0.34)',
+    borderLight: 'rgba(255, 102, 213, 0.64)',
+    text: '#FCF7FF',
+    textMuted: '#C6BBEF',
+    textSubMuted: '#8C7DBB',
+    accent: '#FF62D1',
+    accentSoft: 'rgba(255, 98, 209, 0.20)',
+    gold: '#FFE45C',
+    greenBg: 'rgba(68, 246, 193, 0.16)',
+    greenText: '#6DF7D1',
+    greenBorder: 'rgba(109, 247, 209, 0.62)',
+    redBg: 'rgba(255, 99, 151, 0.18)',
+    redText: '#FF9ABB',
+    redBorder: 'rgba(255, 154, 187, 0.62)',
+  },
+  party: {
+    bg: '#FFBE64',
+    cardBg: '#FFF7E9',
+    surface: '#FFE4AB',
+    surfaceAlt: '#FFD28D',
+    surfaceHover: '#FFC378',
+    border: 'rgba(84, 53, 36, 0.22)',
+    borderLight: 'rgba(84, 53, 36, 0.42)',
+    text: '#302319',
+    textMuted: '#735A47',
+    textSubMuted: '#A88364',
+    accent: '#EF5E5E',
+    accentSoft: 'rgba(239, 94, 94, 0.18)',
+    gold: '#AB6A00',
+    greenBg: '#D7F5D7',
+    greenText: '#236C57',
+    greenBorder: '#75C7A0',
+    redBg: '#FFE0DF',
+    redText: '#AF2E49',
+    redBorder: '#EE91A0',
   },
 };
 
@@ -460,6 +502,321 @@ function calculateTicketCanvasHeight(data: SessionShareCardData): number {
   return Math.max(1180, Math.min(1420, baseH + ledgerH));
 }
 
+function fitCanvasText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  initialSize: number,
+  minSize: number,
+  weight = '800'
+): number {
+  let size = initialSize;
+  while (size > minSize) {
+    ctx.font = `${weight} ${size}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth) return size;
+    size -= 2;
+  }
+  ctx.font = `${weight} ${minSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+  return minSize;
+}
+
+function drawConfettiAndSparkles(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  seed: number,
+  theme: ShareCardTheme
+): void {
+  const colors = theme === 'party'
+    ? ['#EF5E5E', '#1FAD91', '#7D54D7', '#FFDD5D', '#F98D46']
+    : ['#FF62D1', '#6DF7FF', '#FFE45C', '#6DF7D1', '#A994FF'];
+  let state = seed || 17;
+  const random = () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+
+  ctx.save();
+  for (let index = 0; index < 54; index += 1) {
+    const x = 20 + random() * (width - 40);
+    const y = 28 + random() * Math.min(760, height - 60);
+    const size = 5 + random() * 11;
+    ctx.fillStyle = colors[index % colors.length];
+    ctx.globalAlpha = 0.5 + random() * 0.35;
+    ctx.translate(x, y);
+    ctx.rotate(random() * Math.PI);
+    if (index % 5 === 0) {
+      ctx.beginPath();
+      ctx.moveTo(0, -size);
+      ctx.lineTo(size * 0.35, -size * 0.35);
+      ctx.lineTo(size, 0);
+      ctx.lineTo(size * 0.35, size * 0.35);
+      ctx.lineTo(0, size);
+      ctx.lineTo(-size * 0.35, size * 0.35);
+      ctx.lineTo(-size, 0);
+      ctx.lineTo(-size * 0.35, -size * 0.35);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.fillRect(-size / 2, -size / 3, size, Math.max(4, size * 0.54));
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  ctx.restore();
+}
+
+type PodiumEntry = {
+  playerId: string;
+  playerName: string;
+  rank: number;
+  scoreLabel?: string;
+  vibeTag?: string;
+  avatar: ShareCardPlayerAvatar;
+  isWinner: boolean;
+};
+
+function getPodiumEntries(data: SessionShareCardData): PodiumEntry[] {
+  if (data.mode === 'points') {
+    return (data.leaderboard || []).slice(0, 3).map((player) => ({
+      playerId: player.playerId,
+      playerName: player.playerName,
+      rank: player.rank,
+      scoreLabel: player.scoreFormatted,
+      vibeTag: player.vibeTag,
+      avatar: player,
+      isWinner: player.isWinner,
+    }));
+  }
+  if (data.mode === 'win_only') {
+    return [
+      ...(data.winners || []).map((player, index) => ({
+        playerId: player.playerId,
+        playerName: player.playerName,
+        rank: 1,
+        vibeTag: player.vibeTag,
+        avatar: player,
+        isWinner: true,
+        order: index,
+      })),
+      ...(data.otherPlayers || []).map((player, index) => ({
+        playerId: player.playerId,
+        playerName: player.playerName,
+        rank: index + 2,
+        vibeTag: player.vibeTag,
+        avatar: player,
+        isWinner: false,
+        order: index,
+      })),
+    ].slice(0, 3);
+  }
+  return (data.teamPlayers || []).slice(0, 3).map((player, index) => ({
+    playerId: player.playerId,
+    playerName: player.playerName,
+    rank: data.coopOutcome === 'won' ? 1 : index + 1,
+    vibeTag: player.vibeTag,
+    avatar: player,
+    isWinner: data.coopOutcome === 'won',
+  }));
+}
+
+function drawTiltedStamp(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  color: string,
+  textColor: string
+): void {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-0.13);
+  ctx.font = '900 26px system-ui, -apple-system, "Segoe UI", sans-serif';
+  const width = Math.min(300, Math.max(128, ctx.measureText(text).width + 42));
+  drawRoundRect(ctx, -width / 2, -31, width, 62, 13);
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.95;
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = textColor;
+  ctx.globalAlpha = 0.7;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = textColor;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  fitCanvasText(ctx, text, width - 28, 26, 16, '900');
+  ctx.fillText(text, 0, 1);
+  ctx.restore();
+}
+
+function renderPartyPodium(
+  ctx: CanvasRenderingContext2D,
+  data: SessionShareCardData,
+  palette: Palette,
+  accentColor: string,
+  coverImg: HTMLImageElement | null,
+  avatarImgMap: Map<string, HTMLImageElement | null>,
+  width: number,
+  height: number,
+  themeKey: ShareCardTheme
+): void {
+  const isPending = data.resultStatus === 'pending';
+  const isParty = themeKey === 'party';
+  const innerX = 40;
+  const innerY = 40;
+  const innerW = width - innerX * 2;
+  const innerH = height - innerY * 2;
+  const entries = getPodiumEntries(data);
+
+  const bg = ctx.createLinearGradient(0, 0, width, height);
+  if (isParty) {
+    bg.addColorStop(0, '#FF844E');
+    bg.addColorStop(0.48, '#FFCF6B');
+    bg.addColorStop(1, '#77DBB9');
+  } else {
+    bg.addColorStop(0, '#12062D');
+    bg.addColorStop(0.48, '#25105D');
+    bg.addColorStop(1, '#063F66');
+  }
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+  drawConfettiAndSparkles(ctx, width, height, data.shuffleSeed, themeKey);
+
+  drawRoundRect(ctx, innerX, innerY, innerW, innerH, 34);
+  ctx.fillStyle = palette.cardBg;
+  ctx.globalAlpha = 0.94;
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = themeKey === 'arcade' ? '#6DF7FF' : 'rgba(255,255,255,0.75)';
+  ctx.stroke();
+
+  ctx.save();
+  drawRoundRect(ctx, innerX, innerY, innerW, 300, 34);
+  ctx.clip();
+  if (coverImg) {
+    const scale = Math.max(innerW / coverImg.naturalWidth, 300 / coverImg.naturalHeight);
+    const sw = innerW / scale;
+    const sh = 300 / scale;
+    ctx.globalAlpha = 0.24;
+    ctx.drawImage(coverImg, (coverImg.naturalWidth - sw) / 2, (coverImg.naturalHeight - sh) / 2, sw, sh, innerX, innerY, innerW, 300);
+    ctx.globalAlpha = 1;
+  }
+  const heroScrim = ctx.createLinearGradient(0, innerY, 0, innerY + 300);
+  heroScrim.addColorStop(0, isParty ? 'rgba(255,105,72,0.28)' : 'rgba(20,4,61,0.26)');
+  heroScrim.addColorStop(1, palette.cardBg);
+  ctx.fillStyle = heroScrim;
+  ctx.fillRect(innerX, innerY, innerW, 300);
+  ctx.restore();
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = palette.accent;
+  ctx.font = '900 17px system-ui, -apple-system, "Segoe UI", sans-serif';
+  ctx.fillText('HEO GAME NIGHT // FINAL ROUND', innerX + 30, innerY + 38);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = palette.textMuted;
+  ctx.font = '800 15px system-ui, -apple-system, "Segoe UI", sans-serif';
+  ctx.fillText(data.playIndexFormatted.toUpperCase(), innerX + innerW - 30, innerY + 38);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = palette.text;
+  fitCanvasText(ctx, data.gameTitle, innerW - 120, 50, 28, '900');
+  ctx.fillText(data.gameTitle, width / 2, innerY + 98);
+  ctx.fillStyle = palette.textMuted;
+  ctx.font = '700 17px system-ui, -apple-system, "Segoe UI", sans-serif';
+  ctx.fillText(data.venueDateFormatted, width / 2, innerY + 139);
+  ctx.fillStyle = isPending ? palette.gold : palette.accent;
+  fitCanvasText(ctx, data.headline, innerW - 180, 32, 20, '900');
+  ctx.fillText(data.headline, width / 2, innerY + 206);
+  drawTiltedStamp(ctx, data.stamp, innerX + innerW - 174, innerY + 226, isPending ? palette.gold : accentColor, isParty ? '#FFFFFF' : '#160B35');
+
+  if (isPending) {
+    const centerY = 535;
+    ctx.fillStyle = palette.surface;
+    drawRoundRect(ctx, innerX + 62, 370, innerW - 124, 355, 28);
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = palette.borderLight;
+    ctx.stroke();
+    ctx.fillStyle = palette.gold;
+    ctx.font = '900 104px system-ui, -apple-system, "Segoe UI Symbol", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('?', width / 2, centerY - 42);
+    ctx.fillStyle = palette.text;
+    ctx.font = '900 28px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillText('No winner has been crowned yet.', width / 2, centerY + 38);
+    ctx.fillStyle = palette.textMuted;
+    ctx.font = '700 18px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillText('Finish the scores, then bring the banter.', width / 2, centerY + 74);
+  } else {
+    const podiumTop = 700;
+    const positions = [
+      { x: 235, y: podiumTop + 88, h: 190, width: 240, rank: 2 },
+      { x: 540, y: podiumTop, h: 278, width: 265, rank: 1 },
+      { x: 845, y: podiumTop + 118, h: 160, width: 220, rank: 3 },
+    ];
+    const sorted = [...entries].sort((a, b) => a.rank - b.rank);
+    const slotEntries = [sorted.find((entry) => entry.rank === 2), sorted.find((entry) => entry.rank === 1), sorted.find((entry) => entry.rank === 3)];
+
+    slotEntries.forEach((entry, index) => {
+      if (!entry) return;
+      const slot = positions[index];
+      const isChampion = slot.rank === 1;
+      const pedestalColor = isChampion ? palette.gold : isParty ? '#8D6BE9' : '#3B1B7B';
+      const avatarY = slot.y - (isChampion ? 82 : 66);
+      const avatarSize = isChampion ? 132 : 104;
+      ctx.fillStyle = pedestalColor;
+      drawRoundRect(ctx, slot.x - slot.width / 2, slot.y, slot.width, slot.h, 24);
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = isChampion ? '#FFF5B0' : palette.borderLight;
+      ctx.stroke();
+      drawPlayerAvatarOnCanvas(ctx, avatarImgMap.get(entry.playerName) || null, entry.avatar, slot.x, avatarY, avatarSize, isChampion ? palette.gold : palette.accent, 5);
+      ctx.fillStyle = isChampion ? '#302319' : '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.font = `900 ${isChampion ? 44 : 36}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+      ctx.fillText(`#${slot.rank}`, slot.x, slot.y + 49);
+      ctx.fillStyle = isChampion ? '#302319' : '#FFFFFF';
+      fitCanvasText(ctx, entry.playerName, slot.width - 28, isChampion ? 27 : 23, 15, '900');
+      ctx.fillText(entry.playerName, slot.x, slot.y + 91);
+      if (entry.scoreLabel) {
+        ctx.font = `800 ${isChampion ? 25 : 21}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+        ctx.fillText(entry.scoreLabel, slot.x, slot.y + 126);
+      }
+      if (entry.vibeTag) {
+        ctx.fillStyle = isChampion ? 'rgba(48,35,25,0.16)' : 'rgba(255,255,255,0.18)';
+        const tagY = slot.y + slot.h - 47;
+        drawRoundRect(ctx, slot.x - (slot.width - 22) / 2, tagY - 16, slot.width - 22, 33, 16);
+        ctx.fill();
+        ctx.fillStyle = isChampion ? '#302319' : '#FFFFFF';
+        fitCanvasText(ctx, entry.vibeTag, slot.width - 42, 15, 11, '800');
+        ctx.fillText(entry.vibeTag, slot.x, tagY + 1);
+      }
+    });
+  }
+
+  const footerY = height - 165;
+  if (data.customCaption) {
+    ctx.fillStyle = palette.surface;
+    drawRoundRect(ctx, innerX + 34, footerY - 32, innerW - 68, 100, 20);
+    ctx.fill();
+    ctx.strokeStyle = palette.border;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = palette.text;
+    ctx.textAlign = 'center';
+    ctx.font = '800 20px system-ui, -apple-system, "Segoe UI", sans-serif';
+    const captionLines = wrapText(ctx, data.customCaption, innerW - 120, 2);
+    captionLines.forEach((line, index) => ctx.fillText(line, width / 2, footerY + index * 27));
+  } else {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = palette.textMuted;
+    ctx.font = '800 16px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillText(`${data.playerCountFormatted.toUpperCase()} · ${data.durationFormatted || 'GAME NIGHT'} · KEEP THE RECEIPTS`, width / 2, footerY + 20);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // MODEL 1: CHAMPION POSTER RENDERER
 // ---------------------------------------------------------------------------
@@ -702,7 +1059,9 @@ function renderChampionPoster(
 
   if (data.mode === 'points') {
     const players = data.leaderboard || [];
-    const winners = players.filter((p) => p.rank === 1);
+    const winners = data.resultStatus === 'resolved'
+      ? players.filter((p) => p.rank === 1 && p.isWinner)
+      : [];
     const isSingleWinner = winners.length === 1;
 
     if (isSingleWinner) {
@@ -813,7 +1172,7 @@ function renderChampionPoster(
 
         curPillX += pW + pillSpacings;
       }
-    } else {
+    } else if (winners.length > 0) {
       // Tied Winners (2 or 3)
       const count = Math.min(3, winners.length);
       const avatarSize = 124;
@@ -963,8 +1322,8 @@ function renderChampionPoster(
       }
     }
   } else if (data.mode === 'win_only') {
-    // Win Only Mode
-    const winners = data.winners || [];
+    // Win Only Mode. Pending records must not elevate a participant as winner.
+    const winners = data.resultStatus === 'resolved' ? data.winners || [] : [];
     const isSingleWinner = winners.length === 1;
 
     if (isSingleWinner) {
@@ -1031,7 +1390,7 @@ function renderChampionPoster(
 
         curPillX += pW + pillSpacings;
       }
-    } else {
+    } else if (winners.length > 0) {
       // Multi Winners
       const count = Math.min(3, winners.length);
       const avatarSize = 124;
@@ -1135,23 +1494,24 @@ function renderChampionPoster(
       }
     }
   } else {
-    // Co-op Mode
+    // Co-op Mode. Pending legacy outcomes stay neutral rather than claiming defeat.
+    const isPending = data.resultStatus === 'pending';
     const isWon = data.coopOutcome === 'won';
     const bannerH = 110;
 
     drawRoundRect(ctx, cardX + 34, spotY, cardW - 68, bannerH, 20);
-    ctx.fillStyle = isWon ? palette.greenBg : palette.redBg;
+    ctx.fillStyle = isPending ? palette.surface : isWon ? palette.greenBg : palette.redBg;
     ctx.fill();
     ctx.lineWidth = 2;
-    ctx.strokeStyle = isWon ? palette.greenBorder : palette.redBorder;
+    ctx.strokeStyle = isPending ? palette.gold : isWon ? palette.greenBorder : palette.redBorder;
     ctx.stroke();
 
-    ctx.fillStyle = isWon ? palette.greenText : palette.redText;
+    ctx.fillStyle = isPending ? palette.gold : isWon ? palette.greenText : palette.redText;
     ctx.font = `bold 36px ${fontSerif}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(
-      isWon ? '🤝 TEAM VICTORY' : '💀 TEAM DEFEAT',
+      isPending ? 'RESULT PENDING · SUSPENSE!' : isWon ? '🤝 TEAM VICTORY' : '💀 TEAM DEFEAT',
       cardX + cardW / 2,
       spotY + bannerH / 2
     );
@@ -1690,12 +2050,12 @@ function renderGameNightTicket(
   ctx.textBaseline = 'top';
   ctx.fillText('HEO — BOARD GAME COLLECTION', ticketX + 36, stubContentY);
 
-  let winHeadline = 'MATCH COMPLETED';
-  if (data.mode === 'points' && data.leaderboard?.[0]) {
+  let winHeadline = data.resultStatus === 'pending' ? 'RESULT PENDING · SUSPENSE!' : 'MATCH COMPLETED';
+  if (data.resultStatus === 'resolved' && data.mode === 'points' && data.leaderboard?.[0]) {
     winHeadline = `WINNER: ${data.leaderboard[0].playerName.toUpperCase()} (${data.leaderboard[0].scoreFormatted} PTS)`;
-  } else if (data.mode === 'win_only' && data.winners?.[0]) {
+  } else if (data.resultStatus === 'resolved' && data.mode === 'win_only' && data.winners?.[0]) {
     winHeadline = `WINNER: ${data.winners[0].playerName.toUpperCase()}`;
-  } else if (data.mode === 'coop') {
+  } else if (data.resultStatus === 'resolved' && data.mode === 'coop') {
     winHeadline = data.coopOutcome === 'won' ? 'TEAM VICTORY' : 'TEAM DEFEAT';
     if (data.teamScoreFormatted) winHeadline += ` (${data.teamScoreFormatted} PTS)`;
   }
@@ -1734,12 +2094,67 @@ function renderGameNightTicket(
   ctx.fillText(data.ticketBarcode, barcodeX + barcodeW / 2, barcodeY + barcodeH + 14);
 }
 
+function drawVibeOverlay(
+  ctx: CanvasRenderingContext2D,
+  data: SessionShareCardData,
+  palette: Palette,
+  width: number,
+  height: number,
+  theme: ShareCardTheme,
+  style: ShareCardStyle
+): void {
+  if (style === 'podium') return;
+  const isVividTheme = theme === 'arcade' || theme === 'party';
+
+  if (isVividTheme) {
+    drawConfettiAndSparkles(ctx, width, height, data.shuffleSeed, theme);
+    drawTiltedStamp(
+      ctx,
+      data.stamp,
+      width - 178,
+      style === 'ticket' ? 156 : 142,
+      data.resultStatus === 'pending' ? palette.gold : palette.accent,
+      theme === 'party' ? '#FFFFFF' : '#160B35'
+    );
+  }
+
+  const footerHeight = data.customCaption ? 112 : isVividTheme ? 58 : 0;
+  if (footerHeight === 0) return;
+  const y = height - footerHeight - 22;
+  ctx.save();
+  ctx.globalAlpha = 0.94;
+  ctx.fillStyle = palette.cardBg;
+  drawRoundRect(ctx, 48, y, width - 96, footerHeight, 18);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = palette.borderLight;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  if (data.customCaption) {
+    ctx.fillStyle = palette.text;
+    ctx.font = '800 19px system-ui, -apple-system, "Segoe UI", sans-serif';
+    const lines = wrapText(ctx, data.customCaption, width - 160, 2);
+    lines.forEach((line, index) => ctx.fillText(line, width / 2, y + 34 + index * 28));
+    ctx.fillStyle = palette.textMuted;
+    ctx.font = '800 12px system-ui, -apple-system, "Segoe UI", sans-serif';
+    ctx.fillText('TABLE CAPTION', width / 2, y + footerHeight - 18);
+  } else {
+    ctx.fillStyle = data.resultStatus === 'pending' ? palette.gold : palette.accent;
+    fitCanvasText(ctx, data.headline, width - 160, 18, 13, '900');
+    ctx.fillText(data.headline, width / 2, y + footerHeight / 2);
+  }
+  ctx.restore();
+}
+
 // ---------------------------------------------------------------------------
 // MAIN DISPATCHER
 // ---------------------------------------------------------------------------
 
 /**
- * Renders the HTML5 Canvas 2D Session Share Card as either a Champion Poster or Game Night Ticket.
+ * Renders the HTML5 Canvas 2D Session Share Card as either a Champion Poster, Game Night Ticket, or Party Podium.
  */
 export async function renderSessionShareCard(
   data: SessionShareCardData,
@@ -1813,7 +2228,9 @@ export async function renderSessionShareCard(
   const height =
     style === 'ticket'
       ? calculateTicketCanvasHeight(data)
-      : calculatePosterCanvasHeight(data);
+      : style === 'podium'
+        ? 1240
+        : calculatePosterCanvasHeight(data);
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -1825,6 +2242,18 @@ export async function renderSessionShareCard(
 
   if (style === 'ticket') {
     renderGameNightTicket(
+      ctx,
+      data,
+      palette,
+      accentColor,
+      coverImg,
+      avatarImgMap,
+      width,
+      height,
+      themeKey
+    );
+  } else if (style === 'podium') {
+    renderPartyPodium(
       ctx,
       data,
       palette,
@@ -1849,6 +2278,8 @@ export async function renderSessionShareCard(
       themeKey
     );
   }
+
+  drawVibeOverlay(ctx, data, palette, width, height, themeKey, style);
 
   // Return PNG Blob
   return new Promise<Blob>((resolve, reject) => {

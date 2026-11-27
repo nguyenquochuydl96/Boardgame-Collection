@@ -743,3 +743,71 @@ test('buildSessionShareCardData: lowestScoreWins formats gapFromLeaderText with 
   // Runner up has score 7, leader has 3. In lowestScoreWins, gap is +4!
   assert.equal(data.leaderboard?.[1].gapFromLeaderText, '+4');
 });
+
+test('buildSessionShareCardData: roast and celebrate use deterministic presentation without reversing lowest-score winner or last place', () => {
+  const game = { id: 'g-low', name: 'Durian', status: 'own', lowestScoreWins: true } as unknown as BoardGame;
+  const session: PlaySession = {
+    id: 's-low-vibe', gameId: 'g-low', gameName: 'Durian', gameThumbnail: '',
+    datePlayed: '2026-11-27', createdAt: '2026-11-27T19:00:00Z', firstPlayerMethod: 'manual',
+    lowestScoreWins: true,
+    players: [
+      { playerId: 'winner', playerName: 'Winner', score: 2, isWinner: true },
+      { playerId: 'close', playerName: 'Close', score: 3, isWinner: false },
+      { playerId: 'last', playerName: 'Last', score: 14, isWinner: false },
+    ],
+  };
+
+  const roast = buildSessionShareCardData(session, { game, tone: 'roast', shuffleSeed: 11 });
+  const repeat = buildSessionShareCardData(session, { game, tone: 'roast', shuffleSeed: 11 });
+  const celebrate = buildSessionShareCardData(session, { game, tone: 'celebrate', shuffleSeed: 11 });
+  const leaderboard = roast.leaderboard!;
+
+  assert.equal(roast.resultStatus, 'resolved');
+  assert.equal(leaderboard[0].playerName, 'Winner');
+  assert.notEqual(leaderboard[0].vibeTag, 'Chair Warmer');
+  assert.equal(leaderboard[2].playerName, 'Last');
+  assert.equal(leaderboard[2].vibeTag, 'Chair Warmer');
+  assert.equal(roast.headline, repeat.headline);
+  assert.equal(roast.stamp, repeat.stamp);
+  assert.notEqual(roast.headline, celebrate.headline);
+  assert.equal(celebrate.tone, 'celebrate');
+});
+
+test('buildSessionShareCardData: RESULT PENDING suppresses winner and roast targets while retaining custom caption', () => {
+  const session: PlaySession = {
+    id: 's-pending-vibe', gameId: 'g-pending', gameName: 'Unfinished Game', gameThumbnail: '',
+    datePlayed: '2026-11-27', createdAt: '2026-11-27T20:00:00Z', firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'a', playerName: 'Alice', score: 19, isWinner: true },
+      { playerId: 'b', playerName: 'Bob', isWinner: false },
+      { playerId: 'c', playerName: 'Cara', score: 3, isWinner: false },
+    ],
+  };
+  const data = buildSessionShareCardData(session, {
+    tone: 'roast', shuffleSeed: 5, customCaption: '  Hôm nay bét bảng bao trà sữa!  ',
+  });
+
+  assert.equal(data.resultStatus, 'pending');
+  assert.equal(data.calloutBadge, 'RESULT PENDING');
+  assert.equal(data.isNewRecord, false);
+  assert.equal(data.headline, 'Scores Still Pending… Suspense!');
+  assert.equal(data.stamp, 'RESULT PENDING');
+  assert.equal(data.customCaption, 'Hôm nay bét bảng bao trà sữa!');
+  assert.ok(data.leaderboard?.every((player) => !player.isWinner && !player.vibeTag));
+});
+
+test('buildSessionShareCardData: co-op roast and celebrate presentation tracks explicit team results', () => {
+  const won: PlaySession = {
+    id: 's-coop-vibe', gameId: 'g-coop', gameName: 'Spirit Island', gameThumbnail: '',
+    datePlayed: '2026-11-27', createdAt: '2026-11-27T20:30:00Z', firstPlayerMethod: 'manual',
+    scoringMode: 'coop', coopOutcome: 'won',
+    players: [{ playerId: 'a', playerName: 'Alice', isWinner: true }, { playerId: 'b', playerName: 'Bob', isWinner: true }],
+  };
+  const roast = buildSessionShareCardData(won, { tone: 'roast', shuffleSeed: 9 });
+  const celebrate = buildSessionShareCardData(won, { tone: 'celebrate', shuffleSeed: 9 });
+  assert.equal(roast.resultStatus, 'resolved');
+  assert.equal(roast.coopOutcome, 'won');
+  assert.equal(roast.teamPlayers?.[0].vibeTag, 'Dream Team');
+  assert.equal(celebrate.teamPlayers?.[0].vibeTag, 'Co-op Hero');
+  assert.notEqual(roast.stamp, celebrate.stamp);
+});
