@@ -3,6 +3,8 @@ import { BoardGame, GameStatus, Player, PlayerScore, PlaySession, GameLocation }
 import { normalizeLocationKey, resolveGameScoringMode, resolveLowestScoreWins } from './utils';
 import { assertValidBGCatalogInput, type RestoreSelection } from './restoreValidation';
 
+export type SimpleImportDuplicateReason = 'bggId' | 'name';
+
 export interface ImportPreviewItem {
   name: string;
   yearPublished?: number;
@@ -18,6 +20,49 @@ export interface ImportPreviewItem {
   thumbnail?: string;
   tags?: string[];
   selected: boolean;
+  duplicateReason?: SimpleImportDuplicateReason;
+}
+
+const normalizeSimpleImportName = (name: string | undefined): string =>
+  (name || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+
+const normalizeSimpleImportBggId = (bggId: string | undefined): string =>
+  (bggId || '').trim();
+
+/**
+ * Marks simple file/BGG import entries that already exist locally or duplicate an
+ * earlier entry in the same import. A BGG ID is authoritative when available;
+ * normalized names protect manually added games without an ID.
+ */
+export function planSimpleGameImport(
+  items: ImportPreviewItem[],
+  existingGames: ReadonlyArray<Pick<BoardGame, 'bggId' | 'name'>>
+): ImportPreviewItem[] {
+  const knownBggIds = new Set(
+    existingGames.map((game) => normalizeSimpleImportBggId(game.bggId)).filter(Boolean)
+  );
+  const knownNames = new Set(
+    existingGames.map((game) => normalizeSimpleImportName(game.name)).filter(Boolean)
+  );
+
+  return items.map((item) => {
+    const bggId = normalizeSimpleImportBggId(item.bggId);
+    const name = normalizeSimpleImportName(item.name);
+    const duplicateReason: SimpleImportDuplicateReason | undefined =
+      bggId && knownBggIds.has(bggId)
+        ? 'bggId'
+        : name && knownNames.has(name)
+          ? 'name'
+          : undefined;
+
+    if (duplicateReason) {
+      return { ...item, selected: false, duplicateReason };
+    }
+
+    if (bggId) knownBggIds.add(bggId);
+    if (name) knownNames.add(name);
+    return { ...item, duplicateReason: undefined };
+  });
 }
 
 export interface FullBGCatalogImportResult {

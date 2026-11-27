@@ -19,13 +19,14 @@ import {
   parseBGCatalogZip,
   parseBGCatalogJsonObject,
   ImportPreviewItem,
+  planSimpleGameImport,
 } from '../../lib/importer';
 import { importBGGCollection } from '../../lib/bgg';
 import { useGameStore } from '../../store/useGameStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { useSessionStore } from '../../store/useSessionStore';
 import { useLocationStore } from '../../store/useLocationStore';
-import { createGameCoverDataUri, getGameThumbnail } from '../../lib/utils';
+import { createGameCoverDataUri, formatNumber, getGameThumbnail } from '../../lib/utils';
 import { exportVaultJSON, exportGamesCSV, exportSessionsCSV } from '../../lib/exportVault';
 import { useSyncStore } from '../../store/useSyncStore';
 import { applyValidatedRestore, assertRestorePersisted, getRestoreCounts, getRestorePresence, restoreCategories, validateRestoreData, type RestoreCategory, type RestoreSelection } from '../../lib/restoreValidation';
@@ -138,7 +139,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
         // Otherwise treat as simple games list
         const items = parseImportFile(text);
         if (items.length > 0) {
-          setPreviewItems(items);
+          setPreviewItems(planSimpleGameImport(items, games));
         } else {
           setError('Could not find games in this JSON file.');
         }
@@ -150,7 +151,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
       const text = await file.text();
       const items = parseImportFile(text);
       if (items.length > 0) {
-        setPreviewItems(items);
+        setPreviewItems(planSimpleGameImport(items, games));
       } else {
         setError(
           'Could not find boardgames in this CSV file. Please verify the column headers.'
@@ -220,7 +221,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
           thumbnail: g.image || g.thumbnail,
           selected: true,
         }));
-        setPreviewItems(preview);
+        setPreviewItems(planSimpleGameImport(preview, games));
       }
     } catch (err: any) {
       setError(err.message || 'Failed to sync BGG collection.');
@@ -233,24 +234,30 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
   const toggleItem = (index: number) => {
     setPreviewItems((prev) =>
       prev.map((item, i) =>
-        i === index ? { ...item, selected: !item.selected } : item
+        i === index && !item.duplicateReason ? { ...item, selected: !item.selected } : item
       )
     );
   };
 
   const toggleAll = () => {
-    const allSelected = previewItems.every((i) => i.selected);
+    const importable = previewItems.filter((item) => !item.duplicateReason);
+    const allImportableSelected = importable.length > 0 && importable.every((item) => item.selected);
     setPreviewItems((prev) =>
-      prev.map((item) => ({ ...item, selected: !allSelected }))
+      prev.map((item) => item.duplicateReason ? item : { ...item, selected: !allImportableSelected })
     );
   };
 
-  // Execute Simple Import
+  // Re-check against the live collection to avoid duplicates when an import preview is left open.
   const handleExecuteSimpleImport = () => {
-    const selected = previewItems.filter((i) => i.selected);
+    const selected = previewItems.filter((item) => item.selected);
     if (selected.length === 0) return;
 
-    for (const item of selected) {
+    const plan = planSimpleGameImport(selected, games);
+    const importable = plan.filter((item) => !item.duplicateReason);
+    const skippedCount = previewItems.filter((item) => item.duplicateReason).length
+      + plan.filter((item) => item.duplicateReason).length;
+
+    for (const item of importable) {
       const sharpCover = getGameThumbnail({ name: item.name, bggId: item.bggId, thumbnail: item.thumbnail });
       const cover =
         sharpCover ||
@@ -281,7 +288,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
       });
     }
 
-    setSuccessMessage(`Successfully added ${selected.length} board games to collection!`);
+    setSuccessMessage(`Imported ${importable.length} ${importable.length === 1 ? 'game' : 'games'}; skipped ${skippedCount} duplicate ${skippedCount === 1 ? 'game' : 'games'}.`);
     setPreviewItems([]);
   };
 
@@ -607,71 +614,87 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
         )}
 
         {/* Simple Game Preview List */}
-        {previewItems.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs text-[var(--muted)]">
-              <span>
-                Found <strong className="text-[var(--ink)]">{previewItems.length}</strong> games (
-                {previewItems.filter((i) => i.selected).length} selected)
-              </span>
-              <button
-                type="button"
-                onClick={toggleAll}
-                className="text-[var(--accent)] hover:underline cursor-pointer font-bold"
-              >
-                {previewItems.every((i) => i.selected) ? 'Deselect All' : 'Select All'}
-              </button>
-            </div>
+        {previewItems.length > 0 && (() => {
+          const selectedCount = previewItems.filter((item) => item.selected).length;
+          const duplicateCount = previewItems.filter((item) => item.duplicateReason).length;
+          const importableCount = previewItems.length - duplicateCount;
+          const allImportableSelected = importableCount > 0 && selectedCount === importableCount;
 
-            <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1 rounded-xl border border-[var(--line)] p-2 bg-[var(--card)]">
-              {previewItems.map((item, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => toggleItem(idx)}
-                  className={cn(
-                    'flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors',
-                    item.selected
-                      ? 'bg-[var(--accent-soft)] border border-[var(--accent)]/40 text-[var(--ink)]'
-                      : 'opacity-60 hover:opacity-100 hover:bg-[var(--hover-bg)]'
-                  )}
+          return (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3 text-xs text-[var(--muted)]">
+                <span>
+                  Found <strong className="text-[var(--ink)]">{formatNumber(previewItems.length)}</strong> games (
+                  {formatNumber(selectedCount)} selected{duplicateCount > 0 ? ` · ${formatNumber(duplicateCount)} already in collection` : ''})
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleAll}
+                  disabled={importableCount === 0}
+                  className="text-[var(--accent)] hover:underline cursor-pointer font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <input
-                    type="checkbox"
-                    checked={item.selected}
-                    onChange={() => {}}
-                    className="rounded border-[var(--line)] text-[var(--accent)] focus:ring-[var(--accent)]"
-                  />
-                  <GameCoverImage
-                    game={{ name: item.name, bggId: item.bggId, thumbnail: item.thumbnail }}
-                    className="w-9 h-11 rounded border border-[var(--line)] shrink-0"
-                    fallbackIconSize="text-xs"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-[var(--ink)] text-xs truncate">{item.name}</p>
-                    <p className="text-[11px] text-[var(--muted)]">
-                      {item.yearPublished || 'N/A'} · {item.minPlayers}-{item.maxPlayers} players · Status: {item.status}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  {allImportableSelected ? 'Deselect All' : 'Select All'}
+                </button>
+              </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-[var(--line)]">
-              <Button variant="ghost" size="sm" onClick={() => setPreviewItems([])}>
-                Clear
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleExecuteSimpleImport}
-                disabled={!previewItems.some((i) => i.selected)}
-              >
-                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                Import {previewItems.filter((i) => i.selected).length} Games
-              </Button>
+              <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1 rounded-xl border border-[var(--line)] p-2 bg-[var(--card)]">
+                {previewItems.map((item, idx) => (
+                  <div
+                    key={`${item.bggId || item.name}-${idx}`}
+                    onClick={() => toggleItem(idx)}
+                    className={cn(
+                      'flex items-center gap-3 p-2 rounded-lg transition-colors',
+                      item.duplicateReason
+                        ? 'opacity-60 cursor-not-allowed bg-[var(--card-2)]'
+                        : item.selected
+                          ? 'bg-[var(--accent-soft)] border border-[var(--accent)]/40 text-[var(--ink)] cursor-pointer'
+                          : 'opacity-60 hover:opacity-100 hover:bg-[var(--hover-bg)] cursor-pointer'
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={item.selected}
+                      disabled={Boolean(item.duplicateReason)}
+                      onChange={() => {}}
+                      className="rounded border-[var(--line)] text-[var(--accent)] focus:ring-[var(--accent)] disabled:cursor-not-allowed"
+                    />
+                    <GameCoverImage
+                      game={{ name: item.name, bggId: item.bggId, thumbnail: item.thumbnail }}
+                      className="w-9 h-11 rounded border border-[var(--line)] shrink-0"
+                      fallbackIconSize="text-xs"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-[var(--ink)] text-xs truncate">{item.name}</p>
+                      <p className="text-[11px] text-[var(--muted)]">
+                        {item.yearPublished || 'N/A'} · {item.minPlayers}-{item.maxPlayers} players · Status: {item.status}
+                      </p>
+                      {item.duplicateReason && (
+                        <span className="inline-flex mt-1 px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 text-[10px] font-bold">
+                          Already in collection ({item.duplicateReason === 'bggId' ? 'same BGG ID' : 'same name'})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-[var(--line)]">
+                <Button variant="ghost" size="sm" onClick={() => setPreviewItems([])}>
+                  Clear
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleExecuteSimpleImport}
+                  disabled={selectedCount === 0}
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  Import {formatNumber(selectedCount)} {selectedCount === 1 ? 'Game' : 'Games'}
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </Modal>
   );

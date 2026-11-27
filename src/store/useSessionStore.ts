@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PlaySession } from '../types';
-import { generateId } from '../lib/utils';
+import { generateId, normalizeLocationKey } from '../lib/utils';
 
 export const INITIAL_SESSIONS: PlaySession[] = [];
 
@@ -10,6 +10,7 @@ export interface SessionStore {
   addSession: (session: Omit<PlaySession, 'id' | 'createdAt'>) => PlaySession;
   bulkAddSessions: (sessions: PlaySession[], replaceExisting?: boolean) => void;
   updateSession: (id: string, updates: Partial<PlaySession>) => void;
+  renameSessionsAtLocation: (previousName: string, nextName: string) => number;
   deleteSession: (id: string) => void;
   getSessionById: (id: string) => PlaySession | undefined;
   getSessionsByGame: (gameId: string) => PlaySession[];
@@ -55,6 +56,28 @@ export const useSessionStore = create<SessionStore>()(
         set((state) => ({
           sessions: state.sessions.map((s) => (s.id === id ? { ...s, ...updates } : s)),
         }));
+      },
+      renameSessionsAtLocation: (previousName, nextName) => {
+        const previousKey = normalizeLocationKey(previousName);
+        const cleanNextName = nextName
+          .normalize('NFC')
+          .replace(/[\u200B-\u200D\uFEFF]/g, '')
+          .replace(/[–—]/g, '-')
+          .trim()
+          .replace(/\s+/g, ' ');
+        if (!previousKey || !cleanNextName || previousKey === normalizeLocationKey(cleanNextName)) {
+          return 0;
+        }
+
+        let updatedCount = 0;
+        set((state) => ({
+          sessions: state.sessions.map((session) => {
+            if (normalizeLocationKey(session.location) !== previousKey) return session;
+            updatedCount += 1;
+            return { ...session, location: cleanNextName };
+          }),
+        }));
+        return updatedCount;
       },
       deleteSession: (id) => {
         set((state) => ({

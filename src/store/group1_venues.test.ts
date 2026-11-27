@@ -62,10 +62,25 @@ function writePersisted(locations: GameLocation[], hasSyncedHistory = true) {
 // Exercise automatic hydration, not just the explicitly invoked rehydrate method.
 writePersisted(fixtures);
 const { useLocationStore } = await import('./useLocationStore');
+const { useSessionStore } = await import('./useSessionStore');
+const { useSyncStore } = await import('./useSyncStore');
+await import('../lib/syncGuard');
 
 function resetStore(locations: GameLocation[] = [], hasSyncedHistory = false) {
   storage.clear();
   useLocationStore.setState({ locations, hasSyncedHistory });
+}
+
+function resetRenameState(locations: GameLocation[], sessions: PlaySession[]) {
+  resetStore(locations);
+  useSessionStore.setState({ sessions });
+  useSyncStore.setState({
+    isEnabled: true,
+    pendingChanges: false,
+    localRevision: 0,
+    syncConflict: null,
+    syncStatus: 'idle',
+  });
 }
 
 function session(location: string, id: string): PlaySession {
@@ -305,4 +320,33 @@ test('renaming to another normalized name is rejected without losing either venu
     ...second, name: 'Nhà Lộc - Annex', address: 'Annex', notes: 'Open', isDefault: true,
   });
   assertUniqueNames(locations);
+});
+
+test('renaming a venue updates every normalized historical session location and marks both stores pending for sync', () => {
+  const oldVenue: GameLocation = {
+    id: 'venue-1', name: 'Huy’s Game Room', address: 'District 3', isDefault: true, createdAt: date,
+  };
+  const sessions = [
+    session('  HUY\u200B’S   GAME ROOM ', 'matching-1'),
+    session('Huy’s Game Room', 'matching-2'),
+    session('Another Venue', 'unrelated'),
+  ];
+  resetRenameState([oldVenue], sessions);
+
+  useLocationStore.getState().updateLocation(oldVenue.id, {
+    name: 'Huy’s Tabletop Loft', address: oldVenue.address, notes: undefined, isDefault: true,
+  });
+  const updatedCount = useSessionStore.getState().renameSessionsAtLocation(
+    oldVenue.name,
+    'Huy’s Tabletop Loft'
+  );
+
+  assert.equal(updatedCount, 2);
+  assert.equal(useLocationStore.getState().locations[0].name, 'Huy’s Tabletop Loft');
+  assert.deepEqual(
+    useSessionStore.getState().sessions.map((item) => item.location),
+    ['Huy’s Tabletop Loft', 'Huy’s Tabletop Loft', 'Another Venue']
+  );
+  assert.equal(useSyncStore.getState().pendingChanges, true);
+  assert.equal(useSyncStore.getState().localRevision, 2);
 });

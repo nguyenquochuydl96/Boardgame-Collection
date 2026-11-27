@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, Sparkles, Building2, FileText, Star } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { ConfirmModal } from '../ui/ConfirmModal';
 import { Input } from '../ui/Input';
 import { GameLocation } from '../../types';
 import { useLocationStore } from '../../store/useLocationStore';
+import { useSessionStore } from '../../store/useSessionStore';
 import { normalizeLocationKey } from '../../lib/utils';
 
 export interface LocationFormModalProps {
@@ -21,14 +23,24 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
   const addLocation = useLocationStore((s) => s.addLocation);
   const updateLocation = useLocationStore((s) => s.updateLocation);
   const locations = useLocationStore((s) => s.locations);
+  const sessions = useSessionStore((s) => s.sessions);
+  const renameSessionsAtLocation = useSessionStore((s) => s.renameSessionsAtLocation);
 
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [isDefault, setIsDefault] = useState(false);
   const [error, setError] = useState('');
+  const [pendingRename, setPendingRename] = useState<{
+    name: string;
+    address?: string;
+    notes?: string;
+    isDefault: boolean;
+    affectedSessionCount: number;
+  } | null>(null);
 
   useEffect(() => {
+    setPendingRename(null);
     if (location) {
       setName(location.name || '');
       setAddress(location.address || '');
@@ -64,24 +76,43 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
       return;
     }
 
+    const updates = {
+      name: trimmedName,
+      address: address.trim() || undefined,
+      notes: notes.trim() || undefined,
+      isDefault,
+    };
+
     if (location) {
-      updateLocation(location.id, {
-        name: trimmedName,
-        address: address.trim(),
-        notes: notes.trim(),
-        isDefault,
-      });
+      const isRename = normalizeLocationKey(location.name) !== targetKey;
+      const affectedSessionCount = isRename
+        ? sessions.filter((session) => normalizeLocationKey(session.location) === normalizeLocationKey(location.name)).length
+        : 0;
+      if (affectedSessionCount > 0) {
+        setPendingRename({ ...updates, affectedSessionCount });
+        return;
+      }
+      updateLocation(location.id, updates);
     } else {
-      addLocation(trimmedName, address.trim(), notes.trim(), isDefault);
+      addLocation(trimmedName, updates.address, updates.notes, isDefault);
     }
 
+    onClose();
+  };
+
+  const handleConfirmRename = () => {
+    if (!location || !pendingRename) return;
+    updateLocation(location.id, pendingRename);
+    renameSessionsAtLocation(location.name, pendingRename.name);
+    setPendingRename(null);
     onClose();
   };
 
   const isEdit = Boolean(location);
 
   return (
-    <Modal
+    <>
+      <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={isEdit ? 'Edit Gaming Venue' : 'Add New Venue'}
@@ -167,6 +198,17 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
           </Button>
         </div>
       </form>
-    </Modal>
+      </Modal>
+      <ConfirmModal
+        isOpen={pendingRename !== null}
+        title="Update historical venue names?"
+        message={`Rename ${pendingRename?.affectedSessionCount ?? 0} historical ${pendingRename?.affectedSessionCount === 1 ? 'session' : 'sessions'} from "${location?.name ?? ''}" to "${pendingRename?.name ?? ''}"? This keeps venue history and statistics together.`}
+        confirmLabel="Update Sessions"
+        cancelLabel="Keep Editing"
+        variant="warning"
+        onConfirm={handleConfirmRename}
+        onCancel={() => setPendingRename(null)}
+      />
+    </>
   );
 };

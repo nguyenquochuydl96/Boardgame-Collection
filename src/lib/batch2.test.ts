@@ -14,7 +14,7 @@ import {
   findPreviousLoser,
 } from './utils';
 import { decodeHtml, importBGGCollection, saveBGGSettings } from './bgg';
-import { safeParseIsoDate, parseImportFile, parseBGCatalogJsonObject } from './importer';
+import { safeParseIsoDate, parseImportFile, parseBGCatalogJsonObject, planSimpleGameImport } from './importer';
 import { normalizeSessionResult, resolveSessionLowestScoreWins, resolveSessionTeamScore } from './sessionResults';
 import { buildSessionShareCardData } from './shareCard';
 import { validateRestoreData } from './restoreValidation';
@@ -451,6 +451,25 @@ test('parseImportFile parses quoted CSV fields and parseBGCatalogJsonObject safe
   assert.equal(parsed.sessions.length, 2);
   assert.equal(parsed.sessions[0].datePlayed, '2025-09-01T12:00:00.000Z');
   assert.ok(!Number.isNaN(new Date(parsed.sessions[1].datePlayed).getTime()));
+});
+
+test('planSimpleGameImport skips repeated BGG IDs and normalized names with exact imported and skipped counts', () => {
+  const existing = [
+    makeGame({ id: 'stored-bgg', name: 'Original BGG Name', bggId: '101' }),
+    makeGame({ id: 'stored-manual', name: '  Catan   Deluxe  ', bggId: undefined }),
+  ];
+  const preview = [
+    { name: 'Renamed BGG Listing', bggId: '101', minPlayers: 2, maxPlayers: 4, playingTime: 60, status: 'own' as const, selected: true },
+    { name: 'catan deluxe', minPlayers: 2, maxPlayers: 4, playingTime: 90, status: 'own' as const, selected: true },
+    { name: 'New Game', bggId: '202', minPlayers: 1, maxPlayers: 5, playingTime: 45, status: 'own' as const, selected: true },
+    { name: 'New Game Duplicate', bggId: '202', minPlayers: 1, maxPlayers: 5, playingTime: 45, status: 'own' as const, selected: true },
+  ];
+
+  const planned = planSimpleGameImport(preview, existing);
+  assert.deepEqual(planned.map((item) => item.duplicateReason), ['bggId', 'name', undefined, 'bggId']);
+  assert.deepEqual(planned.map((item) => item.selected), [false, false, true, false]);
+  assert.equal(planned.filter((item) => item.selected).length, 1, 'one game will be imported');
+  assert.equal(planned.filter((item) => item.duplicateReason).length, 3, 'three duplicate games will be skipped');
 });
 
 // ============================================================================
