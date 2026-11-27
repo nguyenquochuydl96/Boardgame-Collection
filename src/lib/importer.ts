@@ -467,6 +467,18 @@ export function parseCSV(text: string): string[][] {
   return lines;
 }
 
+function parseOptionalFiniteNumber(raw: unknown): number | undefined {
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  const num = typeof raw === 'number' ? raw : Number(String(raw).trim());
+  return Number.isFinite(num) ? num : undefined;
+}
+
+function parseOptionalInt(raw: unknown): number | undefined {
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  const parsed = typeof raw === 'number' ? Math.trunc(raw) : parseInt(String(raw).trim(), 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 /**
  * Automatically parses imported CSV or simple JSON list
  */
@@ -484,19 +496,14 @@ export function parseImportFile(content: string): ImportPreviewItem[] {
         : parsed.games || parsed.items || [];
       return list.map((item) => ({
         name: item.name || item.title || 'Untitled Game',
-        yearPublished:
-          item.yearPublished || item.year
-            ? Number(item.yearPublished || item.year)
-            : undefined,
+        yearPublished: parseOptionalInt(item.yearPublished ?? item.year),
         bggId: item.bggId ? String(item.bggId) : undefined,
-        minPlayers: Number(item.minPlayers) || 1,
-        maxPlayers: Number(item.maxPlayers) || 4,
-        playingTime: Number(item.playingTime) || 60,
-        bggRating: item.bggRating ? Number(item.bggRating) : undefined,
+        minPlayers: parseOptionalInt(item.minPlayers) || 1,
+        maxPlayers: parseOptionalInt(item.maxPlayers) || 4,
+        playingTime: parseOptionalInt(item.playingTime) || 60,
+        bggRating: parseOptionalFiniteNumber(item.bggRating),
         status: normalizeStatus(item.status || ''),
-        purchasePrice: item.purchasePrice
-          ? Number(item.purchasePrice)
-          : undefined,
+        purchasePrice: parseOptionalFiniteNumber(item.purchasePrice),
         lentToName: item.lentToName || item.lentTo || undefined,
         notes: item.notes || item.comment || undefined,
         thumbnail: item.thumbnail || item.image || item.urlThumb || undefined,
@@ -579,29 +586,18 @@ export function parseImportFile(content: string): ImportPreviewItem[] {
     items.push({
       name: name.trim(),
       bggId: idIdx !== -1 && row[idIdx] ? row[idIdx].trim() : undefined,
-      yearPublished:
-        yearIdx !== -1 && row[yearIdx] ? parseInt(row[yearIdx], 10) : undefined,
-      bggRating:
-        ratingIdx !== -1 && row[ratingIdx]
-          ? Math.round(parseFloat(row[ratingIdx]) * 10) / 10
-          : undefined,
-      minPlayers:
-        minPlayIdx !== -1 && row[minPlayIdx]
-          ? parseInt(row[minPlayIdx], 10)
-          : 1,
-      maxPlayers:
-        maxPlayIdx !== -1 && row[maxPlayIdx]
-          ? parseInt(row[maxPlayIdx], 10)
-          : 4,
-      playingTime:
-        playTimeIdx !== -1 && row[playTimeIdx]
-          ? parseInt(row[playTimeIdx], 10)
-          : 60,
+      yearPublished: parseOptionalInt(yearIdx !== -1 ? row[yearIdx] : undefined),
+      bggRating: (() => {
+        const parsed = parseOptionalFiniteNumber(ratingIdx !== -1 ? row[ratingIdx] : undefined);
+        return parsed !== undefined ? Math.round(parsed * 10) / 10 : undefined;
+      })(),
+      minPlayers: parseOptionalInt(minPlayIdx !== -1 ? row[minPlayIdx] : undefined) || 1,
+      maxPlayers: parseOptionalInt(maxPlayIdx !== -1 ? row[maxPlayIdx] : undefined) || 4,
+      playingTime: parseOptionalInt(playTimeIdx !== -1 ? row[playTimeIdx] : undefined) || 60,
       status,
-      purchasePrice:
-        priceIdx !== -1 && row[priceIdx]
-          ? parseFloat(row[priceIdx].replace(/[^0-9.]/g, ''))
-          : undefined,
+      purchasePrice: parseOptionalFiniteNumber(
+        priceIdx !== -1 && row[priceIdx] ? row[priceIdx].replace(/[^0-9.]/g, '') : undefined
+      ),
       lentToName:
         lentIdx !== -1 && row[lentIdx] ? row[lentIdx].trim() : undefined,
       notes: notesIdx !== -1 && row[notesIdx] ? row[notesIdx].trim() : undefined,

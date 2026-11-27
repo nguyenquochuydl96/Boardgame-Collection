@@ -209,3 +209,25 @@ test('does not mistake a session report CSV for a games import', async () => {
     useSessionStore.setState({ sessions: previous });
   }
 });
+
+test('CSV and simple JSON import ignore non-numeric strings instead of producing NaN', () => {
+  const [csvItem] = parseImportFile(
+    'Name,Year,Min Players,Max Players,Playtime (min),BGG Rating,Purchase Price (VND)\nBrass,TBD,N/A,-,unknown,N/A,Free'
+  );
+  assert.ok(csvItem);
+  assert.equal(csvItem.yearPublished, undefined);
+  assert.equal(csvItem.minPlayers, 1);
+  assert.equal(csvItem.maxPlayers, 4);
+  assert.equal(csvItem.playingTime, 60);
+  assert.equal(csvItem.bggRating, undefined);
+  assert.equal(csvItem.purchasePrice, undefined);
+
+  const [jsonItem] = parseImportFile(
+    JSON.stringify([{ name: 'Brass', year: 'N/A', minPlayers: 'bad', bggRating: 'none', purchasePrice: 'free' }])
+  );
+  assert.ok(jsonItem);
+  assert.equal(jsonItem.yearPublished, undefined);
+  assert.equal(jsonItem.minPlayers, 1);
+  assert.equal(jsonItem.bggRating, undefined);
+  assert.equal(jsonItem.purchasePrice, undefined);
+});

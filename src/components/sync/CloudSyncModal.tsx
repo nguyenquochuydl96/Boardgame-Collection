@@ -630,6 +630,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
         isOpen={isDisconnectConfirmOpen}
         onClose={() => setIsDisconnectConfirmOpen(false)}
         onConfirm={() => {
+          setIsDisconnectConfirmOpen(false);
           disconnect();
           setActiveTab('connect');
         }}

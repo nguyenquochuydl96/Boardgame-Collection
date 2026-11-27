@@ -160,6 +160,7 @@ export const CollectionImportModal: React.FC<CollectionImportModalProps> = ({
       setError(err.message || 'Error parsing file. Please try again.');
     } finally {
       setLoading(false);
+      e.target.value = '';
     }
   };
 

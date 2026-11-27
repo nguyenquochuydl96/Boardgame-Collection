@@ -115,6 +115,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     } catch {}
   };
 
+  const supabaseUrl = useSyncStore((s) => s.supabaseUrl);
+  const supabaseAnonKey = useSyncStore((s) => s.supabaseAnonKey);
+  const vaultId = useSyncStore((s) => s.vaultId);
   const isSyncEnabled = useSyncStore((s) => s.isEnabled);
   const autoSync = useSyncStore((s) => s.autoSync);
   const syncStatus = useSyncStore((s) => s.syncStatus);
@@ -222,7 +225,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         unsubscribeRealtime();
       }
     };
-  }, [isSyncEnabled, autoSync]);
+  }, [isSyncEnabled, autoSync, supabaseUrl, supabaseAnonKey, vaultId]);
 
   // Debounced auto-push when stores change locally
   useEffect(() => {
@@ -274,7 +277,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     const wasOnline = wasOnlineRef.current;
     wasOnlineRef.current = isOnline;
     if (!isOnline || wasOnline) return;
-    if (!isSyncEnabled || !autoSync || !hasCompletedInitialPull || conflictActive) return;
+    if (!isSyncEnabled || !autoSync || conflictActive) return;
 
     import('../../lib/supabaseSync').then((sync) => {
       if (isSyncApplyingRemote()) return;
@@ -282,17 +285,21 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       if (syncState.syncConflict || syncState.syncStatus === 'conflict') return;
       const localGames = useGameStore.getState().games.length;
       const localSessions = useSessionStore.getState().sessions.length;
+      if (!syncState.hasCompletedInitialPull) {
+        sync.pullVaultFromCloud(localGames === 0 && localSessions === 0 ? 'replace' : 'merge');
+        return;
+      }
       if (syncState.pendingChanges) {
         if (localGames > 0 || localSessions > 0) {
           sync.pushVaultToCloud();
         }
         return;
       }
-      if (syncState.syncStatus === 'offline') {
+      if (syncState.syncStatus === 'offline' || syncState.syncStatus === 'error') {
         sync.pullVaultFromCloud(localGames === 0 && localSessions === 0 ? 'replace' : 'merge');
       }
     });
-  }, [isOnline, isSyncEnabled, autoSync, hasCompletedInitialPull, conflictActive]);
+  }, [isOnline, isSyncEnabled, autoSync, conflictActive]);
 
   useEffect(() => {
     const handleOpenInstall = () => setShowInstallModal(true);

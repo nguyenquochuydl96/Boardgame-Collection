@@ -146,10 +146,10 @@ export const NewSessionPage: React.FC = () => {
   const restoringRef = useRef(false);
   const [restoring, setRestoring] = useState(false);
   const [existingDraft, setExistingDraft] = useState<SessionDraft | null>(
-    isRematchMode || rematchSource ? null : initialDraft.draft
+    rematchSource ? null : initialDraft.draft
   );
   const [unreadableDraft, setUnreadableDraft] = useState(
-    initialDraft.raw !== null && !initialDraft.draft && !isRematchMode && !rematchSource
+    initialDraft.raw !== null && !initialDraft.draft && !rematchSource
   );
   const [quotaError, setQuotaError] = useState<string | null>(
     initialDraft.unavailable ? 'Local storage is unavailable. Draft changes are not being saved.' : null
@@ -961,7 +961,7 @@ export const NewSessionPage: React.FC = () => {
       status: 'completed',
       gameId: selectedGame.id,
       gameName: selectedGame.name,
-      gameThumbnail: selectedGame.thumbnail || selectedGame.image,
+      gameThumbnail: selectedGame.thumbnail || selectedGame.image || '',
       datePlayed: computedIsoDate,
       location: location.trim() || undefined,
       durationMinutes: Math.max(5, Number(durationMinutes) || 60),

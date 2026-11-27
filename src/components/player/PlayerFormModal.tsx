@@ -79,9 +79,11 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
   const [favoriteGameId, setFavoriteGameId] = useState('');
   const [bio, setBio] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // Sync state when editing or opening
   useEffect(() => {
+    setUploadError(null);
     if (player) {
       setName(player.name || '');
       setNickname(player.nickname || '');
@@ -128,13 +130,16 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
 
     try {
       setIsUploading(true);
+      setUploadError(null);
       const compressedDataUrl = await compressImageToDataUrl(file, 480, 0.85);
       const idbRef = await saveMediaImage(compressedDataUrl);
       setAvatar(idbRef);
     } catch (err) {
-      console.error('Failed to compress avatar image:', err);
+      console.error('Failed to compress or store avatar image:', err);
+      setUploadError('Could not save avatar image to IndexedDB storage. Free up device storage or check browser storage permissions before trying again.');
     } finally {
       setIsUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -339,6 +344,11 @@ export const PlayerFormModal: React.FC<PlayerFormModalProps> = ({
                   Supports PNG, JPG, WebP. Automatically optimized.
                 </p>
               </div>
+              {uploadError && (
+                <p role="alert" className="text-xs text-[var(--bad)] font-medium">
+                  {uploadError}
+                </p>
+              )}
             </div>
           )}
 
