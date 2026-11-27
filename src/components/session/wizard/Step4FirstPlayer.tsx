@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ArrowLeft, Flag, Zap, Trophy, Dices } from 'lucide-react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
@@ -8,6 +8,7 @@ import { cn } from '../../ui/cn';
 import { BoardGame, Player, FirstPlayerMethod } from '../../../types';
 import { findPreviousLoser, findPreviousWinner } from '../../../lib/utils';
 import { useSessionStore } from '../../../store/useSessionStore';
+import { useGameStore } from '../../../store/useGameStore';
 
 interface Step4FirstPlayerProps {
   isRematchMode: boolean;
@@ -44,10 +45,15 @@ export const Step4FirstPlayer: React.FC<Step4FirstPlayerProps> = React.memo(
     onContinueToStep5,
   }) => {
     const sessions = useSessionStore((s) => s.sessions);
+    const games = useGameStore((s) => s.games);
+    const gamesById = useMemo(
+      () => new Map(games.map((game) => [game.id, game])),
+      [games]
+    );
     const [ruleReason, setRuleReason] = useState<string | null>(null);
 
     const handleSelectPreviousLoser = () => {
-      const res = findPreviousLoser(activeSessionPlayers, sessions, selectedGame?.id);
+      const res = findPreviousLoser(activeSessionPlayers, sessions, selectedGame?.id, gamesById);
       if (res) {
         setFirstPlayerId(res.player.id);
         setFirstPlayerMethod('previous_loser');

@@ -221,6 +221,7 @@ test('findPreviousLoser skips co-op sessions and respects lowestScoreWins', () =
     id: 'low-wins',
     gameId: 'g-golf',
     gameName: 'Skyjo',
+    lowestScoreWins: true,
     datePlayed: '2026-06-12T12:00:00.000Z',
     isCoop: false,
     players: [
@@ -228,7 +229,9 @@ test('findPreviousLoser skips co-op sessions and respects lowestScoreWins', () =
       { playerId: 'p2', playerName: 'Bob', isWinner: false, score: 74 },
     ],
   });
-  const lowWinsLoser = findPreviousLoser(players, [lowWinsSession], 'g-golf');
+  // The persisted session snapshot overrides a conflicting current game rule.
+  const gamesById = new Map([['g-golf', makeGame({ id: 'g-golf', lowestScoreWins: false })]]);
+  const lowWinsLoser = findPreviousLoser(players, [lowWinsSession], 'g-golf', gamesById);
   assert.ok(lowWinsLoser);
   assert.equal(lowWinsLoser.player.id, 'p2');
 });

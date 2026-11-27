@@ -2,7 +2,15 @@ import React, { useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { PlaySession, Player } from '../../types';
-import { formatCount, formatNumber, normalizeLocationKey, sortVenuesByPlayCount, getSessionWinners } from '../../lib/utils';
+import {
+  filterSessionsByRecordScope,
+  formatCount,
+  formatNumber,
+  getSessionWinners,
+  normalizeLocationKey,
+  sortVenuesByPlayCount,
+} from '../../lib/utils';
+import { useGameStore } from '../../store/useGameStore';
 
 interface StatsLocationsTabProps {
   sessions: PlaySession[];
@@ -11,21 +19,43 @@ interface StatsLocationsTabProps {
 
 export const StatsLocationsTab: React.FC<StatsLocationsTabProps> = React.memo(
   ({ sessions, players }) => {
+    const games = useGameStore((state) => state.games);
+    const gamesById = useMemo(
+      () => new Map(games.map((game) => [game.id, game])),
+      [games]
+    );
+    const competitiveSessions = useMemo(
+      () => filterSessionsByRecordScope(sessions, 'competitive', gamesById),
+      [sessions, gamesById]
+    );
     const locationStats = useMemo(() => {
-      const map = new Map<string, { name: string; count: number; playerWins: Map<string, number> }>();
+      const map = new Map<string, {
+        name: string;
+        count: number;
+        competitiveCount: number;
+        playerWins: Map<string, number>;
+      }>();
 
+      // Play totals represent every session; competitive wins are deliberately separate.
       sessions.forEach((s) => {
         const rawLoc = s.location?.trim() || 'Unknown location';
         const key = normalizeLocationKey(rawLoc) || 'unknown';
         let entry = map.get(key);
         if (!entry) {
-          entry = { name: rawLoc, count: 0, playerWins: new Map<string, number>() };
+          entry = { name: rawLoc, count: 0, competitiveCount: 0, playerWins: new Map<string, number>() };
           map.set(key, entry);
         }
         entry.count += 1;
-        const winners = getSessionWinners(s);
+      });
+      competitiveSessions.forEach((s) => {
+        const rawLoc = s.location?.trim() || 'Unknown location';
+        const key = normalizeLocationKey(rawLoc) || 'unknown';
+        const entry = map.get(key);
+        if (!entry) return;
+        entry.competitiveCount += 1;
+        const winners = getSessionWinners(s, gamesById.get(s.gameId));
         winners.forEach((p) => {
-          entry!.playerWins.set(p.playerId, (entry!.playerWins.get(p.playerId) || 0) + 1);
+          entry.playerWins.set(p.playerId, (entry.playerWins.get(p.playerId) || 0) + 1);
         });
       });
 
@@ -49,12 +79,12 @@ export const StatsLocationsTab: React.FC<StatsLocationsTabProps> = React.memo(
           percentage: Math.round((data.count / (sessions.length || 1)) * 100),
           topWinnerName,
           topWinnerWins,
-          topWinnerRate: Math.round((topWinnerWins / (data.count || 1)) * 100),
+          topWinnerRate: Math.round((topWinnerWins / (data.competitiveCount || 1)) * 100),
         };
       });
 
       return sortVenuesByPlayCount(list);
-    }, [sessions, players]);
+    }, [sessions, competitiveSessions, gamesById, players]);
 
     return (
       <div className="space-y-6">
@@ -91,7 +121,7 @@ export const StatsLocationsTab: React.FC<StatsLocationsTabProps> = React.memo(
                     </span>
                     {loc.topWinnerWins > 0 && loc.topWinnerName && (
                       <span className="text-[var(--good)] font-bold flex items-center gap-1">
-                        <span>👑</span> {loc.topWinnerName}: {formatCount(loc.topWinnerWins, 'win')} ({loc.topWinnerRate}%)
+                        <span>👑</span> Competitive: {loc.topWinnerName} · {formatCount(loc.topWinnerWins, 'win')} ({loc.topWinnerRate}%)
                       </span>
                     )}
                   </div>

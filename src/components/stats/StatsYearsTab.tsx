@@ -3,8 +3,14 @@ import { Trophy } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { GameCoverImage } from '../game/GameCoverImage';
 import { cn } from '../ui/cn';
-import { getTotalPlayHours, pluralize, getSessionWinners } from '../../lib/utils';
+import {
+  filterSessionsByRecordScope,
+  getSessionWinners,
+  getTotalPlayHours,
+  pluralize,
+} from '../../lib/utils';
 import { PlaySession } from '../../types';
+import { useGameStore } from '../../store/useGameStore';
 
 interface StatsYearsTabProps {
   sessions: PlaySession[];
@@ -14,11 +20,20 @@ interface StatsYearsTabProps {
 export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
   ({ sessions, availableYears }) => {
     const [selectedYear, setSelectedYear] = useState<string>('all');
+    const games = useGameStore((state) => state.games);
+    const gamesById = useMemo(
+      () => new Map(games.map((game) => [game.id, game])),
+      [games]
+    );
 
     const yearFilteredSessions = useMemo(() => {
       if (selectedYear === 'all') return sessions;
       return sessions.filter((s) => s.datePlayed && s.datePlayed.startsWith(selectedYear));
     }, [sessions, selectedYear]);
+    const competitiveYearSessions = useMemo(
+      () => filterSessionsByRecordScope(yearFilteredSessions, 'competitive', gamesById),
+      [yearFilteredSessions, gamesById]
+    );
 
     const yearStats = useMemo(() => {
       const totalSessions = yearFilteredSessions.length;
@@ -48,8 +63,8 @@ export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
         string,
         { playerId: string; playerName: string; wins: number }
       >();
-      yearFilteredSessions.forEach((s) => {
-        const winners = getSessionWinners(s);
+      competitiveYearSessions.forEach((s) => {
+        const winners = getSessionWinners(s, gamesById.get(s.gameId));
         winners.forEach((p) => {
           const entry = winnerMap.get(p.playerId) || {
             playerId: p.playerId,
@@ -70,7 +85,7 @@ export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
         topGames,
         topWinners,
       };
-    }, [yearFilteredSessions]);
+    }, [yearFilteredSessions, competitiveYearSessions, gamesById]);
 
     return (
       <div className="space-y-6">
@@ -139,7 +154,7 @@ export const StatsYearsTab: React.FC<StatsYearsTabProps> = React.memo(
               👑
             </div>
             <div>
-              <span className="text-xs text-[var(--muted)]">Most Wins</span>
+              <span className="text-xs text-[var(--muted)]">Most Competitive Wins</span>
               <p className="font-display font-black text-xl text-[var(--ink)] mt-0.5 truncate">
                 {yearStats.topWinners[0]?.playerName || '—'}
               </p>

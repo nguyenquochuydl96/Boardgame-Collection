@@ -210,6 +210,43 @@ test('does not mistake a session report CSV for a games import', async () => {
   }
 });
 
+test('session CSV exports co-op team outcome and team score explicitly', async () => {
+  const previousGames = useGameStore.getState().games;
+  const previousSessions = useSessionStore.getState().sessions;
+  const coopGame: BoardGame = { ...game, id: 'g-coop-export', name: 'Spirit Island', scoringMode: 'coop' };
+  const base = {
+    gameId: coopGame.id,
+    gameName: coopGame.name,
+    gameThumbnail: '',
+    firstPlayerMethod: 'manual' as const,
+    players: [
+      { playerId: 'p1', playerName: 'Alice', isWinner: true },
+      { playerId: 'p2', playerName: 'Bob', isWinner: true },
+    ],
+    createdAt: '2026-02-01T00:00:00Z',
+  };
+  useGameStore.setState({ games: [coopGame] });
+  useSessionStore.setState({
+    sessions: [
+      { ...base, id: 'coop-won', datePlayed: '2026-02-01T00:00:00Z', scoringMode: 'coop', coopOutcome: 'won', teamScore: 182 },
+      { ...base, id: 'coop-lost', datePlayed: '2026-02-02T00:00:00Z', scoringMode: 'coop', coopOutcome: 'lost', teamScore: 0,
+        players: base.players.map((player) => ({ ...player, isWinner: false })) },
+    ],
+  });
+  try {
+    const csv = await captureDownload(exportSessionsCSV);
+    assert.match(csv, /Winner \/ Team Result/);
+    assert.match(csv, /Players & Scores \/ Team Score/);
+    assert.match(csv, /Team Won/);
+    assert.match(csv, /Team Lost/);
+    assert.match(csv, /Team Score: 182/);
+    assert.match(csv, /Team Score: 0/);
+  } finally {
+    useGameStore.setState({ games: previousGames });
+    useSessionStore.setState({ sessions: previousSessions });
+  }
+});
+
 test('CSV and simple JSON import ignore non-numeric strings instead of producing NaN', () => {
   const [csvItem] = parseImportFile(
     'Name,Year,Min Players,Max Players,Playtime (min),BGG Rating,Purchase Price (VND)\nBrass,TBD,N/A,-,unknown,N/A,Free'

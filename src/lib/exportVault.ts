@@ -4,7 +4,8 @@ import { useSessionStore } from '../store/useSessionStore';
 import { useLocationStore } from '../store/useLocationStore';
 import { BoardGame, Player, PlaySession, GameLocation } from '../types';
 import { resolvePortableVaultMedia } from './portableVaultMedia';
-import { getSessionWinners } from './utils';
+import { getSessionWinners, isCoopSession } from './utils';
+import { resolveSessionTeamScore } from './sessionResults';
 
 export interface VaultBackupData {
   app: 'BoardGameVault';
@@ -122,23 +123,34 @@ export function exportGamesCSV() {
  */
 export function exportSessionsCSV() {
   const sessions = useSessionStore.getState().sessions;
+  const gamesById = new Map(useGameStore.getState().games.map((game) => [game.id, game]));
   const headers = [
     'Session ID',
     'Game Name',
     'Date Played',
     'Duration (min)',
     'Location',
-    'Winner',
-    'Players & Scores',
+    'Winner / Team Result',
+    'Players & Scores / Team Score',
     'Notes',
   ];
 
   const rows = sessions.map((s) => {
-    const winners = getSessionWinners(s);
+    const game = gamesById.get(s.gameId);
+    const isCoop = isCoopSession(s, game);
+    const winners = getSessionWinners(s, game);
     const winnerNames = winners.map((p) => p.playerName).filter(Boolean).join(', ');
-    const playersSummary = s.players
-      .map((p) => `${p.playerName}: ${typeof p.score === 'number' ? p.score : 'N/A'}`)
-      .join('; ');
+    const teamWon = s.coopOutcome === 'won'
+      || (s.coopOutcome === undefined && winners.length > 0);
+    const winnerOrTeamResult = isCoop
+      ? `Team ${teamWon ? 'Won' : 'Lost'}`
+      : winnerNames;
+    const teamScore = isCoop ? resolveSessionTeamScore(s) : undefined;
+    const playersSummary = isCoop
+      ? `Team Players: ${s.players.map((p) => p.playerName).filter(Boolean).join(', ')}; Team Score: ${teamScore ?? '—'}`
+      : s.players
+          .map((p) => `${p.playerName}: ${typeof p.score === 'number' ? p.score : 'N/A'}`)
+          .join('; ');
 
     return [
       `"${s.id}"`,
@@ -146,7 +158,7 @@ export function exportSessionsCSV() {
       `"${s.datePlayed}"`,
       s.durationMinutes ?? '',
       `"${(s.location || '').replace(/"/g, '""')}"`,
-      `"${winnerNames.replace(/"/g, '""')}"`,
+      `"${winnerOrTeamResult.replace(/"/g, '""')}"`,
       `"${playersSummary.replace(/"/g, '""')}"`,
       `"${(s.notes || '').replace(/"/g, '""')}"`,
     ];

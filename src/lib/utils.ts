@@ -486,12 +486,14 @@ export interface PreviousMatchPlayerResult {
  * Finds the previous loser from match history.
  * In the most recent match of this game (or any game) played by these players:
  * Identifies the last-place player (lowest rank / lowest score, or highest score if lowestScoreWins).
+ * A persisted session snapshot is authoritative; `gamesById` supplies a legacy fallback.
  * If multiple players tied for last place, picks randomly among them.
  */
 export function findPreviousLoser(
   activePlayers: Player[],
   sessions: PlaySession[],
-  currentGameId?: string
+  currentGameId?: string,
+  gamesById?: ReadonlyMap<string, BoardGame>
 ): PreviousMatchPlayerResult | null {
   if (!activePlayers || activePlayers.length === 0 || !sessions || sessions.length === 0) return null;
 
@@ -499,7 +501,7 @@ export function findPreviousLoser(
 
   // Skip co-op sessions where players win or lose together as a team
   const competitiveSessions = [...sessions]
-    .filter((s) => !isCoopSession(s))
+    .filter((s) => !isCoopSession(s, gamesById?.get(s.gameId)))
     .sort((a, b) => {
       const da = new Date(a.datePlayed || a.createdAt).getTime();
       const db = new Date(b.datePlayed || b.createdAt).getTime();
@@ -521,20 +523,11 @@ export function findPreviousLoser(
   const participatingActive = targetSession.players.filter((p) => activeIds.has(p.playerId));
   if (participatingActive.length === 0) return null;
 
-  // Detect if this session used lowestScoreWins: prefer preset template flag, fallback to winner/loser heuristic
-  const templateLowestWins = getScoringTemplateForGame(targetSession.gameName)?.lowestScoreWins;
-  let isLowScoreWins = templateLowestWins === true;
-  if (templateLowestWins === undefined) {
-    const winners = targetSession.players.filter((p) => p.isWinner);
-    const nonWinners = targetSession.players.filter((p) => !p.isWinner && typeof p.score === 'number');
-    if (winners.length > 0 && typeof winners[0].score === 'number' && nonWinners.length > 0) {
-      const winnerScore = winners[0].score as number;
-      const avgLoserScore = nonWinners.reduce((sum, p) => sum + (p.score as number), 0) / nonWinners.length;
-      if (winnerScore < avgLoserScore) {
-        isLowScoreWins = true;
-      }
-    }
-  }
+  // Session snapshot is authoritative; game rules supply the legacy fallback.
+  const isLowScoreWins = resolveSessionLowestScoreWins(
+    targetSession,
+    gamesById?.get(targetSession.gameId)
+  );
 
   let candidates: typeof participatingActive = [];
 

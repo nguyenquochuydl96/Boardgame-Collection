@@ -1807,6 +1807,7 @@ test('findPreviousLoser identifies highest score player in lowestScoreWins sessi
       id: 's2',
       gameId: 'g2',
       gameName: 'No Thanks!',
+      lowestScoreWins: true,
       gameThumbnail: '',
       datePlayed: '2026-11-21T10:00:00Z',
       createdAt: '2026-11-21T10:00:00Z',
