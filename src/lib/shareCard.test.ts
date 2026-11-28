@@ -744,36 +744,70 @@ test('buildSessionShareCardData: lowestScoreWins formats gapFromLeaderText with 
   assert.equal(data.leaderboard?.[1].gapFromLeaderText, '+4');
 });
 
-test('buildSessionShareCardData: roast and celebrate use deterministic presentation without reversing lowest-score winner or last place', () => {
+test('buildSessionShareCardData: tabloid headlines are deterministic and preserve lowest-score results', () => {
   const game = { id: 'g-low', name: 'Durian', status: 'own', lowestScoreWins: true } as unknown as BoardGame;
   const session: PlaySession = {
     id: 's-low-vibe', gameId: 'g-low', gameName: 'Durian', gameThumbnail: '',
     datePlayed: '2026-11-27', createdAt: '2026-11-27T19:00:00Z', firstPlayerMethod: 'manual',
     lowestScoreWins: true,
     players: [
-      { playerId: 'winner', playerName: 'Winner', score: 2, isWinner: true },
-      { playerId: 'close', playerName: 'Close', score: 3, isWinner: false },
-      { playerId: 'last', playerName: 'Last', score: 14, isWinner: false },
+      { playerId: 'winner', playerName: 'Hằng', score: 2, isWinner: true },
+      { playerId: 'close', playerName: 'Lộc', score: 3, isWinner: false },
+      { playerId: 'last', playerName: 'Heo', score: 14, isWinner: false },
     ],
   };
 
-  const roast = buildSessionShareCardData(session, { game, tone: 'roast', shuffleSeed: 11 });
-  const repeat = buildSessionShareCardData(session, { game, tone: 'roast', shuffleSeed: 11 });
-  const celebrate = buildSessionShareCardData(session, { game, tone: 'celebrate', shuffleSeed: 11 });
-  const leaderboard = roast.leaderboard!;
+  const first = buildSessionShareCardData(session, { game, shuffleSeed: 11 });
+  const repeat = buildSessionShareCardData(session, { game, shuffleSeed: 11 });
+  const alternate = buildSessionShareCardData(session, { game, shuffleSeed: 12 });
+  const leaderboard = first.leaderboard!;
 
-  assert.equal(roast.resultStatus, 'resolved');
-  assert.equal(leaderboard[0].playerName, 'Winner');
-  assert.notEqual(leaderboard[0].vibeTag, 'Chair Warmer');
-  assert.equal(leaderboard[2].playerName, 'Last');
-  assert.equal(leaderboard[2].vibeTag, 'Chair Warmer');
-  assert.equal(roast.headline, repeat.headline);
-  assert.equal(roast.stamp, repeat.stamp);
-  assert.notEqual(roast.headline, celebrate.headline);
-  assert.equal(celebrate.tone, 'celebrate');
+  assert.equal(first.resultStatus, 'resolved');
+  assert.equal(leaderboard[0].playerName, 'Hằng');
+  assert.equal(leaderboard[2].playerName, 'Heo');
+  assert.equal(first.headline, repeat.headline);
+  assert.match(first.headline, /Hằng|HEARTBREAK|ONE POINT/i);
+  assert.notEqual(first.headline, alternate.headline);
 });
 
-test('buildSessionShareCardData: RESULT PENDING suppresses winner and roast targets while retaining custom caption', () => {
+test('buildSessionShareCardData: uses tabloid blowout, co-op and pending front-page headlines', () => {
+  const points: PlaySession = {
+    id: 's-broadsheet-points', gameId: 'g-castle', gameName: 'Castle Combo', gameThumbnail: '',
+    datePlayed: '2026-11-22', createdAt: '2026-11-22T15:30:00Z', firstPlayerMethod: 'manual',
+    players: [
+      { playerId: 'hang', playerName: 'Hằng', score: 108, isWinner: true },
+      { playerId: 'huy', playerName: 'Anh Huy', score: 76, isWinner: false },
+      { playerId: 'loc', playerName: 'Lộc', score: 75, isWinner: false },
+      { playerId: 'heo', playerName: 'Heo', score: 74, isWinner: false },
+    ],
+  };
+  const coop: PlaySession = {
+    id: 's-broadsheet-coop', gameId: 'g-coop', gameName: 'Spirit Island', gameThumbnail: '',
+    datePlayed: '2026-11-22', createdAt: '2026-11-22T16:30:00Z', firstPlayerMethod: 'manual',
+    scoringMode: 'coop', coopOutcome: 'won', teamScore: 145,
+    players: [{ playerId: 'hang', playerName: 'Hằng', isWinner: true }, { playerId: 'loc', playerName: 'Lộc', isWinner: true }],
+  };
+  const pending: PlaySession = {
+    id: 's-broadsheet-pending', gameId: 'g-pending', gameName: 'Unfinished Game', gameThumbnail: '',
+    datePlayed: '2026-11-22', createdAt: '2026-11-22T17:30:00Z', firstPlayerMethod: 'manual',
+    players: [{ playerId: 'hang', playerName: 'Hằng', score: 108, isWinner: true }, { playerId: 'loc', playerName: 'Lộc', isWinner: false }],
+  };
+
+  const blowout = buildSessionShareCardData(points, { shuffleSeed: 0 });
+  const teamWin = buildSessionShareCardData(coop, { shuffleSeed: 0 });
+  const recount = buildSessionShareCardData(pending, { shuffleSeed: 0 });
+
+  assert.match(blowout.headline, /HANG LEAVES|SOURCES SAY|NO SURVIVORS|LANDSLIDE/);
+  assert.equal(blowout.leaderboard?.[0].playerName, 'Hằng');
+  assert.match(teamWin.headline, /MIRACLE AT TABLE ONE|FRIENDSHIPS SURVIVED|LATE-NIGHT HEROICS/);
+  assert.equal(teamWin.teamScoreFormatted, '145');
+  assert.equal(recount.resultStatus, 'pending');
+  assert.equal(recount.headline, 'FINAL TALLY DELAYED AMID RECOUNT CHAOS');
+  assert.equal(recount.stamp, 'RESULT PENDING');
+  assert.ok(recount.leaderboard?.every((player) => !player.isWinner));
+});
+
+test('buildSessionShareCardData: RESULT PENDING suppresses winner output while retaining a custom headline', () => {
   const session: PlaySession = {
     id: 's-pending-vibe', gameId: 'g-pending', gameName: 'Unfinished Game', gameThumbnail: '',
     datePlayed: '2026-11-27', createdAt: '2026-11-27T20:00:00Z', firstPlayerMethod: 'manual',
@@ -784,30 +818,29 @@ test('buildSessionShareCardData: RESULT PENDING suppresses winner and roast targ
     ],
   };
   const data = buildSessionShareCardData(session, {
-    tone: 'roast', shuffleSeed: 5, customCaption: '  Hôm nay bét bảng bao trà sữa!  ',
+    shuffleSeed: 5, customHeadline: '  Hôm nay bét bảng bao trà sữa!  ',
   });
 
   assert.equal(data.resultStatus, 'pending');
   assert.equal(data.calloutBadge, 'RESULT PENDING');
   assert.equal(data.isNewRecord, false);
-  assert.equal(data.headline, 'Scores Still Pending… Suspense!');
+  assert.equal(data.headline, 'FINAL TALLY DELAYED AMID RECOUNT CHAOS');
   assert.equal(data.stamp, 'RESULT PENDING');
-  assert.equal(data.customCaption, 'Hôm nay bét bảng bao trà sữa!');
-  assert.ok(data.leaderboard?.every((player) => !player.isWinner && !player.vibeTag));
+  assert.equal(data.customHeadline, 'Hôm nay bét bảng bao trà sữa!');
+  assert.ok(data.leaderboard?.every((player) => !player.isWinner));
 });
 
-test('buildSessionShareCardData: co-op roast and celebrate presentation tracks explicit team results', () => {
+test('buildSessionShareCardData: co-op preserves explicit result semantics for the single tabloid layout', () => {
   const won: PlaySession = {
     id: 's-coop-vibe', gameId: 'g-coop', gameName: 'Spirit Island', gameThumbnail: '',
     datePlayed: '2026-11-27', createdAt: '2026-11-27T20:30:00Z', firstPlayerMethod: 'manual',
     scoringMode: 'coop', coopOutcome: 'won',
     players: [{ playerId: 'a', playerName: 'Alice', isWinner: true }, { playerId: 'b', playerName: 'Bob', isWinner: true }],
   };
-  const roast = buildSessionShareCardData(won, { tone: 'roast', shuffleSeed: 9 });
-  const celebrate = buildSessionShareCardData(won, { tone: 'celebrate', shuffleSeed: 9 });
-  assert.equal(roast.resultStatus, 'resolved');
-  assert.equal(roast.coopOutcome, 'won');
-  assert.equal(roast.teamPlayers?.[0].vibeTag, 'Dream Team');
-  assert.equal(celebrate.teamPlayers?.[0].vibeTag, 'Co-op Hero');
-  assert.notEqual(roast.stamp, celebrate.stamp);
+  const card = buildSessionShareCardData(won, { shuffleSeed: 9 });
+  assert.equal(card.resultStatus, 'resolved');
+  assert.equal(card.coopOutcome, 'won');
+  assert.match(card.headline, /MIRACLE AT TABLE ONE|FRIENDSHIPS SURVIVED|LATE-NIGHT HEROICS/);
+  assert.equal(card.stamp, 'TEAM WIN');
+  assert.equal(card.teamPlayers?.length, 2);
 });

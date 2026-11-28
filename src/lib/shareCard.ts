@@ -14,16 +14,14 @@ import {
 import { resolveSessionLowestScoreWins, resolveSessionTeamScore } from './sessionResults';
 
 export type ShareCardMode = 'points' | 'win_only' | 'coop';
-export type ShareCardTone = 'celebrate' | 'roast';
 export type ShareCardResultStatus = 'resolved' | 'pending';
 
 export interface ShareCardPresentationOptions {
-  tone?: ShareCardTone;
   shuffleSeed?: number;
+  customHeadline?: string;
+  /** @deprecated Use customHeadline. Kept while existing callers migrate. */
   customCaption?: string;
 }
-
-export type ShareCardVibeTag = string;
 
 export interface ShareCardPlayerAvatar {
   avatarUrl?: string;
@@ -41,26 +39,22 @@ export interface ShareCardPointsPlayer extends ShareCardPlayerAvatar {
   isWinner: boolean;
   scorePercentage: number; // 0 to 100
   microTag?: string; // e.g. "+32 pts margin", "Photo Finish · +1 pt", "Shared Victory"
-  vibeTag?: ShareCardVibeTag; // Presentation-only celebrate/roast line
   gapFromLeaderText?: string; // e.g. "-32" or "+4"
 }
 
 export interface ShareCardWinnerPlayer extends ShareCardPlayerAvatar {
   playerId: string;
   playerName: string;
-  vibeTag?: ShareCardVibeTag;
 }
 
 export interface ShareCardOtherPlayer extends ShareCardPlayerAvatar {
   playerId: string;
   playerName: string;
-  vibeTag?: ShareCardVibeTag;
 }
 
 export interface ShareCardTeamPlayer extends ShareCardPlayerAvatar {
   playerId: string;
   playerName: string;
-  vibeTag?: ShareCardVibeTag;
 }
 
 export interface SessionShareCardData {
@@ -82,10 +76,11 @@ export interface SessionShareCardData {
   ticketSerial: string; // e.g. "NO. 0041"
   ticketBarcode: string; // e.g. "HEO-41-20261122"
   resultStatus: ShareCardResultStatus;
-  tone: ShareCardTone;
   shuffleSeed: number;
   headline: string;
   stamp: string;
+  customHeadline?: string;
+  /** @deprecated Alias retained for legacy callers. */
   customCaption?: string;
 
   // Points mode
@@ -190,52 +185,112 @@ function cleanCustomCaption(value: string | undefined): string | undefined {
 function pendingPresentation(): Pick<SessionShareCardData, 'resultStatus' | 'headline' | 'stamp'> {
   return {
     resultStatus: 'pending',
-    headline: 'Scores Still Pending… Suspense!',
+    headline: 'FINAL TALLY DELAYED AMID RECOUNT CHAOS',
     stamp: 'RESULT PENDING',
   };
 }
 
 function resolvedPresentation(
   mode: ShareCardMode,
-  tone: ShareCardTone,
   seed: number,
-  details: { margin?: number; sharedWinner?: boolean; coopOutcome?: 'won' | 'lost' }
+  details: {
+    winnerName?: string;
+    gameTitle?: string;
+    margin?: number;
+    sharedWinner?: boolean;
+    coopOutcome?: 'won' | 'lost';
+  }
 ): Pick<SessionShareCardData, 'resultStatus' | 'headline' | 'stamp'> {
+  const winner = (details.winnerName || 'THE CHAMPION').toLocaleUpperCase('vi-VN');
+  const game = (details.gameTitle || 'THE TABLE').toLocaleUpperCase('vi-VN');
+  const margin = Math.max(0, details.margin ?? 0);
+
   if (mode === 'coop') {
     if (details.coopOutcome === 'won') {
-      return tone === 'roast'
-        ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Dream Team!', 'Co-op Chaos, Perfected!', 'The Island Never Stood a Chance.']), stamp: pickVibe(seed, 2, ['GG EZ!', 'TEAM CARRIED!', 'VICTORY LAP!']) }
-        : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Dream Team!', 'Together, Unstoppable!', 'Co-op Heroes!']), stamp: pickVibe(seed, 2, ['TEAM WIN!', 'ALL FOR ONE!', 'HIGH FIVE!']) };
+      return {
+        resultStatus: 'resolved',
+        headline: pickVibe(seed, 1, [
+          'MIRACLE AT TABLE ONE: THE SQUAD PULLED IT OFF',
+          'FRIENDSHIPS SURVIVED ANOTHER CO-OP NIGHT',
+          'LATE-NIGHT HEROICS SAVE THE TEAM',
+        ]),
+        stamp: 'TEAM WIN',
+      };
     }
-    return tone === 'roast'
-      ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Friendship Tested!', 'Blame the Strategist!', 'The Table Has Questions.']), stamp: pickVibe(seed, 2, ['TEAM WIPED!', 'ROASTED!', 'TRY AGAIN!']) }
-      : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Friendship Tested!', 'One More Round?', 'The Team Will Rebuild.']), stamp: pickVibe(seed, 2, ['REGROUP!', 'NEXT TIME!', 'STILL FRIENDS!']) };
+    return {
+      resultStatus: 'resolved',
+      headline: pickVibe(seed, 1, [
+        'TOTAL COLLAPSE: EVERYONE BLAMES EVERYONE',
+        'CO-OP DISASTER ENDS IN FINGER-POINTING',
+        'TEAM STRATEGY MISSING, PRESUMED LOST',
+      ]),
+      stamp: 'TEAM LOSS',
+    };
   }
 
   if (mode === 'win_only') {
-    return tone === 'roast'
-      ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Victory Secured. Receipts Saved.', 'Rules Lawyers Feared Them.', 'GG EZ? Debatable.']), stamp: pickVibe(seed, 2, ['GG EZ!', 'OUTPLAYED!', 'CROWN CLAIMED!']) }
-      : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Victory Secured!', 'Champions of the Table!', 'Game Night Legends!']), stamp: pickVibe(seed, 2, ['WINNER!', 'CLUTCH!', 'CROWN CLAIMED!']) };
+    return {
+      resultStatus: 'resolved',
+      headline: pickVibe(seed, 1, [
+        `${winner} WALKS OFF WITH BRAGGING RIGHTS`,
+        `NO POINTS NEEDED: ${winner} TAKES THE CROWN`,
+      ]),
+      stamp: 'CROWN CLAIMED',
+    };
   }
 
   if (details.sharedWinner) {
-    return tone === 'roast'
-      ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Nobody Blinked. Nobody Won Alone.', 'A Tie? The Drama Continues.', 'Shared Glory, Shared Trash Talk.']), stamp: 'SHARED VICTORY' }
-      : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Shared Glory!', 'Two Crowns, One Table!', 'A Legendary Tie!']), stamp: 'SHARED VICTORY' };
+    return {
+      resultStatus: 'resolved',
+      headline: pickVibe(seed, 1, [
+        'DEADLOCK AT THE TOP: NOBODY BLINKED',
+        'SPLIT CROWN SHAKES UP GAME NIGHT',
+      ]),
+      stamp: 'SPLIT CROWN',
+    };
   }
-  if ((details.margin ?? 0) <= 2) {
-    return tone === 'roast'
-      ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Clutch by a Whisker!', 'The Dice Chose Violence.', 'One Point, Infinite Salt.']), stamp: pickVibe(seed, 2, ['CLUTCH!', 'PHOTO FINISH!', 'SO CLOSE!']) }
-      : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['What a Finish!', 'A True Photo Finish!', 'Clutch at the Buzzer!']), stamp: 'PHOTO FINISH!' };
+
+  if (margin <= 2) {
+    return {
+      resultStatus: 'resolved',
+      headline: pickVibe(seed, 1, [
+        `${winner} STEALS IT AT THE BUZZER BY ${formatNumber(margin)}`,
+        `HEARTBREAK BY ${formatNumber(margin)}: RECOUNT DEMANDED`,
+        'ONE POINT SHORT — SLEEP DISRUPTED',
+      ]),
+      stamp: 'PHOTO FINISH',
+    };
   }
-  if ((details.margin ?? 0) >= 15) {
-    return tone === 'roast'
-      ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Carried? No, Crushed!', 'Absolute Menace.', 'The Scoreboard Needs Therapy.']), stamp: `NO MERCY · +${formatNumber(details.margin ?? 0)}` }
-      : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Absolute Menace!', 'A Legendary Performance!', 'Dominance Delivered!']), stamp: `BLOWOUT · +${formatNumber(details.margin ?? 0)}` };
+
+  if (margin >= 25) {
+    return {
+      resultStatus: 'resolved',
+      headline: pickVibe(seed, 1, [
+        `${winner} LEAVES ENTIRE TABLE IN SHAMBLES`,
+        'SOURCES SAY THE TABLE NEVER RECOVERED',
+        `NO SURVIVORS AS ${winner} RUNS AWAY WITH IT`,
+        'LANDSLIDE FINISH LEAVES RIVALS SPEECHLESS',
+      ]),
+      stamp: `+${formatNumber(margin)} MARGIN`,
+    };
   }
-  return tone === 'roast'
-    ? { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['The Crown Stays Loud.', 'A Clean Table Takeover.', 'Scoreboard Says Enough.']), stamp: pickVibe(seed, 2, ['DESTROYED!', 'CROWN CLAIMED!', 'GG EZ!']) }
-    : { resultStatus: 'resolved', headline: pickVibe(seed, 1, ['Game Night Champion!', 'A Tabletop Triumph!', 'Victory Looks Good!']), stamp: pickVibe(seed, 2, ['WINNER!', 'CROWN CLAIMED!', 'NICE PLAY!']) };
+
+  return {
+    resultStatus: 'resolved',
+    headline: pickVibe(seed, 1, [
+      `${winner} CLAIMS THE TABLE AFTER LATE-NIGHT CLASH`,
+      `LATE-NIGHT DRAMA ENDS WITH ${winner} ON TOP`,
+      `${winner} OUTSMARTS THE TABLE IN ${game}`,
+    ]),
+    stamp: `+${formatNumber(margin)} MARGIN`,
+  };
+}
+
+function applyCustomHeadline(
+  presentation: Pick<SessionShareCardData, 'resultStatus' | 'headline' | 'stamp'>,
+  customHeadline?: string
+): Pick<SessionShareCardData, 'resultStatus' | 'headline' | 'stamp'> {
+  return customHeadline ? { ...presentation, headline: customHeadline } : presentation;
 }
 
 /**
@@ -252,14 +307,14 @@ export function buildSessionShareCardData(
     players = [],
     locations = [],
     useTablePhoto = false,
-    tone = 'roast',
     shuffleSeed,
+    customHeadline,
     customCaption,
   } = context;
   const resolvedShuffleSeed = Number.isFinite(shuffleSeed)
     ? Math.trunc(shuffleSeed as number)
     : stableHash(`${session.id}|${session.createdAt}|${session.gameId}`);
-  const resolvedCustomCaption = cleanCustomCaption(customCaption);
+  const resolvedCustomHeadline = cleanCustomCaption(customHeadline ?? customCaption);
 
   // 1. Resolve scoring mode via Single Source of Truth
   let mode: ShareCardMode = 'points';
@@ -528,13 +583,17 @@ export function buildSessionShareCardData(
     const resolvedMargin = resultStatus === 'resolved' && rank1Players.length === 1 && rankedPlayersWithoutPct.length > 1
       ? Math.abs(rankedPlayersWithoutPct[0].score - rankedPlayersWithoutPct[1].score)
       : undefined;
-    const presentation = resultStatus === 'pending'
-      ? pendingPresentation()
-      : resolvedPresentation('points', tone, resolvedShuffleSeed, {
-          margin: resolvedMargin,
-          sharedWinner: rank1Players.length > 1,
-        });
-    const lastRank = Math.max(...rankedPlayersWithoutPct.map((player) => player.rank));
+    const presentation = applyCustomHeadline(
+      resultStatus === 'pending'
+        ? pendingPresentation()
+        : resolvedPresentation('points', resolvedShuffleSeed, {
+            winnerName: rank1Players.map((player) => player.playerName).join(' & '),
+            gameTitle,
+            margin: resolvedMargin,
+            sharedWinner: rank1Players.length > 1,
+          }),
+      resultStatus === 'resolved' ? resolvedCustomHeadline : undefined
+    );
     if (resultStatus === 'pending') {
       calloutBadge = 'RESULT PENDING';
       rank1MicroTag = undefined;
@@ -570,21 +629,6 @@ export function buildSessionShareCardData(
         gapFromLeaderText = lowestScoreWins ? `+${formatNumber(diff)}` : `-${formatNumber(diff)}`;
       }
 
-      let vibeTag: ShareCardVibeTag | undefined;
-      if (resultStatus === 'resolved') {
-        if (p.isWinner) {
-          vibeTag = tone === 'roast' && (resolvedMargin ?? 0) >= 15
-            ? 'Absolute Menace'
-            : tone === 'roast' ? 'Crown Claimed' : 'Table Champion';
-        } else if (p.rank === 2 && (resolvedMargin ?? 0) <= 2) {
-          vibeTag = tone === 'roast'
-            ? `Robbed by ${formatNumber(resolvedMargin ?? 0)} ${resolvedMargin === 1 ? 'pt' : 'pts'}`
-            : 'So Close!';
-        } else if (rankedPlayersWithoutPct.length >= 3 && p.rank === lastRank) {
-          vibeTag = tone === 'roast' ? 'Chair Warmer' : 'Still in the Fight';
-        }
-      }
-
       return {
         playerId: p.playerId,
         rank: p.rank,
@@ -594,7 +638,6 @@ export function buildSessionShareCardData(
         isWinner: resultStatus === 'resolved' && p.isWinner,
         scorePercentage,
         microTag: resultStatus === 'resolved' && p.rank === 1 ? rank1MicroTag : undefined,
-        vibeTag,
         gapFromLeaderText,
         avatarUrl: p.avatar.avatarUrl,
         avatarEmoji: p.avatar.avatarEmoji,
@@ -630,9 +673,9 @@ export function buildSessionShareCardData(
       ticketSerial,
       ticketBarcode,
       ...presentation,
-      tone,
       shuffleSeed: resolvedShuffleSeed,
-      customCaption: resolvedCustomCaption,
+      customHeadline: resolvedCustomHeadline,
+      customCaption: resolvedCustomHeadline,
       leaderboard,
       overflowPlayerCount,
     };
@@ -676,18 +719,15 @@ export function buildSessionShareCardData(
     }
 
     const resultStatus: ShareCardResultStatus = winners.length > 0 ? 'resolved' : 'pending';
-    const presentation = resultStatus === 'pending'
-      ? pendingPresentation()
-      : resolvedPresentation('win_only', tone, resolvedShuffleSeed, {});
-    const winnersWithVibes = winners.map((player) => ({
-      ...player,
-      vibeTag: tone === 'roast' ? 'Rules Lawyers Feared Them' : 'Table Champion',
-    }));
-    const othersWithVibes = otherPlayers.map((player) => ({
-      ...player,
-      vibeTag: tone === 'roast' ? 'Plot Armor Missing' : 'Still in the Fight',
-    }));
-
+    const presentation = applyCustomHeadline(
+      resultStatus === 'pending'
+        ? pendingPresentation()
+        : resolvedPresentation('win_only', resolvedShuffleSeed, {
+            winnerName: winners.map((player) => player.playerName).join(' & '),
+            gameTitle,
+          }),
+      resultStatus === 'resolved' ? resolvedCustomHeadline : undefined
+    );
     let calloutBadge = 'SOLO VICTORY';
     if (winners.length > 1) {
       calloutBadge = `${formatNumber(winners.length)} WINNERS`;
@@ -717,11 +757,11 @@ export function buildSessionShareCardData(
       ticketSerial,
       ticketBarcode,
       ...presentation,
-      tone,
       shuffleSeed: resolvedShuffleSeed,
-      customCaption: resolvedCustomCaption,
-      winners: winnersWithVibes,
-      otherPlayers: othersWithVibes.slice(0, finalOther.length),
+      customHeadline: resolvedCustomHeadline,
+      customCaption: resolvedCustomHeadline,
+      winners,
+      otherPlayers: otherPlayers.slice(0, finalOther.length),
       overflowOtherCount,
     };
   }
@@ -735,9 +775,12 @@ export function buildSessionShareCardData(
   const isWon = session.coopOutcome === 'won' || rawPlayers.some((player) => player.isWinner);
   const coopOutcome: 'won' | 'lost' = isWon ? 'won' : 'lost';
   const resultStatus: ShareCardResultStatus = hasExplicitCoopResult ? 'resolved' : 'pending';
-  const presentation = resultStatus === 'pending'
-    ? pendingPresentation()
-    : resolvedPresentation('coop', tone, resolvedShuffleSeed, { coopOutcome });
+  const presentation = applyCustomHeadline(
+    resultStatus === 'pending'
+      ? pendingPresentation()
+      : resolvedPresentation('coop', resolvedShuffleSeed, { gameTitle, coopOutcome }),
+    resultStatus === 'resolved' ? resolvedCustomHeadline : undefined
+  );
   const calloutBadge = resultStatus === 'pending'
     ? 'RESULT PENDING'
     : isWon ? 'TEAM VICTORY' : 'TEAM DEFEAT';
@@ -753,11 +796,6 @@ export function buildSessionShareCardData(
     return {
       playerId: p.playerId,
       playerName: resolvedName,
-      vibeTag: resultStatus === 'resolved'
-        ? isWon
-          ? tone === 'roast' ? 'Dream Team' : 'Co-op Hero'
-          : tone === 'roast' ? 'Friendship Tested' : 'Next Time'
-        : undefined,
       avatarUrl: avatar.avatarUrl,
       avatarEmoji: avatar.avatarEmoji,
       color: avatar.color,
@@ -791,9 +829,9 @@ export function buildSessionShareCardData(
     ticketSerial,
     ticketBarcode,
     ...presentation,
-    tone,
     shuffleSeed: resolvedShuffleSeed,
-    customCaption: resolvedCustomCaption,
+    customHeadline: resolvedCustomHeadline,
+    customCaption: resolvedCustomHeadline,
     coopOutcome,
     teamScoreFormatted,
     teamPlayers: finalTeam,
