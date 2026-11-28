@@ -192,7 +192,14 @@ export const PickerPage: React.FC = () => {
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
-              <Crown className="w-4 h-4 text-amber-500 dark:text-amber-400 relative z-10 shrink-0" />
+              <Crown
+                className={cn(
+                  'w-4 h-4 relative z-10 shrink-0',
+                  mode === 'first_player'
+                    ? 'text-[var(--accent-ink)]'
+                    : 'text-amber-500 dark:text-amber-400'
+                )}
+              />
               <span className="relative z-10 hidden sm:inline">Determine First Player</span>
               <span className="relative z-10 sm:hidden">First Player</span>
             </button>
@@ -216,7 +223,14 @@ export const PickerPage: React.FC = () => {
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                 />
               )}
-              <Dices className="w-4 h-4 text-[var(--accent)] relative z-10 shrink-0" />
+              <Dices
+                className={cn(
+                  'w-4 h-4 relative z-10 shrink-0',
+                  mode === 'what_to_play'
+                    ? 'text-[var(--accent-ink)]'
+                    : 'text-[var(--accent)]'
+                )}
+              />
               <span className="relative z-10 hidden sm:inline">What to Play Tonight?</span>
               <span className="relative z-10 sm:hidden">What to Play?</span>
             </button>
@@ -446,7 +460,7 @@ export const PickerPage: React.FC = () => {
                   </div>
 
                   {/* Player Count Filter */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-[10px] text-[var(--muted)] font-bold shrink-0">Players:</span>
                     {(['all', '2', '3', '4', '5+'] as const).map((cnt) => (
                       <button
@@ -466,7 +480,7 @@ export const PickerPage: React.FC = () => {
                   </div>
 
                   {/* Duration Filter */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-[10px] text-[var(--muted)] font-bold shrink-0">Duration:</span>
                     {(['all', 'short', 'medium', 'long'] as const).map((dur) => (
                       <button

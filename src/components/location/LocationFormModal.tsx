@@ -83,6 +83,19 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
       isDefault,
     };
 
+    const persistLocationUpdates = (cleanUpdates: {
+      name: string;
+      address?: string;
+      notes?: string;
+      isDefault: boolean;
+    }) => {
+      if (location && !location.id.startsWith('hist-')) {
+        updateLocation(location.id, cleanUpdates);
+      } else {
+        addLocation(cleanUpdates.name, cleanUpdates.address, cleanUpdates.notes, cleanUpdates.isDefault);
+      }
+    };
+
     if (location) {
       const isRename = normalizeLocationKey(location.name) !== targetKey;
       const affectedSessionCount = isRename
@@ -92,7 +105,7 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
         setPendingRename({ ...updates, affectedSessionCount });
         return;
       }
-      updateLocation(location.id, updates);
+      persistLocationUpdates(updates);
     } else {
       addLocation(trimmedName, updates.address, updates.notes, isDefault);
     }
@@ -102,8 +115,13 @@ export const LocationFormModal: React.FC<LocationFormModalProps> = ({
 
   const handleConfirmRename = () => {
     if (!location || !pendingRename) return;
-    updateLocation(location.id, pendingRename);
-    renameSessionsAtLocation(location.name, pendingRename.name);
+    const { affectedSessionCount: _affectedCount, ...cleanUpdates } = pendingRename;
+    if (location.id.startsWith('hist-')) {
+      addLocation(cleanUpdates.name, cleanUpdates.address, cleanUpdates.notes, cleanUpdates.isDefault);
+    } else {
+      updateLocation(location.id, cleanUpdates);
+    }
+    renameSessionsAtLocation(location.name, cleanUpdates.name);
     setPendingRename(null);
     onClose();
   };

@@ -38,8 +38,14 @@ export const ResumeSessionBanner: React.FC = () => {
     };
   }, [checkDraft, location.pathname]);
 
-  // Don't show if user is currently inside the new session creation wizard
-  if (!draft || location.pathname === '/sessions/new' || location.pathname.startsWith('/new-session')) {
+  // Don't show inside the new session wizard or on pages that render DraftSessionCard inline
+  if (
+    !draft ||
+    location.pathname === '/' ||
+    location.pathname === '/sessions' ||
+    location.pathname === '/sessions/new' ||
+    location.pathname.startsWith('/new-session')
+  ) {
     return null;
   }
 

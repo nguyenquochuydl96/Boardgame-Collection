@@ -11,6 +11,7 @@ export interface SessionStore {
   bulkAddSessions: (sessions: PlaySession[], replaceExisting?: boolean) => void;
   updateSession: (id: string, updates: Partial<PlaySession>) => void;
   renameSessionsAtLocation: (previousName: string, nextName: string) => number;
+  clearSessionsAtLocation: (venueName: string) => number;
   deleteSession: (id: string) => void;
   getSessionById: (id: string) => PlaySession | undefined;
   getSessionsByGame: (gameId: string) => PlaySession[];
@@ -78,6 +79,20 @@ export const useSessionStore = create<SessionStore>()(
           }),
         }));
         return updatedCount;
+      },
+      clearSessionsAtLocation: (venueName) => {
+        const targetKey = normalizeLocationKey(venueName);
+        if (!targetKey) return 0;
+
+        let clearedCount = 0;
+        set((state) => ({
+          sessions: state.sessions.map((session) => {
+            if (normalizeLocationKey(session.location) !== targetKey) return session;
+            clearedCount += 1;
+            return { ...session, location: undefined };
+          }),
+        }));
+        return clearedCount;
       },
       deleteSession: (id) => {
         set((state) => ({

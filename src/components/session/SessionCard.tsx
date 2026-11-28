@@ -34,17 +34,25 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
   const game = propGame || storeGame;
 
   const players = session.players || [];
+  const displayGameName = game?.name || session.gameName;
+  const displayGameCover = game
+    ? { ...game, name: displayGameName, thumbnail: game.thumbnail || session.gameThumbnail }
+    : { name: session.gameName, thumbnail: session.gameThumbnail };
   const isCoop = isCoopSession(session, game);
   const isWinOnly = isWinOnlySession(session, game);
   const winners = getSessionWinners(session, game);
+  const resolvedWinners = winners.map((w) => ({
+    ...w,
+    playerName: playersById[w.playerId]?.name || w.playerName,
+  }));
   const coopTeamScore = isCoop ? resolveSessionTeamScore(session) : undefined;
-  const winnerBadge = formatWinnerBadgeText(winners);
+  const winnerBadge = formatWinnerBadgeText(resolvedWinners);
   const scoreSuffix =
     !isWinOnly &&
     winners.length > 0 &&
     typeof winners[0].score === 'number' &&
     winners.every((w) => w.score === winners[0].score)
-      ? ` · ${winners[0].score}`
+      ? ` · ${formatNumber(winners[0].score)}`
       : '';
 
   return (
@@ -54,7 +62,7 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
         className="flex items-center gap-4 p-4 rounded-2xl bg-[var(--card)] border border-[var(--line)] hover:border-[var(--line-2)] hover:shadow-md transition-all duration-200 group"
       >
         <GameCoverImage
-          game={{ name: session.gameName, thumbnail: session.gameThumbnail }}
+          game={displayGameCover}
           className="w-14 h-16 sm:w-16 sm:h-20 rounded-xl shrink-0 border border-[var(--line)]"
           imgClassName="group-hover:scale-105 transition-transform duration-300"
           fallbackIconSize="text-xl"
@@ -64,7 +72,7 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 min-w-0">
               <h3 className="font-display font-bold text-base sm:text-lg text-[var(--ink)] truncate group-hover:text-[var(--accent)] transition-colors">
-                {session.gameName}
+                {displayGameName}
               </h3>
               {session.status === 'draft' || session.status === 'in_progress' ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold shrink-0">
@@ -140,7 +148,7 @@ export const SessionCard: React.FC<SessionCardProps> = memo(({
                   return (
                     <PlayerAvatar
                       key={p.playerId || idx}
-                      name={p.playerName}
+                      name={fullPlayer?.name || p.playerName}
                       avatar={fullPlayer?.avatar}
                       size="sm"
                       className="ring-2 ring-[var(--card)]"

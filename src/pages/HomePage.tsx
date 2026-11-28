@@ -39,6 +39,7 @@ import {
   getSessionWinners,
   formatWinnerBadgeText,
 } from '../lib/utils';
+import { DRAFT_STORAGE_KEY, parseSessionDraft, removeDraftIfUnchanged } from '../lib/draftSafety';
 import { AnimatedNumber } from '../components/ui/AnimatedNumber';
 import { SessionDraft } from '../types';
 
@@ -61,37 +62,48 @@ export const HomePage: React.FC = () => {
 
   const [isWhatToPlayOpen, setIsWhatToPlayOpen] = useState(false);
 
-  // Active Draft Session detection
+  const playersById = useMemo(
+    () => Object.fromEntries(players.map((p) => [p.id, p])),
+    [players]
+  );
+
+  // Active Draft Session detection (synced with draftSafety & ResumeSessionBanner)
   const [activeDraft, setActiveDraft] = useState<SessionDraft | null>(null);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('boardgame_session_draft');
-      if (raw) {
-        const parsed = JSON.parse(raw) as SessionDraft;
-        if (
-          parsed &&
-          parsed.gameId &&
-          (!parsed.sessionStartTime || Date.now() - parsed.sessionStartTime < 36 * 60 * 60 * 1000)
-        ) {
+    const syncDraft = () => {
+      try {
+        const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+        const parsed = parseSessionDraft(raw, Date.now());
+        if (parsed) {
           if (isDraftMatchingCompletedSession(parsed, sessions)) {
-            localStorage.removeItem('boardgame_session_draft');
+            removeDraftIfUnchanged(localStorage, raw);
+            window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
             setActiveDraft(null);
             return;
           }
           setActiveDraft(parsed);
           return;
         }
+        setActiveDraft(null);
+      } catch {
+        setActiveDraft(null);
       }
-      setActiveDraft(null);
-    } catch {
-      setActiveDraft(null);
-    }
+    };
+
+    syncDraft();
+    window.addEventListener('storage', syncDraft);
+    window.addEventListener('boardgame_draft_updated', syncDraft);
+    return () => {
+      window.removeEventListener('storage', syncDraft);
+      window.removeEventListener('boardgame_draft_updated', syncDraft);
+    };
   }, [sessions]);
 
   const handleDiscardDraft = () => {
     try {
-      localStorage.removeItem('boardgame_session_draft');
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      removeDraftIfUnchanged(localStorage, raw);
       window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
     } catch {}
     setActiveDraft(null);
@@ -122,8 +134,8 @@ export const HomePage: React.FC = () => {
   const heoStreak = useMemo(() => {
     const heo = players.find((p) => p.name.toLowerCase() === 'heo') || players[0];
     if (!heo) return null;
-    return calculatePlayerStreaks(heo.id, competitiveSessions, 'all');
-  }, [players, competitiveSessions]);
+    return calculatePlayerStreaks(heo.id, competitiveSessions, 'all', gamesById);
+  }, [players, competitiveSessions, gamesById]);
 
   // High-performance memoized calculations across all games and sessions
   const {
@@ -154,9 +166,10 @@ export const HomePage: React.FC = () => {
     const totalMinutes = getTotalPlayDurationMinutes(sessions);
     const playMap = new Map<string, { id: string; label: string; value: number }>();
     for (const s of sessions) {
+      const storeGame = gamesById.get(s.gameId);
       const existing = playMap.get(s.gameId) || {
         id: s.gameId,
-        label: s.gameName,
+        label: storeGame?.name || s.gameName,
         value: 0,
       };
       existing.value += 1;
@@ -239,7 +252,7 @@ export const HomePage: React.FC = () => {
                 {lastSession ? (
                   <>
                     Last game on the table was{' '}
-                    <strong className="font-bold text-[var(--accent)]">{lastSession.gameName}</strong> ({formatDate(lastSession.datePlayed)}). Start a new play or roll for what to play next.
+                    <strong className="font-bold text-[var(--accent)]">{gamesById.get(lastSession.gameId)?.name || lastSession.gameName}</strong> ({formatDate(lastSession.datePlayed)}). Start a new play or roll for what to play next.
                   </>
                 ) : (
                   'Explore your collection, pick what to play tonight, or log your scores in seconds.'
@@ -346,16 +359,24 @@ export const HomePage: React.FC = () => {
               {recentSessions.length > 0 ? (
                 recentSessions.map((session) => {
                   const game = gamesById.get(session.gameId);
+                  const displayGameName = game?.name || session.gameName;
+                  const displayGameCover = game
+                    ? { ...game, name: displayGameName, thumbnail: game.thumbnail || session.gameThumbnail }
+                    : { name: session.gameName, thumbnail: session.gameThumbnail };
                   const isCoop = isCoopSession(session, game);
                   const isWinOnly = isWinOnlySession(session, game);
                   const winners = getSessionWinners(session, game);
-                  const winnerBadge = formatWinnerBadgeText(winners);
+                  const resolvedWinners = winners.map((w) => ({
+                    ...w,
+                    playerName: playersById[w.playerId]?.name || w.playerName,
+                  }));
+                  const winnerBadge = formatWinnerBadgeText(resolvedWinners);
                   const scoreSuffix =
                     !isWinOnly &&
                     winners.length > 0 &&
                     typeof winners[0].score === 'number' &&
                     winners.every((w) => w.score === winners[0].score)
-                      ? ` · ${winners[0].score}p`
+                      ? ` · ${formatNumber(winners[0].score)}p`
                       : '';
 
                   return (
@@ -366,7 +387,7 @@ export const HomePage: React.FC = () => {
                     >
                       <div className="flex items-center gap-3.5 min-w-0">
                         <GameCoverImage
-                          game={{ name: session.gameName, thumbnail: session.gameThumbnail }}
+                          game={displayGameCover}
                           className="w-12 h-12 rounded-xl shrink-0 border border-[var(--line)] shadow-xs"
                           imgClassName="group-hover:scale-105 transition-transform duration-200"
                           fallbackIconSize="text-lg"
@@ -374,7 +395,7 @@ export const HomePage: React.FC = () => {
 
                         <div className="min-w-0">
                           <h3 className="font-display font-bold text-sm text-[var(--ink)] truncate group-hover:text-[var(--accent)] transition-colors">
-                            {session.gameName}
+                            {displayGameName}
                           </h3>
                           <p className="text-xs text-[var(--muted)] inline-flex items-center gap-1 tabular-nums font-medium mt-0.5">
                             <Calendar className="w-3 h-3 text-[var(--accent)]" />

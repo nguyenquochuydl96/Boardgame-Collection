@@ -257,11 +257,11 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
         .filter((p) => (playerPlaysMap.get(p.id) || 0) >= minRequiredPlays)
         .map((p) => ({
           player: p,
-          streak: calculateLongestWinStreak(p.id, competitiveOverviewSessions, 'all'),
+          streak: calculateLongestWinStreak(p.id, competitiveOverviewSessions, 'all', gamesById),
         }))
         .filter((x) => x.streak > 0)
         .sort((a, b) => b.streak - a.streak);
-    }, [players, competitiveOverviewSessions]);
+    }, [players, competitiveOverviewSessions, gamesById]);
 
     // Monthly play frequency
     const monthlyFrequency = useMemo(() => {
@@ -772,7 +772,7 @@ export const StatsOverviewTab: React.FC<StatsOverviewTabProps> = React.memo(
                 <div
                   key={player.id}
                   onClick={() => {
-                    const sDetails = calculatePlayerStreaks(player.id, competitiveOverviewSessions, 'all');
+                    const sDetails = calculatePlayerStreaks(player.id, competitiveOverviewSessions, 'all', gamesById);
                     setSelectedStreakPlayer(player);
                     setSelectedStreakData(sDetails.longestWinStreak);
                   }}

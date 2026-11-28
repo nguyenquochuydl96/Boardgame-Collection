@@ -27,6 +27,7 @@ import { useSessionStore } from '../store/useSessionStore';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useGameStore } from '../store/useGameStore';
 import { formatMonthYear, isDraftMatchingCompletedSession, formatNumber } from '../lib/utils';
+import { DRAFT_STORAGE_KEY, parseSessionDraft, removeDraftIfUnchanged } from '../lib/draftSafety';
 import { PlaySession, SessionDraft, BoardGame } from '../types';
 import { cn } from '../components/ui/cn';
 
@@ -71,24 +72,17 @@ export const SessionsPage: React.FC = () => {
 
   const loadDraft = () => {
     try {
-      const raw = localStorage.getItem('boardgame_session_draft');
-      if (raw) {
-        const parsed = JSON.parse(raw) as SessionDraft;
-        // Keep draft if younger than 48 hours and has a valid gameId
-        if (
-          parsed &&
-          parsed.gameId &&
-          (!parsed.sessionStartTime || Date.now() - parsed.sessionStartTime < 48 * 60 * 60 * 1000)
-        ) {
-          // If this draft corresponds to an already completed session in history, purge it
-          if (isDraftMatchingCompletedSession(parsed, sessions)) {
-            localStorage.removeItem('boardgame_session_draft');
-            setActiveDraft(null);
-            return;
-          }
-          setActiveDraft(parsed);
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      const parsed = parseSessionDraft(raw, Date.now());
+      if (parsed) {
+        if (isDraftMatchingCompletedSession(parsed, sessions)) {
+          removeDraftIfUnchanged(localStorage, raw);
+          window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
+          setActiveDraft(null);
           return;
         }
+        setActiveDraft(parsed);
+        return;
       }
       setActiveDraft(null);
     } catch {
@@ -98,11 +92,18 @@ export const SessionsPage: React.FC = () => {
 
   useEffect(() => {
     loadDraft();
+    window.addEventListener('storage', loadDraft);
+    window.addEventListener('boardgame_draft_updated', loadDraft);
+    return () => {
+      window.removeEventListener('storage', loadDraft);
+      window.removeEventListener('boardgame_draft_updated', loadDraft);
+    };
   }, [sessions]);
 
   const handleDiscardDraft = () => {
     try {
-      localStorage.removeItem('boardgame_session_draft');
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      removeDraftIfUnchanged(localStorage, raw);
       window.dispatchEvent(new CustomEvent('boardgame_draft_updated'));
     } catch {}
     setActiveDraft(null);
@@ -434,7 +435,7 @@ export const SessionsPage: React.FC = () => {
                   setActiveFilterTab('games');
                 }}
                 className={cn(
-                  'px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border select-none',
+                  'px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border select-none',
                   selectedGameIds.length > 0
                     ? 'bg-[var(--accent)]/15 border-[var(--accent)]/40 text-[var(--accent)]'
                     : 'bg-[var(--card-2)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]'
@@ -706,7 +707,7 @@ export const SessionsPage: React.FC = () => {
                             <div className="min-w-0">
                               <h4 className="text-xs font-bold truncate text-[var(--ink)]">{g.name}</h4>
                               <p className="text-[10px] text-[var(--muted)] tabular-nums">
-                                {g.plays} {g.plays === 1 ? 'play' : 'plays'}
+                                {formatNumber(g.plays)} {g.plays === 1 ? 'play' : 'plays'}
                               </p>
                             </div>
                           </div>
@@ -968,7 +969,7 @@ export const SessionsPage: React.FC = () => {
           <div className="space-y-8">
             {groupedByMonth.map((group) => (
               <section key={group.monthLabel} className="space-y-3">
-                <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] lg:top-0 z-20 py-2 px-3.5 rounded-xl bg-[var(--card)] border border-[var(--line)] inline-flex items-center gap-2 shadow-sm">
+                <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] lg:top-16 z-20 py-2 px-3.5 rounded-xl bg-[var(--card)] border border-[var(--line)] inline-flex items-center gap-2 shadow-sm">
                   <Calendar className="w-4 h-4 text-[var(--accent)]" />
                   <h2 className="font-display font-bold text-sm text-[var(--ink)]">
                     {group.monthLabel}

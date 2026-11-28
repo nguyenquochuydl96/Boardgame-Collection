@@ -280,9 +280,7 @@ export const NewSessionPage: React.FC = () => {
         : 'Rematch prefilled · Pick first player or tap Back to edit setup',
     });
 
-    try {
-      window.history.replaceState({}, '', window.location.pathname);
-    } catch {}
+    navigate('/sessions/new', { replace: true });
   };
 
   // Rematch never replaces even an old or legacy draft without an explicit decision.
@@ -310,9 +308,7 @@ export const NewSessionPage: React.FC = () => {
     setPendingRematchSession(null);
     setExistingDraft(parseSessionDraft(pendingDraftRawRef.current, Date.now()));
     setUnreadableDraft(pendingDraftRawRef.current !== null && !parseSessionDraft(pendingDraftRawRef.current, Date.now()));
-    try {
-      window.history.replaceState({}, '', window.location.pathname);
-    } catch {}
+    navigate('/sessions/new', { replace: true });
   };
 
   const handleRestoreDraft = () => {
@@ -844,6 +840,7 @@ export const NewSessionPage: React.FC = () => {
       return;
     }
 
+    setQuotaError(null);
     const normalizedResult = normalizeSessionResult({
       mode: activeScoringMode,
       players: computedPlayerScores,
@@ -852,14 +849,14 @@ export const NewSessionPage: React.FC = () => {
       coopOutcome,
     });
     if (normalizedResult.errors.length > 0) {
-      alert(normalizedResult.errors[0]);
+      setQuotaError(normalizedResult.errors[0]);
       return;
     }
 
     const durationText = durationMinutes.trim();
     const parsedDuration = durationText === '' ? undefined : Number(durationText);
     if (parsedDuration !== undefined && (!Number.isFinite(parsedDuration) || parsedDuration < 0)) {
-      alert('Duration must be a non-negative number of minutes or left blank.');
+      setQuotaError('Duration must be a non-negative number of minutes or left blank.');
       return;
     }
 

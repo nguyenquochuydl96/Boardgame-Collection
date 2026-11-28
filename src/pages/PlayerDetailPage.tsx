@@ -104,8 +104,8 @@ export const PlayerDetailPage: React.FC = () => {
         currentStreak: { type: 'none' as const, count: 0, sessions: [] },
       };
     }
-    return calculatePlayerStreaks(player.id, competitivePlayerSessions, 'all');
-  }, [player?.id, competitivePlayerSessions]);
+    return calculatePlayerStreaks(player.id, competitivePlayerSessions, 'all', gamesById);
+  }, [player?.id, competitivePlayerSessions, gamesById]);
 
   // Per-game breakdown
   const perGameStats = useMemo(() => {

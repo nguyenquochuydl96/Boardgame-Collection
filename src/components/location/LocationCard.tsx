@@ -178,14 +178,18 @@ const LocationCardComponent: React.FC<LocationCardProps> = ({
         {isConfirmingDelete && (
           <div className="absolute inset-0 bg-[var(--card)]/98 rounded-2xl p-4 flex flex-col justify-center items-center text-center space-y-3 z-20 border-2 border-rose-500/50 animate-in fade-in zoom-in-95 duration-150">
             <p className="text-xs font-bold text-[var(--text-primary)]">
-              Confirm venue deletion:
+              {location.id.startsWith('hist-')
+                ? 'Clear venue from session history:'
+                : 'Confirm venue deletion:'}
             </p>
             <p className="text-xs font-extrabold text-[var(--bad)] truncate max-w-full px-2">
               "{location.name}"?
             </p>
             {sessionCount > 0 && (
               <p className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 p-2 rounded-lg border border-amber-500/25">
-                Note: {formatCount(sessionCount, 'logged session')} will keep this venue name.
+                {location.id.startsWith('hist-')
+                  ? `This will clear "${location.name}" from ${formatCount(sessionCount, 'logged session')}.`
+                  : `Note: ${formatCount(sessionCount, 'logged session')} will keep this venue name.`}
               </p>
             )}
             <div className="flex gap-2">
@@ -204,7 +208,7 @@ const LocationCardComponent: React.FC<LocationCardProps> = ({
                   setIsConfirmingDelete(false);
                 }}
               >
-                Delete Venue
+                {location.id.startsWith('hist-') ? 'Clear Venue' : 'Delete Venue'}
               </Button>
             </div>
           </div>

@@ -156,10 +156,23 @@ export const SessionDetailPage: React.FC = () => {
   const [editScoreMode, setEditScoreMode] = useState<'quick' | 'detailed'>('quick');
   const [editLowScoreWins, setEditLowScoreWins] = useState(false);
   const [editScoringMode, setEditScoringMode] = useState<GameScoringMode>('points');
+  const [editError, setEditError] = useState<string | null>(null);
+
+  const displayGameName = game?.name || session?.gameName || '';
+  const displayGameCover = game
+    ? {
+        ...game,
+        name: displayGameName,
+        thumbnail: game.thumbnail || session?.gameThumbnail,
+      }
+    : {
+        name: session?.gameName || 'Board Game',
+        thumbnail: session?.gameThumbnail,
+      };
 
   const scoringTemplate = React.useMemo(
-    () => getScoringTemplateForGame(session?.gameName),
-    [session?.gameName]
+    () => getScoringTemplateForGame(displayGameName || session?.gameName),
+    [displayGameName, session?.gameName]
   );
   const isCoopSession = resolveIsCoopSession(session, game);
   const isWinOnly = isWinOnlySession(session, game);
@@ -320,6 +333,7 @@ export const SessionDetailPage: React.FC = () => {
 
   // Open Edit Modal with full state initialized
   const handleOpenEdit = () => {
+    setEditError(null);
     setEditDatetime(toDatetimeLocal(session.datePlayed));
     setEditLocation(session.location || '');
     setEditDuration(session.durationMinutes === undefined ? '' : String(session.durationMinutes));
@@ -331,7 +345,7 @@ export const SessionDetailPage: React.FC = () => {
       : undefined;
     const rows: EditablePlayerRow[] = (session.players || []).map((p) => ({
       playerId: p.playerId,
-      playerName: p.playerName,
+      playerName: playersById[p.playerId]?.name || p.playerName,
       score: typeof p.score === 'number' ? String(p.score) : '',
       isWinner: canonicalWinnerIds
         ? canonicalWinnerIds.has(p.playerId)
@@ -444,12 +458,13 @@ export const SessionDetailPage: React.FC = () => {
   // Save through the same normalizer used by the creation wizard.
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
+    setEditError(null);
     const rawPlayers: PlayerScore[] = editPlayers.map((p) => {
       const numericScore = p.score.trim() === '' ? undefined : Number(p.score);
       const breakdown = editBreakdowns[p.playerId];
       return {
         playerId: p.playerId,
-        playerName: p.playerName,
+        playerName: playersById[p.playerId]?.name || p.playerName,
         score: editScoringMode === 'points' ? numericScore : undefined,
         isWinner: p.isWinner,
         scoreBreakdown: editScoringMode === 'points' && breakdown && Object.values(breakdown).some((value) => value !== 0)
@@ -464,19 +479,19 @@ export const SessionDetailPage: React.FC = () => {
       coopOutcome: editPlayers.some((p) => p.isWinner) ? 'won' : 'lost',
     });
     if (normalized.errors.length > 0) {
-      alert(normalized.errors[0]);
+      setEditError(normalized.errors[0]);
       return;
     }
     const durationText = editDuration.trim();
     const durationMinutes = durationText === '' ? undefined : Number(durationText);
     if (durationMinutes !== undefined && (!Number.isFinite(durationMinutes) || durationMinutes < 0)) {
-      alert('Duration must be a non-negative number of minutes or left blank.');
+      setEditError('Duration must be a non-negative number of minutes or left blank.');
       return;
     }
     const teamScoreText = editTeamScore.trim();
     const teamScore = teamScoreText === '' ? undefined : Number(teamScoreText);
     if (teamScore !== undefined && (!Number.isFinite(teamScore))) {
-      alert('Team score must be a finite number or left blank.');
+      setEditError('Team score must be a finite number or left blank.');
       return;
     }
     const activeFirstPlayer = editPlayers.find((p) => p.isFirstPlayer);
@@ -574,7 +589,7 @@ export const SessionDetailPage: React.FC = () => {
         <div className="rounded-3xl overflow-hidden bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6 shadow-2xl">
           <Link to={`/collection/${session.gameId}`} className="shrink-0">
             <GameCoverImage
-              game={{ name: session.gameName, thumbnail: session.gameThumbnail }}
+              game={displayGameCover}
               className="w-24 h-32 rounded-2xl border border-[var(--border-subtle)] hover:scale-105 transition-transform shadow-md"
               fallbackIconSize="text-3xl"
             />
@@ -586,7 +601,7 @@ export const SessionDetailPage: React.FC = () => {
                 to={`/collection/${session.gameId}`}
                 className="font-display font-extrabold text-2xl sm:text-3xl text-[var(--text-primary)] hover:text-[var(--accent-neon)] transition-colors block truncate"
               >
-                {session.gameName}
+                {displayGameName}
               </Link>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--good-soft)] text-[var(--good)] text-xs font-bold">
                 <Check className="w-3.5 h-3.5 stroke-[3]" />
@@ -619,7 +634,7 @@ export const SessionDetailPage: React.FC = () => {
                 <span>
                   First player:{' '}
                   <strong className="text-[var(--text-primary)] font-bold">
-                    {firstPlayer.playerName}
+                    {playersById[firstPlayer.playerId]?.name || firstPlayer.playerName}
                   </strong>{' '}
                   ({FIRST_PLAYER_METHOD_LABELS[session.firstPlayerMethod] ||
                     session.firstPlayerMethod})
@@ -681,10 +696,10 @@ export const SessionDetailPage: React.FC = () => {
                         >
                           <PlayerAvatar
                             player={savedPlayer}
-                            name={entry.playerName}
+                            name={savedPlayer?.name || entry.playerName}
                             size="sm"
                           />
-                          <span>{entry.playerName}</span>
+                          <span>{savedPlayer?.name || entry.playerName}</span>
                         </Link>
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-bold text-base text-[var(--text-primary)]">
@@ -764,9 +779,9 @@ export const SessionDetailPage: React.FC = () => {
                           )}
                         >
                           <div className="flex flex-col items-center gap-1">
-                            <PlayerAvatar player={savedPlayer} name={p.playerName} size="sm" />
+                            <PlayerAvatar player={savedPlayer} name={savedPlayer?.name || p.playerName} size="sm" />
                             <span className="font-bold text-[var(--text-primary)] truncate max-w-[90px]">
-                              {p.playerName}
+                              {savedPlayer?.name || p.playerName}
                             </span>
                           </div>
                         </th>
@@ -900,7 +915,7 @@ export const SessionDetailPage: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-[var(--text-secondary)]">
-              Instantly launch a rematch with <strong>{session.gameName}</strong>, <strong>{formatCount(session.players.length, 'player')}</strong> at <strong>{session.location || 'current venue'}</strong>!
+              Instantly launch a rematch with <strong>{displayGameName}</strong>, <strong>{formatCount(session.players.length, 'player')}</strong> at <strong>{session.location || 'current venue'}</strong>!
             </p>
           </div>
           <Button
@@ -934,8 +949,25 @@ export const SessionDetailPage: React.FC = () => {
           maxWidthClass="max-w-2xl"
         >
           <form onSubmit={handleSaveEdit} className="space-y-5 text-sm">
+            {editError && (
+              <div
+                role="alert"
+                className="p-3 rounded-xl bg-[var(--bad-soft)] border border-[var(--bad)]/30 text-[var(--bad)] text-xs font-medium flex items-center justify-between gap-3"
+              >
+                <span>⚠️ {editError}</span>
+                <button
+                  type="button"
+                  onClick={() => setEditError(null)}
+                  className="text-[var(--bad)] hover:opacity-80 font-bold px-1.5 py-0.5 rounded cursor-pointer"
+                  aria-label="Dismiss error"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             {/* 1. Date & Time, Duration, Location */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                   Date &amp; Time

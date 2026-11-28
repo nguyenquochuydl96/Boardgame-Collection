@@ -13,7 +13,7 @@ import {
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { BoardGame, PlaySession } from '../../types';
-import { buildSessionShareCardData } from '../../lib/shareCard';
+import { buildSessionShareCardData, extractCalendarDate } from '../../lib/shareCard';
 import { renderSessionShareCard } from '../../lib/shareCardRenderer';
 import { useLocationStore } from '../../store/useLocationStore';
 import { usePlayerStore } from '../../store/usePlayerStore';
@@ -125,13 +125,14 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
     shuffleSeed,
   ]);
 
-  const fileNameSlug = (session.gameName || 'session')
+  const fileNameSlug = (game?.name || session.gameName || 'session')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-  const fileName = `heo-chronicle-${fileNameSlug || 'session'}-${session.datePlayed || 'play'}.png`;
+  const cleanDate = extractCalendarDate(session.datePlayed) || 'play';
+  const fileName = `the-sunday-table-${fileNameSlug || 'session'}-${cleanDate}.png`;
 
   const canNativeShare = Boolean(
     cardBlob &&
@@ -152,7 +153,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
     try {
       await navigator.share({
         files: [new File([cardBlob], fileName, { type: 'image/png' })],
-        title: `${session.gameName} — The Tabletop Chronicle`,
+        title: `${game?.name || session.gameName} — The Sunday Table`,
       });
     } catch (caught) {
       if ((caught as DOMException).name !== 'AbortError') console.error('Native image share failed:', caught);
@@ -187,7 +188,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
       <div className="min-w-0 space-y-3.5 pt-1">
         <div className="space-y-3 border-b border-[var(--border-subtle)] pb-3.5">
           <div className="space-y-1.5">
-            <label htmlFor="share-card-headline" className="text-xs font-semibold text-[var(--text-muted)]">
+            <label htmlFor="share-card-headline" className="text-xs font-semibold text-[var(--muted)]">
               Headline <span className="font-normal">(optional)</span>
             </label>
             <div className="flex min-w-0 gap-2">
@@ -197,7 +198,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
                 maxLength={120}
                 onChange={(event) => setHeadline(event.target.value)}
                 placeholder="Write your own front-page headline..."
-                className="min-w-0 flex-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-elevated)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                className="min-w-0 flex-1 rounded-xl border border-[var(--line)] bg-[var(--card-2)] px-3 py-2.5 text-sm text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
               />
               <button
                 type="button"
@@ -213,15 +214,15 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
 
           {hasPhotos && (
             <fieldset className="min-w-0 space-y-1.5">
-              <legend className="text-xs font-semibold text-[var(--text-muted)]">Photo source</legend>
-              <div className="grid grid-cols-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface-elevated)] p-1">
+              <legend className="text-xs font-semibold text-[var(--muted)]">Photo source</legend>
+              <div className="grid grid-cols-2 rounded-xl border border-[var(--line)] bg-[var(--card-2)] p-1">
                 <button
                   type="button"
                   onClick={() => setPhotoSource('box')}
                   className={`inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] ${
                     photoSource === 'box'
                       ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)]'
                   }`}
                 >
                   <ImageIcon className="h-3.5 w-3.5" /> Game Box
@@ -232,7 +233,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
                   className={`inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] ${
                     photoSource === 'table'
                       ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-sm'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)]'
                   }`}
                 >
                   <Camera className="h-3.5 w-3.5" /> Table Photo
@@ -242,9 +243,9 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
           )}
         </div>
 
-        <div className="relative flex min-h-[280px] max-h-[48vh] sm:max-h-[52vh] items-center justify-center overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-2 sm:p-4">
+        <div className="relative flex min-h-[280px] max-h-[48vh] sm:max-h-[52vh] items-center justify-center overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--bg)] p-2 sm:p-4">
           {isRendering && !previewUrl ? (
-            <div className="flex flex-col items-center gap-3 py-12 text-[var(--text-muted)]">
+            <div className="flex flex-col items-center gap-3 py-12 text-[var(--muted)]">
               <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
               <p className="text-sm font-medium">Setting the front page...</p>
             </div>
@@ -264,7 +265,7 @@ export const SessionShareModal: React.FC<SessionShareModalProps> = ({
             <div className="relative flex max-h-[44vh] sm:max-h-[48vh] w-auto items-center justify-center">
               <img
                 src={previewUrl}
-                alt="The Tabletop Chronicle session share card"
+                alt="The Sunday Table session share card"
                 className={`max-h-[44vh] sm:max-h-[48vh] max-w-full rounded-xl object-contain shadow-2xl transition-opacity duration-200 ${
                   isRendering ? 'opacity-40 blur-[1px]' : 'opacity-100'
                 }`}

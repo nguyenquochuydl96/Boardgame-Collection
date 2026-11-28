@@ -40,6 +40,7 @@ export const PlayersPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const players = usePlayerStore((s) => s.players);
   const sessions = useSessionStore((s) => s.sessions);
+  const clearSessionsAtLocation = useSessionStore((s) => s.clearSessionsAtLocation);
   const games = useGameStore((s) => s.games);
   const locations = useLocationStore((s) => s.locations);
   const addLocation = useLocationStore((s) => s.addLocation);
@@ -317,7 +318,7 @@ export const PlayersPage: React.FC = () => {
                     : 'bg-[var(--card-2)] text-[var(--muted)]'
                 )}
               >
-                {formatNumber(locations.length)}
+                {formatNumber(combinedVenues.length)}
               </span>
             </button>
           </div>
@@ -566,10 +567,10 @@ export const PlayersPage: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <span className="text-xs text-[var(--text-secondary)] font-medium block">
-                    Total Saved Venues
+                    Total Venues
                   </span>
                   <p className="text-xl font-display font-extrabold text-[var(--text-primary)] tabular-nums">
-                    {formatNumber(locationStats.totalVenues)} venues
+                    {formatCount(locationStats.totalVenues, 'venue')}
                   </p>
                 </div>
               </div>
@@ -665,7 +666,16 @@ export const PlayersPage: React.FC = () => {
                       setEditingLocation(targetLoc);
                       setIsLocationModalOpen(true);
                     }}
-                    onDelete={(id) => deleteLocation(id)}
+                    onDelete={(id) => {
+                      if (id.startsWith('hist-')) {
+                        const found = combinedVenues.find((v) => v.id === id);
+                        if (found) {
+                          clearSessionsAtLocation(found.name);
+                        }
+                        return;
+                      }
+                      deleteLocation(id);
+                    }}
                     onSetDefault={(id) => {
                       if (id.startsWith('hist-')) {
                         const found = combinedVenues.find((v) => v.id === id);

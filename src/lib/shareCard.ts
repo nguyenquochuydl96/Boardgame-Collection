@@ -63,6 +63,8 @@ export interface SessionShareCardData {
   coverUrl?: string;
   tablePhotoUrl?: string;
   dateFormatted: string;
+  filenameDate: string; // clean YYYY-MM-DD for file exports (never raw ISO timestamp)
+  colophonText: string; // e.g. "PLAY #41 · NOV 22, 2026"
   locationName?: string;
   venueDateFormatted: string;
   durationFormatted?: string;
@@ -77,7 +79,9 @@ export interface SessionShareCardData {
   ticketBarcode: string; // e.g. "HEO-41-20261122"
   resultStatus: ShareCardResultStatus;
   shuffleSeed: number;
+  kicker: string;
   headline: string;
+  subhead: string;
   stamp: string;
   customHeadline?: string;
   /** @deprecated Alias retained for legacy callers. */
@@ -105,6 +109,23 @@ export interface BuildShareCardContext extends ShareCardPresentationOptions {
   players?: Player[];
   locations?: GameLocation[];
   useTablePhoto?: boolean;
+}
+
+/**
+ * Extracts a clean calendar date string (YYYY-MM-DD) from date-only or ISO timestamp inputs.
+ * Prevents raw ISO timestamps (e.g. "2026-11-22T13:07:47.708Z") from leaking into barcodes or filenames.
+ */
+export function extractCalendarDate(raw?: string | null): string {
+  if (!raw) return '';
+  const trimmed = raw.trim();
+  const isoPrefixMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoPrefixMatch) return isoPrefixMatch[1];
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toISOString().slice(0, 10);
+  }
+  return '';
 }
 
 /**
@@ -182,11 +203,28 @@ function cleanCustomCaption(value: string | undefined): string | undefined {
   return Array.from(compact).slice(0, 120).join('') || undefined;
 }
 
-function pendingPresentation(): Pick<SessionShareCardData, 'resultStatus' | 'headline' | 'stamp'> {
+function formatWinnerList(names: string[]): string {
+  const clean = names.map((n) => n.trim()).filter(Boolean);
+  if (clean.length === 0) return 'The Champion';
+  if (clean.length === 1) return clean[0];
+  if (clean.length === 2) return `${clean[0]} & ${clean[1]}`;
+  if (clean.length === 3) return `${clean[0]}, ${clean[1]} & ${clean[2]}`;
+  return `${clean[0]} + ${formatNumber(clean.length - 1)} Others`;
+}
+
+type EditorialPresentation = Pick<
+  SessionShareCardData,
+  'resultStatus' | 'kicker' | 'headline' | 'subhead' | 'stamp'
+>;
+
+function pendingPresentation(gameTitle: string, locationName?: string): EditorialPresentation {
+  const venueSuffix = locationName ? ` at ${locationName}` : '';
   return {
     resultStatus: 'pending',
-    headline: 'FINAL TALLY DELAYED AMID RECOUNT CHAOS',
-    stamp: 'RESULT PENDING',
+    kicker: 'BREAKING · RESULT PENDING',
+    headline: 'Final Tally Delayed Amid Recount Chaos',
+    subhead: `${gameTitle} standings remain under review${venueSuffix} until every score is verified.`,
+    stamp: 'PENDING',
   };
 }
 
@@ -194,102 +232,176 @@ function resolvedPresentation(
   mode: ShareCardMode,
   seed: number,
   details: {
-    winnerName?: string;
-    gameTitle?: string;
+    winnerNames?: string[];
+    runnerUpName?: string;
+    runnerUpScore?: number;
+    topScoreFormatted?: string;
+    gameTitle: string;
     margin?: number;
+    isBlowout?: boolean;
+    isNewRecord?: boolean;
+    lowestScoreWins?: boolean;
     sharedWinner?: boolean;
     coopOutcome?: 'won' | 'lost';
+    teamScoreFormatted?: string;
+    playerCountFormatted: string;
+    durationFormatted?: string;
+    locationName?: string;
   }
-): Pick<SessionShareCardData, 'resultStatus' | 'headline' | 'stamp'> {
-  const winner = (details.winnerName || 'THE CHAMPION').toLocaleUpperCase('vi-VN');
-  const game = (details.gameTitle || 'THE TABLE').toLocaleUpperCase('vi-VN');
+): EditorialPresentation {
+  const winners = details.winnerNames || [];
+  const winnerDisplay = formatWinnerList(winners);
+  const isPlural = winners.length > 1;
+  const game = details.gameTitle || 'Game Night';
   const margin = Math.max(0, details.margin ?? 0);
+  const venueClause = details.locationName ? ` at ${details.locationName}` : '';
+  const durationClause = details.durationFormatted ? ` (${details.durationFormatted})` : '';
+  const runnerUpClause = details.runnerUpName
+    ? ` ahead of ${details.runnerUpName}`
+    : '';
 
   if (mode === 'coop') {
+    const scorePart = details.teamScoreFormatted !== undefined
+      ? ` with ${details.teamScoreFormatted} team pts`
+      : '';
     if (details.coopOutcome === 'won') {
       return {
         resultStatus: 'resolved',
+        kicker: 'CO-OP DISPATCH',
         headline: pickVibe(seed, 1, [
-          'MIRACLE AT TABLE ONE: THE SQUAD PULLED IT OFF',
-          'FRIENDSHIPS SURVIVED ANOTHER CO-OP NIGHT',
-          'LATE-NIGHT HEROICS SAVE THE TEAM',
+          `Miracle at Table One: The Squad Survives ${game}`,
+          `Friendships Survive Another Night of ${game}`,
+          `Late-Night Heroics Deliver a ${game} Victory`,
         ]),
+        subhead: `${details.playerCountFormatted} pulled together${scorePart}${venueClause}${durationClause}.`,
         stamp: 'TEAM WIN',
       };
     }
     return {
       resultStatus: 'resolved',
+      kicker: 'CO-OP DISPATCH',
       headline: pickVibe(seed, 1, [
-        'TOTAL COLLAPSE: EVERYONE BLAMES EVERYONE',
-        'CO-OP DISASTER ENDS IN FINGER-POINTING',
-        'TEAM STRATEGY MISSING, PRESUMED LOST',
+        `Total Collapse in ${game}: Everyone Blames Everyone`,
+        `Co-op Disaster in ${game} Ends in Finger-Pointing`,
+        `${game} Wins Again as Team Strategy Goes Missing`,
       ]),
+      subhead: `${details.playerCountFormatted} came up short${scorePart}${venueClause} — post-match inquiry underway.`,
       stamp: 'TEAM LOSS',
     };
   }
 
   if (mode === 'win_only') {
+    const walkVerb = isPlural ? 'Walk' : 'Walks';
+    const takeVerb = isPlural ? 'Take' : 'Takes';
+    const ruleVerb = isPlural ? 'Rule' : 'Rules';
     return {
       resultStatus: 'resolved',
+      kicker: isPlural ? 'SHARED VICTORY' : 'GAME NIGHT FINAL',
       headline: pickVibe(seed, 1, [
-        `${winner} WALKS OFF WITH BRAGGING RIGHTS`,
-        `NO POINTS NEEDED: ${winner} TAKES THE CROWN`,
+        `${winnerDisplay} ${walkVerb} Off With ${game} Bragging Rights`,
+        `No Points Needed: ${winnerDisplay} ${takeVerb} the ${game} Crown`,
+        `${winnerDisplay} ${ruleVerb} the Table in ${game}`,
       ]),
-      stamp: 'CROWN CLAIMED',
+      subhead: `Official table victory across ${details.playerCountFormatted}${durationClause}${venueClause}.`,
+      stamp: isPlural ? 'SHARED WIN' : 'CROWN CLAIMED',
     };
   }
 
   if (details.sharedWinner) {
+    const scoreStr = details.topScoreFormatted ? ` at ${details.topScoreFormatted} pts` : '';
     return {
       resultStatus: 'resolved',
+      kicker: 'DEADLOCK AT THE TOP',
       headline: pickVibe(seed, 1, [
-        'DEADLOCK AT THE TOP: NOBODY BLINKED',
-        'SPLIT CROWN SHAKES UP GAME NIGHT',
+        `Deadlock in ${game}: ${winnerDisplay} Split the Crown`,
+        `Nobody Blinked as ${winnerDisplay} Tie the ${game} Summit`,
+        `Split Crown Shakes Up ${game} Night`,
       ]),
+      subhead: `Dead-even${scoreStr} in a ${details.playerCountFormatted} clash${venueClause}.`,
       stamp: 'SPLIT CROWN',
     };
   }
 
-  if (margin <= 2) {
+  if (details.isNewRecord) {
+    const scoreStr = details.topScoreFormatted ? `${details.topScoreFormatted} pts` : 'a record tally';
     return {
       resultStatus: 'resolved',
+      kicker: 'NEW TABLE RECORD',
       headline: pickVibe(seed, 1, [
-        `${winner} STEALS IT AT THE BUZZER BY ${formatNumber(margin)}`,
-        `HEARTBREAK BY ${formatNumber(margin)}: RECOUNT DEMANDED`,
-        'ONE POINT SHORT — SLEEP DISRUPTED',
+        `Record Shattered! ${winnerDisplay} Sets the ${game} Mark`,
+        `History at the Table: ${winnerDisplay} Rewrites ${game}`,
+        `All-Time Best as ${winnerDisplay} Towers Over ${game}`,
       ]),
-      stamp: 'PHOTO FINISH',
+      subhead: `${winnerDisplay} set a new benchmark with ${scoreStr}${runnerUpClause}${venueClause}.`,
+      stamp: 'NEW RECORD',
     };
   }
 
-  if (margin >= 25) {
+  if (margin <= 2 && details.runnerUpName) {
+    const marginLabel = formatCount(margin, 'Point');
+    const scoreStr = details.topScoreFormatted ? `${details.topScoreFormatted} pts` : 'the lead';
     return {
       resultStatus: 'resolved',
+      kicker: details.lowestScoreWins ? 'LOW-SCORE THRILLER' : 'PHOTO FINISH',
       headline: pickVibe(seed, 1, [
-        `${winner} LEAVES ENTIRE TABLE IN SHAMBLES`,
-        'SOURCES SAY THE TABLE NEVER RECOVERED',
-        `NO SURVIVORS AS ${winner} RUNS AWAY WITH IT`,
-        'LANDSLIDE FINISH LEAVES RIVALS SPEECHLESS',
+        `${winnerDisplay} Steals ${game} by ${marginLabel}`,
+        `Heartbreak for ${details.runnerUpName} as ${winnerDisplay} Edges ${game}`,
+        `${marginLabel} Short — Sleep Disrupted After ${game} Thriller`,
       ]),
-      stamp: `+${formatNumber(margin)} MARGIN`,
+      subhead: `Razor-thin finish at ${scoreStr} over ${details.runnerUpName}${venueClause}${durationClause}.`,
+      stamp: margin === 1 ? '1-PT THRILLER' : margin === 0 ? 'TIEBREAKER' : '2-PT THRILLER',
     };
   }
 
+  if (details.lowestScoreWins) {
+    const scoreStr = details.topScoreFormatted ? `${details.topScoreFormatted} pts` : 'the lowest tally';
+    return {
+      resultStatus: 'resolved',
+      kicker: 'LOW-SCORE CLASSIC',
+      headline: pickVibe(seed, 1, [
+        `Less Is More: ${winnerDisplay} Stays Clean in ${game}`,
+        `${winnerDisplay} Dodges Trouble to Take ${game} at ${details.topScoreFormatted || 'Low'}`,
+        `Surgical Minimalism: ${winnerDisplay} Cruises in ${game}`,
+      ]),
+      subhead: `${winnerDisplay} stayed lowest at ${scoreStr}, ${formatNumber(margin)} clear${runnerUpClause}${venueClause}.`,
+      stamp: 'LOW-SCORE WIN',
+    };
+  }
+
+  if (details.isBlowout || margin >= 25) {
+    const scoreStr = details.topScoreFormatted ? `${details.topScoreFormatted} pts` : 'the top spot';
+    return {
+      resultStatus: 'resolved',
+      kicker: 'BLOWOUT SPECIAL',
+      headline: pickVibe(seed, 1, [
+        `${winnerDisplay} Leaves the ${game} Table in Shambles`,
+        `No Survivors as ${winnerDisplay} Runs Away With ${game}`,
+        `Sources Say the ${game} Table Never Recovered`,
+        `Landslide in ${game} Leaves Rivals Speechless`,
+      ]),
+      subhead: `Commanding +${formatNumber(margin)} point rout (${scoreStr})${runnerUpClause}${venueClause}.`,
+      stamp: 'BLOWOUT',
+    };
+  }
+
+  const scoreStr = details.topScoreFormatted ? `${details.topScoreFormatted} pts` : 'the win';
   return {
     resultStatus: 'resolved',
+    kicker: 'GAME NIGHT FINAL',
     headline: pickVibe(seed, 1, [
-      `${winner} CLAIMS THE TABLE AFTER LATE-NIGHT CLASH`,
-      `LATE-NIGHT DRAMA ENDS WITH ${winner} ON TOP`,
-      `${winner} OUTSMARTS THE TABLE IN ${game}`,
+      `${winnerDisplay} Claims ${game} After Late-Night Clash`,
+      `${winnerDisplay} Outsmarts the Table in ${game}`,
+      `Late-Night Drama Ends With ${winnerDisplay} on Top`,
     ]),
-    stamp: `+${formatNumber(margin)} MARGIN`,
+    subhead: `${winnerDisplay} closed out ${game} on ${scoreStr}${runnerUpClause}${venueClause}${durationClause}.`,
+    stamp: margin > 0 ? `+${formatNumber(margin)} MARGIN` : 'OFFICIAL WIN',
   };
 }
 
 function applyCustomHeadline(
-  presentation: Pick<SessionShareCardData, 'resultStatus' | 'headline' | 'stamp'>,
+  presentation: EditorialPresentation,
   customHeadline?: string
-): Pick<SessionShareCardData, 'resultStatus' | 'headline' | 'stamp'> {
+): EditorialPresentation {
   return customHeadline ? { ...presentation, headline: customHeadline } : presentation;
 }
 
@@ -306,7 +418,6 @@ export function buildSessionShareCardData(
     allSessions = [],
     players = [],
     locations = [],
-    useTablePhoto = false,
     shuffleSeed,
     customHeadline,
     customCaption,
@@ -329,7 +440,9 @@ export function buildSessionShareCardData(
   const coverUrl = game?.image || game?.thumbnail || session.gameThumbnail || '';
   const tablePhotoUrl =
     Array.isArray(session.photos) && session.photos.length > 0 ? session.photos[0] : undefined;
-  const dateFormatted = formatDate(session.datePlayed);
+  const calendarDate = extractCalendarDate(session.datePlayed);
+  const dateFormatted = formatDate(calendarDate || session.datePlayed);
+  const filenameDate = calendarDate || 'play';
 
   // Canonical venue lookup
   let locationName: string | undefined;
@@ -393,10 +506,11 @@ export function buildSessionShareCardData(
   const playNumber = sessionIndex >= 0 ? sessionIndex + 1 : orderedSessions.length;
   const playIndexFormatted = `Play #${formatNumber(playNumber)}`;
 
-  // Ticket serial and barcode
+  // Clean print serial, barcode, and colophon (never raw ISO timestamp)
   const ticketSerial = `NO. ${String(playNumber).padStart(4, '0')}`;
-  const dateCompact = (session.datePlayed || '').replace(/-/g, '') || '20261124';
+  const dateCompact = (calendarDate || '').replace(/-/g, '') || '20261124';
   const ticketBarcode = `HEO-${playNumber}-${dateCompact}`;
+  const colophonText = `${playIndexFormatted.toUpperCase()} · ${dateFormatted.toUpperCase()}`;
 
   // Helper to compute consecutive winnerGameStreak specifically on this game
   const computeWinnerGameStreak = (singleWinnerPlayerId?: string): number | undefined => {
@@ -526,6 +640,7 @@ export function buildSessionShareCardData(
     const rank1Players = rankedPlayersWithoutPct.filter((p) => p.isWinner);
     let rank1MicroTag: string | undefined;
     let calloutBadge = rank1Players.length === 0 ? 'RESULT PENDING' : 'SOLO VICTORY';
+    let isBlowout = false;
 
     if (hasCompleteScores && isNewRecord) {
       calloutBadge = '★ NEW RECORD';
@@ -548,6 +663,7 @@ export function buildSessionShareCardData(
         margin >= 15 ||
         (runnerUpScore > 0 && margin / runnerUpScore >= 0.25)
       ) {
+        isBlowout = true;
         calloutBadge = `BLOWOUT · +${formatNumber(margin)}`;
       } else {
         calloutBadge = `+${formatNumber(margin)} PTS MARGIN`;
@@ -580,17 +696,29 @@ export function buildSessionShareCardData(
     const resultStatus: ShareCardResultStatus = hasCompleteScores && rankedPlayersWithoutPct.length > 0
       ? 'resolved'
       : 'pending';
-    const resolvedMargin = resultStatus === 'resolved' && rank1Players.length === 1 && rankedPlayersWithoutPct.length > 1
-      ? Math.abs(rankedPlayersWithoutPct[0].score - rankedPlayersWithoutPct[1].score)
+    const runnerUp = resultStatus === 'resolved' && rank1Players.length === 1 && rankedPlayersWithoutPct.length > 1
+      ? rankedPlayersWithoutPct[1]
+      : undefined;
+    const resolvedMargin = runnerUp
+      ? Math.abs(rankedPlayersWithoutPct[0].score - runnerUp.score)
       : undefined;
     const presentation = applyCustomHeadline(
       resultStatus === 'pending'
-        ? pendingPresentation()
+        ? pendingPresentation(gameTitle, locationName)
         : resolvedPresentation('points', resolvedShuffleSeed, {
-            winnerName: rank1Players.map((player) => player.playerName).join(' & '),
+            winnerNames: rank1Players.map((player) => player.playerName),
+            runnerUpName: runnerUp?.playerName,
+            runnerUpScore: runnerUp?.score,
+            topScoreFormatted: rankedPlayersWithoutPct[0]?.scoreFormatted,
             gameTitle,
             margin: resolvedMargin,
+            isBlowout,
+            isNewRecord,
+            lowestScoreWins,
             sharedWinner: rank1Players.length > 1,
+            playerCountFormatted,
+            durationFormatted,
+            locationName,
           }),
       resultStatus === 'resolved' ? resolvedCustomHeadline : undefined
     );
@@ -660,6 +788,8 @@ export function buildSessionShareCardData(
       coverUrl,
       tablePhotoUrl,
       dateFormatted,
+      filenameDate,
+      colophonText,
       locationName,
       venueDateFormatted,
       durationFormatted,
@@ -721,10 +851,13 @@ export function buildSessionShareCardData(
     const resultStatus: ShareCardResultStatus = winners.length > 0 ? 'resolved' : 'pending';
     const presentation = applyCustomHeadline(
       resultStatus === 'pending'
-        ? pendingPresentation()
+        ? pendingPresentation(gameTitle, locationName)
         : resolvedPresentation('win_only', resolvedShuffleSeed, {
-            winnerName: winners.map((player) => player.playerName).join(' & '),
+            winnerNames: winners.map((player) => player.playerName),
             gameTitle,
+            playerCountFormatted,
+            durationFormatted,
+            locationName,
           }),
       resultStatus === 'resolved' ? resolvedCustomHeadline : undefined
     );
@@ -744,6 +877,8 @@ export function buildSessionShareCardData(
       coverUrl,
       tablePhotoUrl,
       dateFormatted,
+      filenameDate,
+      colophonText,
       locationName,
       venueDateFormatted,
       durationFormatted,
@@ -775,21 +910,29 @@ export function buildSessionShareCardData(
   const isWon = session.coopOutcome === 'won' || rawPlayers.some((player) => player.isWinner);
   const coopOutcome: 'won' | 'lost' = isWon ? 'won' : 'lost';
   const resultStatus: ShareCardResultStatus = hasExplicitCoopResult ? 'resolved' : 'pending';
-  const presentation = applyCustomHeadline(
-    resultStatus === 'pending'
-      ? pendingPresentation()
-      : resolvedPresentation('coop', resolvedShuffleSeed, { gameTitle, coopOutcome }),
-    resultStatus === 'resolved' ? resolvedCustomHeadline : undefined
-  );
-  const calloutBadge = resultStatus === 'pending'
-    ? 'RESULT PENDING'
-    : isWon ? 'TEAM VICTORY' : 'TEAM DEFEAT';
 
   let teamScoreFormatted: string | undefined;
   const rawTeamScore = resolveSessionTeamScore(session);
   if (typeof rawTeamScore === 'number' && Number.isFinite(rawTeamScore)) {
     teamScoreFormatted = formatNumber(rawTeamScore);
   }
+
+  const presentation = applyCustomHeadline(
+    resultStatus === 'pending'
+      ? pendingPresentation(gameTitle, locationName)
+      : resolvedPresentation('coop', resolvedShuffleSeed, {
+          gameTitle,
+          coopOutcome,
+          teamScoreFormatted,
+          playerCountFormatted,
+          durationFormatted,
+          locationName,
+        }),
+    resultStatus === 'resolved' ? resolvedCustomHeadline : undefined
+  );
+  const calloutBadge = resultStatus === 'pending'
+    ? 'RESULT PENDING'
+    : isWon ? 'TEAM VICTORY' : 'TEAM DEFEAT';
 
   const teamPlayers = rawPlayers.map((p) => {
     const { resolvedName, avatar } = getPlayerDetails(p);
@@ -816,6 +959,8 @@ export function buildSessionShareCardData(
     coverUrl,
     tablePhotoUrl,
     dateFormatted,
+    filenameDate,
+    colophonText,
     locationName,
     venueDateFormatted,
     durationFormatted,

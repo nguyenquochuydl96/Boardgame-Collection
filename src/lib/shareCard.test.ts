@@ -766,11 +766,12 @@ test('buildSessionShareCardData: tabloid headlines are deterministic and preserv
   assert.equal(leaderboard[0].playerName, 'Hằng');
   assert.equal(leaderboard[2].playerName, 'Heo');
   assert.equal(first.headline, repeat.headline);
-  assert.match(first.headline, /Hằng|HEARTBREAK|ONE POINT/i);
+  assert.match(first.headline, /Hằng|Heartbreak|Point Short/i);
+  assert.equal(first.stamp, '1-PT THRILLER');
   assert.notEqual(first.headline, alternate.headline);
 });
 
-test('buildSessionShareCardData: uses tabloid blowout, co-op and pending front-page headlines', () => {
+test('buildSessionShareCardData: uses broadsheet blowout, co-op and pending front-page headlines', () => {
   const points: PlaySession = {
     id: 's-broadsheet-points', gameId: 'g-castle', gameName: 'Castle Combo', gameThumbnail: '',
     datePlayed: '2026-11-22', createdAt: '2026-11-22T15:30:00Z', firstPlayerMethod: 'manual',
@@ -797,13 +798,16 @@ test('buildSessionShareCardData: uses tabloid blowout, co-op and pending front-p
   const teamWin = buildSessionShareCardData(coop, { shuffleSeed: 0 });
   const recount = buildSessionShareCardData(pending, { shuffleSeed: 0 });
 
-  assert.match(blowout.headline, /HANG LEAVES|SOURCES SAY|NO SURVIVORS|LANDSLIDE/);
+  assert.match(blowout.headline, /Hằng|Sources Say|No Survivors|Landslide/i);
+  assert.equal(blowout.stamp, 'BLOWOUT');
+  assert.equal(blowout.kicker, 'BLOWOUT SPECIAL');
+  assert.ok(blowout.subhead.includes('Anh Huy'));
   assert.equal(blowout.leaderboard?.[0].playerName, 'Hằng');
-  assert.match(teamWin.headline, /MIRACLE AT TABLE ONE|FRIENDSHIPS SURVIVED|LATE-NIGHT HEROICS/);
+  assert.match(teamWin.headline, /Miracle at Table One|Friendships Survive|Late-Night Heroics/i);
   assert.equal(teamWin.teamScoreFormatted, '145');
   assert.equal(recount.resultStatus, 'pending');
-  assert.equal(recount.headline, 'FINAL TALLY DELAYED AMID RECOUNT CHAOS');
-  assert.equal(recount.stamp, 'RESULT PENDING');
+  assert.equal(recount.headline, 'Final Tally Delayed Amid Recount Chaos');
+  assert.equal(recount.stamp, 'PENDING');
   assert.ok(recount.leaderboard?.every((player) => !player.isWinner));
 });
 
@@ -824,13 +828,13 @@ test('buildSessionShareCardData: RESULT PENDING suppresses winner output while r
   assert.equal(data.resultStatus, 'pending');
   assert.equal(data.calloutBadge, 'RESULT PENDING');
   assert.equal(data.isNewRecord, false);
-  assert.equal(data.headline, 'FINAL TALLY DELAYED AMID RECOUNT CHAOS');
-  assert.equal(data.stamp, 'RESULT PENDING');
+  assert.equal(data.headline, 'Final Tally Delayed Amid Recount Chaos');
+  assert.equal(data.stamp, 'PENDING');
   assert.equal(data.customHeadline, 'Hôm nay bét bảng bao trà sữa!');
   assert.ok(data.leaderboard?.every((player) => !player.isWinner));
 });
 
-test('buildSessionShareCardData: co-op preserves explicit result semantics for the single tabloid layout', () => {
+test('buildSessionShareCardData: co-op preserves explicit result semantics for the broadsheet layout', () => {
   const won: PlaySession = {
     id: 's-coop-vibe', gameId: 'g-coop', gameName: 'Spirit Island', gameThumbnail: '',
     datePlayed: '2026-11-27', createdAt: '2026-11-27T20:30:00Z', firstPlayerMethod: 'manual',
@@ -840,7 +844,73 @@ test('buildSessionShareCardData: co-op preserves explicit result semantics for t
   const card = buildSessionShareCardData(won, { shuffleSeed: 9 });
   assert.equal(card.resultStatus, 'resolved');
   assert.equal(card.coopOutcome, 'won');
-  assert.match(card.headline, /MIRACLE AT TABLE ONE|FRIENDSHIPS SURVIVED|LATE-NIGHT HEROICS/);
+  assert.match(card.headline, /Miracle at Table One|Friendships Survive|Late-Night Heroics/i);
   assert.equal(card.stamp, 'TEAM WIN');
   assert.equal(card.teamPlayers?.length, 2);
+});
+
+test('buildSessionShareCardData: strips raw ISO timestamps from barcode, colophon, and filenameDate', () => {
+  const session: PlaySession = {
+    id: 's-iso-1',
+    gameId: 'g-wingspan',
+    gameName: 'Wingspan',
+    gameThumbnail: '',
+    datePlayed: '2026-11-24T13:07:47.708Z',
+    createdAt: '2026-11-24T13:07:47.708Z',
+    firstPlayerMethod: 'manual',
+    location: 'Quán Cà Phê Đá',
+    players: [
+      { playerId: 'p-1', playerName: 'Hằng', score: 94, isWinner: true },
+      { playerId: 'p-2', playerName: 'Lộc', score: 88, isWinner: false },
+    ],
+  };
+
+  const data = buildSessionShareCardData(session, { allSessions: [session] });
+  assert.equal(data.filenameDate, '2026-11-24');
+  assert.equal(data.ticketBarcode, 'HEO-1-20261124');
+  assert.ok(!data.ticketBarcode.includes('T'));
+  assert.ok(!data.colophonText.includes('T13:07'));
+  assert.ok(data.colophonText.includes('PLAY #1'));
+  assert.equal(data.locationName, 'Quán Cà Phê Đá');
+});
+
+test('buildSessionShareCardData: uses LOW-SCORE WIN stamp for non-thriller lowest-score matches and handles multi-winner grammar', () => {
+  const lowGame = { id: 'g-skyjo', name: 'Skyjo', status: 'own', lowestScoreWins: true } as unknown as BoardGame;
+  const lowSession: PlaySession = {
+    id: 's-skyjo-1',
+    gameId: 'g-skyjo',
+    gameName: 'Skyjo',
+    gameThumbnail: '',
+    datePlayed: '2026-11-25',
+    createdAt: '2026-11-25T20:00:00Z',
+    firstPlayerMethod: 'manual',
+    lowestScoreWins: true,
+    players: [
+      { playerId: 'p1', playerName: 'Anh Huy', score: 12, isWinner: true },
+      { playerId: 'p2', playerName: 'Lộc', score: 26, isWinner: false },
+    ],
+  };
+  const lowData = buildSessionShareCardData(lowSession, { game: lowGame, allSessions: [lowSession] });
+  assert.equal(lowData.stamp, 'LOW-SCORE WIN');
+  assert.equal(lowData.kicker, 'LOW-SCORE CLASSIC');
+
+  const multiWin: PlaySession = {
+    id: 's-avalon-1',
+    gameId: 'g-avalon',
+    gameName: 'Avalon',
+    gameThumbnail: '',
+    datePlayed: '2026-11-26',
+    createdAt: '2026-11-26T21:00:00Z',
+    firstPlayerMethod: 'manual',
+    scoringMode: 'win_only',
+    players: [
+      { playerId: 'p1', playerName: 'Hằng', isWinner: true },
+      { playerId: 'p2', playerName: 'Lộc', isWinner: true },
+      { playerId: 'p3', playerName: 'Heo', isWinner: false },
+    ],
+  };
+  const multiData = buildSessionShareCardData(multiWin, { allSessions: [multiWin], shuffleSeed: 1 });
+  assert.equal(multiData.stamp, 'SHARED WIN');
+  assert.ok(multiData.headline.includes('Hằng & Lộc'));
+  assert.doesNotMatch(multiData.headline, /Walks|Takes|Rules/);
 });

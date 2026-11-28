@@ -329,6 +329,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     if (location.pathname.startsWith('/players/')) return 'Player Profile';
     if (location.pathname.startsWith('/players')) return 'Players & Rivals';
     if (location.pathname.startsWith('/stats')) return 'Collection Analytics';
+    if (location.pathname.startsWith('/picker') || location.pathname.startsWith('/tools')) return 'Tabletop Hub & Picker';
     return 'Collection';
   };
 
